@@ -6,18 +6,17 @@ oohighlight - search, replace and highlight text in a document
 
 =head1	SYNOPSIS
 
-This sample program allows the user to search and replace a given string
-in a whole document, and highlight the each processed area with a given
-background color.
+oohighlight "myfile.sxw" "search string" -r "replacement" -o "target.sxw"
 
-Usage: oohighliht filename "search string" [-options]
+replaces "search string" by "replacement" in the file "myfile.sxw", highlights
+each replacement with a yellow (default) backgound, then writes the resulting
+document as "target.sxw"
 
-Example:
+oohighlight "myfile.sxw" "search string" -color "#00ff00"
 
-oohighlight myfile.sxw "to be replaced" -r "replacement" -c "#00ff00"
-
-replaces "to be replaced" by "replacement" everywhere in the document,
-and puts a green background at each replacement
+highlights each occurrence of "search string" in "myfile.sxw" with a green
+background color, without changing the text (without "-o" option, the changes
+apply to "myfile.sxw"
 
 =head1	ARGUMENTS AND OPTIONS
 
@@ -62,21 +61,6 @@ and represented with the "Standard" style.
 
 		an alternative filename to save the modified document, when
 		the source document must remain unchanged
-		
-=head1	COMMENT
-
-This script introduces the "Document" object, that allows content and
-presentation processing in the same session. createStyle() is inherited from
-the "Styles" class, while selectElementsByContent() and setSpan() come from
-the "Text" class.
-
-selectElementsByContent() is used with a subroutine (closure) as its second
-argument; in this way, the highlighting and the text replacement are
-executed in one pass.
-
-One should go to the OpenOffice::OODoc::Styles and
-OpenOffice::OODoc::Text manual pages, respectively, in order to get some
-documentation about these methods.
 
 =cut
 

@@ -222,10 +222,11 @@ It's freely downloadable from the project page
 =head1	AUTHOR/COPYRIGHT
 
 Copyright 2004 by Genicorp, S.A. (http://www.genicorp.com)
+
 Initial developer: Jean-Marie Gouarne (http://jean.marie.gouarne.online.fr)
 
 Initial English version of the reference manual
-by Graeme A. Hunter <graeme.hunter@zen.co.uk>
+by Graeme A. Hunter (graeme.hunter@zen.co.uk)
 	
 Licensing conditions:
 

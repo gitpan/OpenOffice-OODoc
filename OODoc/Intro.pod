@@ -719,6 +719,7 @@ So any constructive remark or contribution is welcome.
 =head1	Author & Copyright
 
 Copyright 2004 by Genicorp, S.A. (http://www.genicorp.com)
+
 Initial developer : Jean-Marie Gouarne (http://jean.marie.gouarne.online.fr)
 
 Licensing conditions:
@@ -729,7 +730,7 @@ Licensing conditions:
 Contact: oodoc@genicorp.com
 
 The initial main reference manual has been written in French by the developer,
-then translated in English by Graeme A. Hunter <graeme.hunter@zen.co.uk>
+then translated in English by Graeme A. Hunter (graeme.hunter@zen.co.uk)
 
 The OpenOffice::OODoc man pages (not including this introduction) are
 extracted from this reference manual.

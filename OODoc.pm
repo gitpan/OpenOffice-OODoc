@@ -10,7 +10,7 @@ use OpenOffice::OODoc::Document		1.006;
 
 package	OpenOffice::OODoc;
 use 5.008_000;
-our $VERSION				= 1.107;
+our $VERSION				= 1.108;
 
 require Exporter;
 our @ISA    = qw(Exporter);
@@ -214,6 +214,7 @@ corresponding module for details.
 =head1	AUTHOR/COPYRIGHT
 
 Copyright 2004 by Genicorp, S.A. (http://www.genicorp.com)
+
 Initial developer: Jean-Marie Gouarne (http://jean.marie.gouarne.online.fr)
 
 Licensing conditions:

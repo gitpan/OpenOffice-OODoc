@@ -1,16 +1,17 @@
 #-----------------------------------------------------------------------------
-# 02read.t	OpenOffice::OODoc 1.107 Installation test	(c) GENICORP
+# 02read.t	OpenOffice::OODoc 1.108 Installation test	(c) GENICORP
 #-----------------------------------------------------------------------------
 
 use Test;
 BEGIN	{ plan tests => 7 }
 
-use OpenOffice::OODoc	1.107;
+use OpenOffice::OODoc	1.108;
 ok(1);
 
 #-----------------------------------------------------------------------------
 
-my $testfile = "ootest.sxw";
+my $testfile	= "ootest.sxw";
+my $generator	= "OpenOffice::OODoc 1.108 installation test";
 
 # Opening the $testfile file
 my $archive = ooFile($testfile)
@@ -34,7 +35,7 @@ ok($doc->getImageElement("Logo"));
 ok($doc->selectParagraphByStyle("Colour"));
 
 # Checking the installation signature in the metadata
-ok($meta->generator() eq "OpenOffice::OODoc 1.106 installation test");
+ok($meta->generator() eq $generator);
 
 exit 0;
 

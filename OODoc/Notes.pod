@@ -175,10 +175,11 @@ to the "[nn]" note citations included in the other documents.
 =head1	AUTHOR/COPYRIGHT
 
 Copyright 2004 by Genicorp, S.A. (http://www.genicorp.com)
+
 Initial developer: Jean-Marie Gouarne (http://jean.marie.gouarne.online.fr)
 
 Initial English version of the reference manual
-by Graeme A. Hunter <graeme.hunter@zen.co.uk>
+by Graeme A. Hunter (graeme.hunter@zen.co.uk)
 
 These notes are extracted from the initial reference manual, that is
 available in SXW or PDF format from the project homepage
