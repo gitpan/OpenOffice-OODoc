@@ -47,8 +47,10 @@ not necessarily in OpenOffice.org format.
             work_dir		=> "path"
 
         which designates the path to the XML working files also generated
-        during a save, by default "/tmp/" (if this parameter is set to null,
-        the save workspace is the current user directory).
+        during a save for this object (each OpenOffice::OODoc::File object
+	can have its own working directory); without this option, the
+	working directory is set according to the content of the class
+	variable $OpenOffice::OODoc::File::WORKING_DIRECTORY.
 
         Note: no content checking is carried out. The archive can be opened
         whether or not it is an OpenOffice.org document.
@@ -250,6 +252,12 @@ not necessarily in OpenOffice.org format.
 =head2	Properties
 
         No class variables are exported.
+
+	The class variable $OpenOffice::OODoc::File::WORKING_DIRECTORY
+	indicates the directory to be used for temporary files (used but the
+	save() method) when no object-specific path is provided through the
+	'work_dir' option. By default, the working directory is the current
+	directory ('.').
 
         Instance hash variables are:
 

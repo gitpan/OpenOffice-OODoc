@@ -1,8 +1,8 @@
 #-----------------------------------------------------------------------------
-#	$Id : OODoc.pm 1.109 2004-07-08 JMG$
+#	$Id : OODoc.pm 1.111 2004-07-11 JMG$
 #-----------------------------------------------------------------------------
 
-use OpenOffice::OODoc::File		1.103;
+use OpenOffice::OODoc::File		1.104;
 use OpenOffice::OODoc::Meta		1.003;
 use OpenOffice::OODoc::Document		1.006;
 
@@ -10,14 +10,14 @@ use OpenOffice::OODoc::Document		1.006;
 
 package	OpenOffice::OODoc;
 use 5.008_000;
-our $VERSION				= 1.109;
+our $VERSION				= 1.111;
 
 require Exporter;
 our @ISA    = qw(Exporter);
 our @EXPORT = qw
 	(
 	ooXPath ooFile ooText ooMeta ooImage ooDocument ooStyles
-	localEncoding ooEncodeText ooDecodeText
+	localEncoding ooEncodeText ooDecodeText workingDirectory
 	);
 
 #-----------------------------------------------------------------------------
@@ -86,6 +86,23 @@ sub	localEncoding
 	return $OpenOffice::OODoc::XPath::LOCAL_CHARSET;
 	}
 
+#-----------------------------------------------------------------------------
+# accessor for default working directory control
+
+sub	workingDirectory
+	{
+	my $path = shift;
+
+	$OpenOffice::OODoc::File::WORKING_DIRECTORY = $path
+		if defined $path;
+	OpenOffice::OODoc::File::checkWorkingDirectory
+		(
+		$OpenOffice::OODoc::File::WORKING_DIRECTORY
+		);
+
+	return $OpenOffice::OODoc::File::WORKING_DIRECTORY;
+	}
+	
 #-----------------------------------------------------------------------------
 # shortcuts for low-level local/utf8 code conversion 
 
@@ -164,6 +181,22 @@ corresponding module for details.
 
 	See the Encode::Supported (Perl) documentation for the list
 	of supported encodings.
+
+=head3	workingDirectory
+
+	Accessor to get/set the working directory to use for temporary
+	files (the default is the current directory).
+
+	If an argument is given, it replaces the current working
+	directory.
+
+	A warning is issued if the (existing or newly set) path is not
+	a directory with write permission.
+
+	This accessor sets only the default working directory for the
+	application. A special, separate working directory can be set
+	for each OOo document (see the manual page for OpenOffice::OODoc::File
+	for details, if needed).
 
 =head3	ooDecodeText($ootext)
 

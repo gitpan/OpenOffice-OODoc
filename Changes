@@ -1,3 +1,9 @@
+1.111	2004-07-11
+	- New method to generate unique names for temporary files (File.pm)
+	  due to an incompatibility with Archive::Zip 1.12
+	- Added write permission check in the working directory in the save()
+	  method (File.pm)
+	- Added the workingDirectory() accessor in the main module
 1.109	2004-07-08
 	- Removed redundant "use" statements in a test script
 	- Small documentation update; no change in the code

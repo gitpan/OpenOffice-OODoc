@@ -1,17 +1,17 @@
 #-----------------------------------------------------------------------------
-# 02read.t	OpenOffice::OODoc 1.109 Installation test	(c) GENICORP
+# 02read.t	OpenOffice::OODoc 1.111 Installation test	(c) GENICORP
 #-----------------------------------------------------------------------------
 
 use Test;
 BEGIN	{ plan tests => 7 }
 
-use OpenOffice::OODoc	1.109;
+use OpenOffice::OODoc	1.111;
 ok(1);
 
 #-----------------------------------------------------------------------------
 
 my $testfile	= "ootest.sxw";
-my $generator	= "OpenOffice::OODoc 1.109 installation test";
+my $generator	= "OpenOffice::OODoc 1.111 installation test";
 
 # Opening the $testfile file
 my $archive = ooFile($testfile)

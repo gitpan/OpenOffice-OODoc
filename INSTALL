@@ -8,7 +8,7 @@ SYSTEM REQUIREMENTS
 	
 TODO
 
-	Uncompress the distribution archive, enter the OpenOffice-OODoc-1.104
+	Uncompress the distribution archive, enter the OpenOffice-OODoc-x.xxx
 	directory and (as system administrator), type the following commands:
 
 		perl Makefile.PL

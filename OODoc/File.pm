@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : File.pm 1.103 2004-03-07 JMG$
+#	$Id : File.pm 1.104 2004-03-11 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -13,8 +13,9 @@
 
 package	OpenOffice::OODoc::File;
 use	5.006_001;
-our	$VERSION	= 1.103;
+our	$VERSION	= 1.104;
 use	Archive::Zip	1.05	qw ( :DEFAULT :CONSTANTS :ERROR_CODES );
+use	File::Temp;
 
 #-----------------------------------------------------------------------------
 # some defaults
@@ -22,6 +23,7 @@ use	Archive::Zip	1.05	qw ( :DEFAULT :CONSTANTS :ERROR_CODES );
 our	$DEFAULT_COMPRESSION_METHOD	= COMPRESSION_DEFLATED;
 our	$DEFAULT_COMPRESSION_LEVEL	= COMPRESSION_LEVEL_BEST_COMPRESSION;
 our	$DEFAULT_EXPORT_PATH		= './';
+our	$WORKING_DIRECTORY		= '.';
 
 #-----------------------------------------------------------------------------
 # control & conversion of XML component names of the OO file
@@ -58,13 +60,40 @@ sub	ZipError
 	}
 
 #-----------------------------------------------------------------------------
+# check working directory
+
+sub	checkWorkingDirectory
+	{
+	my $path	= shift;
+
+	if (-d $path)
+		{
+		if (-w $path)
+			{
+			return 1;
+			}
+		else
+			{
+			warn	"[" . __PACKAGE__ . "] "	.
+				"No write permission in $path\n";
+			}
+		}
+	else
+		{
+		warn	"[" . __PACKAGE__ . "] "	.
+			"$path is not a directory\n";
+		}
+	return undef;
+	}
+
+#-----------------------------------------------------------------------------
 # unique temporary file name generation
 
 sub	new_temp_file_name
 	{
 	my $self	= shift;
 
-	return Archive::Zip::tempFileName($self->{'work_dir'});
+	return File::Temp::mktemp($self->{'work_dir'} . '/oo_XXXXX');
 	}
 
 #-----------------------------------------------------------------------------
@@ -159,13 +188,15 @@ sub	new
 	my $caller	= shift;
 	my $class	= ref($caller) || $caller;
 	my $sourcefile	= shift;
-	my $self	= 	{
-				'linked'		=> [],
-				'work_dir'		=> '/tmp',
-				'temporary_files'	=> [],
-				'raw_members'		=> [],
-				@_
-				};
+	my $self	= 
+		{
+		'linked'		=> [],
+		'work_dir'		=>
+				$OpenOffice::OODoc::File::WORKING_DIRECTORY,
+		'temporary_files'	=> [],
+		'raw_members'		=> [],
+		@_
+		};
 	
 	$self->{'source_file'}	= $sourcefile;
 
@@ -409,6 +440,18 @@ sub	save
 	{
 	my $self		= shift;
 	my $targetfile		= shift;
+
+	unless
+		(
+		OpenOffice::OODoc::File::checkWorkingDirectory
+			($self->{'work_dir'})
+		)
+		{
+		warn	"[" . __PACKAGE__ . "::save] "		.
+			"Write operation not allowed - "	.
+			"Working directory missing or non writable\n";
+		return undef;
+		}
 
 	my %newmembers		= ();
 	foreach my $nm (@{$self->{'linked'}})
