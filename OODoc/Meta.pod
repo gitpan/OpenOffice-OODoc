@@ -54,9 +54,15 @@ of OpenOffice.org documents.
 	(ISO-8601) date format. The ooLocaltime() function can be used in
 	order to convert a regular Perl time() value in OOo format.
 
+	The OpenOffice.org desktop software never changes this value, but
+	this method allows the user to read or write it.
+
+	See also date().
+
 =head3	creator()
 
-        Without argument, returns the document author's name.
+        Without argument, returns the document creator's name. The creator
+	is generally the author of the last update. See also initial_creator().
 
         With argument, modifies the document author's name.
 
@@ -111,6 +117,12 @@ of OpenOffice.org documents.
             "OpenOffice.org 1.1.1 (Linux)"
 
         With argument, inserts any signature.
+
+=head3	initial_creator()
+
+	Like creator(), but apply to the creator of the first version of the
+	document. The OOo desktop software never updates this value, but this
+	method allows the user to read or write it.	
 
 =head3	keywords()
 

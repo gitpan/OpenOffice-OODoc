@@ -114,7 +114,7 @@ WriteMakefile
     	'PREREQ_PM'	=>
     		{
 		'XML::Twig'		=> '3.15',
-		'Archive::Zip'		=> '1.14',
+		'Archive::Zip'		=> '1.06',
 		'File::Temp'		=> '0.12',
 		'Time::Local'		=> '1.07'
 		},

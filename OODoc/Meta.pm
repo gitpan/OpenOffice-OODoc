@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Meta.pm 1.005 2004-08-03 JMG$
+#	$Id : Meta.pm 1.006 2005-03-31 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -13,7 +13,7 @@
 
 package	OpenOffice::OODoc::Meta;
 use	5.006_001;
-our	$VERSION	= 1.005;
+our	$VERSION	= 1.006;
 
 use	OpenOffice::OODoc::XPath	1.115;
 require Exporter;
@@ -143,6 +143,15 @@ sub	creator
 	{
 	my $self	= shift;
 	return $self->accessor('//dc:creator', @_);
+	}
+
+#-----------------------------------------------------------------------------
+# get/set the 'initial-creator' field (i.e. author)
+
+sub	initial_creator
+	{
+	my $self	= shift;
+	return $self->accessor('//meta:initial-creator', @_);
 	}
 
 #-----------------------------------------------------------------------------

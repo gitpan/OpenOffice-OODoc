@@ -1,9 +1,9 @@
-OpenOffice::OODoc installation (Sep 2004)
+OpenOffice::OODoc installation (Mar 2005)
 
 SYSTEM REQUIREMENTS
 
 	Perl		>= 5.8.0
-	Archive::Zip	>= 1.14
+	Archive::Zip	>= 1.06
 	XML::Twig	>= 3.15
 	Time::Local	>= 1.07
 	File::Temp	>= 0.12

@@ -1,3 +1,7 @@
+1.307	2005-03-31
+	- Downgraded Archive::Zip version control to 1.06 (1.14 seems to be
+	a problem for some testers)
+	- Added initial_creator() in Meta.pm
 1.306	2005-03-16
 	- Added userFieldValue(), getChapter(), bibliography and bookmark related
 	methods in Text.pm
