@@ -10,12 +10,12 @@ OpenOffice::OODoc::Document class.
 
 The OpenOffice::OODoc::Text class is a specialist derivative of
 OpenOffice::OODoc::XPath for XML elements which describe the text content
-of OpenOffice.org documents.
+of OpenOffice.org documents. Here, "text content" means containers that can
+host text content (i.e. tables, lists...) as well as flat text.
 
-Designed for the handling of text elements. Should be used with
-OpenOffice::OODoc::Styles, via the OpenOffice::OODoc::Document
-class, if the application has to handle detailed presentation
-parameters of text elements. This is because such parameters are
+This module Should be used with OpenOffice::OODoc::Styles, via the
+OpenOffice::OODoc::Document class, if the application has to handle detailed
+presentation parameters of text elements. This is because such parameters are
 held in styles elements and not in the text elements themselves,
 according to the principle of separation of content and presentation
 which is one of the foundations of the OpenOffice.org format.
@@ -235,6 +235,9 @@ which is one of the foundations of the OpenOffice.org format.
         rejected if the name already exists). Returns the created table
         element if successful.
 
+	'rows' and/or 'columns', if omitted, are replaced by the 'max_rows'
+	and 'max_cols' properties of the document (see the properties below).
+
         By default, the table is set to fit the entire width between the
         left and right margins with equal sized columns, cells of type
         string and without borders or background colour.
@@ -242,7 +245,7 @@ which is one of the foundations of the OpenOffice.org format.
         Possible options:
 
             'table-style'	=> table style
-            'cell-type'	=> default cell type
+            'cell-type'		=> default cell type
             'cell-style'	=> default cell style
             'text-style'	=> default cell text style
 
@@ -309,6 +312,14 @@ which is one of the foundations of the OpenOffice.org format.
 
             $doc->appendParagraph(text => 'My text');
 
+=head3	cellCurrency(table, row, column [, currency])
+
+=head3	cellCurrency(cell [, currency])
+
+	Get/set the currency unit of a cell.
+	If a currency is provided, the cell value type is automatically
+	switched to 'currency'.
+
 =head3	cellFormula(table, row, column [, formula])
 
 =head3	cellFormula(cell [, formula])
@@ -333,6 +344,51 @@ which is one of the foundations of the OpenOffice.org format.
         Note 2: syntax and functionality of cell formulae differ greatly
         between the Writer and Calc applications.
 
+=head3	cellSpan(table, row, column [, span])
+
+=head3	cellSpan(cell [, span])
+
+	In a spreadsheet document, get/set the span of a table cell,
+	knowing that this span can be one or more columns. The cell addressing
+	is the same as with getCell().
+	Example:
+
+		$doc->cellSpan($table, "B4", 3);
+
+	creates a 3-cell span from B4 in a spreadsheet.
+
+	Caution: when related to table cells, "span" has not the same
+	meaning as when related to flat text (see getSpan() and setSpan()).
+
+=head3	cellStyle(table, row, column [, stylename])
+
+=head3	cellStyle(cell [, stylename])
+
+	Get or set the style of a table cell.
+
+=head3	cellValue(table, row, column [, value [, text]])
+
+=head3	cellValue(cell [, value [, text]])
+
+	Without the "value" argument: see getCellValue().
+
+	With "value" (and, optionnally, "text"): see updateCell().
+
+
+=head3	cellValueType(table, row, column [, type])
+
+=head3	cellValueType(cell [, type])
+
+	Get/set the data type of a table cell.
+
+	Note: If an application must convert a 'string' cell to a numeric
+	one and fill it with a numeric value, cellValueType() must be called
+	*before* cellValue(). Ex:
+
+		my $cell = $doc->getCell('Sheet1', 4, 8);
+		$doc->cellValueType($cell, 'float');
+		$doc->cellValue($cell, 12.34);
+
 =head3	columnStyle(column_element [, style])
 
 =head3	columnStyle(table, column [, style])
@@ -354,6 +410,10 @@ which is one of the foundations of the OpenOffice.org format.
 
 =head3	getCell(table, row, column)
 
+=head3	getCell(table, coord)
+
+=head3	getCell(row, column)
+
         Returns the element which represents the given cell. Possible
         arguments are respectively: the table number or its reference in the
         document, row number and column number. Each table cell contained in
@@ -362,12 +422,31 @@ which is one of the foundations of the OpenOffice.org format.
         rest of the document [22] .
 
         The first argument can be either the sequential number of the table
-        (starting at 0) or a 'table' object (which can be retrieved in
-        advance using getTable). If the third argument is omitted, the
-        returned element is the first cell in the row. If the row number is
-        omitted instead, the cell at the very top left of the table is
-        returned.
+        (starting at 0), the logical name of the table, or a 'table' object
+	(which can be retrieved in advance using getTable). If it's a number
+	or a name, getTable() is automatically called by getCell() in order
+	to convert it in a 'table' object. However, if the first argument is
+	a row object (previously obtained via getRow()), the second one is
+	processed as the column number. Before using several cells in the
+	same row, it's a good idea to get the row object and then to use it
+	in every cell selection, in order to minimize the coordinates
+	calculation.
 
+	Alternatively, the user can provide the cell coordinates in a single
+	alphanumeric argument, beginning with one or two letters and ending
+	with one or more decimal digits, according to the same logic as in a
+	spreadsheet. So, for example
+
+		$doc->getCell($table, 'B12');
+	
+	is equivalent to
+
+		$doc->getCell($table, 11, 1);
+
+	(Remember that, with the numeric coordinates, the row number is the
+	first argument, while with the alphanumeric, spreadsheet-like ones,
+	the column letter(s) come first.)
+	
         Numbers can also be negative, where position -1 is the last. For
         example:
 
@@ -378,12 +457,32 @@ which is one of the foundations of the OpenOffice.org format.
 
         Returns a null value if the given cell does not exist.
 
-        Note: addressing cells in spreadsheets is considerably more complex
-        than in text document tables. OpenOffice::OODoc::Text methods which
-        address cells are primarily designed to work with text document
-        tables. However, it is still possible, with a few restrictions
-        (which cannot be gone into here), to use getCellxxx methods with
-        spreadsheets (.sxc).
+	Any cellXXX() method in this module uses the same cell addressing
+	logic as getCell().
+
+        Note about spreadsheets:
+	
+	Addressing cells in spreadsheets is considerably more complex
+        than in text document tables. However, the same addressing scheme
+	in allowed in the "Calc" documents than in the "Writer" ones,
+	provided the targeted cells belong to a "managed area" (beginnning
+	to the upper-left cell, and ending at a parametrizable position).
+	If the 'expand_tables' property of the document is set to 'on', this
+	managed area is automatically initialized when the sheet is
+	targeted for the first time. So, the first access to a given sheet
+	(whatever the row or the cell) can be significantly more costly
+	than any subsequent access. See normalizeSheet() for more
+	explanations. Remember that the table addressing is zero-based and
+	the row comes before the column in OpenOffice::OODoc, so, for
+	example:
+
+		$cell1 = $doc->getCell($table, 0, 0);
+		$cell2 = $doc->getCell($table, 31, 25);
+
+	returns respectively the A1 and Z32 cells.
+
+	Note: in a spreadsheet, (0,0) are the coordinates of the "A1" cell,
+	and, for example, (16, 25) are the coordinates of the "Z17" cell.
 
 =head3	getCellValue(table, row, column)
 
@@ -418,12 +517,12 @@ which is one of the foundations of the OpenOffice.org format.
         the document, logical name or element reference. The second argument
         is the column's number in the table. Synonym: getTableColumn.
 
-=head3	getFootnoteCitationList
+=head3	getFootnoteCitationList()
 
         Returns the list of all the footnote citations (i.e. references to
         footnotes included in the text) contained in the document.
 
-=head3	getFootnoteList
+=head3	getFootnoteList()
 
         Returns the list of all the footnote elements contained in the
         document.
@@ -440,7 +539,7 @@ which is one of the foundations of the OpenOffice.org format.
         level 1 header then two level 2 headers then a level 1 header, the
         call getHeader(3) returns the last level 1 header.
 
-=head3	getHeaderList
+=head3	getHeaderList()
 
         Returns a list of header elements (i.e. elements called 'text:h' in
         the document body).
@@ -532,7 +631,7 @@ which is one of the foundations of the OpenOffice.org format.
         document, logical name or element reference. The second argument is
         the row number in the table. Synonym: getTableRow.
 
-=head3	getSpanList
+=head3	getSpanList()
 
         Returns a list of elements which correspond to texts which "stand
         out" from the document i.e. which have been given a style which
@@ -567,13 +666,25 @@ which is one of the foundations of the OpenOffice.org format.
         Moreover, this type of selection means the application will still
         work even if a table changes position within a document.
 
+	The returned object is a "handle" that can be used for subsequent
+	accesses to its components (rows, cells).
+
+	getTable() can be used to retrieve a sheet in a Calc document as
+	well as a table in a Writer document. However, before using any of
+	the row/column/cell manipulation available methods, a special
+	preprocessing should be done if the target table is a spreadsheet.
+	See normalizeSheet() for more information.
+
+	In the text documents, the tables are used without any preprocessing
+	and the paragraph above doesn't apply.
+
         The returned value is a table element and not a table's content.
 
 =head3	getTableColumn(table, column)
 
         See getColumn.
 
-=head3	getTableList
+=head3	getTableList()
 
         Returns a list of table elements in a document.
 
@@ -647,7 +758,7 @@ which is one of the foundations of the OpenOffice.org format.
 
         If the element is a table, getText behaves like getTableText.
 
-=head3	getTextContent
+=head3	getTextContent()
 
         Returns the text of a document, as "flat" editable text.
 
@@ -663,7 +774,7 @@ which is one of the foundations of the OpenOffice.org format.
 
         Same as selectTextContent('.*').
 
-=head3	getTextElementList
+=head3	getTextElementList()
 
         Returns the list of all the text elements, including headers,
         paragraphs and item lists.
@@ -809,6 +920,66 @@ which is one of the foundations of the OpenOffice.org format.
         For a neater and more direct access to element types, see the
         getName method of XML::XPath [28] .
 
+=head3	normalizeSheet(sheet [, rows [, columns]])
+
+	To be used with spreadsheets. This method preprocesses a given
+	sheet so its components (rows, cells) become available for all the
+	table-oriented methods described in this chapter.
+
+	This method is not needed for tables included in OpenOffice.org
+	Writer (sxw) documents, because these tables are "normalized" (i.e.
+	each component is mapped to an exclusive XML element). But in Calc
+	(sxc) documents, the XML mapping of rows, columns and cells is
+	"denormalized" in order to save memory: several table components
+	can be mapped to a single XML element, so the XML address of each one
+	can't be simply calculated from its logical coordinates (sheet, row,
+	column). In order to allow the spreadsheets components to be addressed
+	with the same methods as the Writer table components, normalizeSheet()
+	reorganizes the XML mapping of the given sheet.
+
+	Because this method is very time and memory consuming, it should never
+	be used to reorganize the largest possible area of a sheet (meaning
+	thousands of rows and hundreds of columns that will probably never be
+	used). So it's action is limited to a given area, controlled by the
+	rows, columns arguments. When these arguments are not provided, the
+	method uses the 'max_rows' and 'max_cols' properties instead (see the
+	Properties section for other explanations).
+
+	The first argument can be either the logical name of the sheet (as
+	it's shown in the bottom tab by OOo Calc), the sheet number, or a
+	table object reference, previously returned by getTable(). The return
+	value is the table object (or undef in case of failure).
+	
+	Example:
+
+		$doc = ooDocument(file => 'report.sxc');
+		my $sheet = $doc->normalizeSheet('Sheet1', 7, 9);
+		my $result = $doc->cellValue($sheet, 5, 6);
+	
+	In the sequence above, a top left area of 7 rows by 8 columns is
+	pre-processed, so the cells from A1 to H6 of this sheet can be
+	reached according to the same addressing scheme as in Writer tables.
+	The last instruction gets the content of G6.
+
+	Because a "normalized" sheet has the same XML structure as a Writer
+	table, it's generally possible to directly copy it from a spreadsheet
+	document to a text document. Example:
+
+		$doc1 = ooDocument(file => "spreadsheet.sxc");
+		$doc2 = ooDocument(file => "text.sxw");
+		$sheet = $doc1->normalizeSheet("Sheet1", 6, 8);
+		$doc2->appendBodyElement($sheet);
+	
+	In this last example, a new table, that is a copy of the A1:H7 area
+	of the "Sheet1" sheet of a Calc document, is attached at the end of
+	a Writer document.
+
+	Note: The transformed sheets, of course, are readable by OOo Calc.
+	They simply take some more disk space when the processed spreadsheet
+	is saved. If the document is later read then written by OOo Calc,
+	the storage is optimized, so the effects of normalizeSheet()
+	disappear.
+	
 =head3	outputDelimitersOn
 
 =head3	outputDelimitersOff
@@ -1018,15 +1189,13 @@ which is one of the foundations of the OpenOffice.org format.
 
         Applies a "span" to part of the content of a text element.
 
-        In OpenOffice.org language, a "span" is a character string whose
+        In OpenOffice.org XML language, a "span" is a substring whose
         presentation style differs from the style of the text element to
-        which it belongs. For example, in this text:
+        which it belongs. For example, a given "span" could be in italics
+	while the rest of the paragraph is in normal characters.
 
-            I consider OpenOffice.org Writer to be my word processor of
-            choice.
-
-        if the string "OpenOffice.org Writer" is in italics while the rest
-	of the paragraph is in normal characters, it's a "span".
+	Caution: the same word has a different meaning when it's used
+	about table cells (see cellSpan()).
 
         A "span" is therefore a way to use several styles within the same
 	element, bearing in mind that the paragraph's global style can be
@@ -1135,7 +1304,7 @@ which is one of the foundations of the OpenOffice.org format.
         Modifies the content of a table cell.
 
         In its first form, indicates a cell by its 3D coordinates, as with
-        getCell. In its second form, indicates a cell by its element
+        getCell(). In its second form, indicates a cell by its element
         reference.
 
         If the cell is set to literal, its content is limited to its text.
@@ -1185,20 +1354,34 @@ which is one of the foundations of the OpenOffice.org format.
         contains the string to be used to separate lines when exporting
         "flat" text. By default, it is a line-feed ("\n").
 
+	    'max_rows'		=> max table length (default 32)
+	    'max_cols'		=> max table width (default 26)
+
+	these 2 properties control the size of the "managed area" in a
+	spreadsheet; the default "managed area" is the A1:Z31 rectangle,
+	corresponding to the (0,0)-(31,25) coordinates; see getTable() and
+	getCell() and normalizeSheet() for more explanations.
+
+	    'expand_tables'	=> table transformation usage
+
+	indicates whether the XML representation of the spreadsheets are to
+	be expanded in order to allow the same cell/row addressing scheme
+	as with the tables belonging to text documents; by default, this
+	property is not set. If this property is set to 'on', the first
+	access to any sheet will automatically trigger this transformation,
+	so the explicit normalizeSheet() method will not be needed.
+	However, this automatic (but costly) transformation has a drawback:
+	it uses the same 'max_rows' and 'max_cols' values for every targeted
+	sheet, whatever the really needed managed area for each one.
+
 =head1	NOTES
 
 See OpenOffice::OODoc::Notes(3) for the footnote citations ([n])
 included in this page.
 
-This man page has been adapted from a chapter of the original
-reference manual. This manual is in OpenOffice.org (SXW) format.
-
-It's freely downloadable from the project page
-(http://www.genicorp.com/devel/oodoc)
-
 =head1	AUTHOR/COPYRIGHT
 
-Copyright 2004 by Genicorp, S.A. (http://www.genicorp.com)
+Copyright 2005 by Genicorp, S.A. (http://www.genicorp.com)
 
 Initial developer: Jean-Marie Gouarne (http://jean.marie.gouarne.online.fr)
 

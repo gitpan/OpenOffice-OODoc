@@ -28,9 +28,9 @@ OODoc/Text.pod
 OODoc/XPath.pod
 examples/change_style
 examples/command_doc
-examples/createoodoc
 examples/extract
 examples/oo2pod
+examples/oobuild
 examples/oofilesearch
 examples/oohighlight
 examples/search

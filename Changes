@@ -1,3 +1,11 @@
+1.206	2005-01-27
+	- Documentation update
+	- Added several spreadsheet management features in Text.pm
+	- "readable XML" option in XPath.pm
+	- Row/cell addressing improvements for spreadsheets in Text.pm
+	- Added cellSpan() in Text.pm
+	- Bug fixes in getCellValue() and updateCell() in Text.pm
+	- Replaced "createoodoc" by "oobuild" in the examples
 1.205	2004-09-20
 	- Fixed a bug in createImageElement(); this could prevent the user from
 	inserting images in presentation or drawing documents

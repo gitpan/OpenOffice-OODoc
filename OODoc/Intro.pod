@@ -52,12 +52,12 @@ More generally, OpenOffice::OODoc provides a lot of methods (probably most
 of them are not useful for you) allowing create/search/update/delete
 operations with document elements such as:
 
-	- ordinary text objects (paragraphs, headers, item lists);
-	- tables and cells;
-	- images;
-	- styles;
-	- page layout;
-	- metadata (i.e. title, subject, and other general properties).
+- ordinary text objects (paragraphs, headers, item lists);
+- tables and cells;
+- images;
+- styles;
+- page layout;
+- metadata (i.e. title, subject, and other general properties).
 	
 Every document processing begins by the initialization of an object
 abstraction of the document, using a constructor like:
@@ -90,7 +90,7 @@ $document->save instruction, not by the object initialization.
 
 The OODoc toolbox is organized in 3 logical layers. It's not necessary for
 you to remember the (annoying) details given in the next few paragraphs,
-but there are described only to explain the general orgaisation of the
+but there are described only to explain the general organisation of the
 modules. If you have only a few dozens of seconds for reading this document,
 please jump directly at the part II (practical examples) and come back later
 if you want to know more.
@@ -111,7 +111,7 @@ Perl representation of an XML member of an OpenOffice.org document
 (ex: content.xml, meta.xml, styles.xml, etc.), using the XML::XPath
 Perl API to access individual XML elements. If you want to deal in
 the same time with several XML components of the same document, you
-can/must create several OpenOffice::OODoc::Xpath against the document (ex: one
+can/must create several OpenOffice::OODoc::XPath against the document (ex: one
 OpenOffice::OODoc::XPath will be associated with 'meta.xml' to represent the
 metadata, another one will be associated with 'content.xml' to give
 access to the content. OpenOffice::OODoc::XPath accepts and provides only XML strings
@@ -213,11 +213,10 @@ following classes:
 	OpenOffice::OODoc::Styles for page/style definitions. 
 
 The OpenOffice::OODoc::Text class brings some methods table processing
-methods (table creation, direct access to individual cells). But, in the
-present version, these methods are less easy to use with spreadsheets
-(OpenOffice.org Calc documents) than with tables included in text documents.
-Perhaps another class (say OpenOffice::OODoc::Calc), not available yet,
-would be useful...
+methods (table creation, direct access to individual cells). These methods
+can be used with spreadsheets (OpenOffice.org Calc documents) as well as
+with tables included in text documents (however, there are a few more
+constraints and performance issues with spreadsheets).
 
 To illustrate the differences between the layers, with OODoc::Text (if
 you know your document is really an OpenOffice.org Writer one), you get
@@ -328,10 +327,10 @@ in the same sequence and in any order.
 Caution: In order to get a convenient translation between the user's local
 character set and the common OpenOffice.org encoding (utf8), the application
 must indicate the appropriate encoding. The default one is iso-8859-1;
-it can be set with the localEncoding() function. Example:
+it can be set with the ooLocalEncoding() function. Example:
 
 	use OpenOffice::OODoc;
-	localEncoding 'iso-8859-15';
+	ooLocalEncoding 'iso-8859-15';
 
 Starting from version 1.2, the default encoding can be selected by the
 user during the installation, and changed later by editing a configuration
@@ -443,7 +442,7 @@ to issue a:
 
 	$doc->save;
 
-I said OODoc::Meta (which is an OODoc:XPath) did not know anything about
+I said OODoc::Meta (which is an OODoc::XPath) did not know anything about
 files and data compression. But in my example, the object has been
 created with a 'file' argument and associated with an implicit
 OODoc::File object. So, the 'save' method of OODoc::XPath is only a
@@ -463,7 +462,12 @@ one.
 
 =head2	Example 2 - Manipulating text
 
-Here we must read and update some elements of an OpenOffice.org Writer
+Here we must read and update some text content elements. By "text content",
+we mean not only "flat text". While the most interesting module is named
+OpenOffice::OODoc::Text, it's not fully dedicated to OOo-Writer documents.
+It can deal with the text content of Impress documents, as well as the
+sheets and cells of a Calc document.
+
 Our program begin with something like that:
 
 	use OpenOffice::OODoc;
@@ -571,6 +575,16 @@ returns the value of the 1st cell of the 13th row of the 1st table in the
 document. Note the 'cell value' is simply the text content if the cell
 type is string; but if the cell type is any numeric type, getCellValue
 returns the content of the value attribute and ignores the text.
+
+A cell can be selected in a table using either it's numeric (row, column)
+coordinates or a "spreadsheet-like" alphanumeric notation. So, the example
+above could be written as
+
+	my $value = $doc->getCellValue(0, "A11");
+
+Knowing that the tables are zero-based, so "A1" corresponds to (0,0). This
+last notation is probably more user-friendly for OOo Calc documents.
+
 You can also change the content of a cell:
 
 	$doc->updateCell($table, $line, $col, $value);
@@ -600,6 +614,9 @@ the application must provide a lot of parameters. So, it's recommended to
 avoid purely programmatic table construction, and to reuse existing table
 structures and styles in template documents previously created with the
 OpenOffice.org software.
+
+The table-related methods can be used with spreadsheets (i.e. OOo Calc
+documents) as well as with tables included in text documents.
 
 And, as with OODoc::Meta, don't forget to issue a 'save' call if you
 want to make your changes persistent.
@@ -762,7 +779,7 @@ accessing this new file with OpenOffice::OODoc).
 
 =head1	Author & Copyright
 
-Copyright 2004 by Genicorp, S.A. (http://www.genicorp.com)
+Copyright 2005 by Genicorp, S.A. (http://www.genicorp.com)
 
 Initial developer : Jean-Marie Gouarne (http://jean.marie.gouarne.online.fr)
 

@@ -1,9 +1,9 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 1.115 2004-08-03 JMG$
+#	$Id : XPath.pm 1.116 2005-01-27 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
-#	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
 #	Licensing conditions:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
@@ -13,7 +13,7 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 1.115;
+our	$VERSION	= 1.116;
 use	XML::XPath	1.13;
 use	Encode;
 
@@ -432,7 +432,7 @@ sub	contentClass
 
 	my $element = $self->getRootElement;
 	$self->setAttribute($element, 'office:class', $class) if $class;
-	return $self->getAttribute($element, 'office:class');
+	return $self->getAttribute($element, 'office:class') || '';
 	}
 
 #------------------------------------------------------------------------------
@@ -1459,6 +1459,21 @@ sub	replaceElement
 	}
 
 #------------------------------------------------------------------------------
+# adds a separator (default = "\n") after an element (for readable XML)
+
+sub	insertXMLSeparator
+	{
+	my $self	= shift;
+	my $element	= shift	or return undef;
+	my $parent	= $element->getParentNode or return undef;
+	my $separator	= shift || "\n";
+	
+	my $s = XML::XPath::Node::Text->new($separator);
+	$parent->insertAfter($s, $element);
+	return $s;
+	}
+
+#------------------------------------------------------------------------------
 # adds a new or existing child element
 
 sub	appendElement
@@ -1492,6 +1507,10 @@ sub	appendElement
 		return undef;
 		}
 	$parent->appendChild($element);
+	if ($self->{'readable_XML'} && ($self->{'readable_XML'} eq 'on'))
+		{
+		$self->insertXMLSeparator($element);
+		}
 	$self->setAttributes($element, %{$opt{'attribute'}});
 	return $element;
 	}
@@ -1542,6 +1561,11 @@ sub	insertElement
 	else
 		{
 		$parent->insertBefore($element, $posnode);
+		}
+
+	if ($self->{'readable_XML'} && ($self->{'readable_XML'} eq 'on'))
+		{
+		$self->insertXMLSeparator($element);
 		}
 
 	$self->setAttributes($element, %{$opt{'attribute'}});

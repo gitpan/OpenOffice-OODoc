@@ -203,6 +203,11 @@ methods.
 	must have the same kind of structure and content as the "templates"
 	subdirectory of the OpenOffice::OODoc installation.
 
+	A optional 'readable_XML' can be passed. If this option is provided
+	and set to 'on', each XML element created by the application is
+	followed by a line break. Be careful, this option significantly
+	increases the processing time, so it should be set for debugging only
+
         Other optional parameters can also be passed to the constructor (see
         Properties below).
 
@@ -238,16 +243,16 @@ methods.
 
         Example:
 
-            %my_style	=
-            	(
+            $my_style	=
+            	{
             	'style:name'	=> 'P1',
             	'style:family	=> 'paragraph'
-            	);
+            	};
 
             $content->appendElement
             	(
             	'//office:automatic-styles', 0, 'style:style',
-            	attribute	=> %my_style
+            	attribute	=> $my_style
             	);
 
         creates a new paragraph style called 'P1' in the list of "automatic
@@ -332,8 +337,8 @@ methods.
 	to the OpenOffice.org terminology, i.e. one of the following values:
 	"text", "spreadsheet", "presentation", or "drawing".
 
-	Returns undef if the current member is not a document content (if
-	it's, for example, the "meta" or "styles" member).
+	Returns an empty string if the current member is not a document
+	content (if it's, for example, the "meta" or "styles" member).
 
 	With a given class name as an optional argument, this method can
 	change or set the document class; but this risky operation is, of
@@ -716,27 +721,27 @@ methods.
 
             text	=> "text of element"
 
-            attribute => %attributes
+            attribute	=> $attributes
 
-        The "attribute" option is itself a hash containing one or more
-        attributes in the form [name => value] as in appendElement.
+        The "attribute" option is itself a hash reference containing one or
+	more attributes in the form [name => value] as in appendElement.
 
         When successful, this method returns the inserted element's
         reference (else undef).
 
         Example:
 
-            my %attributes	=
-            	(
+            my $attributes	=
+            	{
             	'text:style-name'	=> 'Header 2',
-            	'text:level'	=> '2'
-            	);
+            	'text:level'		=> '2'
+            	};
             $doc->insertElement
             	(
             	'//text:p', 4, 'text:h',
             	position		=> 'after',
             	text		=> 'New section',
-            	attribute	=> %attributes
+            	attribute	=> $attributes
             	);
 
         This sequence (in an OpenOffice.org Writer document) inserts a level
@@ -1186,14 +1191,15 @@ methods.
         The content of these three variables should not normally be directly
         modified by the applications.
 
-        Instance hash variables are primarily those which were listed as
-        parameters of the new constructor:
+        Instance hash variables are :
 
             'archive'		=> <oodoc_file_object>
             'file'		=> <OpenOffice.org file>
             'member'		=> <file member>
+	    'readable_XML'	=> <'on' or not>
             'xml'		=> <XML string>
             'element'		=> <name of loaded XML element>
+	    'xpath'		=> <XML::XPath object>
             'parser'		=> <XML parser>
 
         However, the 'xml' variable is cleared almost immediately after a
@@ -1201,7 +1207,7 @@ methods.
         corresponding XPath object has been created, the XML source is no
         longer required.
 
-        The 'XPath' variable of an OODoc::XPath object contains a reference
+        The 'xpath' variable of an OODoc::XPath object contains a reference
         to an XML::XPath class object (see CPAN documentation). Remember
         that OODoc::XPath is based on XML::XPath, not derived from it. This
         object encompasses the entire current XML tree. Each access to XML
@@ -1253,15 +1259,9 @@ methods.
 See OpenOffice::OODoc::Notes(3) for the footnote citations ([n])
 included in this page.
 
-This man page has been adapted from a chapter of the original
-reference manual. This manual is in OpenOffice.org (SXW) format.
-
-It's freely downloadable from the project page
-(http://www.genicorp.com/devel/oodoc)
-
 =head1	AUTHOR/COPYRIGHT
 
-Copyright 2004 by Genicorp, S.A. (http://www.genicorp.com)
+Copyright 2005 by Genicorp, S.A. (http://www.genicorp.com)
 
 Initial developer: Jean-Marie Gouarne (http://jean.marie.gouarne.online.fr)
 

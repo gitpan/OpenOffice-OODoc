@@ -1,9 +1,9 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 1.113 2004-08-03 JMG$
+#	$Id : Text.pm 1.114 2005-01-26 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
-#	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
 #	Licensing conditions:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
@@ -13,9 +13,9 @@
 
 package OpenOffice::OODoc::Text;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	1.115;
+use	OpenOffice::OODoc::XPath	1.116;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 1.113;
+our	$VERSION	= 1.114;
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -61,10 +61,19 @@ our	%DEFAULT_DELIMITERS	=
 		end	=>	''
 		},
 	);
-	
+
 #-----------------------------------------------------------------------------
 
-sub	isContent		{ 1; }
+our $ROW_REPEAT_ATTRIBUTE       = 'table:number-rows-repeated';
+our $COL_REPEAT_ATTRIBUTE       = 'table:number-columns-repeated';
+
+#-----------------------------------------------------------------------------
+
+sub	isContent
+	{
+	my $self	= shift;
+	return $self->contentClass() ? 1 : undef;
+	}
 
 #-----------------------------------------------------------------------------
 # constructor
@@ -81,14 +90,20 @@ sub	new
 		use_delimiters	=> 'on',	# use text output delimiters
 		field_separator	=> ';',		# table cell separator
 		line_separator	=> "\n",	# text line break
+		max_rows	=> 32,		# last row in spreadsheets
+		max_cols	=> 26,		# last col in spreadsheets
 		delimiters	=>
 			{ %OpenOffice::OODoc::Text::DEFAULT_DELIMITERS },
 		@_
 		);
+
 	my $object	= $class->SUPER::new(%options);
-	return	$object	?
-		bless $object, $class	:
-		undef;
+
+	if ($object)
+		{
+		bless $object, $class;
+		}
+	return $object;
 	}
 
 #-----------------------------------------------------------------------------
@@ -202,6 +217,25 @@ sub	XML::XPath::Node::Element::isSequenceDeclarations
 	my $element	= shift;
 	my $name	= $element->getName;
 	return ($name && ($name eq 'text:sequence-decls')) ? 1 : undef;
+	}
+
+#-----------------------------------------------------------------------------
+# getElement() method adaptation for spreadsheet preprocessing
+
+sub	getElement
+	{
+	my $self	= shift;
+	my $element	= $self->SUPER::getElement(@_);
+	return undef unless $element;
+	if	(
+		$self->{'expand_tables'}		&&
+		($self->{'expand_tables'} eq 'on')	&&
+		$element->isTable			&&
+		($self->contentClass() eq 'spreadsheet'))
+		{
+		$self->_expand_table($element);
+		}
+	return $element;
 	}
 
 #-----------------------------------------------------------------------------
@@ -954,6 +988,175 @@ sub	insertItemList
 	}
 
 #-----------------------------------------------------------------------------
+# row expansion utility for _expand_table
+	
+sub	_expand_row
+	{
+	my $self	= shift;
+	my $row		= shift;
+	unless ($row)
+		{
+		warn "Unknown table row\n"; return undef;
+		}
+	my $width	= shift || $self->{'max_cols'};
+
+	my @cells	= $self->selectChildElementsByName
+					(
+					$row,
+					'^table:table-cell$'
+					);
+
+	my $cell	= undef;
+	my $last_cell	= undef;
+	my $rep		= 0;
+	my $cellnum	= 0;
+	while (@cells && ($cellnum < $width))
+		{
+		$cell = shift @cells;
+		$rep  =	$cell	?
+				$cell->getAttribute($COL_REPEAT_ATTRIBUTE) :
+				0;
+		if ($rep)
+			{
+			$cell->removeAttribute($COL_REPEAT_ATTRIBUTE);
+			while ($rep > 1 && ($cellnum < $width))
+				{
+				$last_cell = $self->replicateElement
+					($cell, $cell, position => 'after');
+				$rep--; $cellnum++;
+				}
+			}
+		$cellnum++;
+		}
+	while ($cellnum < $width)
+		{
+		$last_cell = $self->appendElement($row, 'table:table-cell');
+		$cellnum++;
+		$rep-- if ($rep && ($rep > 0));
+		}
+	$self->setAttribute($last_cell, $COL_REPEAT_ATTRIBUTE, $rep)
+			if ($rep && ($rep > 1));
+	
+	return $row;
+	}
+	
+#-----------------------------------------------------------------------------
+# column expansion utility for _expand_table
+	
+sub	_expand_columns
+	{
+	my $self	= shift;
+	my $table	= shift;
+	return undef unless ($table && ref $table);
+	my $width	= shift || $self->{'max_cols'};
+	
+	my @cols	= $self->selectChildElementsByName
+					(
+					$table,
+					'^table:table-column$'
+					);
+
+	my $col		= undef;
+	my $last_col	= $cols[0];
+	my $rep		= 0;
+	my $colnum	= 0;
+	while (@cols && ($colnum < $width))
+		{
+		$col	= shift @cols; $last_col = $col;
+		$rep =	$col	?
+				$col->getAttribute($COL_REPEAT_ATTRIBUTE) :
+				0;
+		if ($rep)
+			{
+			$col->removeAttribute($COL_REPEAT_ATTRIBUTE);
+			while ($rep > 1 && ($colnum < $width))
+				{
+				$last_col = $self->replicateElement
+					(
+					$col, $last_col, position => 'after'
+					);
+				$rep--; $colnum++;
+				}
+			}
+		$colnum++;
+		}
+	
+	while ($colnum < $width)
+		{
+		$last_col = $self->insertElement
+				(
+				$last_col, 'table:table-column',
+				position => 'after'
+				);
+		$colnum++;
+		$rep-- if ($rep && ($rep > 0));
+		}
+	$self->setAttribute($last_col, $COL_REPEAT_ATTRIBUTE, $rep)
+			if ($rep && ($rep > 1));
+	return $table;
+	}
+
+#-----------------------------------------------------------------------------
+# expands repeated table elements in order to address them in spreadsheets
+# in the same way as in text documents
+	
+sub	_expand_table
+	{
+	my $self	= shift;
+	my $table	= shift;
+	my $length	= shift	|| $self->{'max_rows'};
+	my $width	= shift || $self->{'max_cols'};
+	return undef unless ($table && ref $table);
+	
+	my @rows	= $self->selectChildElementsByName
+					(
+					$table,
+					'^table:table-row$'
+					);
+
+	my $row		= undef;
+	my $last_row	= $rows[0];
+	my $rep		= 0;
+	my $rownum	= 0;
+	while (@rows && ($rownum < $length))
+		{
+		$row	= shift @rows; $last_row = $row;
+		$self->_expand_row($row);
+		$rep =	$row	?
+				$row->getAttribute($ROW_REPEAT_ATTRIBUTE) :
+				0;
+		if ($rep)
+			{
+			$row->removeAttribute($ROW_REPEAT_ATTRIBUTE);
+			while ($rep > 1 && ($rownum < $length))
+				{
+				$last_row = $self->replicateElement
+					($row, $last_row, position => 'after');
+				$rep--; $rownum++;
+				}
+			}
+		$rownum++;
+		}
+
+	while ($rownum < $length)
+		{
+		$last_row = $self->appendElement
+				(
+				$table, 'table:table-row'
+				);
+		$self->_expand_row($last_row, $width);
+		$rownum++;
+		$rep-- if ($rep && ($rep > 0));
+		}
+	$self->setAttribute($last_row, $ROW_REPEAT_ATTRIBUTE, $rep)
+			if ($rep && ($rep > 1));
+
+	$self->_expand_columns($table, $width);
+
+	return $table;
+	}
+
+#-----------------------------------------------------------------------------
 # get a table size in ($lines, $columns) form
 
 sub	getTableSize
@@ -1065,6 +1268,34 @@ sub	getRow
 	}
 
 #-----------------------------------------------------------------------------
+# spreadsheet coordinates conversion utility
+
+sub	_coord_conversion
+	{
+	my $arg	= shift or return ($arg, @_);
+	my $coord = uc $arg;
+	return ($arg, @_) unless $coord =~ /[A-Z]/;
+	
+	$coord	=~ s/\s*//g;
+	$coord	=~ /(^[A-Z]*)(\d*)/;
+	my $c	= $1;
+	my $r	= $2;
+	return ($arg, @_) unless ($c && $r);
+	
+	my $rownum	= $r - 1;
+	my @csplit	= split '', $c;
+	my $colnum	= 0;
+	foreach my $p (@csplit)
+		{
+		$colnum *= 26;
+		$colnum	+= ((ord($p) - ord('A')) + 1);
+		}
+	$colnum--;
+
+	return ($rownum, $colnum, @_);
+	}
+
+#-----------------------------------------------------------------------------
 # get cell element by 3D coordinates ($tablenum, $line, $column)
 # or by ($tablename/$tableref, $line, $column)
 
@@ -1080,17 +1311,20 @@ sub	getTableCell
 	if	(! ref $p1 || ($p1->isTable))
 		{
 		$table	= $self->getTable($p1)	or return undef;
+		@_ = OpenOffice::OODoc::Text::_coord_conversion(@_);
+		my $r	= shift || 0;
 		$row	=
 			(
 			$self->selectChildElementsByName
 					($table, 'table:table-row')
-			)[shift]
+			)[$r]
 				or return undef;
+		my $c	= shift || 0;
 		$cell	=
 			(
 			$self->selectChildElementsByName
 					($row, 'table:table-cell')
-			)[shift];
+			)[$c];
 		}
 	elsif	($p1->isTableCell)
 		{
@@ -1121,9 +1355,11 @@ sub	getCellValue
 	{
 	my $self	= shift;
 	my $p1		= shift;
+
 	my $cell	= undef;
-	if 	(! (ref $p1))
+	if 	((! (ref $p1)) || $p1->isTable)
 		{
+		@_ = OpenOffice::OODoc::Text::_coord_conversion(@_);
 		$cell = $self->getTableCell($p1, shift, shift);
 		}
 	elsif	($p1->isTableCell)
@@ -1134,14 +1370,11 @@ sub	getCellValue
 		{
 		$cell = $self->getTableCell($p1, shift);
 		}
-	else
-		{
-		$cell = $self->getTableCell($p1, shift, shift);
-		}
+
 	return undef unless $cell;
 
 	my $cell_type	= $cell->getAttribute('table:value-type');
-	if ($cell_type && ($cell_type eq 'string'))		# text value
+	if ((! $cell_type) || ($cell_type eq 'string'))		# text value
 		{
 		return $self->getText
 			(
@@ -1164,9 +1397,11 @@ sub	cellValueType
 	{
 	my $self	= shift;
 	my $p1		= shift;
+
 	my $cell	= undef;
-	if 	(! (ref $p1))
+	if 	((! (ref $p1)) || $p1->isTable)
 		{
+		@_ = OpenOffice::OODoc::Text::_coord_conversion(@_);
 		$cell = $self->getTableCell($p1, shift, shift);
 		}
 	elsif	($p1->isTableCell)
@@ -1177,10 +1412,7 @@ sub	cellValueType
 		{
 		$cell = $self->getTableCell($p1, shift);
 		}
-	else
-		{
-		$cell = $self->getTableCell($p1, shift, shift);
-		}
+
 	return undef unless $cell;
 
 	my $newtype	= shift;
@@ -1195,15 +1427,16 @@ sub	cellValueType
 	}
 
 #-----------------------------------------------------------------------------
-# get/set accessor for the formula of a table cell
+# get/set a cell currency
 
-sub	cellFormula
+sub	cellCurrency
 	{
 	my $self	= shift;
 	my $p1		= shift;
 	my $cell	= undef;
-	if 	(! (ref $p1))
+	if 	((! (ref $p1)) || $p1->isTable)
 		{
+		@_ = OpenOffice::OODoc::Text::_coord_conversion(@_);
 		$cell = $self->getTableCell($p1, shift, shift);
 		}
 	elsif	($p1->isTableCell)
@@ -1214,9 +1447,40 @@ sub	cellFormula
 		{
 		$cell = $self->getTableCell($p1, shift);
 		}
+	return undef unless $cell;
+
+	my $newcurrency	= shift;
+	unless ($newcurrency)
+		{
+		return $cell->getAttribute('table:currency');
+		}
 	else
 		{
+		$cell->setAttribute('table:value-type', 'currency');
+		return $cell->setAttribute('table:currency', $newcurrency);
+		}
+	}
+
+#-----------------------------------------------------------------------------
+# get/set accessor for the formula of a table cell
+
+sub	cellFormula
+	{
+	my $self	= shift;
+	my $p1		= shift;
+	my $cell	= undef;
+	if 	((! (ref $p1)) || $p1->isTable)
+		{
+		@_ = OpenOffice::OODoc::Text::_coord_conversion(@_);
 		$cell = $self->getTableCell($p1, shift, shift);
+		}
+	elsif	($p1->isTableCell)
+		{
+		$cell = $p1;
+		}
+	elsif	($p1->isTableRow)
+		{
+		$cell = $self->getTableCell($p1, shift);
 		}
 	return undef unless $cell;
 	my $formula = shift;
@@ -1242,8 +1506,9 @@ sub	updateCell
 	my $self	= shift;
 	my $p1		= shift;
 	my $cell	= undef;
-	if 	(! (ref $p1))
+	if 	((! (ref $p1)) || $p1->isTable)
 		{
+		@_ = OpenOffice::OODoc::Text::_coord_conversion(@_);
 		$cell = $self->getTableCell($p1, shift, shift);
 		}
 	elsif	($p1->isTableCell)
@@ -1253,10 +1518,6 @@ sub	updateCell
 	elsif	($p1->isTableRow)
 		{
 		$cell = $self->getTableCell($p1, shift);
-		}
-	else
-		{
-		$cell = $self->getTableCell($p1, shift, shift);
 		}
 	return undef	unless $cell;
 	my $value	= shift;
@@ -1270,14 +1531,11 @@ sub	updateCell
 		$cell_type = 'string';
 		}
 
-	$self->OpenOffice::OODoc::XPath::setText
-		(
-		$self->selectChildElementByName($cell, 'text:p'),
-		$text
-		);
-
+	my $p = $self->selectChildElementByName($cell, 'text:p');
+	$p = $self->appendElement($cell, 'text:p') unless $p;
+	$self->OpenOffice::OODoc::XPath::setText($p, $text);
 	$cell->setAttribute('table:value', $value)
-		unless ($cell_type eq 'string');
+		if ($cell_type && ($cell_type ne 'string'));
 	}
 
 #-----------------------------------------------------------------------------
@@ -1287,9 +1545,11 @@ sub	cellValue
 	{
 	my $self	= shift;
 	my $p1		= shift;
+
 	my $cell	= undef;
-	if 	(! (ref $p1))
+	if 	((! (ref $p1)) || $p1->isTable)
 		{
+		@_ = OpenOffice::OODoc::Text::_coord_conversion(@_);
 		$cell = $self->getTableCell($p1, shift, shift);
 		}
 	elsif	($p1->isTableCell)
@@ -1299,10 +1559,6 @@ sub	cellValue
 	elsif	($p1->isTableRow)
 		{
 		$cell = $self->getTableCell($p1, shift);
-		}
-	else
-		{
-		$cell = $self->getTableCell($p1, shift, shift);
 		}
 	return undef unless $cell;
 
@@ -1325,8 +1581,9 @@ sub	cellStyle
 	my $self	= shift;
 	my $p1		= shift;
 	my $cell	= undef;
-	if 	(! (ref $p1))
+	if 	((! (ref $p1)) || $p1->isTable)
 		{
+		@_ = OpenOffice::OODoc::Text::_coord_conversion(@_);
 		$cell = $self->getTableCell($p1, shift, shift);
 		}
 	elsif	($p1->isTableCell)
@@ -1336,10 +1593,6 @@ sub	cellStyle
 	elsif	($p1->isTableRow)
 		{
 		$cell = $self->getTableCell($p1, shift);
-		}
-	else
-		{
-		$cell = $self->getTableCell($p1, shift, shift);
 		}
 	return undef unless $cell;
 
@@ -1351,6 +1604,64 @@ sub	cellStyle
 	}
 
 #-----------------------------------------------------------------------------
+# get/set cell spanning (contributed by Don_Reid[at]Agilent.com)
+
+sub	cellSpan	
+	{
+	my $self	= shift;
+	my $p1		= shift;
+	my $cell	= undef;
+	my $rnum	= undef;
+	my $cnum	= undef;
+	if 	((! (ref $p1)) || $p1->isTable)
+		{
+		@_ = OpenOffice::OODoc::Text::_coord_conversion(@_);
+		$cell = $self->getTableCell($p1, shift, shift);
+		}
+	elsif	($p1->isTableCell)
+		{
+		$cell = $p1;
+		}
+	elsif	($p1->isTableRow)
+		{
+		$cell = $self->getTableCell($p1, shift);
+		}
+	return undef unless $cell;
+
+	my $span = shift;	# Number of columns spanned
+	if (!defined $span) {	
+		return $cell->getAttribute('table:number-columns-spanned');
+		}
+
+	my $row	= $cell->getParentNode;
+	my @cells = $self->selectNodesByXPath($row, 'table:table-cell');
+	my $cnt = scalar(@cells);
+	# which col is the current cell?
+	for ($c=0; $c<$cnt; $c++) {
+		if ($cell == $cells[$c]) {	# This is it
+			# Check span against size!
+			if (($c + $span) > $cnt) {
+				$span = ($cnt - $c);
+				}
+
+			# Attach attribute to the cell,
+			$cell->setAttribute('table:number-columns-spanned', 
+						$span);
+
+			# Change covered cells
+			for ($i = 1; $i < $span; $i ++) {
+				$self->replaceElement($cells[$c + $i], 
+					'table:covered-table-cell');
+				}
+
+			last
+			}
+		}
+	
+	return $span;
+	}
+
+#-----------------------------------------------------------------------------
 # get the content of a table element in a 2D array
 
 sub	_get_row_content
@@ -1359,7 +1670,8 @@ sub	_get_row_content
 	my $row		= shift;
 	
 	my @row_content	= ();
-	foreach my $cell ($self->selectChildElementsByName($row, 'table:table-cell'))
+	foreach my $cell
+		($self->selectChildElementsByName($row, 'table:table-cell'))
 		{
 		push @row_content, $self->getText($cell);
 		}
@@ -1421,13 +1733,94 @@ sub	getTable
 		}
 	if ($table =~ /^\d*$/)
 		{
-		return $self->getElement('//table:table', $table);
+		$t = $self->getElement('//table:table', $table);
 		}
 	else
 		{
-		return $self->getNodeByXPath
+		$t = $self->getNodeByXPath
 				("//table:table[\@table:name=\"$table\"]");
+		$self->_expand_table($t) if
+			(
+			$self->contentClass() eq 'spreadsheet'	&&
+			$self->{'expand_tables'}		&&
+			$self->{'expand_tables'} eq 'on'
+			);
 		}
+
+	return $t;
+	}
+
+#-----------------------------------------------------------------------------
+# user-controlled spreadsheet expansion
+
+sub	normalizeSheet
+	{
+	my $self	= shift;
+	my $table	= shift;
+	unless (ref $table)
+		{
+		if ($table =~ /^\d*$/)
+			{
+			$table = $self->getElement('//table:table', $table);
+			}
+		else
+			{
+			$table = $self->getNodeByXPath
+				("//table:table[\@table:name=\"$table\"]");
+			}
+		}
+
+	unless ((ref $table) && $table->isTable)
+		{
+		warn	"[" . __PACKAGE__ . "::normalizeSheet] "	.
+			"Missing sheet\n";
+		return undef;
+		}
+	return $self->_expand_table($table, @_);
+	}
+
+sub	normalizeSheets
+	{
+	my $self	= shift;
+	my $length	= shift;
+	my $width	= shift;
+	my @sheets	= $self->getTableList;
+	my $count	= 0;
+	foreach my $sheet (@sheets)
+		{
+		$self->normalizeSheet($sheet, $length, $width);
+		$count++;
+		}
+	return $count;
+	}
+
+#-----------------------------------------------------------------------------
+# activate/deactivate and parametrize automatic spreadsheet expansion
+
+sub	autoSheetNormalizationOn
+	{
+	my $self	= shift;
+	my $length	= shift || $self->{'max_rows'};
+	my $width	= shift || $self->{'max_cols'};
+
+	$self->{'expand_tables'}	= 'on';
+	$self->{'max_rows'}		= $length;
+	$self->{'max_cols'}		= $width;
+
+	return 'on';
+	}
+
+sub	autoSheetNormalizationOff
+	{
+	my $self	= shift;
+	my $length	= shift || $self->{'max_rows'};
+	my $width	= shift || $self->{'max_cols'};
+
+	$self->{'expand_tables'}	= 'no';
+	$self->{'max_rows'}		= $length;
+	$self->{'max_cols'}		= $width;
+
+	return 'no';
 	}
 
 #-----------------------------------------------------------------------------
@@ -1437,15 +1830,18 @@ sub	_build_table
 	{
 	my $self	= shift;
 	my $table	= shift;
-	my $rows	= shift;
-	my $cols	= shift;
+	my $rows	= shift || $self->{'max_rows'} || 1;
+	my $cols	= shift || $self->{'max_cols'} || 1;
 	my %opt		=
 			(
 			'cell-type'	=> 'string',
 			'text-style'	=> 'Table Contents',
 			@_
 			);
-	
+
+	$rows = $self->{'max_rows'} unless $rows;
+	$cols = $self->{'max_cols'} unless $cols;
+
 	for (my $i = 0 ; $i < $cols ; $i++)
 		{
 		$self->appendElement
@@ -1497,8 +1893,8 @@ sub	appendTable
 	{
 	my $self	= shift;
 	my $name	= shift;
-	my $rows	= shift || 1;
-	my $cols	= shift || 1;
+	my $rows	= shift || $self->{'max_rows'} || 1;
+	my $cols	= shift || $self->{'max_cols'} || 1;
 	my %opt		=
 			(
 			'attachment'	=> $self->getBody,
@@ -1537,8 +1933,8 @@ sub	insertTable
 	my $pos		= ref $path ? undef : shift;
 	my $posnode	= $self->getElement($path, pos) or return undef;
 	my $name	= shift;
-	my $rows	= shift || 1;
-	my $cols	= shift || 1;
+	my $rows	= shift || $self->{'max_rows'} || 1;
+	my $cols	= shift || $self->{'max_cols'} || 1;
 	my %opt		=
 			(
 			'table-style'	=> $name,
