@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 #-----------------------------------------------------------------------------
 #
-#	$Id: oofilesearch 0.005 2004-07-26$
+#	$Id: oofilesearch 0.006 2005-02-07$
 #
 #-----------------------------------------------------------------------------
 
@@ -82,10 +82,10 @@
 
 #=============================================================================
 
-use	OpenOffice::OODoc	1.107;
+use	OpenOffice::OODoc	1.301;
 use	Getopt::Long;
 
-our	$VERSION		= 0.005;
+our	$VERSION		= 0.006;
 
 #=============================================================================
 
@@ -170,10 +170,18 @@ sub	matching_file
 		$text .= ($meta->keywords || "");
 		$text .= ($meta->subject || "");
 		$text .= ($meta->description || "");
+
+		$meta->dispose;
 		}
 	my $content	= ooText(archive => $oof) or message
 				"$file doesn't have a regular content";
-	$text .= ($content->getTextContent || "") if $content;
+	if ($content)
+		{
+		$text .= ($content->getTextContent || "");
+
+		$content->dispose;
+		}
+
 	return undef unless $text;
 	while (@words)
 		{

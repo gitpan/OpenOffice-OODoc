@@ -1,0 +1,31 @@
+#!/usr/bin/perl -w
+#--------------------------------------------------------------------------
+
+=head1	NAME
+
+text2ooo - Text to OpenOffice.org (SXW) conversion
+
+=head1	SYNOPSIS
+
+cat sourcefile.txt | text2oo targetfile.sxw
+
+=head1	DESCRIPTION
+
+This filter creates an OpenOffice.org Writer (SXW) file and fills it
+with the text coming through its standard entry. The target file is
+created, and any existing file with the same name is replaced.
+To avoid this behaviour and append the text to an existing OOo file,
+just remove the create => 'text' option in the script.
+
+=cut
+
+use	OpenOffice::OODoc;
+
+die "Missing target filename\n" unless $ARGV[0];
+my $doc = ooDocument(file => $ARGV[0], create => 'text');
+while (my $line = <STDIN>)
+	{
+	$doc->appendParagraph(text => $line);
+	}
+$doc->save;
+exit;

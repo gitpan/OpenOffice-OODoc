@@ -6,7 +6,7 @@ OpenOffice::OODoc::XPath - Low-level XML navigation in the documents
 
 This module is a low-level class which uses OODoc::File (without
 inheriting anything from it) along with the classes defined in the
-XML::XPath module. It's a common basis for the other, more user-
+XML::Twig module. It's a common basis for the other, more user-
 friendly, document-oriented modules.
 
 This chapter can be skipped by programmers who are only interested
@@ -20,15 +20,15 @@ This class forms the basis of OODoc::Meta, OODoc::Text,
 OODoc::Styles and OODoc::Image. It contains the lowest layer of
 navigation services for XML documents and handles the link with
 OODoc::File for file access. Its primary role is as an interface
-with the XML::XPath API.
+with the XML::Twig API.
 
-OODoc::XPath is based on the XML::XPath module (see CPAN
+OODoc::XPath is based on the XML::Twig module (see CPAN
 documentation). In the following chapters, you will see elements
 often mentioned. When it says that a module expects a parameter or
 returns an element (either singly or as a list), it is referring to
 an XML element. More precisely, it is referring to an object of the
-XML::XPath::Node::Element class (unless otherwise stated) and all
-available methods this object confers. Generally speaking, it is not
+XML::Twig::Elt class (unless otherwise stated) and all available
+methods this object confers. Generally speaking, it is not
 necessary to call these low-level methods contained within
 OODoc::XPath and its descendants using their simpler form. It is
 however important to distinguish elements from their content
@@ -39,9 +39,10 @@ attributes, use the accessors also available within OODoc::XPath.
 In most cases where XPath methods require a reference to an element
 as an argument, there are two ways of proceeding:
 
-	- reference the element directly (obtained previously)
-	- or give the XML::XPath path and position, being a string and
-	an integer respectively [2]
+- reference the element directly (obtained previously)
+
+- or give the XML::XPath path and position, being a string and
+an integer respectively [2]
 
 Some methods accept both forms which means that if the first
 parameter is recognised as an element reference, the position does
@@ -80,9 +81,9 @@ document) in any position in the current document. This offers
 powerful manoeuvrability but only if these placements conform with
 the destination position's context [3] .
 
-For advanced users familiar with the XML::XPath API, it might be
+For advanced users familiar with the XML::Twig API, it might be
 interesting to know that all the objects called "elements" in the
-following chapters are objects of the XML::XPath::Node::Element
+following chapters are objects of the XML::Twig::Elt
 class, and that all methods associated with this class are directly
 applicable to them, on top of the functionality described in this
 manual. However, this should not normally be needed.
@@ -103,8 +104,22 @@ methods.
 
         Short Form: ooXPath(<parameters>)
 
-        Returns a new instance of XPath, containing a well-formed XML
-        document given directly or indirectly as a parameter.
+	Example:
+
+		my $doc = ooXpath
+				(
+				file	=> "myfile.sxc",
+				member	=> "content"
+				);
+		# ... lot of processing ...
+		$doc->save;
+
+        Returns a new document object. In the example above, the object
+	is loaded from a regular OOo file, that is the most current
+	option, but there are other possibilities. It's possible to use
+	flat XML (available as a string in memory, or loaded from a file).
+	In addition, this constructor is able to create a new document
+	from scratch.
 
         Parameters are named (hash key => value). The constructor must get
         at least one parameter giving a means of obtaining the XML document
@@ -127,22 +142,30 @@ methods.
         previously by the program).
 
         The second method links OODoc::XPath to an existing OODoc::File
-        object and indicates which XML member it is to extract (metadata,
-        content, styles, etc).
+        object (so-called "archive" because it's a zip archive used through
+	an object-oriented API) and indicates which XML member it is to
+	extract (metadata, content, styles, etc). The OODoc::File is an
+	abstraction of an already open OOo file.
 
-        The third method returns an OpenOffice.org file and an member to
-        extract, but this time there is no pre-existing OODoc::File. In this
-        case, the XPath constructor will instance a "private" File object
-        and connect to it for its own use.
+	The third method is the easiest, because the user just provide
+	a filename and a member, and all the file interface is run silently
+	(i.e. an invisible OODoc::File object is automtically created and
+	used to get the content). It's probably the most used approach; its
+	recommended when the user doesn't need to get more than one member
+	in the same file.
 
-        This third method is generally considered to be the easiest since
-        the use of OODoc::File becomes invisible. It does not, however,
-        allow sharing of the same OODoc::File between several OODoc::XPath.
-        It must therefore only be used if the program accesses one single
-        component of the OpenOffice.org file.
+	The 'member' option is a selector that tells what component is
+	needed (the content of the document, the styles, the metadata, ...)
+	knowing that an OODoc::XPath object can handle only one component.
+	If the application needs to process, say, the content and the styles
+	in the same session, it must create two, or more, OODoc::XPath objects
+	possibly associated with the same OOo file.
 
-        A program which must access a spreadsheet's content and page layout
-        simultaneously could do it like this:
+	The explicit instantiation of an OODoc::File object is required
+	when the user needs a read/write access to two or more components
+	in the same OOo file. For example, a program which must access a
+	spreadsheet's content and page layout simultaneously could do it
+	like this:
 
             my $archive	= ooFile("invoice.sxc");
             my $content	= ooXPath(archive => $archive, member => 'content');
@@ -159,6 +182,15 @@ methods.
         an absolute minimum and their lifespan should be the same as that of
         the program itself.
 
+	If the provided filename has a ".xml" or ".XML" suffix, or whatever
+	the name if the 'flat_xml' option is set to 1, the file is processed
+	as flat XML and not as a regular OOo file. No OODoc::File object is
+	created, so the save() method is not available. To save the changes
+	made in the document, the application can either export the document
+	as flat XML to a text file (see getXMLContent() below) or select some
+	elements of the document to inert them into another OODoc::XPath
+	object.
+
         You can pass the optional parameter 'element' in any case where the
         constructor is called without the 'xml' parameter. Bearing in mind
         that an OODoc::XPath object will not necessarily handle an entire
@@ -171,24 +203,13 @@ methods.
             'content'	=> 'office:document-content'
             'styles'	=> 'office:document-styles'
             'settings'	=> 'office:document-settings'
+	    'manifest'	=> 'manifest:manifest'
 
         Conversely, the 'element' parameter becomes mandatory if the chosen
         XML element is not listed above. Through OODoc::File, OODoc::XPath
         can actually access archives which are not necessarily in
         OpenOffice.org format and may be, for example, "banks" of
         presentation and content templates.
-
-        The parser parameter can be added if the program already has an
-        XML::XPath::XMLParser object [5] . (The same XML parser can be
-        shared between several OODoc::XPath objects.) If this parameter is
-        absent, it automatically becomes the parser if the application has a
-        global variable called $XML_PARSER which effectively points to an
-        XML::XPath::XMLParser. If not, a "private" XML parser is
-        automatically created but it is still possible to share it later
-        using getXMLParser. Therefore if OODoc::XPath is loaded indirectly
-        via the main OpenOffice::OODoc module (which is normal), a global
-        $XML_PARSER is automatically created without the application having
-        to do anything.
 
 	If the application needs to create a new document, and not process
 	an existing one, an additional option must be passed:
@@ -203,10 +224,14 @@ methods.
 	must have the same kind of structure and content as the "templates"
 	subdirectory of the OpenOffice::OODoc installation.
 
-	A optional 'readable_XML' can be passed. If this option is provided
-	and set to 'on', each XML element created by the application is
-	followed by a line break. Be careful, this option significantly
-	increases the processing time, so it should be set for debugging only
+	An optional 'readable_XML' can be passed. If this option is provided
+	and set to 'on', the resulting XML will be smartly indented (and, of
+	course, more space-consuming). This feature is intended for debugging
+	purpose and should not be used in production.
+
+	The 'local_encoding' option can be set with the appropriate value
+	when a particular character set (and not the default one) must be
+	used for a document.
 
         Other optional parameters can also be passed to the constructor (see
         Properties below).
@@ -414,6 +439,12 @@ methods.
         from OpenOffice.org documents is based on decode_text; so any
         modification or improvement of the decoding logic should be made
         there.
+
+=head3	dispose()
+
+	Deletes the calling OODoc::XPath object. Recommended as soon as the
+	object is no longer used by the application, and sometimes mandatory
+	to avoid memory leaks.
 
 =head3	encode_text(editable_string)
 
@@ -971,12 +1002,32 @@ methods.
         This method physically creates a new element which is an exact copy
         of the given element, but which is physically separate from it.
 
-        This method is much slower than simply modifying an existing element
-        or inserting an element reference and heavy use is not recommended.
+        This method is slower than simply modifying an existing element or
+        inserting an element reference.
 
-=head3	save
+	Note: If the user needs only a "free" copy of the element (out of the
+	document structure, to be later attached), the XML::Twig::Elt copy()
+	method should be preferred.
 
-=head3	save(filename)
+=head3	replicateNode(count [, position])
+
+	It's method is an element method, not a document method. It allows
+	the caller object to be replicated one or more time. It's particularly
+	useful to insert lines in tables, but it can be used to replicate any
+	kind of element (paragraphs, sheets in Calc documents, styles, etc).
+	Example:
+
+		$doc->getTableRow('MyTable', 5)->replicateNode(3);
+	
+	This line of code replicates 3 times the row 5 in the table "MyTable"
+	(the 3 new rows are inserted immediately after the calling row).
+
+	Without any argument, the calling element is replicated once. The
+	second argument must be 'before' or 'after' (default is 'after');
+	it controls the position of the copies, related to the original
+	element (but it generally doesn't matter).
+
+=head3	save([filename])
 
         Calls the 'save' method of an OODoc::File object to which the
         current object is connected, passing the filename argument to it (if
@@ -1197,10 +1248,10 @@ methods.
             'file'		=> <OpenOffice.org file>
             'member'		=> <file member>
 	    'readable_XML'	=> <'on' or not>
+	    'local_encoding'	=> <user's output encoding>
             'xml'		=> <XML string>
             'element'		=> <name of loaded XML element>
-	    'xpath'		=> <XML::XPath object>
-            'parser'		=> <XML parser>
+	    'xpath'		=> <XML::Twig object>
 
         However, the 'xml' variable is cleared almost immediately after a
         successful constructor call, in order to save memory. As soon as the
@@ -1208,51 +1259,17 @@ methods.
         longer required.
 
         The 'xpath' variable of an OODoc::XPath object contains a reference
-        to an XML::XPath class object (see CPAN documentation). Remember
-        that OODoc::XPath is based on XML::XPath, not derived from it. This
-        object encompasses the entire current XML tree. Each access to XML
-        using OODoc::XPath objects is done via XML::XPath. So, after having
-        run the following command:
+        to the document structure as it's made available through XML::Twig
+	(see CPAN documentation). This object encompasses the entire current
+	XML tree. Each access to XML using OODoc::XPath objects is done via
+	XML::Twig. So, after having run the following command:
 
             my $xp = $doc->{'xpath'};
 
         the experienced programmer will be able to use $xp to access all the
-        functionality of the XML::XPath API, bearing in mind that all
+        functionality of the XML::Twig API, bearing in mind that all
         operations using this interface will have a direct effect on the
         content of the $doc object.
-
-        The 'parser' variable (which most will never need) is aimed at
-        XML::XPath::XMLParser [16]  type objects which have been used to
-        construct OODoc::XPath objects out of an XML document and can be
-        reused (within very specific applications) to create new elements
-        from imported XML strings. For example:
-
-            $xml =	'<style:properties '	.
-            	'draw:luminance="2%" '	.
-            	'draw:contrast="3%"/>';
-            $p = $doc->{'parser'}->parse($xml);
-
-        creates a new element which describes the properties applicable to a
-        graphics object and which could later be incorporated into a
-        document. Calling the parser is not enough to insert the element
-        into the document.
-
-        The same parser can be used again later in several XPath objects
-        which may be interesting in case you wish to perform simultaneous
-        handling of a large number of documents. When calling the
-        constructor of a new XPath object, you need simply pass a parser
-        parameter equal to the parser parameter of an existing XPath object
-        [17] . We have, however, no way of measuring the amount of memory
-        and processing time saved by reusing it.
-
-        Bearing in mind that OODoc::XPath does not necessarily handle the
-        entire loaded XML document but only the element represented by the
-        'element' parameter, there are also two variables, 'begin' and 'end'
-        which contain, respectively, those parts of the document before and
-        after the extracted element. These two variables are stored in the
-        instance to allow reconstruction of the entire document by
-        concatenation, however the content of 'begin' and 'end' is not
-        verified, analysed or modified.
 
 =head1	NOTES
 

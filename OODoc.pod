@@ -166,6 +166,10 @@ separate "member".
 	ooLocalEncoding() with an argument, the user's programs can override
 	this default.
 
+	Note: the user can override this setting for a particular document,
+	using the 'local_encoding' property of the document object (see the
+	OpenOffice::OODoc::XPath manual page).
+
 	See the Encode::Supported (Perl) documentation for the list
 	of supported encodings.
 

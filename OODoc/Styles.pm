@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Styles.pm 1.007 2004-08-03 JMG$
+#	$Id : Styles.pm 1.008 2005-02-05 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -13,9 +13,9 @@
 
 package OpenOffice::OODoc::Styles;
 use	5.006_001;
-our	$VERSION	= 1.007;
+our	$VERSION	= 1.008;
 
-use	OpenOffice::OODoc::XPath	1.115;
+use	OpenOffice::OODoc::XPath	1.200;
 use	File::Basename;
 require	Exporter;
 our	@ISA		= qw ( Exporter OpenOffice::OODoc::XPath );
@@ -147,8 +147,10 @@ sub	rgb2oo
 	}
 	
 #-----------------------------------------------------------------------------
+package	XML::Twig::Elt;
+#-----------------------------------------------------------------------------
 	
-sub	XML::XPath::Node::Element::isStyle
+sub	isStyle
 	{
 	my $element	= shift;
 	my $fullname	= $element->getName;
@@ -166,7 +168,7 @@ sub	XML::XPath::Node::Element::isStyle
 	 	?	1 : undef;
 	}
 
-sub	XML::XPath::Node::Element::isMasterPage
+sub	isMasterPage
 	{
 	my $element	= shift;
 	return	(
@@ -178,6 +180,8 @@ sub	XML::XPath::Node::Element::isMasterPage
 		
 	}
 
+#-----------------------------------------------------------------------------
+package OpenOffice::OODoc::Styles;
 #-----------------------------------------------------------------------------
 # constructor
 

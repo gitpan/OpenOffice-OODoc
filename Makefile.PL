@@ -113,11 +113,20 @@ WriteMakefile
     	'AUTHOR'	=> 'Jean-Marie Gouarne, Genicorp S.A.',
     	'PREREQ_PM'	=>
     		{
-		'XML::XPath'		=> '1.13',
+		'XML::Twig'		=> '3.15',
 		'Archive::Zip'		=> 0,
 		'File::Temp'		=> '0.12',
 		'Time::Local'		=> '1.07'
 		},
+	'EXE_FILES'	=>
+		[
+		'examples/oohighlight',
+		'examples/oofilesearch',
+		'examples/text2ooo',
+		'examples/text2table',
+		'examples/oo2pod',
+		'examples/oobuild'
+		]
 	);
 
 #---

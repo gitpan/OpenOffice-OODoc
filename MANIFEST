@@ -37,6 +37,8 @@ examples/search
 examples/set_fields
 examples/set_title
 examples/export_images
+examples/text2ooo
+examples/text2table
 OODoc/data/scarab.png
 OODoc/templates/text/content.xml
 OODoc/templates/text/meta.xml

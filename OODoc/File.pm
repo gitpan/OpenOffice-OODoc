@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : File.pm 1.107 2004-09-06 JMG$
+#	$Id : File.pm 1.108 2005-02-04 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -253,7 +253,7 @@ sub	store_temp_file
 	my $data	= shift;
 
 	my $tmpfile	= $self->new_temp_file_name;
-	unless (open FH, '>', $tmpfile)
+	unless (open FH, '>:utf8', $tmpfile)
 		{
 		warn	"[" . __PACKAGE__ . "::store_temp_file] "	.
 			"Unable to create temporary file $tmpfile\n";

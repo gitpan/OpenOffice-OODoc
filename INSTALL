@@ -4,7 +4,7 @@ SYSTEM REQUIREMENTS
 
 	Perl		>= 5.8.0
 	Archive::Zip	>= 1.05  (*)
-	XML::XPath	>= 1.13
+	XML::Twig	>= 3.15
 	Time::Local	>= 1.07
 	File::Temp	>= 0.12
 
@@ -27,12 +27,12 @@ INSTALLATION
 	utility is not present in your environment, you can get it at
 	http://download.microsoft.com/download/vc15/Patch/1.52/W95/EN-US/Nmake15.exe
 	
-	If Archive::Zip and XML::XPath are already installed, this CPAN
+	If Archive::Zip and XML::Twig are already installed, this CPAN
 	installation works without a C compiler, because OpenOffice::OODoc is
 	pure Perl. Otherwise, if these required modules are not installed and
 	if you don't have a C development environment, you should use another
 	distribution (such as the PPM one for ActivePerl, if available) instead,
-	knowing that the CPAN Archive::Zip and XML::XPath distributions can
+	knowing that the CPAN Archive::Zip and XML::Twig distributions can
 	indirectly bring a lot of C source code.
 
 	You will be prompted for the following parameters:

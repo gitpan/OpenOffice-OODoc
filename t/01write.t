@@ -5,7 +5,7 @@
 use Test;
 BEGIN	{ plan tests => 20 }
 
-use OpenOffice::OODoc	1.207;
+use OpenOffice::OODoc	1.301;
 ok(1);
 
 #-----------------------------------------------------------------------------
@@ -102,7 +102,7 @@ $doc->setText
 	"Platform : $^O",
 	"Perl version : $]",
 	"Archive::Zip version : $Archive::Zip::VERSION",
-	"XML::XPath version : $XML::XPath::VERSION",
+	"XML::Twig version : $XML::Twig::VERSION",
 	"OpenOffice::OODoc version : $OpenOffice::OODoc::VERSION"
 	);
 my $list = $doc->getUnorderedList(0);

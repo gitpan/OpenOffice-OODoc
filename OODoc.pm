@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : OODoc.pm 1.207 2005-01-29 JMG$
+#	$Id : OODoc.pm 1.301 2005-02-05 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -20,7 +20,7 @@ use OpenOffice::OODoc::Manifest		1.002;
 
 package	OpenOffice::OODoc;
 use 5.008_000;
-our $VERSION				= 1.207;
+our $VERSION				= 1.301;
 
 require Exporter;
 our @ISA    = qw(Exporter);
@@ -49,17 +49,14 @@ sub	ooReadConfig
 			"Missing configuration file\n";
 		return undef;
 		}
-	my $config = XML::XPath->new
-			(
-			filename	=> $filename
-			);
+	my $config = XML::Twig->new->safe_parsefile($filename);
 	unless ($config)
 		{
 		warn	"[" . __PACKAGE__ . "::ooReadConfig] "	.
 			"Syntax error in configuration file $filename\n";
 		return undef;
 		}
-	my $root = ($config->find('//OpenOffice-OODoc')->get_nodelist)[0];
+	my $root = ($config->findnodes('//OpenOffice-OODoc'))[0];
 	unless ($root && $root->isElementNode)
 		{
 		return undef;
@@ -197,7 +194,6 @@ sub	ooDecodeText
 
 sub	BEGIN
 	{
-	$main::XML_PARSER = XML::XPath::XMLParser->new;
 	my $module_path = $INC{"OpenOffice/OODoc.pm"};
 	$module_path =~ s/\.pm$//;
 	$OpenOffice::OODoc::INSTALLATION_PATH = $module_path;

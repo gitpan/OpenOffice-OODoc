@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Mamifest.pm 1.002 2004-08-03 JMG$
+#	$Id : Mamifest.pm 1.003 2005-02-07 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -13,9 +13,9 @@
 
 package	OpenOffice::OODoc::Manifest;
 use	5.006_001;
-our	$VERSION	= 1.002;
+our	$VERSION	= 1.003;
 
-use	OpenOffice::OODoc::XPath	1.115;
+use	OpenOffice::OODoc::XPath	1.200;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
 
 #-----------------------------------------------------------------------------
@@ -38,6 +38,15 @@ sub	new
 	return	$object ?
 		bless $object, $class	:
 		undef;
+	}
+
+#-----------------------------------------------------------------------------
+# override the basic getBody() method; here the body is the root
+
+sub	getBody
+	{
+	my $self	= shift;
+	return $self->getRootElement;
 	}
 
 #-----------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 1.117 2005-01-29 JMG$
+#	$Id : XPath.pm 1.200 2005-02-07 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -13,17 +13,18 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 1.117;
-use	XML::XPath	1.13;
+our	$VERSION	= 1.200;
+use	XML::Twig	3.15;
 use	Encode;
 
 #------------------------------------------------------------------------------
 
 our %XMLNAMES	=			# OODoc root element names
 	(
-	'meta'		=> 'office:document-meta',
 	'content'	=> 'office:document-content',
 	'styles'	=> 'office:document-styles',
+	'meta'		=> 'office:document-meta',
+	'manifest'	=> 'manifest:manifest',
 	'settings'	=> 'office:document-settings'
 	);
 
@@ -48,43 +49,275 @@ sub	OpenOffice::OODoc::XPath::encode_text
 	}
 
 #------------------------------------------------------------------------------
-# replace toString method from XML::XPath for Text and Attribute nodes
+# basic element creation
 
-sub	XML::XPath::Node::Text::toString
+sub	OpenOffice::OODoc::XPath::new_element
 	{
-	my $node	= shift;
+	my $name	= shift		or return undef;
+	return undef if ref $name;
 
-	return	XML::XPath::Node::XMLescape
-			(
-			Encode::encode($OO_CHARSET, $node->getNodeValue),
-			$CHARS_TO_ESCAPE
-			);
-	}
-
-sub	XML::XPath::Node::Attribute::toString
-	{
-	my $node	= shift;
-
-	return	' '							.
-		OpenOffice::OODoc::XPath::encode_text($node->getName)	.
-		'="'							.
-		XML::XPath::Node::XMLescape
-			(
-			Encode::encode($OO_CHARSET, $node->getNodeValue),
-			$CHARS_TO_ESCAPE
-			)						.
-		'"';
+	$name		=~ s/^\s+//;
+	$name		=~ s/\s+$//;
+	
+	if ($name =~ /^<.*>$/)	# create element from XML string
+		{
+		return XML::Twig::Elt->parse($name, @_);
+		}
+	else			# create element from name and optional data
+		{
+		return XML::Twig::Elt->new($name, @_);
+		}
 	}
 
 #------------------------------------------------------------------------------
-# common search/replace text processing routine (class method)
+# text node creation
+
+sub	OpenOffice::OODoc::XPath::new_text_node
+	{
+	return OpenOffice::OODoc::XPath::new_element('#PCDATA');
+	}
+
+#------------------------------------------------------------------------------
+# some wrappers for XML Twig elements
+package	XML::Twig::Elt;
+#------------------------------------------------------------------------------
+
+sub	setName
+	{
+	my $node	= shift;
+	return $node->set_tag(shift);
+	}
+
+sub	getPrefix
+	{
+	my $node	= shift;
+	return $node->ns_prefix;
+	}
+
+sub	selectChildElements
+	{
+	my $node	= shift;
+	my $filter	= shift;
+
+	return $node->getChildNodes() unless $filter;
+
+	my @list	= ();
+	my $fc = $node->first_child;
+	my $name = $fc->name if $fc;
+	while ($fc)
+		{
+		if ($name && ($name =~ /$filter/))
+			{
+			return $fc unless wantarray;
+			push @list, $fc;
+			}
+		$fc = $fc->next_sibling;
+		$name = $fc->name if $fc;;
+		}
+	return @list;
+	}
+
+sub	selectChildElement
+	{
+	my $node	= shift;
+	return scalar $node->selectChildElements(@_);
+	}
+
+sub	getParentNode
+	{
+	my $node	= shift;
+	return $node->parent;
+	}
+	
+sub	getFirstChild
+	{
+	my $node	= shift;
+	my $fc = $node->first_child(@_);
+	my $name = $fc->name if $fc;
+	while ($name && ($name =~ /^#/))
+		{
+		$fc = $fc->next_sibling(@_);
+		$name = $fc->name if $fc;
+		}
+	return $fc;
+	}
+
+sub	getLastChild
+	{
+	my $node	= shift;
+	my $lc = $node->last_child(@_);
+	my $name = $lc->name;
+	while ($name && ($name =~ /^#/))
+		{
+		$lc = $lc->prev_sibling(@_);
+		$name = $lc->name;
+		}
+	return $lc;
+	}
+
+sub	getDescendantNodes
+	{
+	my $node	= shift;
+	my @children	= $node->getChildNodes(@_);
+	my @descendants = ();
+	foreach my $child (@children)
+		{
+		push @descendants, $child, $child->getDescendantNodes(@_);
+		}
+	return @descendants;
+	}
+
+sub	getDescendantTextNodes
+	{
+	my $node	= shift;
+	return $node->descendants('#PCDATA');
+	}
+
+sub	appendChild
+	{
+	my $node	= shift;
+	my $child	= shift;
+	unless (ref $child)
+		{
+		$child = OpenOffice::OODoc::XPath::new_element($child, @_);
+		}
+	return $child->paste_last_child($node);
+	}
+
+sub	removeChildNodes
+	{
+	my $node	= shift;
+	return $node->cut_children(@_);
+	}
+
+sub	replicateNode
+	{
+	my $node	= shift;
+	my $number	= shift || 1;
+	my $position	= shift || 'after';
+	my $lastnode	= $node;
+	while ($number > 0)
+		{
+		my $newnode	= $node->copy;
+		$newnode->paste($position => $lastnode);
+		$last_node	= $newnode;
+		$number--;
+		}
+	return $last_node;
+	}
+
+sub	getNodeValue
+	{
+	my $node	= shift;
+	return $node->text;
+	}
+
+sub	getValue
+	{
+	my $node	= shift;
+	return $node->text;
+	}
+
+sub	setNodeValue
+	{
+	my $node	= shift;
+	return $node->set_text(@_);
+	}
+
+sub	appendTextChild
+	{
+	my $node	= shift;
+	my $text	= shift or return undef;
+	my $text_node	= XML::Twig::Elt->new('#PCDATA' => $text);
+	return $text_node->paste(last_child => $node);
+	}
+
+sub	getAttribute
+	{
+	my $node	= shift;
+	return $node->att(@_);
+	}
+
+sub	getAttributes
+	{
+	my $node	= shift;
+	return %{$node->atts(@_)};
+	}
+
+sub	setAttribute
+	{
+	my $node	= shift or return undef;
+	my $attribute	= shift;
+	my $value	= shift;
+	if (defined $value)
+		{
+		return $node->set_att($attribute, $value, @_);
+		}
+	else
+		{
+		if ($node->{$attribute})
+			{
+			return $node->del_att($attribute);
+			}
+		else
+			{
+			return undef;
+			}
+		}
+	}
+
+sub	removeAttribute
+	{
+	my $node	= shift or return undef;
+	return $node->del_att(shift);
+	}
+
+#------------------------------------------------------------------------------
+package	OpenOffice::OODoc::XPath;
+#------------------------------------------------------------------------------
+# basic conversion between internal & printable encodings (object version)
+
+sub	inputTextConversion
+	{
+	my $self	= shift;
+	my $text	= shift;
+	my $local_encoding = $self->{'local_encoding'} or return $text;
+	return Encode::decode($local_encoding, $text);
+	}
+
+sub	outputTextConversion
+	{
+	my $self	= shift;
+	my $text	= shift;
+	my $local_encoding = $self->{'local_encoding'} or return $text;
+	return Encode::encode($local_encoding, $text);
+	}
+
+sub	localEncoding
+	{
+	my $self	= shift;
+	my $encoding	= shift;
+	$self->{'local_encoding'} = $encoding if $encoding;
+	return $self->{'local_encoding'} || '';
+	}
+
+sub	noLocalEncoding
+	{
+	my $self	= shift;
+	delete $self->{'local_encoding'};
+	return 1;
+	}
+
+#------------------------------------------------------------------------------
+# search/replace text processing routine
 # if $replace is a user-provided routine, it's called back with
 # the current argument stack, plus the substring found
 
-sub	OpenOffice::OODoc::XPath::_find_text
+sub	_find_text
 	{
+	my $self	= shift;
 	my $text	= shift;
-	my $pattern	= OpenOffice::OODoc::XPath::encode_text(shift);
+	my $pattern	= $self->inputTextConversion(shift);
 	my $replace	= shift;
 
 	if (defined $pattern)
@@ -119,7 +352,7 @@ sub	OpenOffice::OODoc::XPath::_find_text
 		    }
 		else
 		    {
-		    my $r = OpenOffice::OODoc::XPath::encode_text($replace);
+		    my $r = $self->inputTextConversion($replace);
 		    return undef unless ($text =~ s/$pattern/$r/g);
 		    }
 		}
@@ -132,46 +365,40 @@ sub	OpenOffice::OODoc::XPath::_find_text
 	}
 
 #------------------------------------------------------------------------------
-# remove all the children of a given element (extends XML::XPath)
+# search/replace content in descendant nodes
 
-sub	XML::XPath::Node::Element::removeChildNodes
+sub	_search_content
 	{
-	my $element	= shift;
-
-	$element->removeChild($_) for $element->getChildNodes;
-	}
-
-#------------------------------------------------------------------------------
-# recursive text search & replace processing (extends XML::XPath)
-
-sub	XML::XPath::Node::Element::_search_content
-	{
-	my $element	= shift;
+	my $self	= shift;
+	my $element	= shift or return undef;
 	my $content	= undef;
-	foreach my $child ($element->getChildNodes)
+	
+	foreach my $child ($element->children)
 		{
 		my $text = undef;
-		if	($child->isTextNode)
+		if ($child->isTextNode)
 			{
-			$text = OpenOffice::OODoc::XPath::_find_text
-				($child->string_value, @_);
-			if (defined $text)
-				{
-				$child->setNodeValue($text);
-				}
+			$text = $self->_find_text($child->text, @_);
+			$child->set_text($text) if defined $text;
 			}
-		elsif	($child->isElementNode)
+		else
 			{
-			my $t = $child->_search_content(@_);
-			$text .= $t if (defined $t);
+			my $t = $self->_search_content($child, @_);
+			$text .= $t if defined $t;
 			}
-		$content .= $text if (defined $text);
+		$content .= $text if defined $text;
 		}
 	return $content;
 	}
 
 #------------------------------------------------------------------------------
-# reserved properties (to be implemented)
+# document class check
+
+sub	isContent
+	{
+	my $self	= shift;
+	return ($self->contentClass()) ? 1 : undef;
+	}
 
 sub	isCalcDocument
 	{
@@ -213,81 +440,115 @@ sub	new
 		auto_style_path		=> '//office:automatic-styles',
 		master_style_path	=> '//office:master-styles',
 		named_style_path	=> '//office:styles',
+		local_encoding		=>
+				$OpenOffice::OODoc::XPath::LOCAL_CHARSET,
 		@_
 		};
-	if (($self->{'file'}) && (! $self->{'archive'}))
-		{
-		require OpenOffice::OODoc::File;
 
-		$self->{'archive'} = OpenOffice::OODoc::File->new
+	my $twig = undef;
+
+	if ($self->{'member'} && ! $self->{'element'})
+		{
+		my $m	= lc $self->{'member'};
+		$m	=~ /(^.*)\..*/;
+		$m	= $1	if $1;
+		$self->{'element'} =
+		    $OpenOffice::OODoc::XPath::XMLNAMES{$m};
+		}
+					# create the XML::Twig
+	if ($self->{'readable_XML'} && ($self->{'readable_XML'} eq 'on'))
+		{
+		$self->{'readable_XML'} = 'indented';
+		}
+	$self->{'element'} = $OpenOffice::OODoc::XPath::XMLNAMES{'content'}
+				unless $self->{'element'};
+	if ($self->{'element'})
+		{
+		$twig = XML::Twig->new
+			(
+			twig_roots	=>
+				{
+				$self->{'element'}	=> 1
+				},
+			pretty_print	=> $self->{'readable_XML'},
+			%{$self->{'twig_options'}}
+			);
+		}
+	else
+		{
+		$twig = XML::Twig->new
+			(
+			pretty_print	=> $self->{'readable_XML'},
+			%{$self->{'twig_options'}}
+			);
+		}
+
+	if ($self->{'xml'})		# load from XML string
+		{
+		$self->{'xpath'} = $twig->safe_parse($self->{'xml'});
+		}
+	elsif ($self->{'archive'})	# load from existig OOFile
+		{
+		$self->{'member'} = 'content' unless $self->{'member'};
+		$self->{'xml'} = $self->{'archive'}->link($self);
+		$self->{'xpath'} = $twig->safe_parse($self->{'xml'});
+		}
+	elsif ($self->{'file'})		# look for a file
+		{
+		unless	(
+			$self->{'flat_xml'}
+					||
+			(lc $self->{'file'}) =~ /\.xml$/
+			)
+			{		# create OOFile & extract from it
+			require OpenOffice::OODoc::File;
+
+			$self->{'archive'} = OpenOffice::OODoc::File->new
 				(
 				$self->{'file'},
 				create		=> $self->{'create'},
 				template_path	=> $self->{'template_path'}
 				);
-		}
-
-	unless ($self->{'xml'})
-		{
-		if ($self->{'archive'})
-			{
-			$self->{'member'} = 'content' unless $self->{'member'};
-			$self->{'xml'} =
-			    $self->{'archive'}->link($self);
-
-			unless ($self->{'element'})
-				{
-				my $m	= lc $self->{'member'};
-				$m	=~ /(^.*)\..*/;
-				$m	= $1	if $1;
-				$self->{'element'} =
-					$OpenOffice::OODoc::XPath::XMLNAMES{$m};
-				}
+			$self->{'member'} = 'content'
+					unless $self->{'member'};
+			$self->{'xml'} = $self->{'archive'}->link($self);
+			$self->{'xpath'} = $twig->safe_parse($self->{'xml'});
 			}
 		else
-			{
-			warn "[" . __PACKAGE__ . "] No oo_archive\n";
-			return undef;
+			{		# load from XML flat file
+			$self->{'xpath'} =
+				$twig->safe_parsefile($self->{'file'});		
 			}
-		}
-		
-	if ($self->{'element'})
-		{
-		my $t	= $self->{'xml'};
-		my $b	= $self->{'element'};
-		$t	=~ /(.*)(<\s*$b\s.*<\s*\/$b\s*>)(.*)/s;
-		$self->{'begin'}	= $1; chomp $self->{'begin'};
-		$self->{'xml'}		= $2; chomp $self->{'xml'};
-		$self->{'end'}		= $3;
-		}
-		
-	if ($self->{'xml'})
-		{
-		unless ($self->{'parser'})
-			{
-			if
-			    (
-			    $main::XML_PARSER
-				&&
-			    $main::XML_PARSER->isa('XML::XPath::XMLParser')
-			    )
-			    {
-			    $self->{'parser'} = $main::XML_PARSER;
-			    }
-			else
-			    {
-			    $self->{'parser'} = XML::XPath::XMLParser->new;
-			    }
-			}
-		$self->{'xpath'} = $self->{'parser'}->parse($self->{'xml'});
-		$self->{'xml'} = undef;
 		}
 	else
 		{
 		warn "[" . __PACKAGE__ . "] No XML content\n";
 		return undef;
 		}
+	delete $self->{'xml'};
+	unless ($self->{'xpath'})
+		{
+		warn "[" . __PACKAGE__ . "] No well formed content\n";
+		return undef;
+		}
 	return bless $self, $class;
+	}
+
+#------------------------------------------------------------------------------
+
+sub	DESTROY
+	{
+	my $self	= shift;
+
+	delete $self->{'xpath'};
+	delete $self->{'archive'};
+	$self = {};
+	}
+
+sub	dispose
+	{
+	my $self	= shift;
+	$self->DESTROY(@_);
 	}
 
 #------------------------------------------------------------------------------
@@ -295,8 +556,8 @@ sub	new
 
 sub	getXMLParser
 	{
-	my $self	= shift;
-	return $self->{'parser'};
+	warn	"[" . __PACKAGE__ . "::getXMLParser] No longer implemented\n";
+	return undef;
 	}
 
 #------------------------------------------------------------------------------
@@ -396,12 +657,7 @@ sub	raw_export
 sub	getXMLContent
 	{
 	my $self	= shift;
-
-	my $xml	= $self->exportXMLElement($self->getRoot);
-
-	return	$self->{'begin'}	. "\n" .
-		$xml			. "\n" .
-		$self->{'end'};
+	return $self->getRootElement()->sprint;
 	}
 
 sub	getContent
@@ -415,9 +671,8 @@ sub	getContent
 
 sub	reorganize
 	{
-	my $self	= shift;
-	my $xml		= $self->exportXMLElement($self->getRoot);
-	$self->{'xpath'} = $self->{'parser'}->parse($xml);
+	warn "[" . __PACKAGE__ . "::reorganize] No longer implemented\n";
+	return undef;
 	}
 
 #------------------------------------------------------------------------------
@@ -426,8 +681,7 @@ sub	reorganize
 sub	getRoot
 	{
 	my $self	= shift;
-
-	return $self->OpenOffice::OODoc::XPath::getElement('/', 0);
+	return $self->{'xpath'}->root;
 	}
 
 #------------------------------------------------------------------------------
@@ -436,8 +690,11 @@ sub	getRoot
 sub	getRootElement
 	{
 	my $self	= shift;
-	my $node	= $self->getNodeByXPath('/' . $self->{'element'});
-	return	(ref $node && $node->isElementNode) ? $node : undef;
+	my $root	= $self->{'xpath'}->root;
+	my $rootname	= $root->name() || '';
+	return ($rootname eq $self->{'element'})	?
+			$root				:
+			$root->first_child($self->{'element'});
 	}
 		
 #------------------------------------------------------------------------------
@@ -450,22 +707,21 @@ sub	contentClass
 
 	my $element = $self->getRootElement;
 	return undef unless $element;
-	$element->setAttribute
-			(
-			'office:class',
-			OpenOffice::OODoc::XPath::encode_text($class)
-			)	if $class;
-	return $element->getAttribute('office:class') || '';
+	$self->setAttribute($element, 'office:class', $class) if $class;
+	return $self->getAttribute($element, 'office:class') || '';
+	}
+
+#------------------------------------------------------------------------------
+# element name check
+
+sub	getRootName
+	{
+	my $self	= shift;
+	return $self->getRootElement->name;
 	}
 
 #------------------------------------------------------------------------------
 # member type checks
-
-sub	isContent
-	{
-	my $self	= shift;
-	return ($self->getRootName() eq $XMLNAMES{'content'}) ? 1 : undef;
-	}
 
 sub	isMeta
 	{
@@ -491,13 +747,11 @@ sub	isSettings
 sub	getBody
 	{
 	my $self	= shift;
-
-	return 
-		(
-		$self->getElement($self->{'body_path'}, 0)
-			||
-		$self->getElement($self->{'master_style_path'}, 0)
-		);
+	my $body	= $self->getRootElement->selectChildElement
+				(
+				'office:(body|meta|master-styles|settings)'
+				);
+	return $body;
 	}
 
 #------------------------------------------------------------------------------
@@ -532,7 +786,7 @@ sub	exportXMLElement
 	my $element	=
 		(ref $path) ? $path : $self->getElement($path, @_);
 
-	my $text	= $element->toString;
+	my $text	= $element->sprint(@_);
 	return $text;
 	}
 
@@ -563,8 +817,8 @@ sub	getElement
 	if (defined $pos && (($pos =~ /^\d*$/) || ($pos =~ /^[\d+-]\d+$/)))
 		{
 		my $context	= shift;
-		$context	= $self->{'xpath'} unless ref $context;
-		my $node	= ($context->find($path)->get_nodelist)[$pos];
+		$context	= $self->getRootElement unless ref $context;
+		my $node	= ($context->findnodes($path))[$pos];
 
 		return	$node && $node->isElementNode ? $node : undef;
 		}
@@ -586,23 +840,8 @@ sub	selectChildElementsByName
 	my $path	= shift;
 	my $element	= ref $path ? $path : $self->getElement($path, shift);
 	return undef	unless $element;
-	my @list	= $element->getChildNodes;
-	my $filter	= shift;
 
-	if ($filter && ($filter ne ".*"))
-		{
-		my @selection = ();
-		while (@list)
-			{
-			my $node	= shift @list;
-			my $n		= $node->getName;
-			push @selection, $node	if ($n && ($n =~ /$filter/));
-			}
-		@list	= @selection;
-		}
-		
-	return undef	unless @list;
-	return wantarray ? @list : $list[0];
+	return $element->selectChildElements(@_);
 	}
 
 #------------------------------------------------------------------------------
@@ -614,18 +853,7 @@ sub	selectChildElementByName
 	my $path	= shift;
 	my $element	= ref $path ? $path : $self->getElement($path, shift);
 	return undef			unless $element;
-	my $filter	= shift;
-	return $element->getFirstChild	unless $filter;
-	my @list	= $element->getChildNodes;
-
-	while (@list)
-		{
-		my $node	= shift @list;
-		my $n		= $node->getName;
-		return $node	if ($n && ($n =~ /$filter/));
-		}
-
-	return undef;
+	return scalar $element->selectChildElements(@_);
 	}
 
 #------------------------------------------------------------------------------
@@ -634,19 +862,7 @@ sub	selectChildElementByName
 sub	getChildElementByName
 	{
 	my $self	= shift;
-	my $path	= shift;
-	my $element	= ref $path ? $path : $self->getElement($path, shift);
-	return undef			unless $element;
-	my $filter	= shift;
-	return undef unless $filter;
-	my @list	= $element->getChildNodes;
-	while (@list)
-		{
-		my $node	= shift @list;
-		my $n		= $node->getName;
-		return $node	if ($n && ($n eq $filter));
-		}
-	return undef;
+	return $self->selectChildElementByName(@_);
 	}
 
 #------------------------------------------------------------------------------
@@ -665,7 +881,7 @@ sub	setText
 					($path, $pos);
 	return undef	unless $element;
 
-	$element->removeChildNodes;
+	$element->set_text("");
 	my @lines	= split "\n", $text;
 	while (@lines)
 		{
@@ -673,16 +889,12 @@ sub	setText
 		my @columns	= split "\t", $line;
 		while (@columns)
 			{
-			my $column	=
-				OpenOffice::OODoc::XPath::encode_text
-					(shift @columns);
-			$element->appendChild
-				(XML::XPath::Node::Text->new($column));
-			$self->appendElement($element, 'text:tab-stop')
-					if (@columns);
+			my $column	= 
+				$self->inputTextConversion(shift @columns);
+			$element->appendTextChild($column);
+			$element->appendChild('text:tab-stop') if (@columns);
 			}
-		$self->appendElement($element, 'text:line-break')
-				if (@lines);
+		$element->appendChild('text:line-break') if (@lines);
 		}
 
 	return $text;
@@ -711,15 +923,11 @@ sub	extendText
 		while (@columns)
 			{
 			my $column	=
-				OpenOffice::OODoc::XPath::encode_text
-					(shift @columns);
-			$element->appendChild
-				(XML::XPath::Node::Text->new($column));
-			$self->appendElement($element, 'text:tab-stop')
-					if (@columns);
+				$self->inputTextConversion(shift @columns);
+			$element->appendTextChild($column);
+			$element->appendChild('text:tab-stop') if (@columns);
 			}
-		$self->appendElement($element, 'text:line-break')
-				if (@lines);
+		$element->appendChild('text:line-break') if (@lines);
 		}
 
 	return $text;
@@ -732,8 +940,8 @@ sub	createTextNode
 	{
 	my $self	= shift;
 	my $text	= shift		or return undef;
-	my $content	= OpenOffice::OODoc::XPath::encode_text($text);
-	return XML::XPath::Node::Text->new($content);
+	my $content	= $self->inputTextConversion($text);
+	return XML::Twig::Elt->new('#PCDATA' => $text);
 	}
 
 #------------------------------------------------------------------------------
@@ -746,10 +954,8 @@ sub	replaceText
 	my $element	= (ref $path) ?
 				$path	:
 				$self->getElement($path, shift);
-	
-	return	$element ?
-		$element->_search_content(@_)	:
-		undef;
+
+	return $self->_search_content($element, @_);
 	}
 
 #------------------------------------------------------------------------------
@@ -768,11 +974,18 @@ sub	getText
 	foreach my $node ($element->getChildNodes)
 		{
 		if ($node->isElementNode)
-			{ $text .= ($self->getText($node) || ''); }
+			{
+			$text .=
+			    (
+			    $self->getText($node)
+			    		||
+			    ''
+			    );
+			}
 		else
 			{
 			my $t = ($node->getValue() || '');
-			$text .= OpenOffice::OODoc::XPath::decode_text($t);
+			$text .= $self->outputTextConversion($t);
 			}
 		}
 	return $text;
@@ -804,7 +1017,7 @@ sub	selectNodesByXPath
 	else		{ $path = $p1; $context = $p2; }
 
 	$context = $self->{'xpath'} unless ref $context;
-	return $context->find($path, @_)->get_nodelist;
+	return $context->get_xpath($path);
 	}
 
 #------------------------------------------------------------------------------
@@ -833,18 +1046,16 @@ sub	getXPathValue
 	my $context	= undef;
 	if (ref $p1)	{ $context = $p1; $path = $p2; }
 	else		{ $path = $p1; $context = $p2; }
-	 
+	
 	if (ref $context)
 		{
 		$path =~ s/^\/*//;
-		return OpenOffice::OODoc::XPath::decode_text
-				($context->findvalue($path, @_));
 		}
 	else
 		{
-		return OpenOffice::OODoc::XPath::decode_text
-				($self->{'xpath'}->findvalue($path, @_));
+		$context = $self->{'xpath'};
 		}
+	return $self->outputTextConversion($context->findvalue($path, @_));
 	}
 
 #------------------------------------------------------------------------------
@@ -1053,7 +1264,7 @@ sub	selectElements
 		{
 		my $node = shift @candidates;
 		push @result, $node
-			if $node->_search_content($filter, @_, $node);
+			if $self->_search_content($node, $filter, @_, $node);
 		}
 	return @result;
 	}
@@ -1080,7 +1291,8 @@ sub	selectElement
 	while (@candidates)
 		{
 		my $node = shift @candidates;
-		return $node if $node->_search_content($filter, @_, $node);
+		return $node
+			if $self->_search_content($node, $filter, @_, $node);
 		}
 	return undef;
 	}
@@ -1165,8 +1377,7 @@ sub	getTextList
 
 	foreach my $n (@nodelist)
 		{
-		my $l	= OpenOffice::OODoc::XPath::decode_text
-							($n->string_value);
+		my $l	= $self->outputTextConversion($n->string_value);
 		push @text, $l if ((! defined $pattern) || ($l =~ /$pattern/));
 		}
 
@@ -1189,11 +1400,10 @@ sub	getAttributes
 	return undef	unless $path;
 
 	my %attributes	= ();
-	foreach my $a ($node->getAttributeNodes)
+	my %atts	= %{$node->atts(@_)};
+	foreach my $a (keys %atts)
 		{
-		my $name		= $a->getName;
-		$attributes{$name}	=
-			OpenOffice::OODoc::XPath::decode_text($a->getValue);
+		$attributes{$a}	= $self->outputTextConversion($atts{$a});
 		}
 
 	return %attributes;
@@ -1213,8 +1423,7 @@ sub	getAttribute
 	$pos	= 0	unless $pos;
 
 	my $node	= $self->getElement($path, $pos);
-	return	OpenOffice::OODoc::XPath::decode_text
-					($node->getAttribute($name));
+	return	$self->outputTextConversion($node->att($name));
 	}
 
 #------------------------------------------------------------------------------
@@ -1235,16 +1444,15 @@ sub	setAttributes
 		{
 		if (defined $attr{$k})
 		    {
-		    $node->setAttribute
+		    $node->set_att
 		    		(
 				$k,
-				OpenOffice::OODoc::XPath::encode_text
-						($attr{$k})
+				$self->inputTextConversion($attr{$k})
 				);
 		    }
-		elsif (my $a = $node->getAttributeNode($k))
+		else
 		    {
-		    $node->removeAttribute($a);
+		    $node->del_att($a);
 		    }
 		}
 
@@ -1265,15 +1473,15 @@ sub	setAttribute
 
 	if (defined $value && ($value gt ' '))
 		{
-		$node->setAttribute
+		$node->set_att
 			(
 			$attribute,
-			OpenOffice::OODoc::XPath::encode_text($value)
+			$self->inputTextConversion($value)
 			);
 		}
-	elsif (my $a = $node->getAttributeNode($attribute))
+	else
 		{
-		$node->removeAttribute($a);
+		$node->del_att($a);
 		}
 	
 	return $value; 
@@ -1292,16 +1500,7 @@ sub	removeAttribute
 	my $node	= $self->getElement($path, $pos);
 
 	return undef	unless $node;
-
-	foreach my $a ($node->getAttributeNodes)
-		{
-		if ($a->getName eq $name)
-			{
-			$node->removeAttribute($a);
-			}
-		}
-
-	return 1;
+	return $node->del_att($a);
 	}
 
 #------------------------------------------------------------------------------
@@ -1322,48 +1521,38 @@ sub	replicateElement
 
 	$position	= 'end'	unless $position;
 
-	my $element		= undef;
-	my $name		= $proto->getName;
-	%{$options{'attribute'}} = $self->getAttributes($proto);
+	my $element		= $proto->copy;
+	$element->set_atts($options => 'attribute');
 
 	if	(ref $position)
 		{
 		if (! $options{'position'})
 			{
-			$element = $self->appendElement
-						($position, $name, %options);
+			$element->paste_last_child($position);
 			}
-		else
+		elsif ($options{'position'} eq 'before')
 			{
-			$element = $self->insertElement
-						($position, $name, %options);
+			$element->paste_before($position);
+			}
+		elsif ($options{'position'} eq 'after')
+			{
+			$element->paste_after($position);
+			}
+		elsif ($options{'position'} ne 'free')
+			{
+			warn	"[" . __PACKAGE__ . "::replicateElement] " .
+				"No valid attachment option\n";
 			}
 		}
 	elsif	($position eq 'end')
 		{
-		$element = $self->appendElement
-					($self->getRoot, $name, %options);
+		$element->paste_last_child($self->{'xpath'}->root);
 		}
 	elsif	($position eq 'body')
 		{
-		$element = $self->appendElement
-					($self->getBody, $name, %options);
+		$element->paste_last_child($self->getBody);
 		}
 
-	foreach my $node ($proto->getChildNodes)
-		{
-		if	($node->isElementNode)
-			{
-			$options{'position'} = undef;
-			$self->replicateElement($node, $element, %options);
-			}
-		elsif	($node->isTextNode)
-			{
-			my $text_node = XML::XPath::Node::Text->new
-							($node->getValue);
-			$element->appendChild($text_node);
-			}
-		}
 	return $element;
 	}
 
@@ -1378,26 +1567,13 @@ sub	createElement
 	my $self	= shift;
 	my $name	= shift;
 	my $text	= shift;
-	my $element	= undef;
 
-	unless ($name)
+	my $element = OpenOffice::OODoc::XPath::new_element($name, @_);
+	unless ($element)
 		{
-		warn "[" . __PACKAGE__ . "::createElement] No name or XML\n";
+		warn	"[" . __PACKAGE__ . "::createElement] "	.
+			"Element creation failure\n";
 		return undef;
-		}
-	$name =~ s/^\s+//;
-	$name =~ s/\s+$//;
-	if ($name =~ /^<.*>$/)
-		{
-		$element =  $self->{'parser'}->parse($name);
-		return ($element && $element->isElementNode)	?
-			$element : undef;
-		}
-	else
-		{
-		$name		=~ /(.*):(.*)/;
-		my $prefix	=  $1;
-		$element = XML::XPath::Node::Element->new($name, $prefix);
 		}
 
 	$self->setText($element, $text)		if ($text);
@@ -1452,12 +1628,9 @@ sub	replaceElement
 		}
 	if	(! $options{'mode'} || $options{'mode'} eq 'copy')
 		{
-		$result = $self->replicateElement
-					(
-					$new_element,
-					$old_element,
-					position	=> 'before'
-					);
+		$result = $new_element->copy;
+		$result->replace($old_element);
+		return $result;
 		}
 	elsif	($options{'mode'} && $options{'mode'} eq 'reference')
 		{
@@ -1467,34 +1640,15 @@ sub	replaceElement
 					$new_element,
 					position	=> 'before'
 					);
+		$self->removeElement($old_element);
+		return $result;
 		}
 	else
 		{
 		warn	"[" . __PACKAGE__ . "::replaceElement] " .
 			"Unknown option\n";
-		return undef;
-		}
-	if	($result && $result->isElementNode)
-		{
-		$self->removeElement($old_element);
-		return $result;
 		}
 	return undef;
-	}
-
-#------------------------------------------------------------------------------
-# adds a separator (default = "\n") after an element (for readable XML)
-
-sub	insertXMLSeparator
-	{
-	my $self	= shift;
-	my $element	= shift	or return undef;
-	my $parent	= $element->getParentNode or return undef;
-	my $separator	= shift || "\n";
-	
-	my $s = XML::XPath::Node::Text->new($separator);
-	$parent->insertAfter($s, $element);
-	return $s;
 	}
 
 #------------------------------------------------------------------------------
@@ -1507,7 +1661,6 @@ sub	appendElement
 	my $pos		= (ref $path) ? undef : shift;
 	my $name	= shift;
 	my %opt		= @_;
-
 	$opt{'attribute'} = $opt{'attributes'} unless ($opt{'attribute'});
 
 	return undef	unless $name;
@@ -1530,11 +1683,7 @@ sub	appendElement
 			"::appendElement] Position not found\n";
 		return undef;
 		}
-	$parent->appendChild($element);
-	if ($self->{'readable_XML'} && ($self->{'readable_XML'} eq 'on'))
-		{
-		$self->insertXMLSeparator($element);
-		}
+	$element->paste_last_child($parent);
 	$self->setAttributes($element, %{$opt{'attribute'}});
 	return $element;
 	}
@@ -1571,25 +1720,14 @@ sub	insertElement
 		warn "[" . __PACKAGE__ . "::insertElement] Unknown position\n";
 		return undef;
 		}
-	my $parent	= $posnode->getParentNode;
-	unless ($parent)
-		{
-		warn "[" . __PACKAGE__ . "::insertElement] Root position\n";
-		return undef;
-		}
 
 	if (($opt{'position'}) && ($opt{'position'} eq 'after'))
 		{
-		$parent->insertAfter($element, $posnode);
+		$element->paste_after($posnode);
 		}
 	else
 		{
-		$parent->insertBefore($element, $posnode);
-		}
-
-	if ($self->{'readable_XML'} && ($self->{'readable_XML'} eq 'on'))
-		{
-		$self->insertXMLSeparator($element);
+		$element->paste_before($posnode);
 		}
 
 	$self->setAttributes($element, %{$opt{'attribute'}});
@@ -1603,21 +1741,24 @@ sub	insertElement
 sub	removeElement
 	{
 	my $self	= shift;
-	my $path	= shift;
-	my $pos		= (ref $path) ? undef : shift;
 
-	my $e	= $self->getElement($path, $pos);
+	my $e	= $self->getElement(@_);
 	return undef	unless $e;
-	my $p	= $e->getParentNode;
+	return $e->delete;
+	}
 
-	unless ($p)
-		{
-		warn "[" . __PACKAGE__ . "::removeElement] Root node\n";
-		return undef;
-		}
-	$p->removeChild($e);
+#------------------------------------------------------------------------------
+# cuts the given element & children (to be pasted elsewhere)
 
-	return 1;
+sub	cutElement
+	{
+	my $self	= shift;
+
+	my $e	= $self->getElement(@_);
+	return undef	unless $e;
+	$e->cut;
+
+	return $e;
 	}
 
 #------------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 1.115 2005-01-29 JMG$
+#	$Id : Text.pm 1.200 2005-02-05 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -13,9 +13,9 @@
 
 package OpenOffice::OODoc::Text;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	1.117;
+use	OpenOffice::OODoc::XPath	1.200;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 1.115;
+our	$VERSION	= 1.200;
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -68,14 +68,6 @@ our $ROW_REPEAT_ATTRIBUTE       = 'table:number-rows-repeated';
 our $COL_REPEAT_ATTRIBUTE       = 'table:number-columns-repeated';
 
 #-----------------------------------------------------------------------------
-
-sub	isContent
-	{
-	my $self	= shift;
-	return $self->contentClass() ? 1 : undef;
-	}
-
-#-----------------------------------------------------------------------------
 # constructor
 
 sub	new
@@ -107,23 +99,23 @@ sub	new
 	}
 
 #-----------------------------------------------------------------------------
-# text element type detection (add-in for XML::XPath)
+# text element type detection (add-in for XML::Twig::Elt)
 
-sub	XML::XPath::Node::Element::isOrderedList
+sub	XML::Twig::Elt::isOrderedList
 	{
 	my $element	= shift;
 	my $name	= $element->getName;
 	return ($name && ($name eq 'text:ordered-list')) ?  1 : undef;
 	}
 
-sub	XML::XPath::Node::Element::isUnorderedList
+sub	XML::Twig::Elt::isUnorderedList
 	{
 	my $element	= shift;
 	my $name	= $element->getName;
 	return ($name && ($name eq 'text:unordered-list')) ?  1 : undef;
 	}
 
-sub	XML::XPath::Node::Element::isItemList
+sub	XML::Twig::Elt::isItemList
 	{
 	my $element	= shift;
 	my $name	= $element->getName;
@@ -136,83 +128,90 @@ sub	XML::XPath::Node::Element::isItemList
 		1 : undef;
 	}
 
-sub	XML::XPath::Node::Element::isListItem
+sub	XML::Twig::Elt::isListItem
 	{
 	my $element	= shift;
 	my $name	= $element->getName;
 	return ($name && ($name eq 'text:list-item')) ?  1 : undef;
 	}
 
-sub	XML::XPath::Node::Element::isParagraph
+sub	XML::Twig::Elt::isParagraph
 	{
 	my $element	= shift;
 	my $name	= $element->getName;
 	return ($name && ($name eq 'text:p')) ? 1 : undef;
 	}
 
-sub	XML::XPath::Node::Element::isHeader
+sub	XML::Twig::Elt::isHeader
 	{
 	my $element	= shift;
 	my $name	= $element->getName;
 	return ($name && ($name eq 'text:h')) ? 1 : undef;
 	}
 
-sub	XML::XPath::Node::Element::headerLevel
+sub	XML::Twig::Elt::headerLevel
 	{
 	my $element	= shift;
 	return $element->getAttribute('text:level');
 	}
 
-sub	XML::XPath::Node::Element::isTable
+sub	XML::Twig::Elt::isTable
 	{
 	my $element	= shift;
 	my $name	= $element->getName;
 	return ($name && ($name eq 'table:table')) ? 1 : undef;
 	}
 
-sub	XML::XPath::Node::Element::isTableRow
+sub	XML::Twig::Elt::isTableRow
 	{
 	my $element	= shift;
 	my $name	= $element->getName;
 	return ($name && ($name eq 'table:table-row')) ? 1 : undef;
 	}
 
-sub	XML::XPath::Node::Element::isTableColumn
+sub	XML::Twig::Elt::isTableColumn
 	{
 	my $element	= shift;
 	my $name	= $element->getName;
 	return ($name && ($name eq 'table:table-column')) ? 1 : undef;
 	}
 
-sub	XML::XPath::Node::Element::isTableCell
+sub	XML::Twig::Elt::isTableCell
 	{
 	my $element	= shift;
 	my $name	= $element->getName;
 	return ($name && ($name eq 'table:table-cell')) ? 1 : undef;
 	}
 
-sub	XML::XPath::Node::Element::isSpan
+sub	XML::Twig::Elt::isCovered
+	{
+	my $element	= shift;
+	my $name	= $element->getName;
+	return ($name && ($name =~ /covered/)) ? 1 : undef;
+	}
+	
+sub	XML::Twig::Elt::isSpan
 	{
 	my $element	= shift;
 	my $name	= $element->getName;
 	return ($name && ($name eq 'text:span')) ? 1 : undef;
 	}
 
-sub	XML::XPath::Node::Element::isFootnoteCitation
+sub	XML::Twig::Elt::isFootnoteCitation
 	{
 	my $element	= shift;
 	my $name	= $element->getName;
 	return ($name && ($name eq 'text:footnote-citation')) ? 1 : undef;
 	}
 
-sub	XML::XPath::Node::Element::isFootnoteBody
+sub	XML::Twig::Elt::isFootnoteBody
 	{
 	my $element	= shift;
 	my $name	= $element->getName;
 	return ($name && ($name eq 'text:footnote-body')) ? 1 : undef;
 	}
 
-sub	XML::XPath::Node::Element::isSequenceDeclarations
+sub	XML::Twig::Elt::isSequenceDeclarations
 	{
 	my $element	= shift;
 	my $name	= $element->getName;
@@ -227,7 +226,7 @@ sub	XML::XPath::Node::Element::isSequenceDeclarations
 sub	getText
 	{
 	my $self	= shift;
-	my $element	= $self->SUPER::getElement(@_);
+	my $element	= $self->getElement(@_);
 	return undef	unless ($element && $element->isElementNode);
 
 	my $text	= undef;
@@ -267,8 +266,7 @@ sub	getText
 		$element->isTableCell
 		)
 		{
-		my $p = $self->selectChildElementByName
-					($element, 'text:p');
+		my $p = $element->getFirstChild('text:p');
 		$text .= ($self->SUPER::getText($p) || '');
 		}
 	elsif	($element->isTable)
@@ -300,6 +298,15 @@ sub	outputDelimitersOff
 	$self->{'use_delimiters'}	= 'off';
 	}
 
+sub	defaultOutputTerminator
+	{
+	my $self	= shift;
+	my $delimiter	= shift;
+	$self->{'delimiters'}{'default'}{'end'} = $delimiter
+		if defined $delimiter;
+	return $doc->{'delimiters'}{'default'}{'end'};
+	}
+
 #-----------------------------------------------------------------------------
 # setText() method adaptation for complex elements
 # overrides setText from OODoc::XPath
@@ -309,7 +316,7 @@ sub	setText
 	my $self	= shift;
 	my $path	= shift;
 	my $pos		= (ref $path) ? undef : shift;
-	my $element	= $self->SUPER::getElement($path, $pos);
+	my $element	= $self->getElement($path, $pos);
 	return undef	unless $element;
 
 	my $line_break	= $self->{'line_separator'} || '';
@@ -343,7 +350,6 @@ sub	setText
 sub	getTextContent
 	{
 	my $self	= shift;
-
 	return $self->selectTextContent('.*', @_);
 	}
 
@@ -373,19 +379,24 @@ sub	selectElementsByContent
 				||
 				($pattern eq '.*')
 				||
-				(defined $element->_search_content
-						($pattern, @_, $element))
+				(defined $self->_search_content
+					($element, $pattern, @_, $element))
 			   );
 		}
 
 	return @elements;
 	}
 
-sub	findElementsByContent
+sub	findElementsByContent	# deprecated
 	{
 	my $self	= shift;
+	return $self->selectElementsByContent(@_);
+	}
 
-	$self->selectElementsByContent(@_);
+sub	replaceAll		# deprecated
+	{
+	my $self	= shift;
+	return $self->selectElementsByContent(@_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -410,8 +421,8 @@ sub	selectElementByContent
 				||
 				($pattern eq '.*')
 				||
-				(defined $element->_search_content
-						($pattern, @_, $element))
+				(defined $self->_search_content
+					($element, $pattern, @_, $element))
 			   );
 		}
 	return undef;
@@ -443,8 +454,8 @@ sub	selectTextContent
 				||
 				($pattern eq '.*')
 				||
-				(defined $element->_search_content
-						($pattern, @_, $element))
+				(defined $self->_search_content
+					($element, $pattern, @_, $element))
 			       );
 		}
 	return wantarray ? @lines : join $line_break, @lines;
@@ -455,20 +466,6 @@ sub	findTextContent
 	my $self	= shift;
 
 	$self->selectTextContent(@_);
-	}
-
-#----------------------------------------------------------------------------
-# replace every substring matching a given pattern in the whole text content
-
-sub	replaceAll
-	{
-	my $self	= shift;
-	my @list	= ();
-	
-	push @list, [ $self->findElementList('//text:h', @_) ];
-	push @list, [ $self->findElementList('//text:p', @_) ];
-
-	return @list;
 	}
 
 #-----------------------------------------------------------------------------
@@ -565,13 +562,13 @@ sub	setSpan
 		my $context	= shift;
 		unless (ref $context)
 			{
-			$element = $self->SUPER::getElement($path, $pos)
+			$element = $self->getElement($path, $pos)
 					or return undef;
 			unshift @_, $context;
 			}
 		else
 			{
-			$element = $self->SUPER::getElement
+			$element = $self->getElement
 						($path, $pos, $context)
 					or return undef;
 			}
@@ -595,19 +592,19 @@ sub	setSpan
 			my ($before, $selection, $after) = ($1, $2, $3);
 			my $span = $self->createElement
 						('text:span', $selection);
-			$element->insertBefore($span, $n);
+			$span->paste_before($n);
 			$self->setAttribute($span, 'text:style-name', $style);
-			$element->removeChild($n); $n = undef; $text = undef;
+			$n->delete; $n = undef; $text = undef;
 			if ($before)
 				{
-				$n = $self->createTextNode($before);
-				$element->insertBefore($n, $span);
+				$self->createTextNode($before)
+						->paste_before($span);
 				$text = $before;
 				}
 			if ($after)
 				{
-				my $a = $self->createTextNode($after);
-				$element->insertAfter($a, $span);
+				$self->createTextNode($after)
+						->paste_after($span);
 				}
 			}
 		}
@@ -623,7 +620,7 @@ sub	removeSpan
 
 	my $element	= ref $path ?
 				$path	:
-				$self->SUPER::getElement($path, @_);
+				$self->getElement($path, @_);
 	return undef	unless $element;
 
 	my $text	= "";
@@ -646,7 +643,7 @@ sub	removeSpan
 			else
 				{
 				$last_text_node =
-					XML::XPath::Node::Text->new($t);
+				    OpenOffice::OODoc::XPath::new_text_node($t);
 				$element->insertBefore($last_text_node, $n);
 				}
 			$element->removeChild($n);
@@ -689,7 +686,7 @@ sub	getTableList
 sub	getHeader
 	{
 	my $self	= shift;
-	return $self->SUPER::getElement('//text:h', @_);
+	return $self->getElement('//text:h', @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -717,7 +714,7 @@ sub	getLevel
 	my $path	= shift;
 	my $pos		= (ref $path) ? undef : shift;
 
-	my $element	= $self->SUPER::getElement($path, $pos, @_);
+	my $element	= $self->getElement($path, $pos, @_);
 	return $element->getAttribute('text:level') || "";
 	}
 
@@ -730,7 +727,7 @@ sub	setLevel
 	my $pos		= (ref $path) ? undef : shift;
 	my $level	= shift;
 
-	my $element	= $self->SUPER::getElement($path, $pos, @_);
+	my $element	= $self->getElement($path, $pos, @_);
 	return $element->setAttribute('text:level' => $level);
 	}
 
@@ -741,7 +738,7 @@ sub	getParagraph
 	{
 	my $self	= shift;
 
-	return $self->SUPER::getElement('//text:p', @_);
+	return $self->getElement('//text:p', @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -751,7 +748,7 @@ sub	getTopParagraph
 	{
 	my $self	= shift;
 
-	return $self->SUPER::getElement('//office:body/text:p', @_);
+	return $self->getElement('//office:body/text:p', @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -803,7 +800,7 @@ sub	getOrderedList
 
 	return	(ref $pos)	?
 		$pos		:
-		$self->SUPER::getElement('//text:ordered-list', $pos);
+		$self->getElement('//text:ordered-list', $pos);
 	}
 
 #-----------------------------------------------------------------------------
@@ -816,7 +813,7 @@ sub	getUnorderedList
 
 	return	(ref $pos)	?
 		$pos		:
-		$self->SUPER::getElement('//text:unordered-list', $pos);
+		$self->getElement('//text:unordered-list', $pos);
 	}
 
 #-----------------------------------------------------------------------------
@@ -957,7 +954,7 @@ sub	insertItemList
 	my $path	= shift;
 	my $posnode	= (ref $path)	?
 				$path	:
-				$self->SUPER::getElement($path, shift);
+				$self->getElement($path, shift);
 	my %opt		= @_;
 	$opt{'attribute'}{'text:style-name'} = $opt{'style'} if $opt{'style'};
 	$opt{'attribute'}{'text:style-name'} = $self->{'paragraph_style'}
@@ -983,19 +980,15 @@ sub	_expand_row
 		}
 	my $width	= shift || $self->{'max_cols'};
 
-	my @cells	= $self->selectChildElementsByName
-					(
-					$row,
-					'^table:table-cell$'
-					);
+	my @cells	= $row->children('table:table-cell');
 
 	my $cell	= undef;
-	my $last_cell	= $cells[0];
+	my $last_cell	= undef;
 	my $rep		= 0;
 	my $cellnum	= 0;
 	while (@cells && ($cellnum < $width))
 		{
-		$cell = shift @cells;
+		$cell = shift @cells; $last_cell = $cell;
 		$rep  =	$cell	?
 				$cell->getAttribute($COL_REPEAT_ATTRIBUTE) :
 				0;
@@ -1004,20 +997,28 @@ sub	_expand_row
 			$cell->removeAttribute($COL_REPEAT_ATTRIBUTE);
 			while ($rep > 1 && ($cellnum < $width))
 				{
-				$last_cell = $self->replicateElement
-					(
-					$cell, $last_cell, position => 'after'
-					);
+				$last_cell = $last_cell->replicateNode;
 				$rep--; $cellnum++;
 				}
 			}
 		$cellnum++ if $cell;
 		}
-	while ($cellnum < $width)
+
+	if ($cellnum < $width)
 		{
-		$last_cell = $self->appendElement($row, 'table:table-cell');
+		my $c = $self->createElement('table:table-cell');
+		unless ($last_cell)
+			{
+			$last_cell = $c->paste_last_child($row); $rep = 0;
+			}
+		else
+			{
+			$last_cell = $c->paste_after($last_cell); $rep--;
+			}
 		$cellnum++;
-		$rep-- if ($rep && ($rep > 0));
+		my $nc = $width - $cellnum;
+		$last_cell = $last_cell->replicateNode($nc);
+		$rep -= $nc if $rep > 0;
 		}
 	$last_cell->setAttribute($COL_REPEAT_ATTRIBUTE, $rep)
 			if ($rep && ($rep > 1));
@@ -1034,15 +1035,11 @@ sub	_expand_columns
 	my $table	= shift;
 	return undef unless ($table && ref $table);
 	my $width	= shift || $self->{'max_cols'};
-	
-	my @cols	= $self->selectChildElementsByName
-					(
-					$table,
-					'^table:table-column$'
-					);
+
+	my @cols	= $table->children('table:table-column');
 
 	my $col		= undef;
-	my $last_col	= $cols[0];
+	my $last_col	= undef;
 	my $rep		= 0;
 	my $colnum	= 0;
 	while (@cols && ($colnum < $width))
@@ -1056,25 +1053,28 @@ sub	_expand_columns
 			$col->removeAttribute($COL_REPEAT_ATTRIBUTE);
 			while ($rep > 1 && ($colnum < $width))
 				{
-				$last_col = $self->replicateElement
-					(
-					$col, $last_col, position => 'after'
-					);
+				$last_col = $last_col->replicateNode;
 				$rep--; $colnum++;
 				}
 			}
 		$colnum++ if $col;
 		}
 	
-	while ($colnum < $width)
+	if ($colnum < $width)
 		{
-		$last_col = $self->insertElement
-				(
-				$last_col, 'table:table-column',
-				position => 'after'
-				);
+		my $c = $self->createElement('table:table-column');
+		unless ($last_col)
+			{
+			$last_col = $c->paste_last_child($table); $rep = 0;
+			}
+		else
+			{
+			$last_col = $c->paste_after($last_col); $rep--;
+			}
 		$colnum++;
-		$rep-- if ($rep && ($rep > 0));
+		my $nc = $width - $colnum;
+		$last_col = $last_col->replicateNode($nc);
+		$rep -= $nc;
 		}
 	$last_col->setAttribute($COL_REPEAT_ATTRIBUTE, $rep)
 			if ($rep && ($rep > 1));
@@ -1092,15 +1092,13 @@ sub	_expand_table
 	my $length	= shift	|| $self->{'max_rows'};
 	my $width	= shift || $self->{'max_cols'};
 	return undef unless ($table && ref $table);
-	
-	my @rows	= $self->selectChildElementsByName
-					(
-					$table,
-					'^table:table-row$'
-					);
+
+	$self->_expand_columns($table, $width);
+
+	my @rows	= $table->children('table:table-row');
 
 	my $row		= undef;
-	my $last_row	= $rows[0];
+	my $last_row	= undef;
 	my $rep		= 0;
 	my $rownum	= 0;
 	while (@rows && ($rownum < $length))
@@ -1115,28 +1113,32 @@ sub	_expand_table
 			$row->removeAttribute($ROW_REPEAT_ATTRIBUTE);
 			while ($rep > 1 && ($rownum < $length))
 				{
-				$last_row = $self->replicateElement
-					($row, $last_row, position => 'after');
+				$last_row = $last_row->replicateNode;
 				$rep--; $rownum++;
 				}
 			}
 		$rownum++ if $row;
 		}
 
-	while ($rownum < $length)
+	if ($rownum < $length)
 		{
-		$last_row = $self->appendElement
-				(
-				$table, 'table:table-row'
-				);
-		$self->_expand_row($last_row, $width);
+		my $r = $self->createElement('table:table-row');
+		unless ($last_row)
+			{
+			$last_row = $r->paste_last_child($table); $rep = 0;
+			}
+		else
+			{
+			$last_row = $r->paste_after($last_row); $rep--;
+			}
 		$rownum++;
-		$rep-- if ($rep && ($rep > 0));
+		$self->_expand_row($last_row, $width);
+		my $nc = $length - $rownum;
+		$last_row = $last_row->replicateNode($nc);
+		$rep -= $nc if $rep > 0;
 		}
 	$last_row->setAttribute($ROW_REPEAT_ATTRIBUTE, $rep)
 			if ($rep && ($rep > 1));
-
-	$self->_expand_columns($table, $width);
 
 	return $table;
 	}
@@ -1238,12 +1240,9 @@ sub	getTableRow
 	my $p1		= shift;
 	return $p1	if (ref $p1 && $p1->isTableRow);
 	my $table	= $self->getTable($p1)	or return undef;
-	my $line	= shift;
+	my $line	= shift || 0;
 
-	return
-	  (
-	  $self->selectChildElementsByName($table, 'table:table-row')
-	  )[$line];
+	return ($table->children('table:table-row'))[$line];
 	}
 
 sub	getRow
@@ -1298,17 +1297,13 @@ sub	getTableCell
 		$table	= $self->getTable($p1)	or return undef;
 		@_ = OpenOffice::OODoc::Text::_coord_conversion(@_);
 		my $r	= shift || 0;
-		$row	=
-			(
-			$self->selectChildElementsByName
-					($table, 'table:table-row')
-			)[$r]
+		$row	= ($table->children('table:table-row'))[$r]
 				or return undef;
 		my $c	= shift || 0;
-		$cell	=
-			(
-			$self->selectChildElementsByName
-					($row, 'table:table-cell')
+
+		$cell =	(
+			$row->selectChildElements
+				('table:(covered-|)table-cell')
 			)[$c];
 		}
 	elsif	($p1->isTableCell)
@@ -1317,14 +1312,13 @@ sub	getTableCell
 		}
 	else	# assume $p1 is a table row
 		{
-		$cell	=
-			(
-			$self->selectChildElementsByName
-					($p1, 'table:table-cell')
+		$cell =	(
+			$p1->selectChildElements
+				('table:(covered-|)table-cell')
 			)[shift];
 		}
 
-	return $cell;
+	return ($cell && ! $cell->isCovered) ? $cell : undef;
 	}
 
 sub	getCell
@@ -1363,8 +1357,7 @@ sub	getCellValue
 		{
 		return $self->getText
 			(
-			$self->selectChildElementByName
-				($cell, 'text:p')
+			$cell->first_child('text:p')
 			);
 		}
 	else							# numeric value
@@ -1505,6 +1498,7 @@ sub	updateCell
 		$cell = $self->getTableCell($p1, shift);
 		}
 	return undef	unless $cell;
+
 	my $value	= shift;
 	my $text	= shift;
 
@@ -1516,7 +1510,7 @@ sub	updateCell
 		$cell_type = 'string';
 		}
 
-	my $p = $self->selectChildElementByName($cell, 'text:p');
+	my $p = $cell->first_child('text:p');
 	$p = $self->appendElement($cell, 'text:p') unless $p;
 	$self->OpenOffice::OODoc::XPath::setText($p, $text);
 	$cell->setAttribute('table:value', $value)
@@ -1589,7 +1583,36 @@ sub	cellStyle
 	}
 
 #-----------------------------------------------------------------------------
-# get/set cell spanning (contributed by Don_Reid[at]Agilent.com)
+# get/set cell spanning (from a contribution by Don_Reid[at]Agilent.com)
+
+sub	removeCellSpan
+	{
+	my $self	= shift;
+	my $cell	= $self->getTableCell(@_) or return undef;
+
+	my $span = $cell->getAttribute('table:number-columns-spanned') || 0;
+	return undef unless ($span && $span > 0);
+
+	$cell->removeAttribute('table:number-columns-spanned');
+
+	my $cell_paragraph = $cell->first_child('text:p');
+	my $next_cell = $cell->next_sibling;
+	while ($span > 1 && $next_cell && $next_cell->isCovered)
+		{
+		$span--;
+		$next_cell->set_name('table:table-cell');
+		$next_cell->set_atts($cell->atts);
+		$next_cell->del_att('table:value');
+		if ($cell_paragraph)
+			{
+			my $p = $cell_paragraph->copy;
+			$p->set_text("");
+			$p->paste_first_child($next_cell);
+			}
+		$next_cell = $next_cell->next_sibling;
+		}
+	return 1;
+	}
 
 sub	cellSpan	
 	{
@@ -1612,14 +1635,22 @@ sub	cellSpan
 		$cell = $self->getTableCell($p1, shift);
 		}
 	return undef unless $cell;
-
+	
 	my $span = shift;	# Number of columns spanned
-	if ((!defined $span) || $span < 1) {	
-		return $cell->getAttribute('table:number-columns-spanned');
-		}
 
+				# look for possible existing span
+	my $old_span = $cell->getAttribute('table:number-columns-spanned')
+				|| 0;
+	if (! defined $span || $span == $old_span)
+		{
+		return $old_span;
+		}
+				# remove the old span
+	$self->removeCellSpan($cell);
+	return undef unless ($span > 1);
+				# process the new span
 	my $row	= $cell->getParentNode;
-	my @cells = $self->selectNodesByXPath($row, 'table:table-cell');
+	my @cells = $row->children('table:table-cell');
 	my $cnt = scalar(@cells);
 	# which col is the current cell?
 	for ($c=0; $c<$cnt; $c++) {
@@ -1635,8 +1666,20 @@ sub	cellSpan
 
 			# Change covered cells
 			for ($i = 1; $i < $span; $i ++) {
-				$self->replaceElement($cells[$c + $i], 
+				my $covered = $cells[$c + $i];
+				my @paras = $covered->children('text:p');
+				$self->replaceElement($covered, 
 					'table:covered-table-cell');
+				while (@paras)
+					{
+					my $p = shift @paras;
+					$p->paste_last_child($cell) if 
+						(
+						defined $p->text
+							&&
+						$p->text ge ' '
+						);
+					}
 				}
 
 			last
@@ -1655,8 +1698,7 @@ sub	_get_row_content
 	my $row		= shift;
 	
 	my @row_content	= ();
-	foreach my $cell
-		($self->selectChildElementsByName($row, 'table:table-cell'))
+	foreach my $cell ($row->children('table:table-cell'))
 		{
 		push @row_content, $self->getText($cell);
 		}
@@ -1671,13 +1713,14 @@ sub	getTableContent
 	return undef	unless $table;
 
 	my @table_content = ();
-	my $headers	= $self->selectChildElementByName
-					($table, 'table:table-header-rows');
-	$headers &&
+	my $headers	= $table->getFirstChild('table:table-header-rows');
+	if ($headers)
+		{
+		push @table_content, [ $self->_get_row_content($_) ]
+			for ($headers->children('table:table-row'));
+		}
 	push @table_content, [ $self->_get_row_content($_) ]
-		for ($self->selectChildElementsByName($headers, 'table:table-row'));
-	push @table_content, [ $self->_get_row_content($_) ]
-		for ($self->selectChildElementsByName($table, 'table:table-row'));
+		for ($table->children('table:table-row'));
 
 	if (wantarray)
 		{
@@ -1734,7 +1777,7 @@ sub	getTable
 			)
 		)
 		{
-		$self->_expand_table($t, $length, $width);
+		return $self->_expand_table($t, $length, $width);
 		}
 	return $t;
 	}
@@ -1750,7 +1793,7 @@ sub	normalizeSheet
 		{
 		if ($table =~ /^\d*$/)
 			{
-			$table = $self->SUPER::getElement
+			$table = $self->getElement
 						('//table:table', $table);
 			}
 		else
@@ -1832,46 +1875,28 @@ sub	_build_table
 	$rows = $self->{'max_rows'} unless $rows;
 	$cols = $self->{'max_cols'} unless $cols;
 
-	for (my $i = 0 ; $i < $cols ; $i++)
-		{
-		$self->appendElement
-				(
-				$table, 'table:table-column',
-				attribute	=>
-					{
-					'table:style-name'	=>
-						$opt{'column-style'}
-					}
-				);
-		}
+	my $col_proto	= $self->createElement('table:table-column');
+	$self->setAttribute
+		($col_proto, 'table:style-name', $opt{'column-style'})
+			if $opt{'column-style'};
+	$col_proto->paste_first_child($table);
+	$col_proto->replicateNode($cols - 1, 'after');
 
-	for (my $r = 0 ; $r < $rows ; $r++)
-		{
-		my $row = $self->appendElement($table, 'table:table-row');
-		for (my $c = 0 ; $c < $cols ; $c++)
-			{
-			my $cell = $self->appendElement
-					(
-					$row, 'table:table-cell',
-					attribute	=>
-						{
-						'table:value-type'	=>
-							$opt{'cell-type'},
-						'table:style-name'	=>
-							$opt{'cell-style'}
-						}
-					);
-			$self->appendElement
-					(
-					$cell, 'text:p',
-					attribute	=>
-						{
-						'text:style-name'	=>
-							$opt{'text-style'}
-						}
-					);
-			}
-		}
+	my $row_proto	= $self->createElement('table:table-row');
+	my $cell_proto	= $self->createElement('table:table-cell');
+	$self->cellValueType($cell_proto, $opt{'cell-type'});
+	$self->cellStyle($cell_proto, $opt{'cell-style'});
+	my $para_proto	= $self->createElement('text:p');
+	$self->setAttribute
+		($para_proto, 'text:style-name', $opt{'text-style'})
+			if $opt{'text-style'};
+	$para_proto->paste_last_child($cell_proto);
+	$cell_proto->paste_first_child($row_proto);
+	$cell_proto->replicateNode($cols - 1, 'after');
+
+	$row_proto->paste_last_child($table);
+	$row_proto->replicateNode($rows - 1, 'after');
+
 	return $table;
 	}
 
@@ -1898,6 +1923,7 @@ sub	appendTable
 			"Table $name exists\n";
 		return	undef;
 		}
+
 	my $table = $self->appendElement
 				(
 				$opt{'attachment'}, 'table:table',
@@ -1962,6 +1988,12 @@ sub	renameTable
 	my $table	= $self->getTable(shift) or return undef;
 	my $newname	= shift;
 
+	if ($self->getTable($newname))
+		{
+		warn	"[" . __PACKAGE__ . "::renameTable] " .
+			"Table name $newname already in use\n";
+		return undef;
+		}
 	return $self->setAttribute($table, 'table:name' => $newname);
 	}
 
@@ -1995,11 +2027,7 @@ sub	replicateTableRow
 		{
 		$table		= $self->getTable($p1) or return undef;
 		my $line	= shift;
-		$row 	=
-			(
-			$self->selectChildElementsByName
-				($table, 'table:table-row')
-			)[$line]
+		$row 	= ($table->children('table:table-row'))[$line]
 			or return undef;
 		}
 	my %options	=

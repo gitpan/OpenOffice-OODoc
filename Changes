@@ -1,3 +1,12 @@
+1.301	2005-02-07
+	- Migration to XML::Twig
+	- A lot of optimizations in XPath.pm and Text.pm
+	- Added flat XML files input option
+	- Many internal changes in Text.pm due to XML::Twig
+	- A few internal changes in other modules due to XML::Twig 
+	- Added examples; put some examples in EXE_FILES
+	- Documentation update
+	- Makefile.PL update; XML::XPath no longer required: XML::Twig required
 1.207	2005-01-28
 	- Fixed a normalizeSheet() issue in Text.pm
 	- Added a few more shortcuts in XPath.pm

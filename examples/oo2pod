@@ -1,30 +1,37 @@
 #!/usr/bin/perl -w
 #-----------------------------------------------------------------------------
 #	$Id : oo2pod 0.1 2004-03-12 JMG$
-#
-#	Simple OpenOffice.org to POD conversion.
-#
-#	Usage : oo2pod <oofilename>
-#
-#	This demo script exports the content of a given OpenOffice.org file
-#	POD on the standard output. In the present form, it's quite limited
-#	and not flexible, in order to remain easily readable. It should be
-#	considered as an example of text extraction using OpenOffice::OODoc
-#	and not as the 'definitive' oo2pod filter.
-#
-#	Before extraction, some transformations are done in the document
-#	in order to make it more convenient for a POD presentation. Some
-#	pieces of metadata (title, subject, description), if defined, are
-#	reported in the beginning of the POD. The footnotes are removed from
-#	the content and reported in a special section at the end.
-#
-#	This script needs Text::Wrapper (that is not necessarily required
-#	by the OpenOffice::OODoc installation). To implement more sophisicated
-#	presentation rules, you could use Text::Format instead.
-#	
 #-----------------------------------------------------------------------------
 
-use OpenOffice::OODoc	1.104;
+=head1	NAME
+
+oo2pod - POD generation from an OpenOffice.org document
+
+=head1	SYNOPSIS
+
+Usage : oo2pod <oofilename>
+
+=head1	DESCRIPTION
+
+This demo script exports the content of a given OpenOffice.org file
+to POD on the standard output. In the present form, it's quite limited
+and not flexible, in order to remain easily readable. It should be
+considered as an example of text extraction using OpenOffice::OODoc
+and not as the 'definitive' oo2pod filter.
+
+Before extraction, some transformations are done in the document
+in order to make it more convenient for a POD presentation. Some
+pieces of metadata (title, subject, description), if defined, are
+reported in the beginning of the POD. The footnotes are removed from
+the content and reported in a special section at the end.
+
+This script needs Text::Wrapper (that is not necessarily required
+by the OpenOffice::OODoc installation). To implement more sophisicated
+presentation rules, you could use Text::Format instead.
+
+=cut
+
+use OpenOffice::OODoc;
 use Text::Wrapper;
 
 #-----------------------------------------------------------------------------
@@ -179,10 +186,5 @@ if (@notes)
 print "=cut\n";
 
 exit;
+
 #-----------------------------------------------------------------------------
-=head1	NAME
-
-	oo2pod - POD generation from an OpenOffice.org document
-
-=cut
-

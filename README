@@ -1,9 +1,9 @@
 ------------------------------------------------------------------------
 
 OpenOffice::OODoc - Open Office Document Connector
-(http://www.genicorp.com/devel/oodoc)
+(http://search.cpan.org/dist/OpenOffice-OODoc
 
-Quickstart notice (Sep. 2004)
+Quickstart notice (Feb. 2005)
 
 -------------------------------------------------------------------------
 
@@ -111,7 +111,7 @@ is an OpenOffice/XML-aware class. This class is generally not directly used by
 the applications; it's mainly a common ancestor for more specialised (and more
 user-friendly) other classes. OpenOffice::OODoc::XPath is an object-oriented
 Perl representation of an XML member of an OpenOffice.org document
-(ex: content.xml, meta.xml, styles.xml, etc.), using the XML::XPath
+(ex: content.xml, meta.xml, styles.xml, etc.), using the XML::Twig
 Perl API to access individual XML elements. If you want to deal in
 the same time with several XML components of the same document, you
 can/must create several OpenOffice::OODoc::Xpath against the document (ex: one

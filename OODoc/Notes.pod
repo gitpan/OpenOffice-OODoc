@@ -31,8 +31,7 @@ to the "[nn]" note citations included in the other documents.
         [4] Can also be shortened to ooXPath() if the XPath module is loaded
         via the main OODoc module.
 
-        [5] To find out more about this object, see the documentation for
-        the XML::XPath module available from CPAN.
+        [5] (removed)
 
         [6] It is just a single element 'office:body' which contains all the
         text in an OpenOffice.org document. Therefore, the XPath path
@@ -86,12 +85,9 @@ to the "[nn]" note citations included in the other documents.
         [15] However, contrary to insertElement, a copy of the given element
         is indeed created, not just a reference to it.
 
-        [16] XML::XPath::XMLParser is a component of XML::XPath
+        [16] (removed)
 
-        [17] Sharing a single XML parser for all XPath objects is automatic
-        in (normal) circumstances where the main OpenOffice::OODoc module
-        has been loaded. In such cases the developer does not need to worry
-        about the parser parameter.
+        [17] (removed)
 
         [18] Note: such forced attributes do not upset the function of
         OpenOffice.org which ignores them. They could therefore be useful in
@@ -133,7 +129,7 @@ to the "[nn]" note citations included in the other documents.
         footnote's number. Its display at the foot of the page or elsewhere
         is a trick of the graphical interface.
 
-        [27] These methods are implemented as XML::XPath package extensions
+        [27] These methods are implemented as XML::Twig package extensions
         even though they are physically defined in the OODoc/Text.pm module.
 
         [28] A call to $element->getName returns the element's XML name

@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Image.pm 1.012 2004-09-20 JMG$
+#	$Id : Image.pm 1.013 2005-02-04 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -13,10 +13,10 @@
 
 package	OpenOffice::OODoc::Image;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	1.115;
+use	OpenOffice::OODoc::XPath	1.200;
 use	File::Basename;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 1.012;
+our	$VERSION	= 1.013;
 
 #-----------------------------------------------------------------------------
 # default attributes for image style
@@ -46,14 +46,18 @@ our	%DEFAULT_IMAGE_STYLE =
 	);
 
 #-----------------------------------------------------------------------------
+package	XML::Twig::Elt;
+#-----------------------------------------------------------------------------
 
-sub	XML::XPath::Node::Element::isImage
+sub	isImage
 	{
 	my $element	= shift;
 	my $name	= $element->getName;
 	return ($name && ($name eq 'draw:image')) ? 1 : undef;
 	}
 
+#-----------------------------------------------------------------------------
+package	OpenOffice::OODoc::Image;
 #-----------------------------------------------------------------------------
 # constructor : calling OO XPath constructor
 

@@ -7,8 +7,11 @@ oobuild - OpenOffice.org file creation utility - (c) Genicorp 2004
 =head1	SYNOPSIS
 
 oobuild filename.sxw
+
 oobuild filename.sxw --title "My Document" --subject "Test"
+
 oobuild filename --class spreadsheet --source "data.csv" --tablesize "8x16"
+
 cat data.txt | oobuild filename.sxw -
 
 =head1	OPTIONS

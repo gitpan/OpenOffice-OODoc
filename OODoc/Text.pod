@@ -357,6 +357,11 @@ which is one of the foundations of the OpenOffice.org format.
 
 	creates a 3-cell span from B4 in a spreadsheet.
 
+	This method works only for horizontal expansion.
+
+	The text of the covered cells (if any) is concatenated to the original
+	content of the expanded cell (as in OOo Writer or Calc).
+
 	Caution: when related to table cells, "span" has not the same
 	meaning as when related to flat text (see getSpan() and setSpan()).
 
@@ -408,6 +413,22 @@ which is one of the foundations of the OpenOffice.org format.
 
         Caution: columns are numbered beginning at 0.
 
+=head3	defaultOutputTerminator([chars])
+
+	Get or set the default terminator character for text export.
+	Example:
+
+		$doc->defaultOutputTerminator("\n");
+
+	After this instruction, a line-break will be appended at the end of
+	every paragraph or header exported by getText(), selectTextContent()
+	or other text extracting methods.
+
+	To reverse this behaviour, the user can call this method with an
+	empty string.
+
+	Without argument, returns the currently selecter terminator, if any.
+
 =head3	getCell(table, row, column)
 
 =head3	getCell(table, coord)
@@ -455,7 +476,8 @@ which is one of the foundations of the OpenOffice.org format.
         returns the very bottom right cell of the very last table in the
         document $doc.
 
-        Returns a null value if the given cell does not exist.
+        Returns a null value if the given cell does not exist or if it's
+	covered by the span of another cell.
 
 	Any cellXXX() method in this module uses the same cell addressing
 	logic as getCell().
@@ -730,13 +752,13 @@ which is one of the foundations of the OpenOffice.org format.
         Exports the text contained in the given element according to the
         means appropriate to that type of element.
 
-        If the 'use_delimiters' flag is set to 'on' (default), the text is
-        preceded and/or followed by a character string depending on the type
-        of element from which it was extracted. This also depends on the
-        settings given to the delimiter values 'begin' and 'end' by the
-        'delimiters' hash. In a default configuration where the application
-        has not provided any specific delimiters, the following delimiters
-        are used:
+        If the 'use_delimiters' flag is set to 'on' (default), the content
+	of each element (others than ordinary paragraphs, table cell,
+	headers) is preceded and/or followed by a character string depending
+	on the type of the element. This also depends on the settings given
+	to the delimiter values 'begin' and 'end' by the 'delimiters' hash.
+	In a default configuration where the application has not provided
+	any specific delimiters, the following delimiters are used:
 
             - '<<' before and '>>' after sections of text highlighted within
             an element (e.g. words in bold or underlined within a paragraph
@@ -753,6 +775,10 @@ which is one of the foundations of the OpenOffice.org format.
         text is exported to e.g. display in editable "flat" format,
         conversion to non-OpenOffice.org XML or a markup language other than
         XML, generating code from text, etc..
+
+	A default export (ex: "\n") terminator can be set for any element that
+	is not listed in the 'delimiters' hash (see defaultOutputTerminator()
+	above).
 
         If the element is an ordered or unordered list, the text produced is
         a concatenation of all the lines in the list, each separated by a
@@ -792,6 +818,12 @@ which is one of the foundations of the OpenOffice.org format.
 
         Returns the element which represents the nth+1 unordered list in a
         document, if found.
+
+=head3	inputTextConversion(text)
+
+	Returns the UTF8 conversion of the given text, supposed to be in
+	the local character set of the document (see the 'local_encoding'
+	property).
 
 =head3	insertHeader(path, position, options)
 
@@ -922,7 +954,7 @@ which is one of the foundations of the OpenOffice.org format.
             isUnorderedList		unordered list
 
         For a neater and more direct access to element types, see the
-        getName method of XML::XPath [28] .
+        getName method of XML::Twig [28] .
 
 =head3	normalizeSheet(sheet [, rows [, columns]])
 
@@ -992,15 +1024,21 @@ which is one of the foundations of the OpenOffice.org format.
 	An explicit call to this method can be replaced by getTable() with the
 	additional length and width parameters. 
 	
-=head3	outputDelimitersOn
+=head3	outputDelimitersOn()
 
-=head3	outputDelimitersOff
+=head3	outputDelimitersOff()
 
         Turns delimiters on or off. Used to mark up text exported by certain
         methods like getText or selectTextContent.
 
         The delimiters actually used depends on the table loaded into the
         OODoc::Text instance via the 'delimiters' property.
+
+=head3	outputTextConversion(text)
+
+	Returns the conversion in local character set of the given text,
+	supposed to be in UTF8. The local character set of the document
+	is used (see the 'local_encoding' property).
 
 =head3	removeHeader(position)
 
@@ -1028,6 +1066,12 @@ which is one of the foundations of the OpenOffice.org format.
         The paragraph to be removed can be indicated by element reference
         (second form). In this case, the type of element is not checked and
         this method becomes the equivalent of removeElement.
+
+=head3	removeCellSpan($cell)
+
+	Removes the multi-column span of a table cell. The width of the cell
+	is reduced to the width of its column. The uncovered cells take the
+	same style and data type as the reduced cell.
 
 =head3	removeSpan(path, position)
 
@@ -1100,6 +1144,8 @@ which is one of the foundations of the OpenOffice.org format.
 	3) the string actually selected. If the filter is an exact string,
 	it is equal to the filter. If the filter is a regular expression,
 	it matches the "real" text retrieved.
+
+	The returned text (if any) must be encoded in UTF8.
 
         The returned list is the same one returned by the first two forms.
 
