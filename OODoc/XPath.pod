@@ -104,22 +104,8 @@ methods.
 
         Short Form: ooXPath(<parameters>)
 
-	Example:
-
-		my $doc = ooXpath
-				(
-				file	=> "myfile.sxc",
-				member	=> "content"
-				);
-		# ... lot of processing ...
-		$doc->save;
-
-        Returns a new document object. In the example above, the object
-	is loaded from a regular OOo file, that is the most current
-	option, but there are other possibilities. It's possible to use
-	flat XML (available as a string in memory, or loaded from a file).
-	In addition, this constructor is able to create a new document
-	from scratch.
+        Returns a new instance of XPath, containing a well-formed XML
+        document given directly or indirectly as a parameter.
 
         Parameters are named (hash key => value). The constructor must get
         at least one parameter giving a means of obtaining the XML document
@@ -144,8 +130,7 @@ methods.
         The second method links OODoc::XPath to an existing OODoc::File
         object (so-called "archive" because it's a zip archive used through
 	an object-oriented API) and indicates which XML member it is to
-	extract (metadata, content, styles, etc). The OODoc::File is an
-	abstraction of an already open OOo file.
+	extract (metadata, content, styles, etc).
 
 	The third method is the easiest, because the user just provide
 	a filename and a member, and all the file interface is run silently
@@ -153,13 +138,6 @@ methods.
 	used to get the content). It's probably the most used approach; its
 	recommended when the user doesn't need to get more than one member
 	in the same file.
-
-	The 'member' option is a selector that tells what component is
-	needed (the content of the document, the styles, the metadata, ...)
-	knowing that an OODoc::XPath object can handle only one component.
-	If the application needs to process, say, the content and the styles
-	in the same session, it must create two, or more, OODoc::XPath objects
-	possibly associated with the same OOo file.
 
 	The explicit instantiation of an OODoc::File object is required
 	when the user needs a read/write access to two or more components
@@ -182,15 +160,6 @@ methods.
         an absolute minimum and their lifespan should be the same as that of
         the program itself.
 
-	If the provided filename has a ".xml" or ".XML" suffix, or whatever
-	the name if the 'flat_xml' option is set to 1, the file is processed
-	as flat XML and not as a regular OOo file. No OODoc::File object is
-	created, so the save() method is not available. To save the changes
-	made in the document, the application can either export the document
-	as flat XML to a text file (see getXMLContent() below) or select some
-	elements of the document to inert them into another OODoc::XPath
-	object.
-
         You can pass the optional parameter 'element' in any case where the
         constructor is called without the 'xml' parameter. Bearing in mind
         that an OODoc::XPath object will not necessarily handle an entire
@@ -203,7 +172,6 @@ methods.
             'content'	=> 'office:document-content'
             'styles'	=> 'office:document-styles'
             'settings'	=> 'office:document-settings'
-	    'manifest'	=> 'manifest:manifest'
 
         Conversely, the 'element' parameter becomes mandatory if the chosen
         XML element is not listed above. Through OODoc::File, OODoc::XPath
@@ -224,10 +192,17 @@ methods.
 	must have the same kind of structure and content as the "templates"
 	subdirectory of the OpenOffice::OODoc installation.
 
+	OODoc::XPath can process OOo documents provided through XML flat
+	files as well as in the compressed (zip) format. The given file is
+	automatically processed as flat XML if either it's name ends by ".xml"
+	or the 'flat_xml' option is set to '1'. When processing a flat XML
+	file, OODoc::XPath doesn't load the OODoc::File zip interface. So,
+	a subsequent call of the save() method can only export the document
+	as flat XML.
+
 	An optional 'readable_XML' can be passed. If this option is provided
-	and set to 'on', the resulting XML will be smartly indented (and, of
-	course, more space-consuming). This feature is intended for debugging
-	purpose and should not be used in production.
+	and set to 'on', each XML element created by the application is
+	followed by a line break (it's mainly useful for debugging).
 
 	The 'local_encoding' option can be set with the appropriate value
 	when a particular character set (and not the default one) must be
@@ -440,12 +415,6 @@ methods.
         modification or improvement of the decoding logic should be made
         there.
 
-=head3	dispose()
-
-	Deletes the calling OODoc::XPath object. Recommended as soon as the
-	object is no longer used by the application, and sometimes mandatory
-	to avoid memory leaks.
-
 =head3	encode_text(editable_string)
 
         Class method.
@@ -472,6 +441,10 @@ methods.
 
         Returns the XML string for use by another application representing
         the body of a document, without UTF8 decoding.
+
+=head3	exportXMLContent()
+
+	See getXMLContent()
 
 =head3	exportXMLElement(path, position)
 
@@ -682,11 +655,24 @@ methods.
         editable text and each element's content is separated from that of
         the following element by a line feed.
 
-=head3	getXMLContent
+=head3	getXMLContent([filehandle])
 
-        Returns a document's entire XML content.
+        Without argument, returns a document's entire XML content.
 
-=head3	getXMLParser
+	Exports the entire XML content to a flat file, if a file handle is
+	provided.
+
+	Note: the exported data are UTF8-encoded.
+
+	Example:
+
+		open my $fh, ">:utf8", "myfile.xml";
+		$doc->getXMLContent($fh);
+		close $fh;
+	
+	Synonym: exportXMLContent()
+
+=head3	getXMLParser()
 
         Technical method which returns the reference of the XML parser being
         used by the current OODoc::XPath object, for later re-use elsewhere.
@@ -1035,6 +1021,15 @@ methods.
         (this generally means that the current OODoc::XPath object was
         created with the constructor parameter 'file'). If not, an error is
         produced.
+
+	If the document is not associated with a regular OpenOffice.org
+	compressed file (used through an OODoc::File object), it's saved
+	as "flat XML" to the given file. In such a situation, if the file name
+	is not provided, the source XML file (if any) is used as the target.
+
+	Note: if you need to save a document as flat XML while it's associated
+	with an OpenOffice.org file, you should use exportXMLContent() with an
+	application-provided file handle.
 
 =head3	selectChildElementByName(path, position [, filter])
 

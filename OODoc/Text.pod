@@ -718,6 +718,14 @@ which is one of the foundations of the OpenOffice.org format.
 
         See getRow.
 
+=head3	getTableRows(table)
+
+	Returns the list of the rows contained in the given table.
+
+	When the user needs to process every row in large tables, this method
+	allows some performance improvements, because it's less costly than
+	a lot of successive getRow() calls.
+
 =head3	getTableSize(table)
 
         Returns the size of a table as a pair of values which represent the

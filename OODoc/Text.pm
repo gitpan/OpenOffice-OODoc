@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 1.200 2005-02-05 JMG$
+#	$Id : Text.pm 1.201 2005-02-17 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -13,9 +13,9 @@
 
 package OpenOffice::OODoc::Text;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	1.200;
+use	OpenOffice::OODoc::XPath	1.201;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 1.200;
+our	$VERSION	= 1.201;
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -824,7 +824,7 @@ sub	getItemElementList
 	my $self	= shift;
 	my $list	= shift;
 
-	return $self->selectChildElementsByName($list, 'text:list-item');
+	return $list->children('text:list-item');
 	}
 
 #-----------------------------------------------------------------------------
@@ -1150,13 +1150,11 @@ sub	getTableSize
 	{
 	my $self	= shift;
 	my $table	= $self->getTable(shift)	or return undef;
-	my @rows	= $self->selectNodesByXPath
-				($table, 'table:table-row');
-	my $lines	= scalar @rows;
+	my $lines	= $table->children_count('table:table-row');
 	my $last_row	= $self->getTableRow($table, -1) or return undef;
-	my @cells	= $self->selectNodesByXPath
-				($last_row, 'table:table-cell');
-	my $columns	= scalar @cells;
+	my $columns	=
+		$last_row->children_count('table:table-cell')	+
+		$last_row->children_count('table:covered-table-cell');
 	return ($lines, $columns);
 	}
 
@@ -1169,12 +1167,9 @@ sub	getTableColumn
 	my $p1		= shift;
 	return $p1	if (ref $p1 && $p1->isTableColumn);
 	my $table	= $self->getTable($p1)	or return undef;
-	my $col		= shift;
+	my $col		= shift || 0;
 
-	return
-	  (
-	  $self->selectChildElementsByName($table, 'table:table-column')
-	  )[$col];
+	return $table->child($col, 'table:table-column');
 	}
 
 sub	getColumn
@@ -1232,7 +1227,8 @@ sub	rowStyle
 	}
 
 #-----------------------------------------------------------------------------
-# get a row element from table id and row num
+# get a row element from table id and row num,
+# or the row cells if wantarray
 
 sub	getTableRow
 	{
@@ -1242,13 +1238,24 @@ sub	getTableRow
 	my $table	= $self->getTable($p1)	or return undef;
 	my $line	= shift || 0;
 
-	return ($table->children('table:table-row'))[$line];
+	return $table->child($line, 'table:table-row');
 	}
 
 sub	getRow
 	{
 	my $self	= shift;
 	return $self->getTableRow(@_);
+	}
+
+#-----------------------------------------------------------------------------
+# get all the rows in a table
+
+sub	getTableRows
+	{
+	my $self	= shift;
+	my $table	= $self->getTable(shift)	or return undef;
+
+	return $table->children('table:table-row');
 	}
 
 #-----------------------------------------------------------------------------
@@ -1297,14 +1304,15 @@ sub	getTableCell
 		$table	= $self->getTable($p1)	or return undef;
 		@_ = OpenOffice::OODoc::Text::_coord_conversion(@_);
 		my $r	= shift || 0;
-		$row	= ($table->children('table:table-row'))[$r]
+		$row	= $table->child($r, 'table:table-row')
 				or return undef;
 		my $c	= shift || 0;
 
-		$cell =	(
-			$row->selectChildElements
-				('table:(covered-|)table-cell')
-			)[$c];
+		$cell = $row->selectChildElement
+				(
+				'table:(covered-|)table-cell',
+				$c
+				);
 		}
 	elsif	($p1->isTableCell)
 		{
@@ -1312,10 +1320,11 @@ sub	getTableCell
 		}
 	else	# assume $p1 is a table row
 		{
-		$cell =	(
-			$p1->selectChildElements
-				('table:(covered-|)table-cell')
-			)[shift];
+		$cell = $p1->selectChildElement
+				(
+				'table:(covered-|)table-cell',
+				shift
+				);
 		}
 
 	return ($cell && ! $cell->isCovered) ? $cell : undef;
@@ -1325,6 +1334,17 @@ sub	getCell
 	{
 	my $self	= shift;
 	return $self->getTableCell(@_);
+	}
+
+#-----------------------------------------------------------------------------
+# get all the cells in a row
+
+sub	getRowCells
+	{
+	my $self	= shift;
+	my $row		= $self->getTableRow(@_)	or return undef;
+
+	return $row->children('table:table-cell');
 	}
 
 #-----------------------------------------------------------------------------

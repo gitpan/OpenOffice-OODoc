@@ -1,6 +1,9 @@
-1.301	2005-02-07
-	- Migration to XML::Twig
-	- A lot of optimizations in XPath.pm and Text.pm
+1.302	2005-02-17
+	- Improved flat XML export facilities
+	- Performance tuning (XPath.pm, Text.pm)
+1.301	2005-02-06
+	- Migration to XML::Twig (a lot of rework in XPath.pm)
+	- Optimized the element creation process
 	- Added flat XML files input option
 	- Many internal changes in Text.pm due to XML::Twig
 	- A few internal changes in other modules due to XML::Twig 

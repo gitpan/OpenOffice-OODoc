@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 1.200 2005-02-07 JMG$
+#	$Id : XPath.pm 1.201 2005-02-17 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -13,7 +13,7 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 1.200;
+our	$VERSION	= 1.201;
 use	XML::Twig	3.15;
 use	Encode;
 
@@ -21,10 +21,9 @@ use	Encode;
 
 our %XMLNAMES	=			# OODoc root element names
 	(
+	'meta'		=> 'office:document-meta',
 	'content'	=> 'office:document-content',
 	'styles'	=> 'office:document-styles',
-	'meta'		=> 'office:document-meta',
-	'manifest'	=> 'manifest:manifest',
 	'settings'	=> 'office:document-settings'
 	);
 
@@ -98,9 +97,7 @@ sub	selectChildElements
 	{
 	my $node	= shift;
 	my $filter	= shift;
-
 	return $node->getChildNodes() unless $filter;
-
 	my @list	= ();
 	my $fc = $node->first_child;
 	my $name = $fc->name if $fc;
@@ -120,7 +117,23 @@ sub	selectChildElements
 sub	selectChildElement
 	{
 	my $node	= shift;
-	return scalar $node->selectChildElements(@_);
+	my $filter	= shift;
+	my $pos		= shift || 0;
+
+	my $count	= 0;
+	my $fc = $node->first_child;
+	my $name = $fc->name if $fc;
+	while ($fc)
+		{
+		if ($name && ($name =~ $filter))
+			{
+			return $fc if ($count >= $pos);
+			$count++;
+			}
+		$fc = $fc->next_sibling;
+		$name = $fc->name if $fc;
+		}
+	return undef;
 	}
 
 sub	getParentNode
@@ -531,18 +544,24 @@ sub	new
 		warn "[" . __PACKAGE__ . "] No well formed content\n";
 		return undef;
 		}
+	$self->{'twig'} = $twig;
 	return bless $self, $class;
 	}
 
 #------------------------------------------------------------------------------
+# destructor
 
 sub	DESTROY
 	{
 	my $self	= shift;
-
+	delete $self->{'file'};
 	delete $self->{'xpath'};
+	delete $self->{'xml'};
+	delete $self->{'twig'};
 	delete $self->{'archive'};
-	$self = {};
+	delete $self->{'twig_options'};
+	undef $self;
+	return 1;
 	}
 
 sub	dispose
@@ -572,8 +591,18 @@ sub	save
 	my $archive	= $self->{'archive'};
 	unless ($archive)
 		{
-		warn "[" . __PACKAGE__ . "::save] No archive object\n";
-		return undef;
+		if ($filename)
+			{
+			open my $fh, ">:utf8", $filename;
+			$self->exportXMLContent($fh);
+			close $fh;
+			return $filename;
+			}
+		else
+			{
+			warn "[" . __PACKAGE__ . "::save] No archive object\n";
+			return undef;
+			}
 		}
 	$filename	= $archive->{'source_file'}	unless $filename;
 	unless ($filename)
@@ -654,16 +683,30 @@ sub	raw_export
 #------------------------------------------------------------------------------
 # exports the whole content of the document as an XML string
 
+sub	exportXMLContent
+	{
+	my $self	= shift;
+	my $target	= shift;
+	if ($target)
+		{
+		return $self->{'twig'}->print($target);
+		}
+	else
+		{
+		return $self->{'twig'}->sprint;
+		}
+	}
+
 sub	getXMLContent
 	{
 	my $self	= shift;
-	return $self->getRootElement()->sprint;
+	return $self->exportXMLContent(@_);
 	}
 
 sub	getContent
 	{
 	my $self	= shift;
-	return $self->getXMLContent;
+	return $self->exportXMLContent(@_);
 	}
 
 #------------------------------------------------------------------------------
@@ -690,11 +733,8 @@ sub	getRoot
 sub	getRootElement
 	{
 	my $self	= shift;
-	my $root	= $self->{'xpath'}->root;
-	my $rootname	= $root->name() || '';
-	return ($rootname eq $self->{'element'})	?
-			$root				:
-			$root->first_child($self->{'element'});
+	my $path	= '//' . $self->{'element'};
+	return $self->getElement($path, 0);
 	}
 		
 #------------------------------------------------------------------------------
@@ -747,11 +787,13 @@ sub	isSettings
 sub	getBody
 	{
 	my $self	= shift;
-	my $body	= $self->getRootElement->selectChildElement
-				(
-				'office:(body|meta|master-styles|settings)'
-				);
-	return $body;
+
+	return 
+		(
+		$self->getElement($self->{'body_path'}, 0)
+			||
+		$self->getElement($self->{'master_style_path'}, 0)
+		);
 	}
 
 #------------------------------------------------------------------------------
@@ -784,7 +826,7 @@ sub	exportXMLElement
 	my $self	= shift;
 	my $path	= shift;
 	my $element	=
-		(ref $path) ? $path : $self->getElement($path, @_);
+		(ref $path) ? $path : $self->getElement($path, shift);
 
 	my $text	= $element->sprint(@_);
 	return $text;
@@ -813,19 +855,19 @@ sub	getElement
 		{
 		return	$path->isElementNode ? $path : undef;
 		}
-	my $pos		= shift;
+	my $pos		= shift || 0;
 	if (defined $pos && (($pos =~ /^\d*$/) || ($pos =~ /^[\d+-]\d+$/)))
 		{
 		my $context	= shift;
-		$context	= $self->getRootElement unless ref $context;
-		my $node	= ($context->findnodes($path))[$pos];
+		$context	= $self->{'xpath'} unless ref $context;
+		my $node	= $context->get_xpath($path, $pos);
 
 		return	$node && $node->isElementNode ? $node : undef;
 		}
 	else
 		{
 		warn	"[" . __PACKAGE__ . "::getElement] "	.
-			"Missing or invalid position\n";
+			"Invalid node position\n";
 		return undef;
 		}
 	}
@@ -853,7 +895,7 @@ sub	selectChildElementByName
 	my $path	= shift;
 	my $element	= ref $path ? $path : $self->getElement($path, shift);
 	return undef			unless $element;
-	return scalar $element->selectChildElements(@_);
+	return $element->selectChildElement(@_);
 	}
 
 #------------------------------------------------------------------------------
@@ -998,10 +1040,19 @@ sub	getElementList
 	{
 	my $self	= shift;
 	my $path	= shift;
+	my $context	= shift;
 	
-	$path		= "/"	unless $path;
+	if ($context)
+		{
+		$path	= "./"	unless $path;
+		}
+	else
+		{
+		$path	= "/"	unless $path;
+		$context = $self->{'xpath'};
+		}
 
-	return $self->{'xpath'}->findnodes($path);
+	return $context->findnodes($path);
 	}
 
 #------------------------------------------------------------------------------
@@ -1026,13 +1077,19 @@ sub	selectNodesByXPath
 sub	selectNodeByXPath
 	{
 	my $self	= shift;
-	return ($self->selectNodesByXPath(@_))[0];
+	my ($p1, $p2)	= @_;
+	my $path	= undef;
+	my $context	= undef;
+	if (ref $p1)	{ $context = $p1; $path = $p2; }
+	else		{ $path = $p1; $context = $p2; }
+	$context = $self->{'xpath'} unless ref $context;
+	return $context->get_xpath($path, 0);
 	}
 
 sub	getNodeByXPath
 	{
 	my $self	= shift;
-	return ($self->selectNodesByXPath(@_))[0];
+	return $self->selectNodeByXPath(@_);
 	}
 
 #------------------------------------------------------------------------------
