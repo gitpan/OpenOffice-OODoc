@@ -29,6 +29,7 @@ OODoc/XPath.pod
 examples/change_style
 examples/command_doc
 examples/extract
+examples/oometadoc
 examples/oo2pod
 examples/oobuild
 examples/oofilesearch

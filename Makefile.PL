@@ -125,7 +125,8 @@ WriteMakefile
 		'examples/text2ooo',
 		'examples/text2table',
 		'examples/oo2pod',
-		'examples/oobuild'
+		'examples/oobuild',
+		'examples/oometadoc'
 		]
 	);
 

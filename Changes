@@ -1,7 +1,10 @@
+1.303	2005-02-17
+	- Added a Tk graphical example (oometadoc)
+	- Fix some module version errors
 1.302	2005-02-17
 	- Improved flat XML export facilities
 	- Performance tuning (XPath.pm, Text.pm)
-1.301	2005-02-06
+1.301	2005-02-07
 	- Migration to XML::Twig (a lot of rework in XPath.pm)
 	- Optimized the element creation process
 	- Added flat XML files input option

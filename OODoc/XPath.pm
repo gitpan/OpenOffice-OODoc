@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 1.201 2005-02-17 JMG$
+#	$Id : XPath.pm 1.202 2005-02-17 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -13,7 +13,7 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 1.201;
+our	$VERSION	= 1.202;
 use	XML::Twig	3.15;
 use	Encode;
 
@@ -21,9 +21,10 @@ use	Encode;
 
 our %XMLNAMES	=			# OODoc root element names
 	(
-	'meta'		=> 'office:document-meta',
 	'content'	=> 'office:document-content',
 	'styles'	=> 'office:document-styles',
+	'meta'		=> 'office:document-meta',
+	'manifest'	=> 'manifest:manifest',
 	'settings'	=> 'office:document-settings'
 	);
 
@@ -560,8 +561,7 @@ sub	DESTROY
 	delete $self->{'twig'};
 	delete $self->{'archive'};
 	delete $self->{'twig_options'};
-	undef $self;
-	return 1;
+	$self = {};
 	}
 
 sub	dispose
@@ -733,8 +733,12 @@ sub	getRoot
 sub	getRootElement
 	{
 	my $self	= shift;
-	my $path	= '//' . $self->{'element'};
-	return $self->getElement($path, 0);
+
+	my $root	= $self->{'xpath'}->root;
+	my $rootname	= $root->name() || '';
+	return ($rootname eq $self->{'element'})	?
+			$root				:
+			$root->first_child($self->{'element'});
 	}
 		
 #------------------------------------------------------------------------------
@@ -788,12 +792,10 @@ sub	getBody
 	{
 	my $self	= shift;
 
-	return 
-		(
-		$self->getElement($self->{'body_path'}, 0)
-			||
-		$self->getElement($self->{'master_style_path'}, 0)
-		);
+	return	$self->getRootElement->selectChildElement
+				(
+				'office:(body|meta|master-styles|settings)'
+				);
 	}
 
 #------------------------------------------------------------------------------

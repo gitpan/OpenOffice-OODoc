@@ -107,6 +107,23 @@ methods.
         Returns a new instance of XPath, containing a well-formed XML
         document given directly or indirectly as a parameter.
 
+	Example:
+
+		my $doc = ooXpath
+				(
+				file	=> "myfile.sxc",
+				member	=> "content"
+				);
+		# ... lot of processing ...
+		$doc->save;
+
+        Returns a new document object. In the example above, the object
+	is loaded from a regular OOo file, that is the most current
+	option, but there are other possibilities. It's possible to use
+	flat XML (available as a string in memory, or loaded from a file).
+	In addition, this constructor is able to create a new document
+	from scratch.
+
         Parameters are named (hash key => value). The constructor must get
         at least one parameter giving a means of obtaining the XML document
         that it will represent. Three options are available:
@@ -130,7 +147,8 @@ methods.
         The second method links OODoc::XPath to an existing OODoc::File
         object (so-called "archive" because it's a zip archive used through
 	an object-oriented API) and indicates which XML member it is to
-	extract (metadata, content, styles, etc).
+	extract (metadata, content, styles, etc). The OODoc::File is an
+	abstraction of an already open OOo file.
 
 	The third method is the easiest, because the user just provide
 	a filename and a member, and all the file interface is run silently
@@ -138,6 +156,13 @@ methods.
 	used to get the content). It's probably the most used approach; its
 	recommended when the user doesn't need to get more than one member
 	in the same file.
+
+	The 'member' option is a selector that tells what component is
+	needed (the content of the document, the styles, the metadata, ...)
+	knowing that an OODoc::XPath object can handle only one component.
+	If the application needs to process, say, the content and the styles
+	in the same session, it must create two, or more, OODoc::XPath objects
+	possibly associated with the same OOo file.
 
 	The explicit instantiation of an OODoc::File object is required
 	when the user needs a read/write access to two or more components
@@ -160,6 +185,15 @@ methods.
         an absolute minimum and their lifespan should be the same as that of
         the program itself.
 
+	If the provided filename has a ".xml" or ".XML" suffix, or whatever
+	the name if the 'flat_xml' option is set to 1, the file is processed
+	as flat XML and not as a regular OOo file. No OODoc::File object is
+	created, so the save() method is not available. To save the changes
+	made in the document, the application can either export the document
+	as flat XML to a text file (see getXMLContent() below) or select some
+	elements of the document to inert them into another OODoc::XPath
+	object.
+
         You can pass the optional parameter 'element' in any case where the
         constructor is called without the 'xml' parameter. Bearing in mind
         that an OODoc::XPath object will not necessarily handle an entire
@@ -172,6 +206,7 @@ methods.
             'content'	=> 'office:document-content'
             'styles'	=> 'office:document-styles'
             'settings'	=> 'office:document-settings'
+	    'manifest'	=> 'manifest:manifest'
 
         Conversely, the 'element' parameter becomes mandatory if the chosen
         XML element is not listed above. Through OODoc::File, OODoc::XPath
@@ -201,8 +236,9 @@ methods.
 	as flat XML.
 
 	An optional 'readable_XML' can be passed. If this option is provided
-	and set to 'on', each XML element created by the application is
-	followed by a line break (it's mainly useful for debugging).
+	and set to 'on', the resulting XML will be smartly indented (and, of
+	course, more space-consuming). This feature is intended for debugging
+	purposes and should not be used in production.
 
 	The 'local_encoding' option can be set with the appropriate value
 	when a particular character set (and not the default one) must be
@@ -436,6 +472,12 @@ methods.
         Explicit calls to this method should generally be avoided. It is
         used internally by methods which insert text or attribute values
         into documents (e.g. setText).
+
+=head3	dispose()
+
+	Deletes the calling document object. Recommended as soon as the
+	object is no longer needed by the application, and sometimes
+	mandatory to avoid memory leaks.
 
 =head3	exportXMLBody()
 
@@ -671,12 +713,6 @@ methods.
 		close $fh;
 	
 	Synonym: exportXMLContent()
-
-=head3	getXMLParser()
-
-        Technical method which returns the reference of the XML parser being
-        used by the current OODoc::XPath object, for later re-use elsewhere.
-        The returned object is of type XML::XPath::XMLParser.
 
 =head3	getXPathValue(xpath_expression)
 
