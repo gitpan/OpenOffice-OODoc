@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 1.114 2005-01-26 JMG$
+#	$Id : Text.pm 1.115 2005-01-29 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -13,9 +13,9 @@
 
 package OpenOffice::OODoc::Text;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	1.116;
+use	OpenOffice::OODoc::XPath	1.117;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 1.114;
+our	$VERSION	= 1.115;
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -220,25 +220,6 @@ sub	XML::XPath::Node::Element::isSequenceDeclarations
 	}
 
 #-----------------------------------------------------------------------------
-# getElement() method adaptation for spreadsheet preprocessing
-
-sub	getElement
-	{
-	my $self	= shift;
-	my $element	= $self->SUPER::getElement(@_);
-	return undef unless $element;
-	if	(
-		$self->{'expand_tables'}		&&
-		($self->{'expand_tables'} eq 'on')	&&
-		$element->isTable			&&
-		($self->contentClass() eq 'spreadsheet'))
-		{
-		$self->_expand_table($element);
-		}
-	return $element;
-	}
-
-#-----------------------------------------------------------------------------
 # getText() method adaptation for complex elements
 # and text output "enrichment"
 # (overrides getText from OODoc::XPath)
@@ -246,7 +227,7 @@ sub	getElement
 sub	getText
 	{
 	my $self	= shift;
-	my $element	= $self->getElement(@_);
+	my $element	= $self->SUPER::getElement(@_);
 	return undef	unless ($element && $element->isElementNode);
 
 	my $text	= undef;
@@ -328,7 +309,7 @@ sub	setText
 	my $self	= shift;
 	my $path	= shift;
 	my $pos		= (ref $path) ? undef : shift;
-	my $element	= $self->getElement($path, $pos);
+	my $element	= $self->SUPER::getElement($path, $pos);
 	return undef	unless $element;
 
 	my $line_break	= $self->{'line_separator'} || '';
@@ -584,13 +565,14 @@ sub	setSpan
 		my $context	= shift;
 		unless (ref $context)
 			{
-			$element = $self->getElement($path, $pos)
+			$element = $self->SUPER::getElement($path, $pos)
 					or return undef;
 			unshift @_, $context;
 			}
 		else
 			{
-			$element = $self->getElement($path, $pos, $context)
+			$element = $self->SUPER::getElement
+						($path, $pos, $context)
 					or return undef;
 			}
 		}
@@ -641,7 +623,7 @@ sub	removeSpan
 
 	my $element	= ref $path ?
 				$path	:
-				$self->getElement($path, @_);
+				$self->SUPER::getElement($path, @_);
 	return undef	unless $element;
 
 	my $text	= "";
@@ -707,7 +689,7 @@ sub	getTableList
 sub	getHeader
 	{
 	my $self	= shift;
-	return $self->getElement('//text:h', @_);
+	return $self->SUPER::getElement('//text:h', @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -735,7 +717,7 @@ sub	getLevel
 	my $path	= shift;
 	my $pos		= (ref $path) ? undef : shift;
 
-	my $element	= $self->getElement($path, $pos, @_);
+	my $element	= $self->SUPER::getElement($path, $pos, @_);
 	return $element->getAttribute('text:level') || "";
 	}
 
@@ -748,8 +730,8 @@ sub	setLevel
 	my $pos		= (ref $path) ? undef : shift;
 	my $level	= shift;
 
-	my $element	= $self->getElement($path, $pos, @_);
-	return $self->setAttribute($element, 'text:level' => $level);
+	my $element	= $self->SUPER::getElement($path, $pos, @_);
+	return $element->setAttribute('text:level' => $level);
 	}
 
 #-----------------------------------------------------------------------------
@@ -759,7 +741,7 @@ sub	getParagraph
 	{
 	my $self	= shift;
 
-	return $self->getElement('//text:p', @_);
+	return $self->SUPER::getElement('//text:p', @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -769,7 +751,7 @@ sub	getTopParagraph
 	{
 	my $self	= shift;
 
-	return $self->getElement('//office:body/text:p', @_);
+	return $self->SUPER::getElement('//office:body/text:p', @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -821,7 +803,7 @@ sub	getOrderedList
 
 	return	(ref $pos)	?
 		$pos		:
-		$self->getElement('//text:ordered-list', $pos);
+		$self->SUPER::getElement('//text:ordered-list', $pos);
 	}
 
 #-----------------------------------------------------------------------------
@@ -834,7 +816,7 @@ sub	getUnorderedList
 
 	return	(ref $pos)	?
 		$pos		:
-		$self->getElement('//text:unordered-list', $pos);
+		$self->SUPER::getElement('//text:unordered-list', $pos);
 	}
 
 #-----------------------------------------------------------------------------
@@ -974,7 +956,8 @@ sub	insertItemList
 	my $self	= shift;
 	my $path	= shift;
 	my $posnode	= (ref $path)	?
-				$path : $self->getElement($path, shift);
+				$path	:
+				$self->SUPER::getElement($path, shift);
 	my %opt		= @_;
 	$opt{'attribute'}{'text:style-name'} = $opt{'style'} if $opt{'style'};
 	$opt{'attribute'}{'text:style-name'} = $self->{'paragraph_style'}
@@ -1007,7 +990,7 @@ sub	_expand_row
 					);
 
 	my $cell	= undef;
-	my $last_cell	= undef;
+	my $last_cell	= $cells[0];
 	my $rep		= 0;
 	my $cellnum	= 0;
 	while (@cells && ($cellnum < $width))
@@ -1022,11 +1005,13 @@ sub	_expand_row
 			while ($rep > 1 && ($cellnum < $width))
 				{
 				$last_cell = $self->replicateElement
-					($cell, $cell, position => 'after');
+					(
+					$cell, $last_cell, position => 'after'
+					);
 				$rep--; $cellnum++;
 				}
 			}
-		$cellnum++;
+		$cellnum++ if $cell;
 		}
 	while ($cellnum < $width)
 		{
@@ -1034,7 +1019,7 @@ sub	_expand_row
 		$cellnum++;
 		$rep-- if ($rep && ($rep > 0));
 		}
-	$self->setAttribute($last_cell, $COL_REPEAT_ATTRIBUTE, $rep)
+	$last_cell->setAttribute($COL_REPEAT_ATTRIBUTE, $rep)
 			if ($rep && ($rep > 1));
 	
 	return $row;
@@ -1078,7 +1063,7 @@ sub	_expand_columns
 				$rep--; $colnum++;
 				}
 			}
-		$colnum++;
+		$colnum++ if $col;
 		}
 	
 	while ($colnum < $width)
@@ -1091,7 +1076,7 @@ sub	_expand_columns
 		$colnum++;
 		$rep-- if ($rep && ($rep > 0));
 		}
-	$self->setAttribute($last_col, $COL_REPEAT_ATTRIBUTE, $rep)
+	$last_col->setAttribute($COL_REPEAT_ATTRIBUTE, $rep)
 			if ($rep && ($rep > 1));
 	return $table;
 	}
@@ -1121,7 +1106,7 @@ sub	_expand_table
 	while (@rows && ($rownum < $length))
 		{
 		$row	= shift @rows; $last_row = $row;
-		$self->_expand_row($row);
+		$self->_expand_row($row, $width);
 		$rep =	$row	?
 				$row->getAttribute($ROW_REPEAT_ATTRIBUTE) :
 				0;
@@ -1135,7 +1120,7 @@ sub	_expand_table
 				$rep--; $rownum++;
 				}
 			}
-		$rownum++;
+		$rownum++ if $row;
 		}
 
 	while ($rownum < $length)
@@ -1148,7 +1133,7 @@ sub	_expand_table
 		$rownum++;
 		$rep-- if ($rep && ($rep > 0));
 		}
-	$self->setAttribute($last_row, $ROW_REPEAT_ATTRIBUTE, $rep)
+	$last_row->setAttribute($ROW_REPEAT_ATTRIBUTE, $rep)
 			if ($rep && ($rep > 1));
 
 	$self->_expand_columns($table, $width);
@@ -1629,7 +1614,7 @@ sub	cellSpan
 	return undef unless $cell;
 
 	my $span = shift;	# Number of columns spanned
-	if (!defined $span) {	
+	if ((!defined $span) || $span < 1) {	
 		return $cell->getAttribute('table:number-columns-spanned');
 		}
 
@@ -1739,14 +1724,18 @@ sub	getTable
 		{
 		$t = $self->getNodeByXPath
 				("//table:table[\@table:name=\"$table\"]");
-		$self->_expand_table($t) if
-			(
-			$self->contentClass() eq 'spreadsheet'	&&
-			$self->{'expand_tables'}		&&
-			$self->{'expand_tables'} eq 'on'
-			);
 		}
-
+	my ($length, $width) = @_;
+	if	(
+		$length		||
+			(
+			$self->{'expand_tables'}		&&
+			($self->{'expand_tables'} eq 'on')
+			)
+		)
+		{
+		$self->_expand_table($t, $length, $width);
+		}
 	return $t;
 	}
 
@@ -1761,7 +1750,8 @@ sub	normalizeSheet
 		{
 		if ($table =~ /^\d*$/)
 			{
-			$table = $self->getElement('//table:table', $table);
+			$table = $self->SUPER::getElement
+						('//table:table', $table);
 			}
 		else
 			{

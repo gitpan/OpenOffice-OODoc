@@ -1,3 +1,7 @@
+1.207	2005-01-28
+	- Fixed a normalizeSheet() issue in Text.pm
+	- Added a few more shortcuts in XPath.pm
+	- Some optimizations in XPath.pm and Text.pm
 1.206	2005-01-27
 	- Documentation update
 	- Added several spreadsheet management features in Text.pm

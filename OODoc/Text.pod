@@ -653,9 +653,9 @@ which is one of the foundations of the OpenOffice.org format.
 
         Obsolete. See textStyle.
 
-=head3	getTable(n)
+=head3	getTable(n [, length, width])
 
-=head3	getTable(name)
+=head3	getTable(name [, length, width])
 
         Returns the nth+1 table in a document, if found, or undef if not
         found [25] .
@@ -674,6 +674,10 @@ which is one of the foundations of the OpenOffice.org format.
 	the row/column/cell manipulation available methods, a special
 	preprocessing should be done if the target table is a spreadsheet.
 	See normalizeSheet() for more information.
+
+	A getTable() call with the optional length, width arguments produces
+	the same effect as an explicit call of normalizeSheet() with the same
+	arguments.
 
 	In the text documents, the tables are used without any preprocessing
 	and the paragraph above doesn't apply.
@@ -974,11 +978,19 @@ which is one of the foundations of the OpenOffice.org format.
 	of the "Sheet1" sheet of a Calc document, is attached at the end of
 	a Writer document.
 
-	Note: The transformed sheets, of course, are readable by OOo Calc.
+	The transformed sheets, of course, are readable by OOo Calc.
 	They simply take some more disk space when the processed spreadsheet
 	is saved. If the document is later read then written by OOo Calc,
 	the storage is optimized, so the effects of normalizeSheet()
 	disappear.
+
+	normalizeSheet() can be used safely against Writer document tables,
+	with two possible results. If the table size is greater than the given
+	size, the method is neutral. Otherwise, the length and/or the width is
+	increased according to the given arguments.
+
+	An explicit call to this method can be replaced by getTable() with the
+	additional length and width parameters. 
 	
 =head3	outputDelimitersOn
 

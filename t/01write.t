@@ -5,7 +5,7 @@
 use Test;
 BEGIN	{ plan tests => 20 }
 
-use OpenOffice::OODoc	1.206;
+use OpenOffice::OODoc	1.207;
 ok(1);
 
 #-----------------------------------------------------------------------------

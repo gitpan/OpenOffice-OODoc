@@ -213,10 +213,9 @@ following classes:
 	OpenOffice::OODoc::Styles for page/style definitions. 
 
 The OpenOffice::OODoc::Text class brings some methods table processing
-methods (table creation, direct access to individual cells). These methods
-can be used with spreadsheets (OpenOffice.org Calc documents) as well as
-with tables included in text documents (however, there are a few more
-constraints and performance issues with spreadsheets).
+methods (table creation, direct access to individual cells). These methods,
+(under some conditions) can be used with spreadsheets (OpenOffice.org Calc
+documents) as well as with tables included in text documents.
 
 To illustrate the differences between the layers, with OODoc::Text (if
 you know your document is really an OpenOffice.org Writer one), you get

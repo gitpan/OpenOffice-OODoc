@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 1.116 2005-01-27 JMG$
+#	$Id : XPath.pm 1.117 2005-01-29 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -13,7 +13,7 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 1.116;
+our	$VERSION	= 1.117;
 use	XML::XPath	1.13;
 use	Encode;
 
@@ -173,9 +173,26 @@ sub	XML::XPath::Node::Element::_search_content
 #------------------------------------------------------------------------------
 # reserved properties (to be implemented)
 
-sub	isCalcDocument		{}
-sub	isImpressDocument	{}
-sub	isDrawDocument		{}
+sub	isCalcDocument
+	{
+	my $self	= shift;
+	return ($self->contentClass() eq 'spreadsheet') ? 1 : undef;
+	}
+sub	isImpressDocument
+	{
+	my $self	= shift;
+	return ($self->contentClass() eq 'impress') ? 1 : undef;
+	}
+sub	isDrawDocument
+	{
+	my $self	= shift;
+	return ($self->contentClass() eq 'drawing') ? 1 : undef;
+	}
+sub	isWriterDocument
+	{
+	my $self	= shift;
+	return ($self->contentClass() eq 'text') ? 1 : undef;
+	}
 
 #------------------------------------------------------------------------------
 # constructor; accepts one from 3 types of parameters to create an instance:
@@ -410,7 +427,7 @@ sub	getRoot
 	{
 	my $self	= shift;
 
-	return $self->getElement('/', 0);
+	return $self->OpenOffice::OODoc::XPath::getElement('/', 0);
 	}
 
 #------------------------------------------------------------------------------
@@ -419,7 +436,8 @@ sub	getRoot
 sub	getRootElement
 	{
 	my $self	= shift;
-	return $self->getElement('/' . $self->{'element'}, 0);
+	my $node	= $self->getNodeByXPath('/' . $self->{'element'});
+	return	(ref $node && $node->isElementNode) ? $node : undef;
 	}
 		
 #------------------------------------------------------------------------------
@@ -431,8 +449,13 @@ sub	contentClass
 	my $class	= shift;
 
 	my $element = $self->getRootElement;
-	$self->setAttribute($element, 'office:class', $class) if $class;
-	return $self->getAttribute($element, 'office:class') || '';
+	return undef unless $element;
+	$element->setAttribute
+			(
+			'office:class',
+			OpenOffice::OODoc::XPath::encode_text($class)
+			)	if $class;
+	return $element->getAttribute('office:class') || '';
 	}
 
 #------------------------------------------------------------------------------
@@ -638,7 +661,8 @@ sub	setText
 
 	return undef	unless defined $text;
 	
-	my $element 	= $self->getElement($path, $pos);
+	my $element 	= $self->OpenOffice::OODoc::XPath::getElement
+					($path, $pos);
 	return undef	unless $element;
 
 	$element->removeChildNodes;
@@ -734,7 +758,7 @@ sub	replaceText
 sub	getText	
 	{
 	my $self	= shift;
-	my $element	= $self->getElement(@_);
+	my $element	= $self->OpenOffice::OODoc::XPath::getElement(@_);
 	return undef	unless ($element && $element->isElementNode);
 	my $text	= '';
 	

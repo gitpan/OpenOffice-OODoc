@@ -216,11 +216,9 @@ OpenOffice::OODoc::Meta for the metadata (meta.xml);
 OpenOffice::OODoc::Styles for page/style definitions. 
 
 The OpenOffice::OODoc::Text class brings some methods table processing
-methods (table creation, direct access to individual cells). But, in the
-present version, these methods are less easy to use with spreadsheets
-(OpenOffice.org Calc documents) than with tables included in text documents.
-Perhaps another class (say OpenOffice::OODoc::Calc), not available yet,
-would be useful...
+methods (table creation, direct access to individual cells). They work
+(under certain conditions) with spreadsheets as well as with Writer
+documents.
 
 To illustrate the differences between the layers, with OODoc::Text (if
 you know your document is really an OpenOffice.org Writer one), you get
@@ -331,10 +329,10 @@ in the same sequence and in any order.
 Caution: In order to get a convenient translation between the user's local
 character set and the common OpenOffice.org encoding (utf8), the application
 must indicate the appropriate encodinge. The default one is iso-8859-1;
-it can be set with the localEncoding() function. Example:
+it can be set with the ooLocalEncoding() function. Example:
 
 	use OpenOffice::OODoc;
-	localEncoding 'iso-8859-15';
+	ooLocalEncoding 'iso-8859-15';
 
 Starting from version 1.2, the default encoding can be selected by the
 user during the installation, and changed later by editing a configuration
@@ -645,7 +643,7 @@ are unnamed by default. We recommend you to give a significant name to each
 object that you want to process later by program, knowing that if an object
 can be easily caught by program, it's potentially reusable.
 
-An image can be selected by his description (i.e. the text the end-user
+An image can be selected by its description (i.e. the text the end-user
 can edit in the image properties dialog in OpenOffice.org). So, the following
 sequence provides the list of images where the description contains the string
 "Montmartre":
