@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-#	$Id : OODoc.pm 1.105 2004-05-26 JMG$
+#	$Id : OODoc.pm 1.106 2004-05-27 JMG$
 #-----------------------------------------------------------------------------
 
 use OpenOffice::OODoc::File		1.103;
@@ -10,7 +10,7 @@ use OpenOffice::OODoc::Document		1.005;
 
 package	OpenOffice::OODoc;
 use 5.008_000;
-our $VERSION				= 1.105;
+our $VERSION				= 1.106;
 
 require Exporter;
 our @ISA    = qw(Exporter);
@@ -120,9 +120,7 @@ But, before using it you should read the README of the standard
 distribution, or the OpenOffice::OODoc::Intro man page, to get
 an immediate knowledge of the functionality of each one.
 Alternatively, you can download the original reference manual
-in OpenOffice.org or PDF format at
-
-http://www.genicorp.fr/devel/oodoc
+in OpenOffice.org or PDF format at http://www.genicorp.com/devel/oodoc
 
 =head2	Exported functions
 
@@ -190,9 +188,7 @@ corresponding module for details.
 
 Initial developer: Jean-Marie Gouarne
 
-Copyright 2004 by Genicorp, S.A. 
-
-http://www.genicorp.com
+Copyright 2004 by Genicorp, S.A. (http://www.genicorp.com)
 
 Licensing conditions:
 

@@ -1,6 +1,6 @@
 =head1	NAME
 
-OpenOffice::OODoc - Introduction to Open Office Document Connector
+OpenOffice::OODoc::Intro - Introduction to Open Office Document Connector
 
 =head1	DESCRIPTION
 
@@ -10,9 +10,8 @@ is a set of OpenOffice::OODoc::xxx manual pages (where xxx is the
 codename of a particular submodule).
 
 A one-file reference manual of the API is available in SXW format
-(OpenOffice.org Writer document) at the project homepage:
-
-http://www.genicorp.fr/devel/oodoc
+(OpenOffice.org Writer document) of PDF. In can be downloaded from
+the project homepage at http://www.genicorp.com/devel/oodoc
 
 =head1	Overview
 
@@ -719,11 +718,9 @@ So any constructive remark or contribution is welcome.
 
 =head1	Author & Copyright
 
-Initial developer : Jean-Marie Gouarne <jean.marie.gouarne@genicorp.fr>
+Initial developer : Jean-Marie Gouarne
 
-Copyright 2004 by Genicorp, S.A.
-
-http://www.genicorp.com
+Copyright 2004 by Genicorp, S.A. (http://www.genicorp.com)
 
 Licensing conditions:
 

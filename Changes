@@ -1,3 +1,5 @@
+1.106	2004-05-27
+	- Minor fixes in POD files; no change in the code
 1.105	2004-05-26
 	- Fixed some local encoding issues in XPath.pm
 	- Added the extendText() method in XPath.pm

@@ -542,15 +542,13 @@ included in this page.
 This man page has been adapted from a chapter of the original
 reference manual. This manual is in OpenOffice.org (SXW) format.
 
-It's freely downloadable at
-
-http://www.genicorp.fr/devel/oodoc
+It's freely downloadable at http://www.genicorp.com/devel/oodoc
 
 =head1	AUTHOR/COPYRIGHT
 
 Initial developer: Jean-Marie Gouarne
 
-Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
+Copyright 2004 by Genicorp, S.A. (http://www.genicorp.com)
 
 Initial English version of the reference manual
 by Graeme A. Hunter <graeme.hunter@zen.co.uk>

@@ -176,15 +176,13 @@ to the "[nn]" note citations included in the other documents.
 
 Initial developer: Jean-Marie Gouarne
 
-Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
+Copyright 2004 by Genicorp, S.A. (http://www.genicorp.com)
 
 Initial English version of the reference manual
 by Graeme A. Hunter <graeme.hunter@zen.co.uk>
 
 These notes are extracted from the initial reference manual, that is
-available in SXW or PDF format at
-
-http://www.genicorp.fr/devel/oodoc
+available in SXW or PDF format at http://www.genicorp.com/devel/oodoc
 	
 Licensing conditions:
 
