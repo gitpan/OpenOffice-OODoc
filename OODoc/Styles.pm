@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Styles.pm 1.005 2004-07-30 JMG$
+#	$Id : Styles.pm 1.006 2004-07-30 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -13,7 +13,7 @@
 
 package OpenOffice::OODoc::Styles;
 use	5.006_001;
-our	$VERSION	= 1.005;
+our	$VERSION	= 1.006;
 
 use	OpenOffice::OODoc::XPath	1.112;
 use	File::Basename;
@@ -57,17 +57,17 @@ our	%COLORMAP		=
 	
 sub	ooLoadColorMap
 	{
-	my $filename = shift || $COLORMAP;
+	my $filename = shift || $COLORMAP or return undef;
 	unless ( -e $filename && -r $filename )
 		{
-		warn	"[" . __PACKAGE . "::ooLoadColorMap] "	.
+		warn	"[" . __PACKAGE__ . "::ooLoadColorMap] "	.
 			"Color map file non existent or unreadable\n";
 		return undef;
 		}
 	my $r = open COLORS, "<", $filename;
 	unless ($r)
 		{
-		warn	"[" . __PACKAGE . "::ooLoadColorMap] "	.
+		warn	"[" . __PACKAGE__ . "::ooLoadColorMap] "	.
 			"Error opening $filename\n";
 		return undef;
 		}

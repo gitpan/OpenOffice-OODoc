@@ -1,4 +1,6 @@
-1.200	2004-07-30
+1.202	2004-07-30
+	- Removing an unneeded warning when no colormap is loaded
+1.201	2004-07-30
 	- Many changes in File.pm to allow the creation of new documents
 	- Added many template files for document creation
 	- Added Manifest.pm and Manifest.pod
