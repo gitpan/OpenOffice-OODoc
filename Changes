@@ -1,3 +1,8 @@
+1.306	2005-03-16
+	- Added userFieldValue(), getChapter(), bibliography and bookmark related
+	methods in Text.pm
+	- Modified getHeader() in Text.pm
+	- Documentation update
 1.305	2005-03-01
 	- Added getParentStyle() and getAncestorStyle() in Styles.pm
 	- Added Archive::Zip version control (1.14) in Makefile.PL

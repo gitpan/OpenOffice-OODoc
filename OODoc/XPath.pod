@@ -1010,7 +1010,7 @@ methods.
             		(
             		'//style::style',
             		'style:name',
-            		'Body of text'
+            		'Text body'
             		);
             my $position = $doc_target->getElement
             		('//office:styles', 0);
@@ -1224,7 +1224,7 @@ methods.
             my $h = $doc->getElement('//text:h', 12);
             my %attributes =
             	(
-            	'text:style-name'		=> 'My Header',
+            	'text:style-name'	=> 'My Header',
             	'text:level		=> '3'
             	);
             $doc->setAttributes($h, %attributes);

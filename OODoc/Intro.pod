@@ -645,12 +645,57 @@ performance considerations, for Calc documents only).
 And, as with OODoc::Meta, don't forget to issue a 'save' call if you
 want to make your changes persistent.
 
+=head2	Manipulating user defined variables, bibliographic entries, bookmarks
+
+The OODoc toolbox provides easy read/write accessors to some useful objects
+that can be included in OOo text documents.
+
+If a text document contains a user-defined field, the corresponding value can
+be read and updated. For example, if the user needs to increase a numeric
+by a given value, the corresponding code could be:
+
+	$old_value = $doc->userFieldValue("FieldName");
+	$doc->userFieldValue("FieldName", $old_value + $added_value);
+
+It's possible to get or set any property of a bibliography entry. An entry
+can be selected by its identifier (as it appears for the end-user). The first
+example below prints the title and the author of the first found occurrence
+of a "[GEN99]" entry, while the second one creates (or updates) its "ISBN"
+and "pages" properties:
+
+	# 1
+	my %properties = $doc->bibliographyEntryContent("GEN99");
+	print "Title = $properties{'title'}\n";
+	print "Author = $properties{'author'}\n";
+
+	# 2
+	$doc->bibliographyEntryContent
+			(
+			"GEN99",
+			isbn	=> 'xxxxyyyyzzzz',
+			pages	=> 254
+			);
+
+In addition, a getBibliographyEntries() method allows the user to retrieve
+the full list of the entries included in a document.
+
+We can put a bookmark in a paragraph containing a given string.
+Example:
+
+	my $paragraph	= $doc->selectElementByContent("my search string");
+	$doc->bookmarkElement($paragraph, "MyMark");
+
+A bookmark (created either through OpenOffice::OODoc or through this Perl
+API) can be used to retrieve a text element:
+
+	my $paragraph = $doc->selectElementByBookmark("MyMark");
+
 =head2	Dealing with text AND metadata
 
-In the last example, we must access both the text content and the
-metadata. So, we need 2 OODoc::XPath objects : one OODoc::Text and
-one OODoc::Meta. And to avoid ugly and inefficient I/O operations, we
-need to connect the 2 objects to the same OODoc::File "server".
+Sometimes we must access both the text content and the metadata. So, we need
+two OODoc::XPath objects : one OODoc::Text and one OODoc::Meta. And to avoid
+ugly and inefficient I/O operations, we need to connect the 2 objects with the
+same OODoc::File "server".
 
 	use OpenOffice::OODoc;
 
@@ -797,9 +842,7 @@ some methods dedicated to page styling.
 
 A few executable examples (not commented here, but commented in line) are
 provided in the distribution. In addition, you can have a look to the
-installation test scripts (the first one creates an OpenOffice.org file
-from scratch, using the Archive::Zip API and a set of XML templates, before
-accessing this new file with OpenOffice::OODoc).
+installation test scripts.
 
 =head1	Author & Copyright
 

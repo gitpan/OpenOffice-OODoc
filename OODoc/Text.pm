@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 1.203 2005-02-18 JMG$
+#	$Id : Text.pm 1.204 2005-03-16 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -15,7 +15,7 @@ package OpenOffice::OODoc::Text;
 use	5.006_001;
 use	OpenOffice::OODoc::XPath	1.202;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 1.203;
+our	$VERSION	= 1.204;
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -216,6 +216,14 @@ sub	XML::Twig::Elt::isSequenceDeclarations
 	my $element	= shift;
 	my $name	= $element->getName;
 	return ($name && ($name eq 'text:sequence-decls')) ? 1 : undef;
+	}
+
+sub	XML::Twig::Elt::isBibliographyMark
+	{
+	
+	my $element	= shift;
+	my $name	= $element->getName;
+	return ($name && ($name eq 'text:bibliography-mark')) ? 1 : undef;
 	}
 
 #-----------------------------------------------------------------------------
@@ -656,6 +664,132 @@ sub	removeSpan
 	}
 
 #-----------------------------------------------------------------------------
+# get all the bibliographic entries
+
+sub	getBibliographyElements
+	{
+	my $self	= shift;
+	my $id		= shift;
+
+	unless ($id)
+		{
+		return $self->getElementList('//text:bibliography-mark');
+		}
+	else
+		{
+		return $self->selectElementsByAttribute
+			('//text:bibliography-mark', 'text:identifier', $id);
+		}
+	}
+
+#-----------------------------------------------------------------------------
+# get/set the content of a bibliography entry
+
+sub	bibliographyEntryContent
+	{
+	my $self	= shift;
+	my $id		= shift;
+	my $e		= undef;
+	my %desc	= @_;
+	unless (ref $id)
+		{
+		$e = $self->getNodeByXPath
+		      ("//text:bibliography-mark[\@text:identifier=\"$id\"]");
+		}
+	else
+		{
+		$e = $id;
+		}
+	return undef unless $e;
+		
+	my $k = undef;
+	foreach $k (keys %desc)
+		{
+		next if $k =~ /:/;
+		my $v = $desc{$k};
+		delete $desc{$k};
+		$k = 'text:' . $k;
+		$desc{$k} = $v;
+		}
+	$self->setAttributes($e, %desc);
+	%desc = $self->getAttributes($e);
+	foreach $k (keys %desc)
+		{
+		my $new_key = $k;
+		$new_key =~ s/^text://;
+		my $v = $desc{$k}; delete $desc{$k}; $desc{$new_key} = $v;
+		}
+	return %desc;
+	}
+
+#-----------------------------------------------------------------------------
+# get a bookmark
+
+sub	getBookmark
+	{
+	my $self	= shift;
+	my $name	= shift;
+
+	return	(
+		$self->getNodeByXPath
+			("//text:bookmark[\@text:name=\"$name\"]")
+			||
+		$self->getNodeByXPath
+			("//text:bookmark-start[\@text:name=\"$name\"]")
+		);
+	}
+
+#-----------------------------------------------------------------------------
+# retrieve the element where is a given bookmark
+
+sub	selectElementByBookmark
+	{
+	my $self	= shift;
+
+	my $bookmark	= $self->getBookmark(@_);
+	return $bookmark ? $bookmark->parent : undef;
+	}
+
+#-----------------------------------------------------------------------------
+# set a bookmark at the beginning of an element
+
+sub	bookmarkElement
+	{
+	my $self	= shift;
+	my $path	= shift;
+	my $element     = ref $path ? $path : $self->getElement($path, shift);
+	return undef unless $element;
+	my $name	= shift;
+	my $offset	= shift || 0;
+	unless ($name)
+		{
+		warn	"[" . __PACKAGE__ . "::bookmarkElement] "	.
+			"Missing bookmark name\n";
+		return undef;
+		}
+	my $bookmark	= OpenOffice::OODoc::XPath::new_element
+						('text:bookmark', @_);
+	$self->setAttribute($bookmark, 'text:name', $name);
+	return $bookmark->paste_within($element, $offset);
+	}
+
+#-----------------------------------------------------------------------------
+# delete a bookmark
+
+sub	deleteBookmark
+	{
+	my $self	= shift;
+
+	$self->removeElement($self->getBookmark(@_));
+	}
+
+sub	removeBookmark
+	{
+	my $self	= shift;
+	return $self->deleteBookmark(@_);
+	}
+
+#-----------------------------------------------------------------------------
 # get the footnote bodies in the document
 
 sub	getFootnoteList
@@ -688,7 +822,22 @@ sub	getTableList
 sub	getHeader
 	{
 	my $self	= shift;
-	return $self->getElement('//text:h', @_);
+	my $pos		= shift;
+	my %opt		= (@_);
+	my $header	= undef;
+
+	unless ($opt{'level'})
+		{
+		$header = $self->getElement
+				('//text:h', $pos);
+		}
+	else
+		{
+		my $level = $opt{'level'};
+		$header = $self->getElement
+				("//text:h[\@text:level=\"$level\"]", $pos); 
+		}
+	return undef unless $header;
 	}
 
 #-----------------------------------------------------------------------------
@@ -731,6 +880,30 @@ sub	setLevel
 
 	my $element	= $self->getElement($path, $pos, @_);
 	return $element->setAttribute('text:level' => $level);
+	}
+
+#-----------------------------------------------------------------------------
+# get the content depending on a giveh header element
+
+sub	getChapter
+	{
+	my $self	= shift;
+	my $h		= shift || 0;
+	my $header	= ref $h ? $h : $self->getHeader($h, @_);
+	return undef unless $header;
+	my @list	= ();
+	my $level	= $self->getLevel($header) or return @list;
+
+	my $next_element	= $header->next_sibling;
+	while ($next_element)
+		{
+		my $l = $self->getLevel($next_element);
+		last if ($l && $l <= $level);
+		push @list, $next_element;
+		$next_element = $next_element->next_sibling;
+		}
+	
+	return @list;
 	}
 
 #-----------------------------------------------------------------------------
@@ -2145,6 +2318,46 @@ sub	appendRow
 	{
 	my $self	= shift;
 	return $self->appendTableRow(@_);
+	}
+
+#-----------------------------------------------------------------------------
+# get user field element
+
+sub	getUserFieldElement
+	{
+	my $self	= shift;
+	my $name	= shift;
+	unless ($name)
+		{
+		warn	"[" . __PACKAGE__ . "::getUserFieldElement] "	.
+			"Missing name\n";
+		return undef;
+		}
+	if (ref $name)
+		{
+		my $n = $name->getName;
+		return ($n eq 'text:user-field-decl') ? $name : undef;
+		}
+	return $self->getNodeByXPath
+			("//text:user-field-decl[\@text:name=\"$name\"]");
+	}
+
+#-----------------------------------------------------------------------------
+# get/set user field value
+
+sub	userFieldValue
+	{
+	my $self	= shift;
+	my $field	= $self->getUserFieldElement(shift)
+			or return undef;
+	my $value	= shift;
+
+	my $value_type	= $field->att('text:value-type');
+	my $value_att	= $value_type eq 'string' ?
+				'text:string-value' : 'text:value';
+	$self->setAttribute($field, $value_att, $value)
+			if defined $value;
+	return $self->getAttribute($field, $value_att);
 	}
 
 #-----------------------------------------------------------------------------

@@ -312,6 +312,69 @@ which is one of the foundations of the OpenOffice.org format.
 
             $doc->appendParagraph(text => 'My text');
 
+=head3	bibliographyEntryContent(id [, key1 => value1, key2 => value2, ...])
+
+	Gets, and optionnally sets, the properties of a given (existing)
+	bibliographic entry. The optionally updated properties are provides
+	as a hash. The returned description is a hash.
+
+	The first argument can be either the logical identifier of the entry
+	(as it appears for the end-user) or a previously found bibliography
+	entry element (see getBibliographyElements()).
+
+	Example:
+
+		my %desc = $doc->bibliographyEntryContent
+					(
+					"GEN99",
+					author	=> 'Genicorp',
+					pages	=> 62
+					);
+	
+	This sequence updates the "Author" and "Pages" values of the "GEN99"
+	entry, then returns all the content of the entry in %desc.
+
+	Caution: Several bibliography entries can have the same identifier.
+	This method processes one element at a time. In the example above,
+	only the first occurrence of the "GEN99" entries is updated. So, if
+	the user needs to ensure that all the entries with the same identifier
+	have the same content, the appropriate code should be something like:
+
+		my @entries = $doc->getBibliographyElements("^GEN99$");
+		foreach my $entry (@entries)
+			{
+			$doc->bibliographyEntryContent
+				(
+				$entry,
+				author	=> 'Genicorp',
+				pages	=> 62
+				)
+			}
+
+	Caution: This method allows the user to create any new property and
+	to put any value in any property, without control. So we recommend
+	you to have a look at the Open Office XML specification and/or the
+	OOo bibliographic project (http://bibliographic.openoffice.org) in
+	order to know the generally accepted properties.
+
+=head3	bookmarkElement(element, name [, offset])
+
+	Puts a bookmark in a text element.
+
+	Example:
+
+		my $paragaph = $doc->selectElementByContent
+						("Eragon and Saphira");
+		$doc->bookmarkElement($paragraph, 'Mark');
+	
+	puts a bookmark identified by "Mark" in a paragraph where a given
+	text has been found (of course, the bookmark will remain even if
+	the text of the paragraph is changed later).
+
+	By default, the bookmark is put at the beginning of the text. But,
+	thanks to the optional offset, it can be put at any position within
+	the text of the bookmarked element.
+
 =head3	cellCurrency(table, row, column [, currency])
 
 =head3	cellCurrency(cell [, currency])
@@ -429,6 +492,33 @@ which is one of the foundations of the OpenOffice.org format.
 
 	Without argument, returns the currently selecter terminator, if any.
 
+=head3	deleteBookmark(name)
+
+	Deletes the given bookmark (if defined).
+
+=head3	getBibliographyElements([id])
+
+	Returns the list of the bibliographic entry elements contained in the
+	document.
+
+	If an argument is provided, the returned list is restricted to the
+	bibliographic entries matching it (this argument can be a regex).
+
+	Example:
+
+		my @biblio = $doc->getBibliographyElements("^W3C");
+	
+	returns the bibliographic entries where the identifier begins with
+	"W3C".
+
+=head3	getBookmark(name)
+
+	Returns the bookmark element (if defined) corresponding to the given
+	bookmark name.
+
+	If the bookmark covers a range of text (i.e. if it's not a position),
+	the returned element is the "bookmark start" one.
+
 =head3	getCell(table, row, column)
 
 =head3	getCell(table, coord)
@@ -532,6 +622,25 @@ which is one of the foundations of the OpenOffice.org format.
         etc.), the best way is first to get its element reference with
         getCell and then use it with getAttribute.
 
+=head3	getChapter(header_no [, options])
+
+	This method returns the list of the elements depending on a given
+	header element. The argument and the options are the same as with
+	getHeader().
+
+	Example:
+
+		my @list = $doc->getChapter(2, level => 3);
+		foreach my $element (@list)
+			{
+			my $text = $doc->getText($element);
+			print "$text\n";
+			}
+
+	The code above selects and prints all the text elements below the
+	third level 3 header of the document (not including the content of
+	the header itself.
+
 =head3	getColumn(table, column)
 
         Returns the element reference of the given column in the given
@@ -549,17 +658,29 @@ which is one of the foundations of the OpenOffice.org format.
         Returns the list of all the footnote elements contained in the
         document.
 
-=head3	getHeader(n)
+=head3	getHeader(n [, options])
 
         Returns the nth+1 header element.
 
         If n is negative, headers are counted backwards from the last.
         getHeader(-1) returns the last header element of the document.
 
-        Caution: this method counts sequentially through all headers along a
-        single plane, irrespective of their level [24] . E.g. if you have a
-        level 1 header then two level 2 headers then a level 1 header, the
-        call getHeader(3) returns the last level 1 header.
+	The only one possible option is "level". It allows the application
+	to select the nth+1 header element for a given header level.
+
+	Example:
+
+		my $header = $doc->getHeader(2, level => 3);
+	
+	selects the third level 3 header in the whole document.
+
+	See also getChapter().
+
+        Caution: without the "level" option, this method counts sequentially
+	through all headers along a single plane, irrespective of their
+	level[24]. E.g. if you have a level 1 header then two level 2 headers
+	then a level 1 header, the call getHeader(3) returns the last level 1
+	header.
 
 =head3	getHeaderList()
 
@@ -827,6 +948,11 @@ which is one of the foundations of the OpenOffice.org format.
         Returns the element which represents the nth+1 unordered list in a
         document, if found.
 
+=head3	getUserFieldElement(name)
+
+	Returns the element (if defined) representing a user-defined field,
+	and corresponding to the given name. See also userFieldValue().
+
 =head3	inputTextConversion(text)
 
 	Returns the UTF8 conversion of the given text, supposed to be in
@@ -1048,6 +1174,10 @@ which is one of the foundations of the OpenOffice.org format.
 	supposed to be in UTF8. The local character set of the document
 	is used (see the 'local_encoding' property).
 
+=head3	removeBookmark(id)
+
+	See deleteBookmark().
+
 =head3	removeHeader(position)
 
 =head3	removeHeader(element)
@@ -1108,6 +1238,10 @@ which is one of the foundations of the OpenOffice.org format.
 
         Reads or modifies a table row's style, in the same way as
         columnStyle does for columns.
+
+=head3	selectElementByBookmark(name)
+
+	Returns the element containing the given bookmark.
 
 =head3	selectElementByContent(filter, [...])
 
@@ -1382,6 +1516,23 @@ which is one of the foundations of the OpenOffice.org format.
 
         This method can be replaced by the accessor cellValue which allows
         reads and writes.
+
+=head3	userFieldValue(user_field [, value])
+
+	Reads the stored value of a given user field or changes it if a
+	value is provided. The 1st argument can be either the name of the
+	field (as it appears for the end-user) or a previously loaded
+	user field element. See also getUserFieldElement().
+
+	This method doesn't create any new user field. It can only read or
+	update an existing one.
+
+	If the given user field is numeric (ex: date, currency) the returned
+	and/or provided value is the internally stored value, and not the
+	displayed one. The user field is displayed according to a data style
+	by OpenOffice.org. For example, 'Tuesday, March 1, 2005' is a possible
+	displayed value for 38412.
+
 
 =head2	Properties
 
