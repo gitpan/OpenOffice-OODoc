@@ -1,0 +1,25 @@
+OpenOffice::OODoc 1.102 installation (Feb 2004)
+
+SYSTEM REQUIREMENTS
+
+	Perl		>= 5.8.0
+	Archive::Zip	>= 1.05
+	XML::XPath	>= 1.13
+	
+TODO
+
+	Uncompress the distribution archive, enter the OpenOffice-OODoc-1.102
+	directory and (as system administrator), type the following commands:
+
+		perl Makefile.PL
+		make install test
+
+	You will be warned about unsatisfied dependencies, if any.
+
+	Unless you omit the 'test' option, the installation test script
+	attempts to create an OpenOffice.org (SXW) file. You should check this
+	file using OpenOffice.org Writer; it contains a PNG logo and a short
+	description of the installation. The content of this document is
+	generated with the OpenOffice::OODoc API, so if you get it you can
+	assume the installation is complete.
+	

@@ -1,0 +1,15 @@
+Makefile.PL
+MANIFEST
+OODoc.pm
+OODoc/Document.pm
+OODoc/File.pm
+OODoc/Image.pm
+OODoc/Meta.pm
+OODoc/Styles.pm
+OODoc/Text.pm
+OODoc/XPath.pm
+test.pl
+scarab.png
+README
+INSTALL
+META.yml                                 Module meta-data (added by MakeMaker)
