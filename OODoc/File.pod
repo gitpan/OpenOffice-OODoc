@@ -1,31 +1,31 @@
 =head1	NAME
 
-	OpenOffice::OODoc::File
+OpenOffice::OODoc::File - I/O operations with OpenOffice.org files
 
 =head1	DESCRIPTION
 
-        The explicit use of this module is necessary only in programs which
-        need to access several XML elements in the same OpenOffice.org
-        document in the same session, e.g. Metadata, content and page
-        layout. In this case, it will in effect be calling several
-        OODoc::XPath derivative objects (e.g. an OODoc::Meta and an
-        OODoc::Text), each one accessing a distinct XML element, but all
-        working on the same file. It is advisable, then, to create firstly
-        an OODoc::File object which handles the overall file access, then to
-        create two or more OODoc::XPath objects which will use it as a
-        "server".
+The explicit use of this module is necessary only in programs which
+need to access several XML elements in the same OpenOffice.org
+document in the same session, e.g. Metadata, content and page
+layout. In this case, it will in effect be calling several
+OODoc::XPath derivative objects (e.g. an OODoc::Meta and an
+OODoc::Text), each one accessing a distinct XML element, but all
+working on the same file. It is advisable, then, to create firstly
+an OODoc::File object which handles the overall file access, then to
+create two or more OODoc::XPath objects which will use it as a
+"server".
 
-        If the program is only concerned with a single XML element from the
-        file, it is unnecessary to create an OODoc::File explicitly. Just
-        build an OODoc::XPath object with a filename as parameter. The XPath
-        will create a "private" File itself and use it to access the data
-        invisibly.
+If the program is only concerned with a single XML element from the
+file, it is unnecessary to create an OODoc::File explicitly. Just
+build an OODoc::XPath object with a filename as parameter. The XPath
+will create a "private" File itself and use it to access the data
+invisibly.
 
-        Please note that OODoc::File is able to handle all standard zip
-        archives and not just OpenOffice.org files. Filenames do not have to
-        have a ".sx?" extension. It allows access by other modules, if
-        required, to XML/OpenOffice data in compressed archives which are
-        not necessarily in OpenOffice.org format.
+Please note that OODoc::File is able to handle all standard zip
+archives and not just OpenOffice.org files. Filenames do not have to
+have a ".sx?" extension. It allows access by other modules, if
+required, to XML/OpenOffice data in compressed archives which are
+not necessarily in OpenOffice.org format.
 
 =head2	Methods
 
@@ -214,7 +214,7 @@
 
         Example:
 
-        $archive->save("target.sxw");
+        	$archive->save("target.sxw");
 
         Please note that File does not check the content, and the save
         method can be used to force through any data which may produce a
@@ -254,7 +254,7 @@
         Instance hash variables are:
 
             'linked'		=> list of connected OODoc::XPath instances
-            'members'	=> list of file member (*.xml and others)
+            'members'		=> list of file member (*.xml and others)
             'raw_members'	=> list of import files
             'temporary_files'	=> created temporary files.
 
@@ -276,23 +276,30 @@
 
 =head1	NOTES
 
-	See OpenOffice::OODoc::Notes(3) for the footnote citations ([n])
-	included in this page.
+See OpenOffice::OODoc::Notes(3) for the footnote citations ([n])
+included in this page.
 
-	This man page has been generated from a chapter of the original
-	reference manual. This manual is in OpenOffice.org (SXW) format.
-	It's freely downloadable at http://www.genicorp.fr/devel/oodoc
+This man page has been adapted from a chapter of the original
+reference manual. This manual is in OpenOffice.org (SXW) format.
+
+It's freely downloadable at
+
+http://www.genicorp.fr/devel/oodoc
 
 =head1	AUTHOR/COPYRIGHT
 
-	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
+Initial developer: Jean-Marie Gouarne
 
-	Initial English version of the reference manual
-	by Graeme A. Hunter <graeme.hunter@zen.co.uk>
+Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
+
+Initial English version of the reference manual
+by Graeme A. Hunter <graeme.hunter@zen.co.uk>
 	
-	Licensing conditions:
-		- Genicorp General Public Licence v1.0
-		- GNU Lesser General Public License v2.1
-	Contact: oodoc@genicorp.com
+Licensing conditions:
+
+	- Genicorp General Public Licence v1.0
+	- GNU Lesser General Public License v2.1
+
+Contact: oodoc@genicorp.com
 
 =cut

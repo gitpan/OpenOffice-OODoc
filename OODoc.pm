@@ -1,20 +1,24 @@
 #-----------------------------------------------------------------------------
-#	$Id : OODoc.pm 1.104 2004-03-12 JMG$
+#	$Id : OODoc.pm 1.105 2004-05-26 JMG$
 #-----------------------------------------------------------------------------
 
 use OpenOffice::OODoc::File		1.103;
-use OpenOffice::OODoc::Meta		1.002;
-use OpenOffice::OODoc::Document		1.004;
+use OpenOffice::OODoc::Meta		1.003;
+use OpenOffice::OODoc::Document		1.005;
 
 #-----------------------------------------------------------------------------
 
 package	OpenOffice::OODoc;
-use 5.006_001;
-our $VERSION				= 1.104;
+use 5.008_000;
+our $VERSION				= 1.105;
 
 require Exporter;
 our @ISA    = qw(Exporter);
-our @EXPORT = qw(ooXPath ooFile ooText ooMeta ooImage ooDocument ooStyles);
+our @EXPORT = qw
+	(
+	ooXPath ooFile ooText ooMeta ooImage ooDocument ooStyles
+	localEncoding
+	);
 
 #-----------------------------------------------------------------------------
 # create a common reusable XML parser in the space of the main program
@@ -62,86 +66,140 @@ sub	ooStyles
 	}
 	
 #-----------------------------------------------------------------------------
+# accessor for local character set control
+
+sub	localEncoding
+	{
+	my $newcharset = shift;
+	if ($newcharset)
+	    	{
+	    	if (Encode::find_encoding($newcharset))
+		    {
+		    $OpenOffice::OODoc::XPath::LOCAL_CHARSET = $newcharset;
+		    }
+		else
+		    {
+		    warn	"[" . __PACKAGE__ . "::localEncoding] " .
+				"Unsupported encoding\n";
+		    }
+		}
+	return $OpenOffice::OODoc::XPath::LOCAL_CHARSET;
+	}
+
+#-----------------------------------------------------------------------------
 1;
 
 =head1	NAME
 
-OpenOffice::OODoc - A multipurpose API for OpenOffice.org document processing
-
-=head1	SYNOPSIS
-
-		use OpenOffice::OODoc;
-
-			# get global access to the document
-		my $doc = ooDocument(file => 'foo.sxw');
-			# retrieve a paragraph matching a given content
-		my $found = $doc->selectElementByContent("Dear Customer");
-			# change a style
-		$doc->style($found, 'Salutation') if $found;
-			# insert graphics
-		$doc->createImageElement
-			(
-			"Corporate Logo",
-			style	=> "LargeLogo",
-			page	=> 1,
-			size	=> "3cm, 2.5cm",
-			import	=> "c:\graphics\logo.png"
-			);
-			# append text
-		$doc->appendParagraph
-			(
-			style	=> 'Text body',
-			text	=> 'Sincerely yours'
-			);
-			# save the changes
-		$doc->save;
-
+OpenOffice::OODoc - A library for direct OpenOffice.org document processing
 
 =head1	DESCRIPTION
 
-	This toolbox allows direct read/write operations on documents, without
-	using the OpenOffice.org software. It provides a high-level,
-	document-oriented language, and isolates the programmer from the
-	details of the OpenOffice.org XML dialect and file format.
+This toolbox allows direct read/write operations on documents, without
+using the OpenOffice.org software. It provides a high-level,
+document-oriented language, and isolates the programmer from the
+details of the OpenOffice.org XML dialect and file format.
 
 =head1	DETAILS
 
-	The main module of the API, OpenOffice::OODoc, provides some code
-	shortcuts for the programmer. So, its main function is to load the
-	operational modules, i.e :
+The main module of the API, OpenOffice::OODoc, provides some code
+shortcuts for the programmer. So, its main function is to load the
+operational modules, i.e :
 
-		OpenOffice::OODoc::Document
-		OpenOffice::OODoc::File
-		OpenOffice::OODoc::Image
-		OpenOffice::OODoc::Meta
-		OpenOffice::OODoc::Styles
-		OpenOffice::OODoc::Text
-		OpenOffice::OODoc::XPath
+	OpenOffice::OODoc::Document
+	OpenOffice::OODoc::File
+	OpenOffice::OODoc::Image
+	OpenOffice::OODoc::Meta
+	OpenOffice::OODoc::Styles
+	OpenOffice::OODoc::Text
+	OpenOffice::OODoc::XPath
 
-	For the detailed documentation, see the man pages of these modules.
-	But, before using it you should read the README of the standard
-	distribution, or the OpenOffice::OODoc::Intro man page, to get
-	an immediate knowledge of the functionality of each one.
-	Alternatively, you can download the original reference manual
-	in OpenOffice.org or PDF format at
+The detailed documentation is organised on a by-module basis.
+There is a man page for each one in the list above.
+But, before using it you should read the README of the standard
+distribution, or the OpenOffice::OODoc::Intro man page, to get
+an immediate knowledge of the functionality of each one.
+Alternatively, you can download the original reference manual
+in OpenOffice.org or PDF format at
 
-		http://www.genicorp.fr/devel/oodoc
+http://www.genicorp.fr/devel/oodoc
 
 =head2	Exported functions
 
-	These functions are only shortcuts for the 'new' methods of the
-	modules listed above. Each one is constructed from the corresponding
-	module's base name, preceded by 'oo'. So, 'ooDocument' is a synonym
-	of 'OpenOffice::OODoc::Document', etc.
+Every "ooXxx" function below is only a shortcut for the constructor
+("new") in a submodule of the API. See the man page of the
+corresponding module for details.
+
+=head3	localEncoding
+
+	Accessor to get/set the user's local character set
+	(see $OpenOffice::OODoc::XPath::LOCAL_CHARSET in the
+	OpenOffice::OODoc::XPath man page).
+
+	Example:
+
+		$old_charset = localEncoding();
+		localEncoding('iso-8859-15');
+
+	If the given argument is an unsupported encoding, an error
+	message is produced and the old encoding is preserved. So
+	this accessor is safer than a direct update of the
+	$OpenOffice::OODoc::XPath::LOCAL_CHARSET variable.
+
+	The default local character set is "iso-8859-1".
+	Should be set to the appropriate value by the application
+	before processing.
+
+	See the Encode::Supported (Perl) documentation for the list
+	of supported encodings.
+
+=head3	ooDocument
+
+	Shortcut for OpenOffice::OODoc::Document->new
+
+=head3	ooFile
+
+	Shortcut for OpenOffice::OODoc::File->new
+
+=head3	ooImage
+
+	Shortcut for OpenOffice::OODoc::Image->new
+
+=head3	ooStyles
+
+	Shortcut for OpenOffice::OODoc::Styles->new
+
+=head3	ooText
+
+	Shortcut for OpenOffice::OODoc::Text->new
+
+=head3	ooXPath
+
+	Shortcut for OpenOffice::OODoc::XPath->new
+
+=head2	Special variable
+
+	$XML_PARSER is a reserved variable in the space of the
+	main program. It contains a reusable XML Parser
+	(XML::XPath::XMLParser object), automatically created.
+	Advanced, XPath-aware applications may reuse this parser
+	(see the documentation of the XML::XPath Perl module) but
+	they must *NOT* set the variable.
 
 =head1	AUTHOR/COPYRIGHT
 
-	Initial developer: Jean-Marie Gouarne
-	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
-	Licensing conditions:
-		- Licence Publique Generale Genicorp v1.0
-		- GNU Lesser General Public License v2.1
-	Contact: oodoc@genicorp.com
+Initial developer: Jean-Marie Gouarne
+
+Copyright 2004 by Genicorp, S.A. 
+
+http://www.genicorp.com
+
+Licensing conditions:
+
+	- Licence Publique Generale Genicorp v1.0
+	- GNU Lesser General Public License v2.1
+
+Contact: oodoc@genicorp.com
 
 =cut
 

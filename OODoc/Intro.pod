@@ -1,14 +1,18 @@
 =head1	NAME
 
-OODoc::Intro - Introduction to Open Office Document Connector
+OpenOffice::OODoc - Introduction to Open Office Document Connector
 
 =head1	DESCRIPTION
 
-This introductory man page is intended to allow anybody to evaluate
-some basic features of the OpenOffice::OODoc modules.
+This introductory notice is intended to allow anybody to evaluate
+some basic features of the OODoc modules. The full reference manual
+is a set of OpenOffice::OODoc::xxx manual pages (where xxx is the
+codename of a particular submodule).
 
-A full reference manual of the API is available as an OpenOffice.org
-document (SXW format) at http://www.genicorp.fr/devel/oodoc
+A one-file reference manual of the API is available in SXW format
+(OpenOffice.org Writer document) at the project homepage:
+
+http://www.genicorp.fr/devel/oodoc
 
 =head1	Overview
 
@@ -40,7 +44,10 @@ The script above appends a new paragraph, with given text and style, and
 a table with 6 lines and 4 columns, to an existing document, then inserts
 a value at a given position in the table. It takes much less time than the
 opening of the document with your favourite text processor, and can be
-executed without any desktop software connection.
+executed without any desktop software connection. A program using this
+library can run without any OpenOffice.org installation (and, practically,
+OODoc has been tested on platforms where OpenOffice.org is not available
+yet).
 
 More generally, OpenOffice::OODoc provides a lot of methods (probably most
 of them are not useful for you) allowing create/search/update/delete
@@ -53,8 +60,12 @@ operations with document elements such as:
 	- page layout;
 	- metadata (i.e. title, subject, and other general properties).
 	
-The OODoc module set is organized in 3 logical layers (a diagram is included
-in the reference manual).
+The OODoc toolbox is organized in 3 logical layers (a diagram is included
+in the reference manual). It's not necessary for you to remember the
+(annoying) details given in the next few paragraphs, but there are described
+only to explain the general orgaisation of the modules. If you have only a
+few dozens of seconds for reading this document, please jump directly at
+the part II (practical examples) and come back later if you want know more.
 
 The first layer consists of the OpenOffice::OODoc::File class (defined in the
 File.pm module). This class is responsible of read/write operations
@@ -158,7 +169,7 @@ much more sophisticated processing, and you have not a lot of time to
 learn the XML path of any kind of document element (paragraph, header,
 item list, style, ...).
 
-So we began to develop a third, more user-friendly layer.
+So there is a third, more user-friendly layer.
 
 The third layer is designed as a set of application-oriented
 classes, inherited from OpenOffice::OODoc::XPath. In this layer, the basic
@@ -168,10 +179,10 @@ hidden. This approach works only if a specialized OpenOffice::OODoc::XPath
 class is defined for each kind of content. So, we ultimately need the
 following classes:
 
-OpenOffice::OODoc::Text for the textual content of any document;
-OpenOffice::OODoc::Image to deal with the graphic objects;
-OpenOffice::OODoc::Meta for the metadata (meta.xml);
-OpenOffice::OODoc::Styles for page/style definitions. 
+	OpenOffice::OODoc::Text for the textual content of any document;
+	OpenOffice::OODoc::Image to deal with the graphic objects;
+	OpenOffice::OODoc::Meta for the metadata (meta.xml);
+	OpenOffice::OODoc::Styles for page/style definitions. 
 
 The OpenOffice::OODoc::Text class brings some methods table processing
 methods (table creation, direct access to individual cells). But, in the
@@ -280,6 +291,14 @@ anchor the image to the paragraph, then create the styles needed to
 control the presentation of both the paragraph and the image, all that
 in the same sequence and in any order.
 
+Caution: In order to get a convenient translation between the user's local
+character set and the common OpenOffice.org encoding (utf8), the application
+must indicate the appropriate encoding. The default one is iso-8859-1;
+it can be set with the localEncoding() function. Example:
+
+	use OpenOffice::OODoc;
+	localEncoding 'iso-8859-15';
+
 =head1	Some practical examples
 
 While the OODoc modules can read and modify any document, they can't
@@ -304,7 +323,7 @@ code to prove that the OpenOffice.org XML format allows a lot of things
 with a few lines.
 
 You can avoid the heavy object oriented notation such as:
-	
+
 	my $meta = OpenOffice::OODoc::Meta->new(file => "xxx.sxc");
 
 and use the shortcuts like:
@@ -413,8 +432,7 @@ To give a very high level abstract, we can say that OODoc::Text provides
 addressing, like getParagraph(4);
 - the 'select' methods that return data selected against a given filter,
 related to a text content or an attribute value, like
-
-	$doc->selectParagraphsByStyle('Text body').
+selectParagraphsByStyle('Text body').
 
 Some 'get' or 'select' methods return lists while other return individual
 elements or values.
@@ -468,13 +486,6 @@ begin and end application-provided tags according to the element type (so
 it's possible to export the text in an alternative, simple XML dialect, or
 in LaTeX, or in an application-specific markup language).
 
-Among the examples provided in the package, you should have a look at
-'oo2pod'. This simple 'extractor' arranges and extracts the content of an
-OOo document and uses it to generate a POD document. (I use a more
-complicated version of this script to generate the OpenOffice::OODoc
-man pages, because the original document is written with the OpenOffice.org
-text processor).
-
 In order to facilitate some kinds of massive document processing
 operations, OODoc::Text provides a few high level methods that do
 iterative processing upon whole sets of text elements. One example is
@@ -507,7 +518,7 @@ Because the need of data capture within table structures is more evident,
 there is a direct accessor to get any individual table cell:
 
 	my $value = $doc->getCellValue($table, $line, $col);
-
+	
 For example:
 
 	my $value = $doc->getCellValue(0, 12, 0);
@@ -527,7 +538,7 @@ The first form puts the $value in the target cell, assuming it's a string
 cell or, if it's a numeric one, your choice is to put the same content
 as the value and the displayable string. The second form (assuming the
 target cell is numeric) provides independent content for value and string
-(the programmer must know what he does, for example in case of money or
+(the programmer must know what (s)he does, for example in case of currency or
 date cell). The 3rd and 4th forms do respectively the same things, but
 use a previously obtained cell element in place of 3D coordinates (in
 order to avoid unnecessary low-level XPath recalculation).
@@ -551,7 +562,7 @@ want to make your changes persistent.
 
 =head2	Example 3 : Dealing with text AND metadata
 
-In this last example, we must access both the text content and the
+In the last example, we must access both the text content and the
 metadata. So, we need 2 OODoc::XPath objects : one OODoc::Text and
 one OODoc::Meta. And to avoid ugly and inefficient I/O operations, we
 need to connect the 2 objects to the same OODoc::File "server".
@@ -697,22 +708,23 @@ installation test scripts (the first one creates an OpenOffice.org file
 from scratch, using the Archive::Zip API and a set of XML templates, before
 accessing this new file with OpenOffice::OODoc).
 
-=head1	SEE ALSO
+=head1	Conclusion
 
-The examples and the test programs provided with the distribution.
+OODoc is a work in progress, so there are probably some bugs to fix, a
+lot of new functionality to add, and maybe some basic design to
+reconsider. But it reasonably works, and has been practically used in
+small real-world projects.
 
-=head1	CONCLUSION
+So any constructive remark or contribution is welcome.
 
-There are probably some bugs to fix, a lot of new functionality to add,
-and maybe some basic design to reconsider. But it reasonably works, and has
-been practically used in small real-world projects.
-
-So any constructive remark is welcome.
-
-=head1	AUTHOR/COPYRIGHT
+=head1	Author & Copyright
 
 Initial developer : Jean-Marie Gouarne <jean.marie.gouarne@genicorp.fr>
-Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
+
+Copyright 2004 by Genicorp, S.A.
+
+http://www.genicorp.com
+
 Licensing conditions:
 
 	- Licence Publique Generale Genicorp v1.0
@@ -722,6 +734,7 @@ Contact: oodoc@genicorp.com
 
 The initial main reference manual has been written in French by the developer,
 then translated in English by Graeme A. Hunter <graeme.hunter@zen.co.uk>
+
 The OpenOffice::OODoc man pages (not including this introduction) are
 extracted from this reference manual.
 

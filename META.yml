@@ -1,6 +1,7 @@
+# http://module-build.sourceforge.net/META-spec.html
 #XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
 name:         OpenOffice-OODoc
-version:      1.104
+version:      1.105
 version_from: OODoc.pm
 installdirs:  site
 requires:
@@ -8,4 +9,4 @@ requires:
     XML::XPath:                    1.13
 
 distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.13
+generated_by: ExtUtils::MakeMaker version 6.17

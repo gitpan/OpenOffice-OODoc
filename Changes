@@ -1,3 +1,11 @@
+1.105	2004-05-26
+	- Fixed some local encoding issues in XPath.pm
+	- Added the extendText() method in XPath.pm
+	- Fixed a style management bug in Text.pm (appendItem method
+	- Added localEncoding() accessor in OODoc.pm
+	- Test update
+	- Added examples/TODO about the localisation of the examples
+	- Documentation update
 1.104	2004-03-12
 	- Added most of the Reference Manual (converted from OOo to POD)
 	- Added a POD version of the README (Intro.pod)

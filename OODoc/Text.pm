@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 1.110 2004-03-12 JMG$
+#	$Id : Text.pm 1.111 2004-05-25 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -13,9 +13,9 @@
 
 package OpenOffice::OODoc::Text;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	1.111;
+use	OpenOffice::OODoc::XPath	1.112;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 1.110;
+our	$VERSION	= 1.111;
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -901,7 +901,7 @@ sub	appendItem
 					text => $text
 					);
 	$opt{'attribute'}{'text:style-name'} = $style;
-	$self->setAttribute($item, %{$opt{'attribute'}});
+	$self->setAttributes($para, %{$opt{'attribute'}});
 
 	return $item;
 	}
@@ -1216,14 +1216,14 @@ sub	cellFormula
 		{
 		if ($formula gt ' ')
 			{
-			$cell->setAttribute('table:formula', $formula);
+			$self->setAttribute($cell, 'table:formula', $formula);
 			}
 		else
 			{
 			$self->removeAttribute($cell, 'table:formula');
 			}
 		}
-	return $cell->getAttribute('table:formula');
+	return $self->getAttribute($cell, 'table:formula');
 	}
 
 #-----------------------------------------------------------------------------

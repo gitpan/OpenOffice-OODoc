@@ -1,11 +1,11 @@
 =head1	NAME
 
-	OpenOffice::OODoc::Notes
+OpenOffice::OODoc::Notes - Notes of the OpenOffice::OODoc man pages
 
 =head1	DESCRIPTION
 
-	The OpenOffice::OODoc::Notes page contains all the notes corresponding
-	to the "[nn]" note citations included in the other documents.
+The OpenOffice::OODoc::Notes page contains all the notes corresponding
+to the "[nn]" note citations included in the other documents.
 
 =head1	NOTES
 
@@ -63,7 +63,13 @@
         implementation of this method.
 
         [12] See the Perl/Encode manual for the list of supported character
-        sets.
+        sets. If the user's character set is selected using the
+	localEncoding() function, any unsupported value (according to the
+	current Perl installation) is automatically rejected. A list of
+	accepted encodings can be returned by Encode::encodings(':all')
+	(the Encode module is loaded by OpenOffice::OODoc, so this function
+	is always available for the application). Some encodings can be
+	named using aliases (see the Encode::Alias documentation).
 
         [13] To do a Find/Replace in an entire text document, use the
         selectTextContent(filter, replacement) method in OODoc::Text.
@@ -168,14 +174,23 @@
 
 =head1	AUTHOR/COPYRIGHT
 
-	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
+Initial developer: Jean-Marie Gouarne
 
-	Initial English version of the reference manual
-	by Graeme A. Hunter <graeme.hunter@zen.co.uk>
+Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
+
+Initial English version of the reference manual
+by Graeme A. Hunter <graeme.hunter@zen.co.uk>
+
+These notes are extracted from the initial reference manual, that is
+available in SXW or PDF format at
+
+http://www.genicorp.fr/devel/oodoc
 	
-	Licensing conditions:
-		- Genicorp General Public Licence v1.0
-		- GNU Lesser General Public License v2.1
-	Contact: oodoc@genicorp.com
+Licensing conditions:
+
+	- Genicorp General Public Licence v1.0
+	- GNU Lesser General Public License v2.1
+
+Contact: oodoc@genicorp.com
 
 =cut

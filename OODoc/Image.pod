@@ -1,42 +1,44 @@
 =head1	NAME
 
-	OpenOffice::OODoc::Image
+OpenOffice::OODoc::Image - Image manipulation methods
 
 =head1	DESCRIPTION
 
-        The OpenOffice::OODoc::Image class is a derivative of
-        OpenOffice::OODoc::XPath designed for the manipulation of graphics
-        objects contained in documents. It mainly allows you to modify the
-        size and position of an image and exchange its content outside the
-        document.
+The OpenOffice::OODoc::Image class is a derivative of
+OpenOffice::OODoc::XPath designed for the manipulation of graphics
+objects contained in documents. It mainly allows you to modify the
+size and position of an image and exchange its content outside the
+document.
 
-        It must be used in conjunction with OpenOffice::OODoc::Styles (via
-        OpenOffice::OODoc::Document) if the application must also manipulate
-        the numerous graphics parameters supported by OpenOffice.org. These
-        parameters are described in graphics styles and not directly in the
-        image elements themselves.
+It must be used in conjunction with OpenOffice::OODoc::Styles (via
+OpenOffice::OODoc::Document) if the application must also manipulate
+the numerous graphics parameters supported by OpenOffice.org. These
+parameters are described in graphics styles and not directly in the
+image elements themselves.
 
-        It can equally be used with images contained in style sheets
-        (headers, footers) as with images contained in the body of a
-        document. It can therefore be associated just as well with a
-        "styles.xml" member as with a "content.xml" member of an
-        OpenOffice.org file.
+It can equally be used with images contained in style sheets
+(headers, footers) as with images contained in the body of a
+document. It can therefore be associated just as well with a
+"styles.xml" member as with a "content.xml" member of an
+OpenOffice.org file.
 
-        This class works with all types of document (text, presentation,
-        etc.).
+This class works with all types of document (text, presentation,
+etc.).
 
-        For all methods where the first argument is given below as "image",
-        it is (unless otherwise stated) either the name of an image as it
-        appears to the end user when editing its properties in
-        OpenOffice.org or StarOffice or the image's element reference
-        obtained previously by the program. All these methods fail and
-        return a null value (or in some cases produce an error message) if
-        the argument does not correspond to a known image contained in the
-        document.
+For all methods where the first argument is given below as "image",
+it is (unless otherwise stated) either the name of an image as it
+appears to the end user when editing its properties in
+OpenOffice.org or StarOffice or the image's element reference
+obtained previously by the program. All these methods fail and
+return a null value (or in some cases produce an error message) if
+the argument does not correspond to a known image contained in the
+document.
 
 =head2	Methods
 
 =head3	Constructor : OpenOffice::OODoc::Image->new(<parameters>) [32] 
+
+	Short Form: ooImage(<parameters>)
 
         See OpenOffice::OODoc::XPath->new.
 
@@ -44,11 +46,11 @@
         => 'styles' is required if you want to work with page background
         images. Example:
 
-            my $doc = OpenOffice::OODoc::Image->new
-            	(
-            	file	=> 'my_presentation.sxi',
-            	member	=> 'styles.xml'
-            	);
+        	my $doc = OpenOffice::OODoc::Image->new
+        		(
+        		file	=> 'my_presentation.sxi',
+        		member	=> 'styles.xml'
+        		);
 
 =head3	createImageElement(name [, options])
 
@@ -59,7 +61,7 @@
 
         Example:
 
-            $doc->createImageElement("Logo");
+        	$doc->createImageElement("Logo");
 
         inserts a default image element called "Logo".
 
@@ -79,7 +81,7 @@
 
         Attributes can be passed in pairs [parameter => value]. Such as:
 
-            style		=> image style name
+        	style		=> image style name
 
         It should be noted that an image should normally be associated with
         a graphic style. The presence of a style is not obligatory when
@@ -87,14 +89,14 @@
         should preferably be actually linked to an existing style before
         displaying or printing the document [33] .
 
-            attachment	=> linked text element
+        	attachment	=> linked text element
 
         indicates if the image is linked to a text element (generally a
         paragraph), and which one. This parameter must be an existing
         element reference (obtained, for example, using getElement or
         selectElementxxx). It is useless if the image is linked to a page.
 
-            page		=> anchor page
+        	page		=> anchor page
 
         If this parameter is used, it indicates that the image will be
         anchored to a page, and the given value is a page number. It does
@@ -103,34 +105,35 @@
         particular page exists when it is opened by OpenOffice.org. If this
         parameter is absent, the image is anchored to a paragraph.
 
-            position		=> coordinates
+        	position	=> coordinates
 
         This parameter indicates the x,y coordinates of the image in
         relation to its anchor point. By default and generally, if the page
         parameter is given, the origin (0,0) is the top left corner of the
-        physical page. If not given, the default is the top left corner of
-        the associated paragraph or header. Coordinates go from left to
-        right and top to bottom, however everything really depends on the
-        image style. Coordinates should be given here in the form of a
-        character string "x,y", and the default unit is centimetres. You can
-        choose millimetres instead by attaching the usual abbreviation, such
-        as "12.5cm, 35mm" which is the same as "125mm, 3.5cm" or "12.5,3.5",
-        etc..
+        physical page. When attached to a text element, if there is no given
+	position, the image is appended to the text.
 
-            size		=> size
+	Coordinates go from left to right and top to bottom, however
+	everything really depends on the image style. Coordinates should be
+	given here in the form of a string "x,y", and the default unit is
+	centimeters. You can choose millimeters instead by attaching the
+	usual abbreviation, such as "12.5cm, 35mm" which is the same as
+	"125mm, 3.5cm" or "12.5,3.5", etc..
+
+        	size		=> size
 
         The image's size (width, height) is given here in the same syntax as
         for position. Caution: if no size is given, you must not assume that
         the image will be spontaneously displayed in the document in a
         convenient size.
 
-        description	=> label
+        	description	=> label
 
         This optional parameter gives the descriptive text (long label) for
         the image as it will appear to the end user when editing the image's
         properties.
 
-            link		=> link
+        	link		=> link
 
         The link parameter contains a reference to the image's physical
         content which can be inserted into an OpenOffice.org file (internal
@@ -144,7 +147,7 @@
         error message is displayed in place of the image. (See imageLink
         about links.) This parameter is useless if import is given.
 
-            import		=> image file
+        	import		=> image file
 
         The presence of this parameter indicates that the image content
         should be imported from an external file and, implicitly, that the
@@ -194,15 +197,15 @@
         the $doc object is a OODoc::Document class. See also
         createImageStyle in OODoc::Document.
 
-            $doc->createImageElement
-            	(
-            	"Landscape",
-            	description	=> "Kilimanjaro in winter",
-            	attachment	=> $doc->getParagraph(4),
-            	size		=> "5cm, 3.5cm",
-            	style		=> "gr1",
-            	import		=> "C:\Images\Landscape.jpg"
-            	);
+        	$doc->createImageElement
+			(
+        		"Landscape",
+        		description	=> "Kilimanjaro in winter",
+        		attachment	=> $doc->getParagraph(4),
+        		size		=> "5cm, 3.5cm",
+        		style		=> "gr1",
+        		import		=> "C:\Images\Landscape.jpg"
+        		);
 
         Remember: creating an image element will only make that image appear
         in the document if 1) the image has a valid link which points to a
@@ -225,7 +228,7 @@
 
         The second optional argument is the destination file. Example:
 
-            $doc->exportImage("Logo1", "C:\My Documents\logo.jpg");
+        	$doc->exportImage("Logo1", "C:\My Documents\logo.jpg");
 
         It is up to the application to choose an appropriate extension for
         the exported file (.jpg, .gif, .png, etc.). You can easily find out
@@ -252,14 +255,14 @@
         behaviour can be changed by parameters passed in hash form
         (parameter => value). Possible parameters are as follows:
 
-            selection	=> filtering of image names (regex)
-            filter		=> filtering of image names (regex)
-            name		=> filtering of image names (regex)
-            target		=> path and/or basic filename
-            path		=> path and/or basic filename
-            suffix		=> extension to be given to filenames
-            extension	=> extension to be given to filenames
-            start_count	=> begin count indicator
+        	selection	=> filtering of image names (regex)
+        	filter		=> filtering of image names (regex)
+        	name		=> filtering of image names (regex)
+        	target		=> path and/or basic filename
+        	path		=> path and/or basic filename
+        	suffix		=> extension to be given to filenames
+        	extension	=> extension to be given to filenames
+        	start_count	=> begin count indicator
 
         The "filter", "selection" or "name" parameters allow you to export
         only those images whose names match the given regular expression.
@@ -361,7 +364,7 @@
 
         Example:
 
-            $doc->imageLink("Logo", "http://www.mysite.com/logo.png");
+        	$doc->imageLink("Logo", "http://www.mysite.com/logo.png");
 
         Caution: the actual physical existence of a valid image which
         corresponds to the link is not checked.
@@ -382,7 +385,7 @@
 
         Example:
 
-            my ($x, $y) = $doc->imagePosition("Landscape");
+        	my ($x, $y) = $doc->imagePosition("Landscape");
 
         If the coordinate arguments are given, they replace the image's old
         coordinates.
@@ -395,7 +398,7 @@
 
         Example:
 
-            $doc->imagePosition("Landscape", "2.5cm", "5.125cm");
+        	$doc->imagePosition("Landscape", "2.5cm", "5.125cm");
 
         Normally, coordinates are measured from left to right and from top
         to bottom starting from the point of reference. The point of
@@ -426,7 +429,7 @@
 
         Example:
 
-            $doc->importImage("Image1", "C:\Images\Portrait.jpg");
+        	$doc->importImage("Image1", "C:\Images\Portrait.jpg");
 
         This import cancels and replaces any previous image content.
 
@@ -456,7 +459,7 @@
 
         Example:
 
-            print "This is an image" if $element->isImage;
+        	print "This is an image" if $element->isImage;
 
 =head3	removeImageDescription(image)
 
@@ -504,7 +507,7 @@
 
         Example:
 
-            my @webimages = $doc->selectImageElementsByLink("^http:");
+        	my @webimages = $doc->selectImageElementsByLink("^http:");
 
         allows you to get a list of images which will not be visible if the
         user's machine is not connected to the internet.
@@ -521,7 +524,7 @@
         There is a static class variable which contains the description of a
         default image style (in hash form):
 
-            %OpenOffice::OODoc::Image::DEFAULT_IMAGE_STYLE
+        	%OpenOffice::OODoc::Image::DEFAULT_IMAGE_STYLE
 
         This hash is not used directly by the module itself (which offers no
         styles functions), but it is available to any application which
@@ -533,23 +536,30 @@
 
 =head1	NOTES
 
-	See OpenOffice::OODoc::Notes(3) for the footnote citations ([n])
-	included in this page.
+See OpenOffice::OODoc::Notes(3) for the footnote citations ([n])
+included in this page.
 
-	This man page has been generated from a chapter of the original
-	reference manual. This manual is in OpenOffice.org (SXW) format.
-	It's freely downloadable at http://www.genicorp.fr/devel/oodoc
+This man page has been adapted from a chapter of the original
+reference manual. This manual is in OpenOffice.org (SXW) format.
+
+It's freely downloadable at
+
+http://www.genicorp.fr/devel/oodoc
 
 =head1	AUTHOR/COPYRIGHT
 
-	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
+Initial developer: Jean-Marie Gouarne
 
-	Initial English version of the reference manual
-	by Graeme A. Hunter <graeme.hunter@zen.co.uk>
+Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
+
+Initial English version of the reference manual
+by Graeme A. Hunter <graeme.hunter@zen.co.uk>
 	
-	Licensing conditions:
-		- Genicorp General Public Licence v1.0
-		- GNU Lesser General Public License v2.1
-	Contact: oodoc@genicorp.com
+Licensing conditions:
+
+	- Genicorp General Public Licence v1.0
+	- GNU Lesser General Public License v2.1
+
+Contact: oodoc@genicorp.com
 
 =cut

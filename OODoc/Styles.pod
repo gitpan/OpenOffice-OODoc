@@ -1,104 +1,104 @@
 =head1	NAME
 
-	OpenOffice::OODoc::Styles
+OpenOffice::OODoc::Styles - Document styles and layout processing
 
 =head1	DESCRIPTION
 
-        This class is designed to handle styles, whether automatic or named,
-        contained in styles.xml or content.xml.
+This class is designed to handle styles, whether automatic or named,
+contained in styles.xml or content.xml.
 
-        Remember that named styles are those that the end user can see and
-        edit using the Stylist tool in OpenOffice.org. Such styles usually
-        have meaningful names and are stored in the styles.xml member.
+Remember that named styles are those that the end user can see and
+edit using the Stylist tool in OpenOffice.org. Such styles usually
+have meaningful names and are stored in the styles.xml member.
 
-        Care should be taken particularly with predefined base styles in
-        OpenOffice.org. These styles are described in styles.xml just like
-        named styles, but they appear to the end user with localised names
-        (in their local language). For example, in the French version of
-        OpenOffice.org, the "Text body" style appears as "Corps de texte",
-        but it is still shown internally as "Text body", and it is by this
-        internal name that applications must refer to it. However, this is
-        not a problem for user-defined styles as the internal name is
-        exactly the same as the display name.
+Care should be taken particularly with predefined base styles in
+OpenOffice.org. These styles are described in styles.xml just like
+named styles, but they appear to the end user with localised names
+(in their local language). For example, in the French version of
+OpenOffice.org, the "Text body" style appears as "Corps de texte",
+but it is still shown internally as "Text body", and it is by this
+internal name that applications must refer to it. However, this is
+not a problem for user-defined styles as the internal name is
+exactly the same as the display name.
 
-        There are also numerous "automatic" styles in a document which are
-        created implicitly by the office application each time a particular
-        set of presentation attributes is given to an element, but where no
-        named style is referenced. Automatic styles which apply to the
-        document body are stored in content.xml (but in an XML element
-        isolated from the content). An automatic style's name can change
-        randomly each time the document is edited or saved in
-        OpenOffice.org. Applications which access automatic styles will not
-        want to indicate them using "hard-coded" names. The best way is to
-        retrieve each automatic style via an object that is known to use it.
-        Using a "hard-coded" name is all right for styles created by a
-        program (the createStyle method requires it), but such a name should
-        only be considered to be stable for the duration of the session. If
-        you want a program-created style name to be then respected by
-        OpenOffice.org, you must create it as a named style. This is no more
-        complicated, but it is better to avoid making hundreds of styles
-        visible to the user that they do not need to see.
+There are also numerous "automatic" styles in a document which are
+created implicitly by the office application each time a particular
+set of presentation attributes is given to an element, but where no
+named style is referenced. Automatic styles which apply to the
+document body are stored in content.xml (but in an XML element
+isolated from the content). An automatic style's name can change
+randomly each time the document is edited or saved in
+OpenOffice.org. Applications which access automatic styles will not
+want to indicate them using "hard-coded" names. The best way is to
+retrieve each automatic style via an object that is known to use it.
+Using a "hard-coded" name is all right for styles created by a
+program (the createStyle method requires it), but such a name should
+only be considered to be stable for the duration of the session. If
+you want a program-created style name to be then respected by
+OpenOffice.org, you must create it as a named style. This is no more
+complicated, but it is better to avoid making hundreds of styles
+visible to the user that they do not need to see.
 
-        On the other hand, some styles are more complex than others as they
-        describe the page layout. These styles can themselves contain text
-        and images. A page style can actually be either:
+On the other hand, some styles are more complex than others as they
+describe the page layout. These styles can themselves contain text
+and images. A page style can actually be either:
 
-            - a header
-            - a footer
-            - margins
-            - or a background.
+    - a header
+    - a footer
+    - margins
+    - or a background.
 
-        Headers and footers can contain text and images which can otherwise
-        be handled by OODoc::Text and OODoc::Image.
+Headers and footers can contain text and images which can otherwise
+be handled by OODoc::Text and OODoc::Image.
 
-        A background contains a colour and can also include a background
-        image (several methods are possible).
+A background contains a colour and can also include a background
+image (several methods are possible).
 
-        Presentation of these objects is itself controlled by styles.
+Presentation of these objects is itself controlled by styles.
 
-        All of this leads to the conclusion that it is not enough just to
-        associate each content element with a style. In reality, document
-        styles form a rather complex network of interdependencies.
+All of this leads to the conclusion that it is not enough just to
+associate each content element with a style. In reality, document
+styles form a rather complex network of interdependencies.
 
-        As for page styles, the OpenOffice.org format contains a concept
-        which must be understood in order to use some of the following
-        methods. By virtue of the principle of separation of content and
-        presentation, the definition of a page style is based on two
-        distinct objects: "master page" and "page master". A "master page"
-        object encompasses any page style content (i.e. the content of
-        headers and footers) and links to a "page master" object which
-        describes page presentation characteristics (with large numbers of
-        parameters from page dimensions to background colour to footnote
-        separator size, etc.). Names which appear in the list of page styles
-        in OpenOffice.org are actually names of "master pages". However, to
-        work with physical aspects of the presentation, you have to access
-        the associated "page master".
+As for page styles, the OpenOffice.org format contains a concept
+which must be understood in order to use some of the following
+methods. By virtue of the principle of separation of content and
+presentation, the definition of a page style is based on two
+distinct objects: "master page" and "page master". A "master page"
+object encompasses any page style content (i.e. the content of
+headers and footers) and links to a "page master" object which
+describes page presentation characteristics (with large numbers of
+parameters from page dimensions to background colour to footnote
+separator size, etc.). Names which appear in the list of page styles
+in OpenOffice.org are actually names of "master pages". However, to
+work with physical aspects of the presentation, you have to access
+the associated "page master".
 
-        To complicate matters, there are also header and footer styles. Each
-        object contained in a header or footer (e.g. paragraph or image) has
-        a style. The number and range of styles are much larger that you
-        would imagine just looking at the Stylist tool in OpenOffice.org. Up
-        to a point, OODoc::Styles methods make life easier for you by
-        masking some of this complexity.
+To complicate matters, there are also header and footer styles. Each
+object contained in a header or footer (e.g. paragraph or image) has
+a style. The number and range of styles are much larger that you
+would imagine just looking at the Stylist tool in OpenOffice.org. Up
+to a point, OODoc::Styles methods make life easier for you by
+masking some of this complexity.
 
-        In OODoc::Styles methods, styles are normally indicated by their
-        logical names (which must be unique), but, except where otherwise
-        stated, they can also be indicated by their style element reference.
-        Moreover, when a method is expecting a page master as an argument
-        but the programmer passes it a master page instead (whether by
-        design or by mistake), it "knows" in most cases how to automatically
-        select the associated page master.
+In OODoc::Styles methods, styles are normally indicated by their
+logical names (which must be unique), but, except where otherwise
+stated, they can also be indicated by their style element reference.
+Moreover, when a method is expecting a page master as an argument
+but the programmer passes it a master page instead (whether by
+design or by mistake), it "knows" in most cases how to automatically
+select the associated page master.
 
-        Defining a style requires a great many attributes. Some appear in
-        code examples in this manual, but for a full list of possible
-        attributes for each style, you must refer to the OpenOffice.org
-        specification or publications derived from it.
+Defining a style requires a great many attributes. Some appear in
+code examples in this manual, but for a full list of possible
+attributes for each style, you must refer to the OpenOffice.org
+specification or publications derived from it.
 
-        OODoc::Styles module is designed to allow applications to manipulate
-        any style and even create new ones. It is not recommended, however,
-        to use it to create a presentation entirely from code. Here again,
-        it is better to start from document templates which already contain
-        at least a blank of each required style.
+OODoc::Styles module is designed to allow applications to manipulate
+any style and even create new ones. It is not recommended, however,
+to use it to create a presentation entirely from code. Here again,
+it is better to start from document templates which already contain
+at least a blank of each required style.
 
 =head2	Methods
 
@@ -204,12 +204,12 @@
         explicitly in the "text" namespace using one of the following two
         options:
 
-            namespace	=> 'text',
+            namespace		=> 'text',
             type		=> 'footnote-configuration'
 
         The following is the list of options:
 
-            namespace	=> namespace
+            namespace		=> namespace
             type		=> style type
             family		=> style family (text, paragraph, ...)
             class		=> style class
@@ -730,8 +730,8 @@
         itself points to a hash containing the base attributes). The four
         top-level elements are as follows:
 
-            references	=> name, family, etc.
-            properties	=> global presentation attributes
+            references		=> name, family, etc.
+            properties		=> global presentation attributes
             header		=> header presentation style
             footer		=> footer presentation style
             footnote-sep	=> footnote separator style
@@ -804,23 +804,30 @@
 
 =head1	NOTES
 
-	See OpenOffice::OODoc::Notes(3) for the footnote citations ([n])
-	included in this page.
+See OpenOffice::OODoc::Notes(3) for the footnote citations ([n])
+included in this page.
 
-	This man page has been generated from a chapter of the original
-	reference manual. This manual is in OpenOffice.org (SXW) format.
-	It's freely downloadable at http://www.genicorp.fr/devel/oodoc
+This man page has been adapted from a chapter of the original
+reference manual. This manual is in OpenOffice.org (SXW) format.
+
+It's freely downloadable at
+
+http://www.genicorp.fr/devel/oodoc
 
 =head1	AUTHOR/COPYRIGHT
 
-	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
+Initial developer: Jean-Marie Gouarne
 
-	Initial English version of the reference manual
-	by Graeme A. Hunter <graeme.hunter@zen.co.uk>
+Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
+
+Initial English version of the reference manual
+by Graeme A. Hunter <graeme.hunter@zen.co.uk>
 	
-	Licensing conditions:
-		- Genicorp General Public Licence v1.0
-		- GNU Lesser General Public License v2.1
-	Contact: oodoc@genicorp.com
+Licensing conditions:
+
+	- Genicorp General Public Licence v1.0
+	- GNU Lesser General Public License v2.1
+
+Contact: oodoc@genicorp.com
 
 =cut

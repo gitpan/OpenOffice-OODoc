@@ -1,20 +1,24 @@
 =head1	NAME
 
-	OpenOffice::OODoc::Text
+OpenOffice::OODoc::Text - The text processing submodule of OpenOffice::OODoc
 
 =head1	DESCRIPTION
 
-        The OpenOffice::OODoc::Text class is a specialist derivative of
-        OpenOffice::OODoc::XPath for XML elements which describe the content
-        of OpenOffice.org documents.
+This man chapter describes the text-oriented methods of OpenOffice::OODoc,
+implemented by the OpenOffice::OODoc::Text class, and inherited by the
+OpenOffice::OODoc::Document class.
 
-        Designed for the handling of text elements. Should be used with
-        OpenOffice::OODoc::Styles, via the OpenOffice::OODoc::Document
-        class, if the application has to handle detailed presentation
-        parameters of text elements. This is because such parameters are
-        held in styles elements and not in the text elements themselves,
-        according to the principle of separation of content and presentation
-        which is one of the foundations of the OpenOffice.org format.
+The OpenOffice::OODoc::Text class is a specialist derivative of
+OpenOffice::OODoc::XPath for XML elements which describe the text content
+of OpenOffice.org documents.
+
+Designed for the handling of text elements. Should be used with
+OpenOffice::OODoc::Styles, via the OpenOffice::OODoc::Document
+class, if the application has to handle detailed presentation
+parameters of text elements. This is because such parameters are
+held in styles elements and not in the text elements themselves,
+according to the principle of separation of content and presentation
+which is one of the foundations of the OpenOffice.org format.
 
 =head2	Methods
 
@@ -870,6 +874,16 @@
         Reads or modifies a table row's style, in the same way as
         columnStyle does for columns.
 
+=head3	selectElementByContent(filter, [...])
+
+	Returns the first text element whose content matches the 'filter'
+	(which can be an exact string or a regular expression), or undef
+	if no matching content is found.
+
+	With more than one argument, this method can be used for replacement
+	operations, or user-defined function triggering, in the same
+	conditions as selectElementsByContent.
+
 =head3	selectElementsByContent(filter)
 
 =head3	selectElementsByContent(filter, replacement)
@@ -1162,23 +1176,30 @@
 
 =head1	NOTES
 
-	See OpenOffice::OODoc::Notes(3) for the footnote citations ([n])
-	included in this page.
+See OpenOffice::OODoc::Notes(3) for the footnote citations ([n])
+included in this page.
 
-	This man page has been generated from a chapter of the original
-	reference manual. This manual is in OpenOffice.org (SXW) format.
-	It's freely downloadable at http://www.genicorp.fr/devel/oodoc
+This man page has been adapted from a chapter of the original
+reference manual. This manual is in OpenOffice.org (SXW) format.
+
+It's freely downloadable at
+
+http://www.genicorp.fr/devel/oodoc
 
 =head1	AUTHOR/COPYRIGHT
 
-	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
+Initial developer: Jean-Marie Gouarne
 
-	Initial English version of the reference manual
-	by Graeme A. Hunter <graeme.hunter@zen.co.uk>
+Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
+
+Initial English version of the reference manual
+by Graeme A. Hunter <graeme.hunter@zen.co.uk>
 	
-	Licensing conditions:
-		- Genicorp General Public Licence v1.0
-		- GNU Lesser General Public License v2.1
-	Contact: oodoc@genicorp.com
+Licensing conditions:
+
+	- Genicorp General Public Licence v1.0
+	- GNU Lesser General Public License v2.1
+
+Contact: oodoc@genicorp.com
 
 =cut

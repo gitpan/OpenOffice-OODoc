@@ -22,6 +22,7 @@ OODoc/Notes.pod
 OODoc/Styles.pod
 OODoc/Text.pod
 OODoc/XPath.pod
+examples/TODO
 examples/change_style
 examples/command_doc
 examples/extract
@@ -39,4 +40,4 @@ data/styles.xml
 data/META-INF/manifest.xml
 t/01write.t
 t/02read.t
-META.yml                                Module meta-data (added by MakeMaker)
+META.yml                                 Module meta-data (added by MakeMaker)

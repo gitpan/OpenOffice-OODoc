@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 1.111 2004-03-11 JMG$
+#	$Id : XPath.pm 1.112 2004-05-26 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -13,7 +13,7 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 1.111;
+our	$VERSION	= 1.112;
 use	XML::XPath	1.13;
 use	Encode;
 
@@ -599,7 +599,9 @@ sub	setText
 		my @columns	= split "\t", $line;
 		while (@columns)
 			{
-			my $column	= shift @columns;
+			my $column	=
+				OpenOffice::OODoc::XPath::encode_text
+					(shift @columns);
 			$element->appendChild
 				(XML::XPath::Node::Text->new($column));
 			$self->appendElement($element, 'text:tab-stop')
@@ -610,6 +612,54 @@ sub	setText
 		}
 
 	return $text;
+	}
+
+#------------------------------------------------------------------------------
+# extends the text of an existing element
+
+sub	extendText
+	{
+	my $self	= shift;
+	my $path	= shift;
+	my $pos		= (ref $path) ? undef : shift;
+	my $text	= shift;
+
+	return undef	unless defined $text;
+	
+	my $element 	= $self->getElement($path, $pos);
+	return undef	unless $element;
+
+	my @lines	= split "\n", $text;
+	while (@lines)
+		{
+		my $line	= shift @lines;
+		my @columns	= split "\t", $line;
+		while (@columns)
+			{
+			my $column	=
+				OpenOffice::OODoc::XPath::encode_text
+					(shift @columns);
+			$element->appendChild
+				(XML::XPath::Node::Text->new($column));
+			$self->appendElement($element, 'text:tab-stop')
+					if (@columns);
+			}
+		$self->appendElement($element, 'text:line-break')
+				if (@lines);
+		}
+
+	return $text;
+	}
+
+#------------------------------------------------------------------------------
+# creates a new encoded text node
+
+sub	createTextNode
+	{
+	my $self	= shift;
+	my $text	= shift		or return undef;
+	my $content	= OpenOffice::OODoc::XPath::encode_text($text);
+	return XML::XPath::Node::Text->new($content);
 	}
 
 #------------------------------------------------------------------------------
@@ -646,9 +696,12 @@ sub	getText
 		if ($node->isElementNode)
 			{ $text .= ($self->getText($node) || ''); }
 		else
-			{ $text .= ($node->getValue || ''); }
+			{
+			my $t = ($node->getValue() || '');
+			$text .= OpenOffice::OODoc::XPath::decode_text($t);
+			}
 		}
-	return OpenOffice::OODoc::XPath::decode_text($text);
+	return $text;
 	}
 
 #------------------------------------------------------------------------------
@@ -852,7 +905,7 @@ sub	selectElementByAttribute
 		{
 		if ($_->isElementNode)
 			{
-			my $v	= $_->getAttribute($key);
+			my $v = $self->getAttribute($_, $key);
 			return $_ if (defined $v && ($v =~ /$value/));
 			}
 		}
@@ -877,7 +930,7 @@ sub	selectElementsByAttribute
 		{
 		if ($_->isElementNode)
 			{
-			my $v	= $_->getAttribute($key);
+			my $v	= $self->getAttribute($_, $key);
 			push @selection, $_	if ($v && ($v =~ /$value/));
 			}
 		}
@@ -1071,7 +1124,8 @@ sub	getAttributes
 	foreach my $a ($node->getAttributeNodes)
 		{
 		my $name		= $a->getName;
-		$attributes{$name}	= $a->getValue;
+		$attributes{$name}	=
+			OpenOffice::OODoc::XPath::decode_text($a->getValue);
 		}
 
 	return %attributes;
@@ -1091,7 +1145,8 @@ sub	getAttribute
 	$pos	= 0	unless $pos;
 
 	my $node	= $self->getElement($path, $pos);
-	return	$node->getAttribute($name);
+	return	OpenOffice::OODoc::XPath::decode_text
+					($node->getAttribute($name));
 	}
 
 #------------------------------------------------------------------------------
@@ -1112,7 +1167,12 @@ sub	setAttributes
 		{
 		if (defined $attr{$k})
 		    {
-		    $node->setAttribute($k, $attr{$k});
+		    $node->setAttribute
+		    		(
+				$k,
+				OpenOffice::OODoc::XPath::encode_text
+						($attr{$k})
+				);
 		    }
 		elsif (my $a = $node->getAttributeNode($k))
 		    {
@@ -1137,7 +1197,11 @@ sub	setAttribute
 
 	if (defined $value && ($value gt ' '))
 		{
-		$node->setAttribute($attribute, $value);
+		$node->setAttribute
+			(
+			$attribute,
+			OpenOffice::OODoc::XPath::encode_text($value)
+			);
 		}
 	elsif (my $a = $node->getAttributeNode($attribute))
 		{

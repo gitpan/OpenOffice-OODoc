@@ -3,7 +3,7 @@
 OpenOffice::OODoc - Open Office Document Connector
 http://www.genicorp.com/devel/oodoc
 
-Quickstart notice (Mar. 2004)
+Quickstart notice (May 2004)
 
 -------------------------------------------------------------------------
 
@@ -42,7 +42,10 @@ The script above appends a new paragraph, with given text and style, and
 a table with 6 lines and 4 columns, to an existing document, then inserts
 a value at a given position in the table. It takes much less time than the
 opening of the document with your favourite text processor, and can be
-executed without any desktop software connection.
+executed without any desktop software connection. A program using this
+library can run without any OpenOffice.org installation (and, practically,
+OODoc has been tested on platforms where OpenOffice.org is not available
+yet).
 
 More generally, OpenOffice::OODoc provides a lot of methods (probably most
 of them are not useful for you) allowing create/search/update/delete
@@ -55,8 +58,12 @@ operations with document elements such as:
 	- page layout;
 	- metadata (i.e. title, subject, and other general properties).
 	
-The OODoc module set is organized in 3 logical layers (a diagram is included
-in the reference manual).
+The OODoc toolbox is organized in 3 logical layers (a diagram is included
+in the reference manual). It's not necessary for you to remember the
+(annoying) details given in the next few paragraphs, but there are described
+only to explain the general orgaisation of the modules. If you have only a
+few dozens of seconds for reading this document, please jump directly at
+the part II (practical examples) and come back later if you want know more.
 
 The first layer consists of the OpenOffice::OODoc::File class (defined in the
 File.pm module). This class is responsible of read/write operations
@@ -160,7 +167,7 @@ much more sophisticated processing, and you have not a lot of time to
 learn the XML path of any kind of document element (paragraph, header,
 item list, style, ...).
 
-So we began to develop a third, more user-friendly layer.
+So there is a third, more user-friendly layer.
 
 The third layer is designed as a set of application-oriented
 classes, inherited from OpenOffice::OODoc::XPath. In this layer, the basic
@@ -282,6 +289,14 @@ anchor the image to the paragraph, then create the styles needed to
 control the presentation of both the paragraph and the image, all that
 in the same sequence and in any order.
 
+Caution: In order to get a convenient translation between the user's local
+character set and the common OpenOffice.org encoding (utf8), the application
+must indicate the appropriate encodinge. The default one is iso-8859-1;
+it can be set with the localEncoding() function. Example:
+
+	use OpenOffice::OODoc;
+	localEncoding 'iso-8859-15';
+
 II - Some practical examples
 
 While the OODoc modules can read and modify any document, they can't
@@ -316,6 +331,7 @@ OpenOffice.org XML. The most straightforward way to do that is to create
 the object in association with an OpenOffice.org file.
 
 Example 1: Dealing with metadata
+
 We need metadata access, so we use OODoc::Meta
 
 	use OpenOffice::OODoc;
@@ -345,7 +361,9 @@ the way to update the user defined fields in the 'set_fields' script.
 The most usual metadata accessors have a symmetrical behaviour. To update
 the title, for example, you have to call the 'title' method with a
 string argument:
+
 	$doc->title("New title");
+
 You can proceed in the same way with subject, description, keywords.
 
 The 'keywords' is an example of polymorphic behaviour (which is quite
@@ -489,7 +507,7 @@ The first form puts the $value in the target cell, assuming it's a string
 cell or, if it's a numeric one, your choice is to put the same content
 as the value and the displayable string. The second form (assuming the
 target cell is numeric) provides independent content for value and string
-(the programmer must know what he does, for example in case of money or
+(the programmer must know what (s)he does, for example in case of currency or
 date cell). The 3rd and 4th forms do respectively the same things, but
 use a previously obtained cell element in place of 3D coordinates (in
 order to avoid unnecessary low-level XPath recalculation).
@@ -667,5 +685,23 @@ small real-world projects.
 
 So any constructive remark is welcome.
 
-(JMG // oodoc@genicorp.com)
+IV - Author & Copyright
+
+Initial developer : Jean-Marie Gouarne <jean.marie.gouarne@genicorp.fr>
+
+Copyright 2004 by Genicorp, S.A.
+http://www.genicorp.com
+
+Licensing conditions:
+
+	- Licence Publique Generale Genicorp v1.0
+	- GNU Lesser General Public License v2.1
+
+Contact: oodoc@genicorp.com
+
+The initial main reference manual has been written in French by the developer,
+then translated in English by Graeme A. Hunter <graeme.hunter@zen.co.uk>
+
+The OpenOffice::OODoc man pages (not including this introduction) are
+extracted from this reference manual.
 

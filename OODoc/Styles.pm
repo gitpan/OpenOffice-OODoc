@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Styles.pm 1.003 2004-03-11 JMG$
+#	$Id : Styles.pm 1.004 2004-05-19 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -13,10 +13,10 @@
 
 package OpenOffice::OODoc::Styles;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	1.111;
+use	OpenOffice::OODoc::XPath	1.112;
 use	File::Basename;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 1.003;
+our	$VERSION	= 1.004;
 
 #-----------------------------------------------------------------------------
 
@@ -463,7 +463,8 @@ sub	getStyleAttributes
 			"::getStyleAttributes] Unknown style\n";
 		return %style;
 		}
-	%{$style{'properties'}}	= $self->styleProperties($element);
+	%{$style{'properties'}}	= $self->styleProperties($element)
+					if $self->styleProperties($element);
 	%{$style{'references'}} = $self->getAttributes($element);
 	return %style;
 	}

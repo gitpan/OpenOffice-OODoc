@@ -1,13 +1,16 @@
 #-----------------------------------------------------------------------------
-# 01write.t	OpenOffice::OODoc 1.103 Installation test	(c) GENICORP
+# 01write.t	OpenOffice::OODoc 1.105 Installation test	(c) GENICORP
 #-----------------------------------------------------------------------------
 
 use Test;
-BEGIN	{ plan tests => 16 }
+BEGIN	{ plan tests => 17 }
 
-use OpenOffice::OODoc	1.103;
+use XML::XPath		1.13;
 ok(1);
 use Archive::Zip	1.05	qw ( :DEFAULT :CONSTANTS :ERROR_CODES );
+ok(1);
+
+use OpenOffice::OODoc	1.105;
 ok(1);
 
 #-----------------------------------------------------------------------------
@@ -123,7 +126,7 @@ ok(1);
 my $title = $meta->title || '';
 ok($title eq "Test document");
 $meta->description($notice);
-$meta->generator("OpenOffice::OODoc installation test");
+$meta->generator("OpenOffice::OODoc 1.105 installation test");
 
 # Saving the $testfile file
 ok($archive->save);

@@ -1,100 +1,101 @@
 =head1	NAME
 
-	OpenOffice::OODoc::XPath
+OpenOffice::OODoc::XPath - Low-level XML navigation in the documents
 
 =head1	DESCRIPTION
 
-        This module is a low-level class which uses OODoc::File (without
-        inheriting anything from it) along with the classes defined in the
-        CPAN XML::XPath module.
+This module is a low-level class which uses OODoc::File (without
+inheriting anything from it) along with the classes defined in the
+XML::XPath module. It's a common basis for the other, more user-
+friendly, document-oriented modules.
 
-        This chapter can be skipped by programmers who are only interested
-        in document types handled by the specialist classes which follow.
-        Understanding these classes is easier and using them requires less
-        Perl and XML expertise. However, calling OODoc::XPath remains a good
-        rescue option as it allows all kinds of operations on all types of
-        XML members contained in any OpenOffice.org document.
+This chapter can be skipped by programmers who are only interested
+in document types handled by the specialist classes which follow.
+Understanding these classes is easier and using them requires less
+Perl and XML expertise. However, calling OODoc::XPath remains a good
+rescue option as it allows all kinds of operations on all types of
+XML members contained in any OpenOffice.org document.
 
-        This class forms the basis of OODoc::Meta, OODoc::Text,
-        OODoc::Styles and OODoc::Image. It contains the lowest layer of
-        navigation services for XML documents and handles the link with
-        OODoc::File for file access. Its primary role is as an interface
-        with the XML::XPath API.
+This class forms the basis of OODoc::Meta, OODoc::Text,
+OODoc::Styles and OODoc::Image. It contains the lowest layer of
+navigation services for XML documents and handles the link with
+OODoc::File for file access. Its primary role is as an interface
+with the XML::XPath API.
 
-        OODoc::XPath is based on the XML::XPath module (see CPAN
-        documentation). In the following chapters, you will see elements
-        often mentioned. When it says that a module expects a parameter or
-        returns an element (either singly or as a list), it is referring to
-        an XML element. More precisely, it is referring to an object of the
-        XML::XPath::Node::Element class (unless otherwise stated) and all
-        available methods this object confers. Generally speaking, it is not
-        necessary to call these low-level methods contained within
-        OODoc::XPath and its descendants using their simpler form. It is
-        however important to distinguish elements from their content
-        (elements being simply references to XML data structures). To read
-        or modify the content of an element such as its text or XML
-        attributes, use the accessors also available within OODoc::XPath.
+OODoc::XPath is based on the XML::XPath module (see CPAN
+documentation). In the following chapters, you will see elements
+often mentioned. When it says that a module expects a parameter or
+returns an element (either singly or as a list), it is referring to
+an XML element. More precisely, it is referring to an object of the
+XML::XPath::Node::Element class (unless otherwise stated) and all
+available methods this object confers. Generally speaking, it is not
+necessary to call these low-level methods contained within
+OODoc::XPath and its descendants using their simpler form. It is
+however important to distinguish elements from their content
+(elements being simply references to XML data structures). To read
+or modify the content of an element such as its text or XML
+attributes, use the accessors also available within OODoc::XPath.
 
-        In most cases where XPath methods require a reference to an element
-        as an argument, there are two ways of proceeding:
+In most cases where XPath methods require a reference to an element
+as an argument, there are two ways of proceeding:
 
-            - reference the element directly (obtained previously)
-            - or give the XML::XPath path and position, being a string and
-            an integer respectively [2]
+	- reference the element directly (obtained previously)
+	- or give the XML::XPath path and position, being a string and
+	an integer respectively [2]
 
-        Some methods accept both forms which means that if the first
-        parameter is recognised as an element reference, the position does
-        not need to be given. Therefore the number of arguments for certain
-        OODoc::XPath methods can vary.
+Some methods accept both forms which means that if the first
+parameter is recognised as an element reference, the position does
+not need to be given. Therefore the number of arguments for certain
+OODoc::XPath methods can vary.
 
-        For those who really want to access all areas there are also
-        OODoc::XPath methods which allow unrestricted access to every
-        element or XML attribute via an access path in XPath syntax. If you
-        are into this kind of thing, we recommend you obtain good syntax
-        reference manuals for XPath and OpenOffice.org and a supply of
-        aspirin.
+For those who really want to access all areas there are also
+OODoc::XPath methods which allow unrestricted access to every
+element or XML attribute via an access path in XPath syntax. If you
+are into this kind of thing, we recommend you obtain good syntax
+reference manuals for XPath and OpenOffice.org and a supply of
+aspirin.
 
-        Methods which may return several lines of text (e.g. getTextList) do
-        so either in the form of an unique character string containing "\n"
-        separators or in table form.
+Methods which may return several lines of text (e.g. getTextList) do
+so either in the form of an unique character string containing "\n"
+separators or in table form.
 
-        Unless otherwise stated, the word document in this chapter only
-        refers to XML documents contained within OODoc::XPath objects and
-        not OpenOffice.org documents (as an end user would use).
+Unless otherwise stated, the word document in this chapter only
+refers to XML documents contained within OODoc::XPath objects and
+not OpenOffice.org documents (as an end user would use).
 
-        Amongst the different methods which return elements, attributes or
-        text, some are called getXxx, others selectXxx or findXxx. Read
-        methods whose names start with "get" generally refer to an
-        unfiltered object or list, whereas others return an object or list
-        filtered according to a parameter value. In this latter case the
-        search parameter is treated as a standard expression and not an
-        exact value. This means that if the search criteria is "xyz", all
-        text containing "xyz" will be considered a match. To restrict the
-        search to text exactly equal to "xyz", use "^xyz$" as the search
-        criteria (following Perl regular expression syntax).
+Amongst the different methods which return elements, attributes or
+text, some are called getXxx, others selectXxx or findXxx. Read
+methods whose names start with "get" generally refer to an
+unfiltered object or list, whereas others return an object or list
+filtered according to a parameter value. In this latter case the
+search parameter is treated as a standard expression and not an
+exact value. This means that if the search criteria is "xyz", all
+text containing "xyz" will be considered a match. To restrict the
+search to text exactly equal to "xyz", use "^xyz$" as the search
+criteria (following Perl regular expression syntax).
 
-        Several methods allow you to place copies of or references to
-        elements (from other documents or from other positions in the same
-        document) in any position in the current document. This offers
-        powerful manoeuvrability but only if these placements conform with
-        the destination position's context [3] .
+Several methods allow you to place copies of or references to
+elements (from other documents or from other positions in the same
+document) in any position in the current document. This offers
+powerful manoeuvrability but only if these placements conform with
+the destination position's context [3] .
 
-        For advanced users familiar with the XML::XPath API, it might be
-        interesting to know that all the objects called "elements" in the
-        following chapters are objects of the XML::XPath::Node::Element
-        class, and that all methods associated with this class are directly
-        applicable to them, on top of the functionality described in this
-        manual. However, this should not normally be needed.
+For advanced users familiar with the XML::XPath API, it might be
+interesting to know that all the objects called "elements" in the
+following chapters are objects of the XML::XPath::Node::Element
+class, and that all methods associated with this class are directly
+applicable to them, on top of the functionality described in this
+manual. However, this should not normally be needed.
 
-        Important note: We recommend using OODoc::Meta and OODoc::Document
-        (which are both OODoc::XPath derivatives) to manipulate metadata
-        (for all document types) and content (for text documents)
-        respectively. These two objects provide highest-level methods which
-        are neater and more productive. Explicit use of XPath methods (which
-        sometimes require large numbers of parameters) should only be
-        considered as a last resort in unexpected circumstances for access
-        to any element or XML attribute not handled by more "friendly"
-        methods.
+Important note: We recommend using OODoc::Meta and OODoc::Document
+(which are both OODoc::XPath derivatives) to manipulate metadata
+(for all document types) and content (for text documents)
+respectively. These two objects provide highest-level methods which
+are neater and more productive. Explicit use of XPath methods (which
+sometimes require large numbers of parameters) should only be
+considered as a last resort in unexpected circumstances for access
+to any element or XML attribute not handled by more "friendly"
+methods.
 
 =head2	Methods
 
@@ -395,7 +396,7 @@
         used internally by methods which insert text or attribute values
         into documents (e.g. setText).
 
-=head3	exportXMLBody
+=head3	exportXMLBody()
 
         Returns the XML string for use by another application representing
         the body of a document, without UTF8 decoding.
@@ -435,6 +436,23 @@
         from within the same program by reference or replication without
         going via its XML (see appendElement, insertElement and
         replicateElement).
+
+=head3	extendText(path, position, text)
+
+=head3	extendText(element, text)
+
+	Appends the given text to the previous content of the given
+	element.
+
+	Example:
+
+		$doc->setText($p, "Initial content");
+		$doc->extendText($p, " extended");
+	
+	Assuming $p is a regular text element (ex: a paragraph), its
+	content becomes "Initial content extended".
+
+	(See also setText()).
 
 =head3	findElementList(element, filter [, replacement])
 
@@ -1091,12 +1109,23 @@
         This sequence gives the 'My Header' style and level 3 to the 13th
         "header" element in the document.
 
+=head3	setText(path, position, text)
+
+=head3	setText(element, text)
+
+	Use the given text as the content of the given element.
+
+	Any previous content is replaced by the given one.
+
+	(See also extendText())
+
 =head2	Properties
 
-        No class variables are exported.
+        No class variables are exported; the applications, if needed,
+	must access them using their full name ($OpenOffice::OODoc::XPath:XXX)
 
-        The following are global variables which should be prefixed
-        explicitly with $OpenOffice::OODoc::XPath:::
+        The following names should be prefixed explicitly with
+	"$OpenOffice::OODoc::XPath::"
 
             CHARS_TO_ESCAPE
 
@@ -1106,24 +1135,29 @@
             OO_CHARSET
 
         indicates the character set used for OpenOffice.org document
-        encoding and whose default value is 'utf8'.
+        encoding and whose default value is 'utf8' (it should not be changed).
 
             LOCAL_CHARSET
 
-        indicates the user's character set, by default 'ISO-8859-1'.
+        indicates the user's character set, by default 'iso-8859-1'; it must
+	be changed according to the real user's needs (warning: there is no
+	kind of automatic adaptation to the user's locales, so the application
+	must explicitly load the right value in this variable); it should be
+	done using the localEncoding() accessor (see the OpenOffice::OODoc(3)
+	man page and, for the list of supported character sets, the Encode
+	module's documentation).
 
-        The content of these three variables should not normally be
-        modified, except the last one for purposes of internationalisation
-        (see accepted values in the Perl Encode module's documentation).
+        The content of these three variables should not normally be directly
+        modified by the applications.
 
         Instance hash variables are primarily those which were listed as
         parameters of the new constructor:
 
-            'archive'	=> <oodoc_file_object>
+            'archive'		=> <oodoc_file_object>
             'file'		=> <OpenOffice.org file>
             'member'		=> <file member>
             'xml'		=> <XML string>
-            'element'	=> <name of loaded XML element>
+            'element'		=> <name of loaded XML element>
             'parser'		=> <XML parser>
 
         However, the 'xml' variable is cleared almost immediately after a
@@ -1180,23 +1214,30 @@
 
 =head1	NOTES
 
-	See OpenOffice::OODoc::Notes(3) for the footnote citations ([n])
-	included in this page.
+See OpenOffice::OODoc::Notes(3) for the footnote citations ([n])
+included in this page.
 
-	This man page has been generated from a chapter of the original
-	reference manual. This manual is in OpenOffice.org (SXW) format.
-	It's freely downloadable at http://www.genicorp.fr/devel/oodoc
+This man page has been adapted from a chapter of the original
+reference manual. This manual is in OpenOffice.org (SXW) format.
+
+It's freely downloadable at
+
+http://www.genicorp.fr/devel/oodoc
 
 =head1	AUTHOR/COPYRIGHT
 
-	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
+Initial developer: Jean-Marie Gouarne
 
-	Initial English version of the reference manual
-	by Graeme A. Hunter <graeme.hunter@zen.co.uk>
+Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
+
+Initial English version of the reference manual
+by Graeme A. Hunter <graeme.hunter@zen.co.uk>
 	
-	Licensing conditions:
-		- Genicorp General Public Licence v1.0
-		- GNU Lesser General Public License v2.1
-	Contact: oodoc@genicorp.com
+Licensing conditions:
+
+	- Genicorp General Public Licence v1.0
+	- GNU Lesser General Public License v2.1
+	
+Contact: oodoc@genicorp.com
 
 =cut

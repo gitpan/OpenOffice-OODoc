@@ -1,20 +1,34 @@
 =head1	NAME
 
-	OpenOffice::OODoc::Document
+OpenOffice::OODoc::Document - Top level component for content processing
 
 =head1	DESCRIPTION
 
-        This module is designed simply to create classes which include all
-        the functionality of OODoc::Text, OODoc::Image and OODoc::Styles
-        (which do not need to be called directly by applications).
+This module defines the top level Document class, allowing any kind
+of content and presentation processing.
 
-        The documentation provided for the three constituent modules and, of
-        course, OODoc::XPath which is the common base, mostly covers this
-        module.
+This module is designed simply to create objects which include all
+the functionality of OODoc::Text, OODoc::Image and OODoc::Styles
+(which do not need to be called directly by applications).
 
-        OODoc::Document itself only provides those methods (there are
-        currently very few) which cover the need to combine at least two or
-        three constituent modules.
+The documentation provided for the three constituent modules and, of
+course, OODoc::XPath which is the common base, mostly covers this
+module. So, in order to get a detailed documentation for each kind
+of functionality, see the following man pages:
+
+	OpenOffice::OODoc::Text		-> text content
+	OpenOffice::OODoc::Styles	-> style & layout
+	OpenOffice::OODoc::Image	-> graphic objects
+	OpenOffice::OODoc::XPath	-> low-level API
+
+Remember that any OpenOffice::OODoc::Document object (created from
+a ooDocument() call) inherits all the methods and properties of the
+classes listed above (and brings only a few additional methods by its
+own).
+
+OODoc::Document itself only provides those methods (there are
+currently very few) which cover the need to combine at least two or
+three constituent modules.
 
 =head2	Methods
 
@@ -147,23 +161,30 @@
 
 =head1	NOTES
 
-	See OpenOffice::OODoc::Notes(3) for the footnote citations ([n])
-	included in this page.
+See OpenOffice::OODoc::Notes(3) for the footnote citations ([n])
+included in this page.
 
-	This man page has been generated from a chapter of the original
-	reference manual. This manual is in OpenOffice.org (SXW) format.
-	It's freely downloadable at http://www.genicorp.fr/devel/oodoc
+This man page has been adapted from a chapter of the original
+reference manual. This manual is in OpenOffice.org (SXW) format.
+
+It's freely downloadable at
+
+http://www.genicorp.fr/devel/oodoc
 
 =head1	AUTHOR/COPYRIGHT
 
-	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
+Initial developer: Jean-Marie Gouarne
 
-	Initial English version of the reference manual
-	by Graeme A. Hunter <graeme.hunter@zen.co.uk>
+Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
+
+Initial English version of the reference manual
+by Graeme A. Hunter <graeme.hunter@zen.co.uk>
 	
-	Licensing conditions:
-		- Genicorp General Public Licence v1.0
-		- GNU Lesser General Public License v2.1
-	Contact: oodoc@genicorp.com
+Licensing conditions:
+
+	- Genicorp General Public Licence v1.0
+	- GNU Lesser General Public License v2.1
+
+Contact: oodoc@genicorp.com
 
 =cut

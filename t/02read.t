@@ -1,12 +1,11 @@
 #-----------------------------------------------------------------------------
-# 02read.t	OpenOffice::OODoc 1.103 Installation test	(c) GENICORP
+# 02read.t	OpenOffice::OODoc 1.105 Installation test	(c) GENICORP
 #-----------------------------------------------------------------------------
 
 use Test;
 BEGIN	{ plan tests => 7 }
 
-# print "Loading OpenOffice::OODoc...";
-use OpenOffice::OODoc	1.103;
+use OpenOffice::OODoc	1.105;
 ok(1);
 
 #-----------------------------------------------------------------------------
@@ -35,7 +34,7 @@ ok($doc->getImageElement("Logo"));
 ok($doc->selectParagraphByStyle("Colour"));
 
 # Checking the installation signature in the metadata
-ok($meta->generator() eq "OpenOffice::OODoc installation test");
+ok($meta->generator() eq "OpenOffice::OODoc 1.105 installation test");
 
 exit 0;
 
