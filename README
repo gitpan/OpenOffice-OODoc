@@ -3,14 +3,18 @@
 OpenOffice::OODoc - Open Office Document Connector
 (http://www.genicorp.com/devel/oodoc)
 
-Quickstart notice (July 2004)
+Quickstart notice (Sep. 2004)
 
 -------------------------------------------------------------------------
 
 This short introductory notice is intended to allow anybody to evaluate
-some basic features of the OODoc modules. A full reference manual of the
-API is available as an OpenOffice.org (SXW) document (please see the
-project page above for download)
+some basic features of the OODoc modules.
+
+A reference manual of the API is available as an OpenOffice.org (SXW)
+document (please see the project page above for download), but it's not
+maintained in sync with the distribution, so it's largely outdated. The only
+one up-to-date documentation is packaged with the distribution and available
+on line at CPAN (http://search.cpan.org/dist/OpenOffice-OODoc).
 
 I - Overview
 

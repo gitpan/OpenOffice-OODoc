@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Image.pm 1.011 2004-08-03 JMG$
+#	$Id : Image.pm 1.012 2004-09-20 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -16,7 +16,7 @@ use	5.006_001;
 use	OpenOffice::OODoc::XPath	1.115;
 use	File::Basename;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 1.011;
+our	$VERSION	= 1.012;
 
 #-----------------------------------------------------------------------------
 # default attributes for image style
@@ -102,7 +102,11 @@ sub	createImageElement
 		my $page = ref $target ?
 				$target		:
 				$self->selectElementByAttribute
-					('draw:page', '^' . $pagename . '$');
+					(
+					'//draw:page',
+					'draw:name',
+			       		'^' . $target . '$'
+					);
 		delete $opt{'page'};
 		$path = $page;
 		}

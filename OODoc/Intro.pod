@@ -9,9 +9,9 @@ some basic features of the OODoc modules. The full reference manual
 is a set of OpenOffice::OODoc::xxx manual pages (where xxx is the
 codename of a particular submodule).
 
-A one-file reference manual of the API is available in SXW format
-(OpenOffice.org Writer document) of PDF. In can be downloaded from
-the project homepage (http://www.genicorp.com/devel/oodoc).
+There is a one-file documentation in OpenOffice.org (SXW) or PDF format, but
+it's not maintained in sync with the distribution, so it's largely outdated.
+However, it's available at the project page (http:://www.genicorp.fr/devel/oodoc) 
 
 =head1	Overview
 

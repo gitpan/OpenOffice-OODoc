@@ -51,13 +51,15 @@ INSTALLATION
 	the --encoding <encoding>, --colormap <file>  and --workdir <path>
 	options. Example:
 	
-	perl Makefile.PL --noprompt --workdir "C:\Temp" --encoding iso-8859-15
+	perl Makefile.PL --noprompt --workdir "C:\Temp" --encoding "cp1252"
 
 	These options define installation-level default values only; each of
 	these values can be overridden by the applications (thanks, for
 	example, to the ooLocalEncoding(), ooWorkingDirectory() and
 	ooLoadColorMap() functions. The installation-level options are stored
 	in a XML file (OODoc/config.xml) below the installation directory.
+	This file can be manually edited at any time after the installation
+	in order to change any parameter.
 
 	If the installation is successful, the test procedure generates an
 	OpenOffice.org document, writes some content in it, and checks the
