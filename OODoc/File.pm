@@ -1,21 +1,19 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : File.pm 1.102 2003-11-10 JMG$		(c) GENICORP 2003
+#	$Id : File.pm 1.103 2004-03-07 JMG$		(c) GENICORP 2004
 #
 #	Initial developer: Jean-Marie Gouarne
-#	Copyright 2003 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
 #	Licensing conditions:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
 #	Contact: oodoc@genicorp.com
 #
-#	Basic compression/uncompression utility for OpenOffice.org files
-#
 #-----------------------------------------------------------------------------
 
 package	OpenOffice::OODoc::File;
 use	5.006_001;
-our	$VERSION	= 1.102;
+our	$VERSION	= 1.103;
 use	Archive::Zip	1.05	qw ( :DEFAULT :CONSTANTS :ERROR_CODES );
 
 #-----------------------------------------------------------------------------
@@ -523,5 +521,10 @@ sub	save
 	}
 
 #-----------------------------------------------------------------------------
-
 1;
+
+=head1	NAME
+
+OpenOffice::OODoc::File - Basic I/O interface for OpenOffice.org files
+
+=cut

@@ -1,23 +1,21 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 1.102 2003-11-10 JMG$		(c) GENICORP 2003
+#	$Id : Text.pm 1.103 2004-03-07 JMG$		(c) GENICORP 2004
 #
 #	Initial developer: Jean-Marie Gouarne
-#	Copyright 2003 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
 #	Licensing conditions:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
 #	Contact: oodoc@genicorp.com
 #
-#	OpenOffice Text XML class definition
-#
 #-----------------------------------------------------------------------------
 
 package OpenOffice::OODoc::Text;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	1.102;
+use	OpenOffice::OODoc::XPath	1.111;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 1.102;
+our	$VERSION	= 1.103;
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -1836,3 +1834,10 @@ sub	setStyle
 
 #-----------------------------------------------------------------------------
 1;
+
+=head1	NAME
+
+OpenOffice::OODoc::Text - Interface for text elements processing
+
+=cut
+

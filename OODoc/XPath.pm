@@ -1,21 +1,19 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 1.110 2004-02-27 JMG$		(c) GENICORP 2004
+#	$Id : XPath.pm 1.111 2004-03-07 JMG$		(c) GENICORP 2004
 #
 #	Initial developer: Jean-Marie Gouarne
-#	Copyright 2003 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
 #	Licensing conditions:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
 #	Contact: oodoc@genicorp.com
 #
-#	Basic XPath methods for OpenOffice.org documents
-#
 #-----------------------------------------------------------------------------
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 1.110;
+our	$VERSION	= 1.111;
 use	XML::XPath	1.13;
 use	Encode;
 
@@ -197,6 +195,10 @@ sub	new
 	my $class	= ref($caller) || $caller;
 	my $self	=
 		{
+		body_path		=> '//office:body',
+		auto_style_path		=> '//office:automatic-styles',
+		master_style_path	=> '//office:master-styles',
+		named_style_path	=> '//office:styles',
 		@_
 		};
 	if (($self->{'file'}) && (! $self->{'archive'}))
@@ -419,9 +421,9 @@ sub	getBody
 
 	return 
 		(
-		$self->getElement('//office:body', 0)
+		$self->getElement($self->{'body_path'}, 0)
 			||
-		$self->getElement('//office:master-styles', 0)
+		$self->getElement($self->{'master_style_path'}, 0)
 		);
 	}
 
@@ -1464,3 +1466,9 @@ sub	removeElement
 
 #------------------------------------------------------------------------------
 1;
+
+=head1	NAME
+
+OpenOffice::OODoc::XPath - Common XML interface for OpenOffice.org documents
+
+=cut

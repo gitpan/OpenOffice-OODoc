@@ -8,8 +8,23 @@ OODoc/Meta.pm
 OODoc/Styles.pm
 OODoc/Text.pm
 OODoc/XPath.pm
-test.pl
-scarab.png
 README
 INSTALL
+Changes
+examples/change_style
+examples/command_doc
+examples/extract
+examples/search
+examples/set_fields
+examples/set_title
+examples/export_images
+data/scarab.png
+data/content.xml
+data/meta.xml
+data/mimetype
+data/settings.xml
+data/styles.xml
+data/META-INF/manifest.xml
+t/01write.t
+t/02read.t
 META.yml                                 Module meta-data (added by MakeMaker)

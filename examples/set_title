@@ -1,0 +1,63 @@
+#!/usr/bin/perl -w
+
+=head1	NAME
+
+set_title - Set the title of a document using a content element
+
+=head1	SYNOPSIS
+
+Sample script reading the title of an OpenOffice.org Writer document and,
+if empty, use the text of the first header of the document content
+as the title (or put an arbitrary string if there is no header in the
+document). Probably not an inspired idea in real life, but it's just a demo.
+
+usage : set_title filename
+
+=cut
+ 
+use OpenOffice::OODoc;
+
+	# create an OpenOffice.org file object
+	# using the 1st command line argument as filename
+my $oofile	= ooFile($ARGV[0]);
+	# exit if $filename isn't available or can't be open
+	# as a regular OpenOffice.org file
+die "Unavailable file $ARGV[0]\n" unless $oofile;
+
+	# create a metadata-aware object, linked to the file object
+my $doc_meta	= ooMeta(archive => $oofile);
+
+	# extract the title form the metadata object
+	# (without argument, the 'title' method is a 'get' accessor)
+my $title	= $doc_meta->title;
+
+	# if the title is defined, display it and exit
+if ($title)
+	{
+	print "The title is \"$title\"\n";
+	}
+	
+	# if there is no title...
+else
+	{
+	# create a content-aware object linked to the same file object
+	my $doc_text	= ooText(archive	=> $oofile);
+	# get the text of the first header element (the list is zero-based)
+	my $text	= $doc_text->getHeaderText(0);
+	if ($text)
+		{
+		# use this text, if defined, as the title
+		# (the 'title' method, with argument, is a 'set' accessor)
+		$doc_meta->title($text);
+		}
+	else
+		{
+		# alas, there was no header in the document,
+		# so we put an arbitrary provisional title
+		$doc_meta->title("Untitled document");
+		}
+	# commit the update
+	$oofile->save;
+	}
+
+exit;

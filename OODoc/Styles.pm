@@ -1,24 +1,22 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Styles.pm 1.002 2003-11-10 JMG$		(c) GENICORP 2003
+#	$Id : Styles.pm 1.003 2004-03-07 JMG$		(c) GENICORP 2004
 #
 #	Initial developer: Jean-Marie Gouarne
-#	Copyright 2003 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
 #	Licensing conditions:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
 #	Contact: oodoc@genicorp.com
 #
-#	OpenOffice.org Styles processing
-#
 #-----------------------------------------------------------------------------
 
 package OpenOffice::OODoc::Styles;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	1.102;
+use	OpenOffice::OODoc::XPath	1.111;
 use	File::Basename;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 1.002;
+our	$VERSION	= 1.003;
 
 #-----------------------------------------------------------------------------
 
@@ -74,9 +72,6 @@ sub	new
 	my %options	=
 		(
 		member			=> 'styles',	# XML member
-		named_style_path	=> '//office:styles',
-		auto_style_path		=> '//office:automatic-styles',
-		master_style_path	=> '//office:master-styles',
 		@_
 		);
 	my $object	= $class->SUPER::new(%options);
@@ -1201,3 +1196,9 @@ sub	removeStyle
 
 #-----------------------------------------------------------------------------
 1;
+
+=head1	NAME
+
+OpenOffice::OODoc::Styles - Interface for styles & layout processing
+
+=cut

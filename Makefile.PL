@@ -4,6 +4,7 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
     'NAME'		=> 'OpenOffice::OODoc',
     'VERSION_FROM'	=> 'OODoc.pm',
+    'ABSTRACT_FROM'	=> 'OODoc.pm',
     'AUTHOR'		=> 'Jean-Marie Gouarne, Genicorp S.A.',
     'PREREQ_PM'		=>
     		{

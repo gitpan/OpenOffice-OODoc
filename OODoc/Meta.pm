@@ -1,23 +1,21 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Meta.pm 1.001 2003-07-26 JMG$		(c) GENICORP 2003
+#	$Id : Meta.pm 1.002 2004-03-07 JMG$		(c) GENICORP 2004
 #
 #	Initial developer: Jean-Marie Gouarne
-#	Copyright 2003 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
 #	Licensing conditions:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
 #	Contact: oodoc@genicorp.com
 #
-#	OpenOffice.org meta-data access module
-#
 #-----------------------------------------------------------------------------
 
 package	OpenOffice::OODoc::Meta;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	1.001;
+use	OpenOffice::OODoc::XPath	1.111;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 1.001;
+our	$VERSION	= 1.002;
 
 #-----------------------------------------------------------------------------
 # constructor : calling OOXPath constructor with 'meta' as member choice
@@ -30,6 +28,7 @@ sub	new
 		(
 		utf8		=> 1,
 		member		=> 'meta',
+		body_path	=> '//office:meta',
 		@_
 		);
 
@@ -59,17 +58,6 @@ sub	accessor
 	return 	(defined $value)			?
 		$self->setText($element, $value)	:
 		$self->getText($element);
-	}
-
-#-----------------------------------------------------------------------------
-# get the body element of the meta-data
-# overrides the getBody method from OODoc::XPath
-
-sub	getBody
-	{
-	my $self	= shift;
-
-	return	$self->getElement('//office:meta', 0);
 	}
 
 #-----------------------------------------------------------------------------
@@ -312,5 +300,10 @@ sub	statistic
 	}
 
 #-----------------------------------------------------------------------------
-
 1;
+
+=head1	NAME
+
+OpenOffice::OODoc::Meta - Interface for metadata manipulation
+
+=cut

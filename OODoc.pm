@@ -1,9 +1,9 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : OODoc.pm 1.102 2003-11-05 JMG$		(c) GENICORP 2003
+#	$Id : OODoc.pm 1.103 2004-03-07 JMG$		(c) GENICORP 2004
 #
 #	Initial developer: Jean-Marie Gouarne
-#	Copyright 2003 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
 #	Licensing conditions:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
@@ -13,15 +13,15 @@
 #
 #-----------------------------------------------------------------------------
 
-use OpenOffice::OODoc::File		1.102;
-use OpenOffice::OODoc::Meta		1.001;
-use OpenOffice::OODoc::Document		1.002;
+use OpenOffice::OODoc::File		1.103;
+use OpenOffice::OODoc::Meta		1.002;
+use OpenOffice::OODoc::Document		1.003;
 
 #-----------------------------------------------------------------------------
 
 package	OpenOffice::OODoc;
 use 5.006_001;
-our $VERSION				= 1.102;
+our $VERSION				= 1.103;
 
 require Exporter;
 our @ISA    = qw(Exporter);
@@ -74,3 +74,23 @@ sub	ooStyles
 	
 #-----------------------------------------------------------------------------
 1;
+
+__END__
+
+=head1 NAME
+
+OpenOffice::OODoc - A multipurpose API for OpenOffice.org document processing
+
+=head1 SYNOPSIS
+
+This module allows direct read/write operations on documents, without using
+the OpenOffice.org software. It provides a high-level, document-oriented
+language, and isolates the programmer from the details of the OpenOffice.org
+XML dialect and file format.
+
+A full reference manual is available at http://www.genicorp.fr/devel/oodoc
+in OpenOffice.org (SXW) format. For a short introduction, please look at the
+README file in the distribution.
+
+=cut
+

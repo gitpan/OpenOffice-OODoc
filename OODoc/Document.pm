@@ -1,29 +1,27 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Document.pm 1.002 2003-11-05 JMG$		(c) GENICORP 2003
+#	$Id : Document.pm 1.003 2004-03-07 JMG$		(c) GENICORP 2004
 #
 #	Initial developer: Jean-Marie Gouarne
-#	Copyright 2003 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
 #	Licensing conditions:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
 #	Contact: oodoc@genicorp.com
 #
-#	Document content processing (text, graphics and automatic styles)
-#
 #-----------------------------------------------------------------------------
 
-use OpenOffice::OODoc::Text	1.102;
-use OpenOffice::OODoc::Image	1.006;
-use OpenOffice::OODoc::Styles	1.002;
+use OpenOffice::OODoc::Text	1.103;
+use OpenOffice::OODoc::Image	1.007;
+use OpenOffice::OODoc::Styles	1.003;
 
 package OpenOffice::OODoc::Document;
 our @ISA	= qw	(
-			OpenOffice::OODoc::Styles
-			OpenOffice::OODoc::Image
 			OpenOffice::OODoc::Text
+			OpenOffice::OODoc::Image
+			OpenOffice::OODoc::Styles
 			);
-our $VERSION	= 1.002;
+our $VERSION	= 1.003;
 
 #-----------------------------------------------------------------------------
 # constructor
@@ -251,3 +249,8 @@ sub	getStyle
 #-----------------------------------------------------------------------------
 1;
 
+=head1	NAME
+
+OpenOffice::OODoc::Document - Integrated API for content and presentation
+
+=cut

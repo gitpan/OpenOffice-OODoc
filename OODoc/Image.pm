@@ -1,24 +1,22 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Image.pm 1.006 2003-11-05 JMG$		(c) GENICORP 2003
+#	$Id : Image.pm 1.007 2004-03-07 JMG$		(c) GENICORP 2004
 #
 #	Initial developer: Jean-Marie Gouarne
-#	Copyright 2003 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
 #	Licensing conditions:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
 #	Contact: oodoc@genicorp.com
 #
-#	OpenOffice.org image manipulation module
-#
 #-----------------------------------------------------------------------------
 
 package	OpenOffice::OODoc::Image;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	1.102;
+use	OpenOffice::OODoc::XPath	1.111;
 use	File::Basename;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 1.006;
+our	$VERSION	= 1.007;
 
 #-----------------------------------------------------------------------------
 # default attributes for image style
@@ -542,10 +540,29 @@ sub	exportImage
 	my $self	= shift;
 	my $element	= $self->getImageElement(shift);
 	return undef	unless $element;
-	my $path	= $self->imageLink($element);
-	return	$path	?
-		$self->raw_export($path, @_)	:
-		undef;
+	my $path	= $self->imageLink($element)	or return undef;
+	unless ($path =~ /^#Pictures\//)
+		{
+		warn	"[" . __PACKAGE__ . "::exportImage] "		.
+			"Image content $path is an external link. "	.
+			"Can't be exported\n";
+		return	undef;
+		}
+	my $target	= shift;
+	unless ($target)
+		{
+		my $name = $self->imageName($element);
+		if ($name)
+			{
+			$path =~ /(\..*$)/;
+			$target = $name . ($1 || '');
+			}
+		else
+			{
+			$target = $path;
+			}
+		}
+	return $self->raw_export($path, $target, @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -559,38 +576,44 @@ sub	exportImages
 	my $filter	= $opt{'filter'} || $opt{'name'} || $opt{'selection'};
 	my $basename	= $opt{'path'} || $opt{'target'};
 	my $suffix	= $opt{'suffix'} || $opt{'extension'};
-	my $count	= $opt{'start_count'} || 0;
+	my $number	= defined $opt{'start_count'} ?
+					$opt{'start_count'} : 1;
 	my @list	= ();
+	my $count	= 0;
 
 	my @to_export	= $filter ?
 				$self->selectImageElementsByName($filter, @_)
 				:
 				$self->getImageElementList(@_);
 
-	foreach my $image (@to_export)
+	IMAGE_LOOP: foreach my $image (@to_export)
 		{
-		my $filename = undef;
-		if (defined $basename)
+		my $link	= $self->imageLink($image);
+		next IMAGE_LOOP unless ($link && ($link =~ /^#Pictures\//));
+		my $filename	= undef;
+		my $extension	= undef;
+		my $target	= undef;
+		if (defined $suffix)
 			{
-			my $extension = undef;
-			if (defined $suffix)
-				{
-				$extension = $suffix;
-				}
-			else
-				{
-				$self->imageLink($image) =~ /(\..*$)/;
-				$extension = $1 || '';
-				}
-			my $target = $basename . $count . $extension;
-			($filename = $self->exportImage($image, $target))
-				&& $count++;
+			$extension = $suffix;
 			}
 		else
 			{
-			$filename = $self->exportImage($image);
+			$link =~ /(\..*$)/;
+			$extension = $1 || '';
 			}
+		if (defined $basename)
+			{
+			$target = $basename . $number . $extension;
+			}
+		else
+			{
+			my $name = $self->imageName($image) || "Image$number";
+			$target = $name . $extension;
+			}
+		$filename = $self->exportImage($image, $target);
 		push @list, $filename	if $filename;
+		$count++; $number++;
 		}
 	return wantarray ? @list : $count;
 	}
@@ -633,3 +656,9 @@ sub	importImage
 
 #-----------------------------------------------------------------------------
 1;
+
+=head1	NAME
+
+OpenOffice::OODoc::Image - Image objects manipulation interface
+
+=cut
