@@ -1,4 +1,4 @@
-OpenOffice::OODoc 1.103 installation (Mar 2004)
+OpenOffice::OODoc 1.104 installation (Mar 2004)
 
 SYSTEM REQUIREMENTS
 
@@ -8,7 +8,7 @@ SYSTEM REQUIREMENTS
 	
 TODO
 
-	Uncompress the distribution archive, enter the OpenOffice-OODoc-1.102
+	Uncompress the distribution archive, enter the OpenOffice-OODoc-1.104
 	directory and (as system administrator), type the following commands:
 
 		perl Makefile.PL
@@ -16,10 +16,8 @@ TODO
 
 	You will be warned about unsatisfied dependencies, if any.
 
-	Unless you omit the 'test' option, the installation test script
-	attempts to create an OpenOffice.org (SXW) file. You should check this
-	file using OpenOffice.org Writer; it contains a PNG logo and a short
-	description of the installation. The content of this document is
-	generated with the OpenOffice::OODoc API, so if you get it you can
-	assume the installation is complete.
-	
+	If the installation is successful, the test procedure generates an
+	OpenOffice.org document, writes some content in it, and checks the
+	result. You can later open this document with OpenOffice.org Writer
+	or a compatible software (the file is named 'ootest.sxw' and resides
+	in the working directory of the installation).

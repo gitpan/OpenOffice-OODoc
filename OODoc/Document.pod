@@ -1,0 +1,169 @@
+=head1	NAME
+
+	OpenOffice::OODoc::Document
+
+=head1	DESCRIPTION
+
+        This module is designed simply to create classes which include all
+        the functionality of OODoc::Text, OODoc::Image and OODoc::Styles
+        (which do not need to be called directly by applications).
+
+        The documentation provided for the three constituent modules and, of
+        course, OODoc::XPath which is the common base, mostly covers this
+        module.
+
+        OODoc::Document itself only provides those methods (there are
+        currently very few) which cover the need to combine at least two or
+        three constituent modules.
+
+=head2	Methods
+
+=head3	Constructor : OpenOffice::OODoc::Document->new(<parameters>)
+
+        Short Form: ooDocument(<parameters>)
+
+        See OpenOffice::OODoc::XPath->new.
+
+        Options are the same as for the OODoc::XPath constructor. If no
+        "member" parameter is given, the member selected by default is
+        "content.xml".
+
+=head3	createImageStyle(name [, options])
+
+        Creates a graphics style which is immediately usable. With no
+        options, this method applies to a style a "reasonable" set of
+        characteristics which match fairly closely the default image
+        presentation style in OpenOffice.org before any manual changes made
+        by the user. An application can set its own options in the same way
+        as createStyle in OODoc::Styles.
+
+        The aim of this method is to minimise the amount of work involved in
+        setting up the style, especially when the default values are close
+        enough, and bearing in mind that an image must always be associated
+        with a style to be displayed in a document.
+
+        The code below shows a simple method of inserting an image into a
+        document, in this case linked to a given paragraph (see
+        createImageElement in OODoc::Image):
+
+            my $anchor	= $doc->getParagraph(4);
+            my $style	= $doc->createImageStyle("Photo");
+            my $image	= $doc->createImageElement
+            	(
+            	"Eiffel Tower",
+            	style		=> "Photo",
+            	attachment	=> $anchor,
+            	size		=> "4cm, 12cm",
+            	import		=> "eiffel_tower.jpg"
+            	);
+
+=head3	createTextStyle(name [, options])
+
+        Creates a text style which is immediately usable and whose default
+        characteristics are the "Standard" style in the document, even if no
+        options are given.
+
+        If the "Standard" style does not exist, a "reasonable" style is
+        still created (this can happen in a document created from code and
+        not by OpenOffice.org).
+
+        An application can still pass all the options it wants in the same
+        way as createStyle in OODoc::Styles.
+
+=head3	removePageBreak(paragraph)
+
+        Removes the page break from the given paragraph (before or after).
+
+        This method actually removes the page break attribute from the
+        corresponding paragraph style. It does not remove paragraph styles
+        which may have been created to carry page breaks, so its effects are
+        not technically the reverse of setPageBreak. Generally speaking,
+        however, this should not be a problem. See setPageBreak about the
+        logic of handling page breaks.
+
+=head3	setPageBreak(paragraph [, options])
+
+        Places a page break at the position of the given paragraph. By
+        default, the page break is placed before the paragraph and no
+        changes are made to the page style.
+
+        You can place the page break after the paragraph using the option
+
+            position => 'after'
+
+        To use this method properly every time, you must remember that a
+        page break is not a text element, but a style applied before or
+        after the paragraph concerned. Putting a page break in front of or
+        behind a paragraph actually means adding a "page break before" or
+        "page break after" attribute to the paragraph's style. As always, a
+        page break cannot appear in the text in keeping with the principle
+        of separation of content and presentation. This however adds a
+        slight complication, in that all paragraphs which use the same style
+        will have the page break. Otherwise, if the paragraph has a named
+        style (i.e. defined in styles.xml) and we are working in the body of
+        the document (i.e. in content.xml), then this method will not work
+        as it cannot access both XML members at the same time. There is
+        however a solution (the one used by OpenOffice.org) which consists
+        simply of creating a special style for the paragraph which takes the
+        old paragraph style as a parent and has only a page break attribute
+        (the old paragraph style is not modified). To do this, all you need
+        is the option:
+
+            style => style_name
+
+        This option forces the creation of an automatic style with the given
+        name (make sure none other exists with the same name) and which will
+        only be used to carry the page break. Later on, you can of course
+        apply other characteristics to the style using the updateStyle
+        method in OODoc::Styles, but this is not recommended. It is better
+        not to use page break styles for other purposes. The nature of the
+        existing paragraph style dictates whether or not you create a page
+        break style. If the paragraph style is a named style (i.e. defined
+        in styles.xml and visible to the user), you must create a page break
+        style, but if it already has an automatic style you must not. The
+        quite rare but most complicated scenario is where the paragraph has
+        an automatic style shared by several paragraphs. In this case you
+        must then make copies of the styles using the methods in
+        OODoc::Styles.
+
+        A page break can allow you to change a page's style. You can do this
+        with the option:
+
+            page => page style
+
+        in which you give the following page's style (i.e. the logical name
+        of a master page. See OODoc::Styles). Remember that if the "page"
+        option is given, the page break is forced before the paragraph (the
+        "position" option does not work in this case).
+
+=head3	style(object [, style])
+
+        Returns the style name of a text or graphics object. If the first
+        argument is a "master page" (see OODoc::Styles), it even returns the
+        associated "page master".
+
+        Replaces the object's style if a style name is given as the second
+        argument.
+
+=head1	NOTES
+
+	See OpenOffice::OODoc::Notes(3) for the footnote citations ([n])
+	included in this page.
+
+	This man page has been generated from a chapter of the original
+	reference manual. This manual is in OpenOffice.org (SXW) format.
+	It's freely downloadable at http://www.genicorp.fr/devel/oodoc
+
+=head1	AUTHOR/COPYRIGHT
+
+	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
+
+	Initial English version of the reference manual
+	by Graeme A. Hunter <graeme.hunter@zen.co.uk>
+	
+	Licensing conditions:
+		- Genicorp General Public Licence v1.0
+		- GNU Lesser General Public License v2.1
+	Contact: oodoc@genicorp.com
+
+=cut

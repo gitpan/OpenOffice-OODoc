@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Meta.pm 1.002 2004-03-07 JMG$		(c) GENICORP 2004
+#	$Id : Meta.pm 1.002 2004-03-11 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -301,9 +301,3 @@ sub	statistic
 
 #-----------------------------------------------------------------------------
 1;
-
-=head1	NAME
-
-OpenOffice::OODoc::Meta - Interface for metadata manipulation
-
-=cut

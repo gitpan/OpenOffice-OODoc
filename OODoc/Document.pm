@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Document.pm 1.003 2004-03-07 JMG$		(c) GENICORP 2004
+#	$Id : Document.pm 1.004 2004-03-11 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -11,7 +11,7 @@
 #
 #-----------------------------------------------------------------------------
 
-use OpenOffice::OODoc::Text	1.103;
+use OpenOffice::OODoc::Text	1.110;
 use OpenOffice::OODoc::Image	1.007;
 use OpenOffice::OODoc::Styles	1.003;
 
@@ -21,7 +21,7 @@ our @ISA	= qw	(
 			OpenOffice::OODoc::Image
 			OpenOffice::OODoc::Styles
 			);
-our $VERSION	= 1.003;
+our $VERSION	= 1.004;
 
 #-----------------------------------------------------------------------------
 # constructor
@@ -248,9 +248,3 @@ sub	getStyle
 
 #-----------------------------------------------------------------------------
 1;
-
-=head1	NAME
-
-OpenOffice::OODoc::Document - Integrated API for content and presentation
-
-=cut

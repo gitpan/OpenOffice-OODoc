@@ -1,0 +1,298 @@
+=head1	NAME
+
+	OpenOffice::OODoc::File
+
+=head1	DESCRIPTION
+
+        The explicit use of this module is necessary only in programs which
+        need to access several XML elements in the same OpenOffice.org
+        document in the same session, e.g. Metadata, content and page
+        layout. In this case, it will in effect be calling several
+        OODoc::XPath derivative objects (e.g. an OODoc::Meta and an
+        OODoc::Text), each one accessing a distinct XML element, but all
+        working on the same file. It is advisable, then, to create firstly
+        an OODoc::File object which handles the overall file access, then to
+        create two or more OODoc::XPath objects which will use it as a
+        "server".
+
+        If the program is only concerned with a single XML element from the
+        file, it is unnecessary to create an OODoc::File explicitly. Just
+        build an OODoc::XPath object with a filename as parameter. The XPath
+        will create a "private" File itself and use it to access the data
+        invisibly.
+
+        Please note that OODoc::File is able to handle all standard zip
+        archives and not just OpenOffice.org files. Filenames do not have to
+        have a ".sx?" extension. It allows access by other modules, if
+        required, to XML/OpenOffice data in compressed archives which are
+        not necessarily in OpenOffice.org format.
+
+=head2	Methods
+
+=head3	Constructor : OpenOffice::OODoc::File->new(<filename>)
+
+        Short Form: ooFile(filename)
+
+        Returns an instance of OODoc::File if <filename> is a valid zip
+        archive name.
+
+        Example:
+
+            my $archive	=
+            	OpenOffice::OODoc::File->new("my_document.sxw");
+
+        An optional argument can be passed in hash format (key => value),
+        after the filename. Like this:
+
+            work_dir		=> "path"
+
+        which designates the path to the XML working files also generated
+        during a save, by default "/tmp/" (if this parameter is set to null,
+        the save workspace is the current user directory).
+
+        Note: no content checking is carried out. The archive can be opened
+        whether or not it is an OpenOffice.org document.
+
+        The returned object, if successful, is a valid File instance, whose
+        methods listed below become available.
+
+        If unsuccessful (generally due to non-existent file or invalid zip
+        archive or even a corrupt zip archive), the constructor returns a
+        null value (undef), and an error message is sent to the standard
+        output.
+
+=head3	extract(<member>)
+
+        Returns the decompressed content of the requested member, if
+        contained in the archive and corresponds to an XML element of the
+        currently active OpenOffice.org file instance. The <member>
+        parameter must therefore correspond to one of the members of the
+        file (see Introduction). If the application uses any of the words
+        "content", "meta", "styles" or "settings", in upper or lower case,
+        the .xml extension is automatically added but any other names are
+        accepted without change if they are indeed existing members of the
+        archive.
+
+        The following statements are equivalent:
+
+            my $content = $archive->extract('META');
+            my $content = $archive->extract('meta.xml');
+            my $content = $archive->extract('meta);
+
+        After the above calls, the variable $content contains the XML
+        document which represents the metadata of an OpenOffice.org file.
+        This content can be used, for example, to instance a Meta object.
+
+        Note: in most "normal" cases, this method does not have to be called
+        explicitly as it is called silently by each occurrence of XPath
+        (therefore by Text and Meta which are derivatives of it), but only
+        if XPath is constructed referencing an OODoc::File object as a
+        parameter (see OODoc::XPath). An extract call is only useful when
+        exporting the XML or handling it outside of OODoc::XPath.
+
+        On error (e.g. unknown archive member), a null value is returned and
+        an error message is produced.
+
+=head3	link(<XPath_object>)
+
+        Connects a File object to an XPath object given as an argument. This
+        connection has two output products:
+
+            - immediately calls the extract method using the corresponding
+            "specialist" component of the XPath object (metadata if
+            OODoc::Meta, content if OODoc::Text, etc).
+            - stores the link for later updates to all OpenOffice.org file
+            members which may have been modified by XPath objects (in case a
+            save is called, see below).
+
+        Note: This method is used by OODoc::XPath to connect as "clients" to
+        OODoc::File objects. It does not have to be called directly by
+        highest-level programs which only use OODoc::XPath objects.
+
+=head3	raw_delete(member)
+
+        Orders the deletion of any OpenOffice.org file member.
+
+        Example:
+
+            $archive->raw_delete("Pictures/100000AEFGH.jpg");
+
+        deletes the physical content of an image loaded in the file.
+
+        It is entirely up to the application to ensure that such a deletion
+        does not compromise the integrity of the file as no dependency
+        checking is carried out here. In the above example, the delete
+        operation could be particularly justified if the "image" member
+        which referenced this content had been (or was going to be)
+        otherwise removed, or if it had been replaced by an external
+        reference.
+
+        This method can be used to remove any XML or non-XML member. It can
+        be combined with raw_import() in order to effect a raw replacement
+        of content without interpretation.
+
+        Note: calls to this method only prepare the deletion, which is
+        actually carried out by the save() method if it occurs before the
+        end of the program. If save() is called with a filename which is
+        different from the source filename, the source file remains
+        unchanged and the deleted member is simply not transferred to the
+        target file.
+
+        This method should not generally be called in an "ordinary" program.
+
+=head3	raw_export(member [, destination])
+
+        Decompresses and exports the physical content of a given member (XML
+        or non-XML) of an archive. If the second argument is used, it passes
+        the destination filename (perhaps with access path). If not, the
+        file is exported using its internal archive name. Examples:
+
+            $archive->raw_export("styles.xml");
+
+        exports the "styles.xml" member into a file of the same name in the
+        current directory.
+
+            $archive->raw_export("styles.xml", "/tmp/my_style.xml");
+
+        exports the same XML member to a given path.
+
+        raw_export executes immediately (and is not deferred like
+        raw_import).
+
+        If successful, the returned value is the filename of the exported
+        file.
+
+=head3	raw_import(member [, source])
+
+        Creates or replaces the indicated member by importing an external
+        source file. If the second argument is omitted, the source file is
+        taken to have the same access path as the internal member.
+
+        Example:
+
+            $arch1->raw_export("styles.xml", "/tmp/styles.xml");
+            $arch2->raw_import("styles.xml", "/tmp/styles.xml");
+
+        or, in more compact form:
+
+            $arch2->raw_import
+            	(
+            	"styles.xml",
+            	$arch1->raw_export("styles.xml")
+            	);
+
+        The above sequence requests the import of the member "styles.xml"
+        from an archive called $arch1 into $arch2 (a direct means of using
+        the styles and page layout of one document as a template for
+        another).
+
+        The imported files can be any type and have any content. This "raw"
+        method treats an OpenOffice.org file as any other zip archive. It
+        notably allows the import of non-XML members (images, sounds,
+        programs, etc) which the application deals with (and which can be
+        ignored by the office application).
+
+        Caution: the import is only completed when a save() method is called
+        by the importing object. It can only succeed if the source file is
+        available at that very moment. A raw_import method can be called
+        before the imported file is available (no check of availability is
+        made). An error will be caused if the file is absent at the time of
+        the save call. If several raw_import statements are run against the
+        same filename, there will actually be a corresponding number of
+        copies of the file in its final state which are imported at the
+        moment of the save, even if it had perhaps been modified in the
+        meantime (probably not a very useful outcome).
+
+=head3	save([<filename>])
+
+        Saves the content of the archive to a file replacing the content of
+        some or all of the XML members with data supplied by the linked
+        OODoc::XPath object(s). Each updated member must be indicated in the
+        form of a hash element whose key corresponds to a standard XML
+        member of an OpenOffice.org file, in the same way as for an extract
+        call with the value being the new XML content to be saved.
+
+        Example:
+
+        $archive->save("target.sxw");
+
+        Please note that File does not check the content, and the save
+        method can be used to force through any data which may produce a
+        file unusable by StarOffice/OpenOffice.org. Normally, supplied data
+        should have been produced by an XPath object or other application
+        producing OpenOffice.org XML.
+
+        The filename argument is optional. If it is omitted, the source file
+        supplied by the new call is used [1] .
+
+        Even though the life of an OODoc::File object does not necessarily
+        end with a save, it is recommended that you avoid repeated
+        alternation between save and extract (the object's behaviour in this
+        situation has not been tested). Normally it is preferable to call a
+        save once and for all at the end of a series of updates.
+
+        Only a call to OODoc::File's save method saves content and
+        presentation changes made by other OODoc components to the
+        OpenOffice.org file, including raw imports of external data
+        (raw_import). No file is created or modified before this method is
+        called, with the exception of external files created by raw_export.
+        Nevertheless File's save can be called automatically and silently by
+        an OODoc::XPath object but only where it has been called as a
+        parameter explicitly for this purpose (see the chapter on
+        OODoc::XPath).
+
+        All XPath objects which are "connected" to a File object by link
+        must be present at the time of the save call. If one of these
+        objects has meanwhile been deleted, the consequences are
+        unpredictable and, in any case, any document updates it could have
+        made are lost.
+
+=head2	Properties
+
+        No class variables are exported.
+
+        Instance hash variables are:
+
+            'linked'		=> list of connected OODoc::XPath instances
+            'members'	=> list of file member (*.xml and others)
+            'raw_members'	=> list of import files
+            'temporary_files'	=> created temporary files.
+
+        Where $f is a given instance of OODoc::File, the table
+
+            @{$f->{'linked'}}
+
+        is a list of OODoc::XPath objects which were connected to $f by the
+        link method and
+
+            @{$f->{'members'}}
+
+        is a list of members found in the archive when new is called.
+
+        These variables can be read at any time even though they were
+        normally designed to be used internally by OODoc::File. Unless you
+        are just finding out exactly what they do, it is dangerous to modify
+        them. Applications do not normally need to access them.
+
+=head1	NOTES
+
+	See OpenOffice::OODoc::Notes(3) for the footnote citations ([n])
+	included in this page.
+
+	This man page has been generated from a chapter of the original
+	reference manual. This manual is in OpenOffice.org (SXW) format.
+	It's freely downloadable at http://www.genicorp.fr/devel/oodoc
+
+=head1	AUTHOR/COPYRIGHT
+
+	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
+
+	Initial English version of the reference manual
+	by Graeme A. Hunter <graeme.hunter@zen.co.uk>
+	
+	Licensing conditions:
+		- Genicorp General Public Licence v1.0
+		- GNU Lesser General Public License v2.1
+	Contact: oodoc@genicorp.com
+
+=cut

@@ -1,3 +1,9 @@
+1.104	2004-03-12
+	- Added most of the Reference Manual (converted from OOo to POD)
+	- Added a POD version of the README (Intro.pod)
+	- Added a new example
+	- Reorganised some in line comments in POD
+	- Included Licence (EN & FR) in the package
 1.103	2004-03-09
 	- Added comments
 	- Added examples

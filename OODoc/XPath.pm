@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 1.111 2004-03-07 JMG$		(c) GENICORP 2004
+#	$Id : XPath.pm 1.111 2004-03-11 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -1466,9 +1466,3 @@ sub	removeElement
 
 #------------------------------------------------------------------------------
 1;
-
-=head1	NAME
-
-OpenOffice::OODoc::XPath - Common XML interface for OpenOffice.org documents
-
-=cut

@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 1.103 2004-03-07 JMG$		(c) GENICORP 2004
+#	$Id : Text.pm 1.110 2004-03-12 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -15,7 +15,7 @@ package OpenOffice::OODoc::Text;
 use	5.006_001;
 use	OpenOffice::OODoc::XPath	1.111;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 1.103;
+our	$VERSION	= 1.110;
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -140,6 +140,12 @@ sub	XML::XPath::Node::Element::isHeader
 	my $element	= shift;
 	my $name	= $element->getName;
 	return ($name && ($name eq 'text:h')) ? 1 : undef;
+	}
+
+sub	XML::XPath::Node::Element::headerLevel
+	{
+	my $element	= shift;
+	return $element->getAttribute('text:level');
 	}
 
 sub	XML::XPath::Node::Element::isTable
@@ -451,6 +457,19 @@ sub	replaceAll
 	}
 
 #-----------------------------------------------------------------------------
+# get the list of text elements
+
+sub	getTextElementList
+	{
+	my $self	= shift;
+	return $self->selectChildElementsByName
+			(
+			$self->getBody,
+			't(ext:(h|p|.*list|table.*)|able:.*)'
+			);
+	}
+
+#-----------------------------------------------------------------------------
 # get the list of paragraph elements
 
 sub	getParagraphList
@@ -624,12 +643,29 @@ sub	removeSpan
 	}
 
 #-----------------------------------------------------------------------------
+# get the footnote bodies in the document
+
+sub	getFootnoteList
+	{
+	my $self	= shift;
+	return $self->getElementList('//text:footnote-body');
+	}
+
+#-----------------------------------------------------------------------------
+# get the footnote citations in the document
+
+sub	getFootnoteCitationList
+	{
+	my $self	= shift;
+	return $self->getElementList('//text:footnote-citation');
+	}
+
+#-----------------------------------------------------------------------------
 # get the list of tables in the document
 
 sub	getTableList
 	{
 	my $self	= shift;
-
 	return $self->getElementList('//table:table');
 	}
 
@@ -639,7 +675,6 @@ sub	getTableList
 sub	getHeader
 	{
 	my $self	= shift;
-
 	return $self->getElement('//text:h', @_);
 	}
 
@@ -649,14 +684,12 @@ sub	getHeader
 sub	getHeaderContent
 	{
 	my $self	= shift;
-
 	return $self->getText('//text:h', @_);
 	}
 
 sub	getHeaderText
 	{
 	my $self	= shift;
-
 	return $self->getText('//text:h', @_);
 	}
 
@@ -1834,10 +1867,3 @@ sub	setStyle
 
 #-----------------------------------------------------------------------------
 1;
-
-=head1	NAME
-
-OpenOffice::OODoc::Text - Interface for text elements processing
-
-=cut
-

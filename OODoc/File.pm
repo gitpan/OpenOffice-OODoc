@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : File.pm 1.103 2004-03-07 JMG$		(c) GENICORP 2004
+#	$Id : File.pm 1.103 2004-03-07 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -522,9 +522,3 @@ sub	save
 
 #-----------------------------------------------------------------------------
 1;
-
-=head1	NAME
-
-OpenOffice::OODoc::File - Basic I/O interface for OpenOffice.org files
-
-=cut

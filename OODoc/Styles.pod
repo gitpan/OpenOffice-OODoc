@@ -1,0 +1,826 @@
+=head1	NAME
+
+	OpenOffice::OODoc::Styles
+
+=head1	DESCRIPTION
+
+        This class is designed to handle styles, whether automatic or named,
+        contained in styles.xml or content.xml.
+
+        Remember that named styles are those that the end user can see and
+        edit using the Stylist tool in OpenOffice.org. Such styles usually
+        have meaningful names and are stored in the styles.xml member.
+
+        Care should be taken particularly with predefined base styles in
+        OpenOffice.org. These styles are described in styles.xml just like
+        named styles, but they appear to the end user with localised names
+        (in their local language). For example, in the French version of
+        OpenOffice.org, the "Text body" style appears as "Corps de texte",
+        but it is still shown internally as "Text body", and it is by this
+        internal name that applications must refer to it. However, this is
+        not a problem for user-defined styles as the internal name is
+        exactly the same as the display name.
+
+        There are also numerous "automatic" styles in a document which are
+        created implicitly by the office application each time a particular
+        set of presentation attributes is given to an element, but where no
+        named style is referenced. Automatic styles which apply to the
+        document body are stored in content.xml (but in an XML element
+        isolated from the content). An automatic style's name can change
+        randomly each time the document is edited or saved in
+        OpenOffice.org. Applications which access automatic styles will not
+        want to indicate them using "hard-coded" names. The best way is to
+        retrieve each automatic style via an object that is known to use it.
+        Using a "hard-coded" name is all right for styles created by a
+        program (the createStyle method requires it), but such a name should
+        only be considered to be stable for the duration of the session. If
+        you want a program-created style name to be then respected by
+        OpenOffice.org, you must create it as a named style. This is no more
+        complicated, but it is better to avoid making hundreds of styles
+        visible to the user that they do not need to see.
+
+        On the other hand, some styles are more complex than others as they
+        describe the page layout. These styles can themselves contain text
+        and images. A page style can actually be either:
+
+            - a header
+            - a footer
+            - margins
+            - or a background.
+
+        Headers and footers can contain text and images which can otherwise
+        be handled by OODoc::Text and OODoc::Image.
+
+        A background contains a colour and can also include a background
+        image (several methods are possible).
+
+        Presentation of these objects is itself controlled by styles.
+
+        All of this leads to the conclusion that it is not enough just to
+        associate each content element with a style. In reality, document
+        styles form a rather complex network of interdependencies.
+
+        As for page styles, the OpenOffice.org format contains a concept
+        which must be understood in order to use some of the following
+        methods. By virtue of the principle of separation of content and
+        presentation, the definition of a page style is based on two
+        distinct objects: "master page" and "page master". A "master page"
+        object encompasses any page style content (i.e. the content of
+        headers and footers) and links to a "page master" object which
+        describes page presentation characteristics (with large numbers of
+        parameters from page dimensions to background colour to footnote
+        separator size, etc.). Names which appear in the list of page styles
+        in OpenOffice.org are actually names of "master pages". However, to
+        work with physical aspects of the presentation, you have to access
+        the associated "page master".
+
+        To complicate matters, there are also header and footer styles. Each
+        object contained in a header or footer (e.g. paragraph or image) has
+        a style. The number and range of styles are much larger that you
+        would imagine just looking at the Stylist tool in OpenOffice.org. Up
+        to a point, OODoc::Styles methods make life easier for you by
+        masking some of this complexity.
+
+        In OODoc::Styles methods, styles are normally indicated by their
+        logical names (which must be unique), but, except where otherwise
+        stated, they can also be indicated by their style element reference.
+        Moreover, when a method is expecting a page master as an argument
+        but the programmer passes it a master page instead (whether by
+        design or by mistake), it "knows" in most cases how to automatically
+        select the associated page master.
+
+        Defining a style requires a great many attributes. Some appear in
+        code examples in this manual, but for a full list of possible
+        attributes for each style, you must refer to the OpenOffice.org
+        specification or publications derived from it.
+
+        OODoc::Styles module is designed to allow applications to manipulate
+        any style and even create new ones. It is not recommended, however,
+        to use it to create a presentation entirely from code. Here again,
+        it is better to start from document templates which already contain
+        at least a blank of each required style.
+
+=head2	Methods
+
+=head3	Constructor : OpenOffice::OODoc::Styles->new(<parameters>)
+
+        Short form: ooStyles(<parameters>)
+
+        See OpenOffice::OODoc::XPath->new.
+
+        The member loaded by default is "styles.xml" which gives access to
+        named or automatic styles associated with the page layout. The
+        "content.xml" member should be forced if the application is to work
+        with styles associated with the document body (automatic styles
+        only).
+
+=head3	backgroundImageLink(page [, link])
+
+        Allows you to check the background image's link (if found) for the
+        page style given as the first argument. If another link is given as
+        the second argument, it replaces the existing link.
+
+        See imageLink in OODoc::Image about links. Put more simply, a link
+        is the address of the graphics file which corresponds to the
+        physical content of the image. Even though the background image
+        belongs to the "page master", the first argument can also be either
+        a "master page" or a "page master".
+
+        If the second argument "link" is given, its value replaces the
+        existing link in the same way as with imageLink.
+
+        Example:
+
+            $doc->backgroundImageLink
+            	("Standard", "http://www.genicorp.com/back.jpg");
+
+        If the page did not have a background image before the call, one is
+        created. It must, however, be an external linked image (as in the
+        above example), unless the link represents the internal address of
+        an already loaded image. This method does not itself carry out any
+        physical import of an image.
+
+        See also importBackgroundImage.
+
+=head3	createMasterPage(name, options)
+
+        Creates a new page style. Options are:
+
+            'page-master'	=> 'page master' style name
+            'next'		=> next 'page master' style name
+
+        The association with a "page master" allows you to associate a
+        layout to the page. Otherwise the page will have a default layout.
+
+        Example:
+
+            $doc->createMasterPage
+            		(
+            		"MyPageStyle",
+            		'page-master'	=> 'pm1',
+            		'next'		=> 'Standard'
+            		);
+
+        See the OpenOffice.org documentation (or the 'Organizer' tab in the
+        "Format/Page" dialog box) if you want to know what a "Next Style"
+        is. The optional "next" parameter simply gives the name of a "master
+        page", which can be the one you are currently creating.
+
+=head3	createPageMaster(name, options)
+
+        Creates a new layout style (page master) which can be used by a page
+        style (master page). Options are the same as for updatePageMaster.
+
+=head3	createStyle(name, options)
+
+        Creates a new style of any type or class (depending on options) and
+        returns its reference if successful.
+
+        The first argument indicates the new style name which must be unique
+        in the document. The call returns undef and produces an error
+        message if the style already exists. Caution: its uniqueness is only
+        checked by one XML member. This means that it is technically
+        possible to create two styles with the same name, one in content.xml
+        and the other in styles.xml.
+
+        Possible options are passed in the form of a hash.
+
+        If the active OODoc::Styles object is associated with a document
+        content (content.xml), the new style is always taken to be an
+        automatic style. If associated with the styles.xml member, the new
+        style is considered to be a named style by default. However, the
+        category => 'automatic' option (or category => 'auto') allows you to
+        specify it as an automatic style. Please note: in the case of
+        content.xml, the "category" option is ignored as all styles are
+        automatic in this member.
+
+        By default, the method stores a style in the form of an XML element
+        "style:style" (which corresponds to the most commonly used content
+        styles). Some style elements are indicated in a different way. The
+        "namespace" and "type" options are available for this. If, for
+        example, you want to create a footer configuration style (called
+        "text:footnote-configuration" in the OpenOffice.org specification),
+        you will have to specify the "footnote-configuration" type
+        explicitly in the "text" namespace using one of the following two
+        options:
+
+            namespace	=> 'text',
+            type		=> 'footnote-configuration'
+
+        The following is the list of options:
+
+            namespace	=> namespace
+            type		=> style type
+            family		=> style family (text, paragraph, ...)
+            class		=> style class
+            parent		=> parent style (inherit)
+            next		=> next style
+
+        If other style "organisation" attributes (often for links to other
+        styles) prove to be needed but are not on the above list, they must
+        be grouped together in a hash provided by the application and
+        indicated by a "references" option.
+
+        Of course, if you create a new style, you do not just sort it into
+        type, class or family, etc. You attribute its own presentation
+        attributes which can be inherited by other styles which cite it as
+        "parent". These personal attributes (whose nature obviously depends
+        on the style type) are all attributed by the "properties" attribute
+        which itself indicates a hash provided by the application.
+
+        Here is an example of a paragraph style creation:
+
+            $doc->createStyle
+            	(
+            	"Colour",
+            	family	=> 'paragraph',
+            	parent	=> 'Standard',
+            	properties =>
+            	 {
+            	 'style:font-name'		=> 'Times',
+            	 'fo:font-size'		=> '14pt',
+            	 'fo:font-weight'		=> 'bold',
+            	 'fo:font-style'		=> 'italic',
+            	 'fo:color'			=> '#000080',
+            	 'style:text-background-color'	=> '#ffff00'
+            	 }
+            	);
+            $doc->setStyle($doc->getParagraph(3), "P3");
+
+        This sequence gives paragraph 3 of the document a lovely Times font
+        in dark blue size 14 bold italics on a yellow background. This is
+        done using a style called "Colour" (reusable later for other
+        paragraphs) based on the "Standard" style. You will note that the
+        colour codes are in RGB hexadecimal preceded by a '#' [35] . In this
+        example, "namespace" and "type" are not specified because the
+        default namespace and type are appropriate here. (Rest assured that
+        this is often the case when working with text styles.)
+
+        Another example:
+
+            $doc->createStyle
+            	(
+            	"Photo1",
+            	family	=> 'graphics',
+            	parent	=> 'Graphics',
+            	properties =>
+            		{
+            		'style:vertical-pos'	=> 'from-top',
+            		'style:horizontal-pos'	=> 'from-left',
+            		'style:vertical-rel'	=> 'page',
+            		'style:horizontal-rel'	=> 'page',
+            		'draw:luminance'		=> '4%',
+            		'draw:contrast'		=> '2%',
+            		'draw:gamma'		=> '1.1',
+            		'draw:transparency'	=> '5%',
+            		'draw:red'		=> '-3%',
+            		'draw:green'		=> '2%'
+            		}
+            	);
+
+        The "Photo1" style defined above is of course an image style i.e. in
+        the "graphics" family, based on the parent graphics style
+        "Graphics". Any images to which this style will be applied will have
+        coordinates which relate to the upper left edge of the page measured
+        from top to bottom and left to right. They will be presented with an
+        increase in luminosity of 4% and contrast of 2%, gamma correction of
+        1.1 and 5% transparency. Moreover, 3% less red and 2% more green
+        will freshen the image and highlight the vibrancy of the
+        chlorophyll. There are yet more in the list of options, so don't
+        throw out your holiday snaps!
+
+        Defining a style entirely from code can be made a lot easier by
+        reusing an already existing style. The simplest way is by
+        inheritance using the "parent" option, but the link to "parent"
+        creates a permanent dependency (any further changes will affect the
+        parent and children). OODoc::Styles offers another possibility: copy
+        the properties of an existing style, without creating a link to a
+        parent using the "prototype" option. This option points to another
+        style whose properties are then taken up and combined with the new
+        properties. New properties prevail over old ones if the new
+        properties replace existing attributes in the prototype style, just
+        like when they are inherited.
+
+        Example:
+
+            $doc->createStyle
+            	(
+            	"Bigger",
+            	prototype	=> "Colour",
+            	properties	=>
+            		{
+            		'fo:font-size'	=> '16pt'
+            		}
+            	);
+
+        This new style called "Bigger" is an exact copy of the "Colour"
+        style, except for the font size.
+
+        Generally speaking, explicit parameters passed by an application
+        (e.g. font size) prevail over prototype's parameters.
+
+        The prototype parameter can be a style name (as in the above
+        example) or a style element reference. In any case, the latter form
+        is mandatory if the copied style comes from another document (or
+        from another XML member in the same OpenOffice.org archive). You
+        cannot actually search for a style using its logical name unless
+        that style exists in the current document.
+
+        If you want to create a style called "MyStyle", for example, in
+        document $doc1 which imitates a style called "HisStyle" in document
+        $doc2 (where both documents are OODoc::Styles or OODoc::Document
+        objects), you can do the following:
+
+            $doc1->createStyle
+            	(
+            	"MyStyle",
+            	prototype => $doc2->getStyleElement("HisStyle")
+            	);
+
+        The getStyleElement (called in $doc2) provides the style element
+        which corresponds to the given name. Not only can you import styles
+        available in other documents, but you can also create automatic
+        styles in content.xml which are derived from named styles found in
+        styles.xml and vice-versa.
+
+        Always be careful of dependencies. There are often dependencies
+        between styles (heritage or usage). An application must be wary of
+        importing styles without modification which are directly or
+        indirectly dependent on other styles which are not available in the
+        target document. Text styles are fairly easy to control in this way,
+        but table, page and graphic styles, for example, have more complex
+        dependencies.
+
+        See the OpenOffice.org format documentation for a complete list of
+        possible attributes for each type of style.
+
+=head3	exportBackgroundImage(page [, destination])
+
+        Exports the graphics file which corresponds to the background image
+        of a page style where the image exists and is internal to the
+        OpenOffice.org archive. (A linked image is obviously not exportable
+        since it is not actually present in the document.) See the
+        exportImage method in OODoc::Image for export details.
+
+        Example:
+
+            $doc->exportBackgroundImage
+            	("First Page", "C:\Images\backgrnd.jpg");
+
+=head3	getAutoStyleList([options])
+
+        Returns a list of automatic style elements in the current document.
+        By default, only "style" type elements in the "style" namespace are
+        returned. You can select special styles using the "namespace" and
+        "type" options.
+
+        For example, if you want to get a list of number styles (namespace
+        "number", type "number-style"), do it like this:
+
+            my @styles = $doc->getAutoStyleList
+            	(namespace => 'number', type => 'number-style');
+
+=head3	getBackgroundImageAttributes(page)
+
+        Returns the attributes of the given page style's background image
+        (if any), in the form of a hash (attribute => value).
+
+=head3	getBackgroundImageElement(page)
+
+        Returns the element reference of the given page style's background
+        image (if found).
+
+=head3	getDefaultStyleAttributes(default_style)
+
+        Returns the given default style's attributes (if any). Default
+        styles are generally "paragraph" and "graphics". See also
+        updateDefaultStyle.
+
+=head3	getDefaultStyleElement(family)
+
+        Returns the default style element's reference given by its logical
+        name.
+
+        A default style describes default values assigned to certain
+        attributes of a given style family.
+
+        For example, to get the default paragraph style of a document, use:
+
+            my $def_para = $doc->getDefaultStyleElement("paragraph");
+
+=head3	getFooterParagraph(page, number)
+
+        Returns a footer paragraph's reference, if the page has a footer and
+        the paragraph exists. Arguments are master page and paragraph
+        number.
+
+=head3	getHeaderParagraph(page, number)
+
+        Like getFooterParagraph, but for a header.
+
+=head3	getMasterPageElement(page)
+
+        Returns a master page element reference whose logical name is given,
+        or undef if the page style is not found. You can also pass an
+        element reference instead of a name. In this case, the method's role
+        is simply to check if the element is indeed a master page type. If
+        so, it returns the argument as is. If not, it returns undef.
+
+=head3	getNamedStyleList([options])
+
+        Returns a list of named styles in the current document, using the
+        same options as for getAutoStyleList. By definition, in
+        OpenOffice.org documents this list should be empty in all elements
+        except styles.xml.
+
+=head3	getPageMasterAttributes(page)
+
+        Returns the description of a page master style. The argument can be
+        either a page master style directly or a master page style which
+        refers to it.
+
+        The structure of returned data is a hash of hashes. It contains four
+        elements, each of which is a hash. As follows:
+
+            - "references": style reference attributes with at least its
+            name and possibly its links to other styles.
+            - "properties": background description (dimensions, orientation,
+            margins, colour, etc.).
+            - "header": presentation attributes for the header.
+            - "footer": presentation attributes for the footer.
+            - "footnote-sep": footnote separator attributes.
+            - "background-image": background image attributes.
+
+        Attributes are displayed according to OpenOffice.org specifications.
+
+=head3	getPageMasterElement(page)
+
+        Returns the page master element reference from a search argument
+        which can be either a logical name or a page style reference. If the
+        argument is a master page, the method returns the corresponding page
+        master.
+
+=head3	getStyleAttributes(style)
+
+        Returns a style's description (other than a page style) given as a
+        logical name or reference.
+
+        The structure of returned data is a hash of hashes. It contains the
+        two following elements:
+
+            - "references": style reference attributes with at least its
+            name and possibly its links to other styles (either its family,
+            parent style, class and/or next style).
+            - "properties": description of the presentation characteristics
+            for this style (and which depend on the type of object the style
+            is applied to).
+
+        Remember that this structure can be used directly by an application
+        to create or update another style.
+
+=head3	getStyleElement(style [, options])
+
+        Returns a style element's reference using its name.
+
+        If the first argument is already an element reference, it returns
+        the argument if it is indeed a style element, and undef if not.
+
+        By default, the style name is sought amongst "style" type elements
+        in the "style" namespace. If an application is looking for a special
+        style (e.g. page or number), then it can pass the optional
+        parameters "namespace" and/or "type". See the section on createStyle
+        for these concepts.
+
+        A search is of course limited to automatic styles if the current XML
+        document is content. If the document is styles, the search for the
+        name is made in all styles by default. You can, however, limit it
+        with the "path" parameter where "path" equals "auto" to search in
+        automatic styles or "named" in named styles.
+
+=head3	getStyleList([options])
+
+        Combines the results of getAutoStyleList and getNamedStyleList (same
+        options).
+
+=head3	importBackgroundImage(page, filename [, link])
+
+        Imports a background image into the given page style from an
+        external file.
+
+        The page style can be either a page master or a master page. An
+        optional link can be inserted (e.g. to reuse an existing link). See
+        backgroundImageLink or imageLink (in OODoc::Image) for information
+        about links. Otherwise, an internal link under "Pictures/" is
+        created by default and takes the name of the source file.
+
+        Returns the link if found, undef if not.
+
+        Caution: the actual import is not made until a save is called (see
+        importImage in OODoc::Image).
+
+=head3	masterPageFooter(page [, element])
+
+        Returns the given page style's footer element reference (master
+        page) or undef if not found.
+
+        If the second argument is a content element, it is added to the
+        footer. If the footer does not exist, it is created.
+
+=head3	masterPageHeader(page [, element])
+
+        Returns the given page style's header element reference (master
+        page) or undef if not found.
+
+        If the second argument is a content element, it is added to the
+        header. If the header does not exist, it is created.
+
+=head3	pageMasterStyle(master_page [, page_master])
+
+        Returns or modifies the layout style name (page master) of a given
+        page style (master page). If the second argument is given, it
+        replaces the old page master value i.e. it changes the layout of the
+        page without changing the header or footer content.
+
+=head3	removeStyleElement(style [, options])
+
+        Deletes the given style. The argument and options are the same as
+        for getStyleElement. The method returns "True" (1) if successful or
+        undef if the style is not found.
+
+=head3	selectStyleElementByFamily(family [, options])
+
+        Returns the first (or only) available style in the given family
+        (using the "family" attribute), or undef if not found. Options are
+        the same as for getStyleElement.
+
+        Example:
+
+            my $style = $doc->selectStyleElementByFamily
+            		(
+            		"graphics",
+            		type	=> 'default-style'
+            		);
+
+        selects the element which describes the default graphic style.
+
+        This method is useful for selecting styles whose "family" attribute
+        is their identifier (and which do not have a "name" attribute). For
+        example, this is the case for default styles where there is normally
+        a default style for the "paragraph" family and another for the
+        "graphics" family. In the above example, we used the "type" option
+        where the type is "default-style" and not "style". We did not use
+        the "namespace" option because it would be pointless to know that
+        the default style namespace is just the default namespace ("style").
+
+=head3	selectStyleElementsByFamily(family [, options])
+
+        Like selectStyleElementByFamily but returns a list of elements which
+        belong to the given family. The "family" argument is treated as a
+        regular expression, so an application must therefore give the
+        appropriate meta-characters if the search is to be limited to the
+        exact family name.
+
+=head3	selectStyleElementsByName(name [, options])
+
+        Returns a list of styles whose names match the first argument (which
+        is treated as a regular expression). Options are the same as for the
+        other selectStyleElementsXXX methods.
+
+=head3	setBackgroundImage(page, options)
+
+        Inserts or replaces a background image in a page style. The "page"
+        argument points either to the page master directly, or to the master
+        page to which it refers. Options point to the graphics object and
+        how it is presented. The returned value is the created or modified
+        background image's element reference (see
+        getBackgroundImageElement).
+
+        You should first indicate the graphics file which contains the image
+        and whether it will merely be linked to the page by reference, or if
+        it has to be physically imported into the OpenOffice.org file. To
+        "link" the image, you supply its address using the "link" option. To
+        import it, you supply the image using the "import" option.
+
+        Examples:
+
+            $doc->setBackgroundImage
+            	(
+            	"First page",
+            	import		=> "C:\Images\Logo.jpg"
+            	);
+
+            $doc->setBackgroundImage
+            	(
+            	"First page",
+            	link		=> "C:\Images\Logo.jpg"
+            	);
+
+        These two calls produce the same effect, but the second only inserts
+        a link to the image.
+
+        Remember that if by error an application supplies both the "link"
+        and "import" options, the "import" option is the one that prevails.
+
+        The other options control the import of images as backgrounds. By
+        default, OODoc::Styles installs the image in the centre without
+        tiling and with an automatic update-on-load attribute if the image
+        is by external link. You can choose other options using the
+        OpenOffice.org standard vocabulary.
+
+        To link a background image which is stretched to fit the entire
+        page, use the following:
+
+            $doc->setBackgoundImage
+            	(
+            	"First page",
+            	link		=> "C:\Images\back.jpg",
+            	'style:repeat'	=> 'stretch'
+            	);
+
+=head3	styleName(style_element [, name])
+
+=head3	styleName(name [, options])
+
+        The first form checks that the given argument is indeed a "style"
+        element reference and, if it is, returns its name (undef if not). If
+        a name is given as the second argument, it replaces the style name.
+
+        In the second form, the current style name is given. In this case,
+        and without any other arguments, the method only checks if the given
+        name is indeed a style and returns a positive result (undef if not).
+        It is still possible to change its name using this form, by using
+        the "newname" option. With this form, some other options allow you
+        to choose the namespace, type and category (automatic or named).
+        These options are "namespace", "type" and "category" (see
+        getStyleElement for these concepts). Without these parameters, the
+        default values are the same as for getStyleElement.
+
+=head3	styleProperties(style [, options])
+
+        This method is for checking and updating the properties of a style.
+        It is more limited than updateStyle, but easier to code. The
+        styleProperties method accesses only the style's description and
+        does not touch its references, such as its name, class or family
+        (see getStyleAttributes).
+
+        With no options, the current style's properties are simply returned
+        in the form of a hash in which the keys are attributes belonging to
+        the OpenOffice.org standard vocabulary and which depend on the type
+        of object. The same data structure can be used to modify a style's
+        properties by passing options as a hash. This structure is the same
+        as the sub-hash "properties" of getStyleAttributes or updateStyle.
+
+        If you wanted to redo the style we called "Colour" (see
+        createStyle), for example, changing the colour of the characters to
+        red and replacing the italics with standard font, you could do it as
+        follows:
+
+            $doc->styleProperties
+            		(
+            		"Colour",
+            		'fo:color'	=> "#ff0000",
+            		'fo:font-style'	=> undef
+            		);
+
+        This short sequence sets the "fo:color" attribute to red and clears
+        the "font-style" attribute. Remember that in RGB notation, the
+        quantity of red is given by the first two hexadecimal digits, which
+        here are set to maximum, and by setting the green and blue to zero.
+        The "font-style" attribute had previously been set to "italic".
+
+        styleProperties returns all the style's properties but only modifies
+        those that have been set using options. To clear an existing
+        property without giving it a new value, you must pass the
+        corresponding option giving it a null value.
+
+=head3	switchPageOrientation(page)
+
+        Switches a portrait page to landscape and vice-versa.
+
+        The argument is a page style (page master or master page).
+
+=head3	updateDefaultStyle(family, options)
+
+        Modifies the default style for the given family according to an
+        options hash given by the application. The family is generally
+        "paragraph" or "graphics".
+
+        Options are given according to the OpenOffice.org style attributes
+        vocabulary.
+
+        The following example shows how to change the font, font size and
+        default tab stops in the text:
+
+            $doc->updateDefaultStyle
+            	(
+            	"paragraph",
+            	'fo:font-name'		=> 'Helvetica',
+            	'fo:font-size'		=> '10pt',
+            	'style:tab-stop-distance'	=> '1.5cm'
+            	);
+
+=head3	updatePageMaster(page, options)
+
+        Modifies all types of page presentation style characteristics (page
+        master). The style given as the first argument can be either the
+        appropriate page master style directly, or a page style (master
+        page) to which it refers.
+
+        Options can be passed in the form of a hash of hashes (each option
+        itself points to a hash containing the base attributes). The four
+        top-level elements are as follows:
+
+            references	=> name, family, etc.
+            properties	=> global presentation attributes
+            header		=> header presentation style
+            footer		=> footer presentation style
+            footnote-sep	=> footnote separator style
+            background-image	=> backgrnd.jpg image characteristics
+
+        The "references" branch will not generally be used unless you want
+        to change the style's name.
+
+        This data structure is the same as returned by
+        getMasterPageAttributes. A combination of these two methods allows
+        you to copy the characteristics of one page style to another easily,
+        especially when you want to apply the page setup of one document to
+        another. When you only want to modify an existing style however, you
+        only need to specify the attributes which you want to change.
+
+        A "prototype" option allows you to clone the characteristics of an
+        existing page master. This option can indicate either an existing
+        page master reference, its logical name, or even the reference or
+        logical name of a master page which refers to it. Only the first
+        method is supported if the prototype page master belongs to another
+        document. The style name is not replaced by the prototype style
+        name. See also createStyle about using a prototype style.
+
+        The following example shows the code required to change several
+        properties of the "Right page" style i.e. top margin width,
+        background colour, maximum footnote height, minimum header height
+        and the colour and width of the footnote separator.
+
+            $doc->updatePageMaster
+            	(
+            	"Right page",
+            	properties	=>
+            	 {
+            	 'fo:margin-top'		=> '2.5cm',
+            	 'fo:background-color		=> '#88eecc',
+            	 'style:footnote-max-height'	=> '3cm'
+            	 },
+            	'footnote-sep'	=>
+            	 {
+            	 'style:width'			=> '0.02cm',
+            	 'style:color'			=> '#0000ff'
+            	 },
+            	header		=>
+            	 {
+            	 'fo:min-height'		=> '2cm'
+            	 }
+            	);
+
+        Once again, it is better to start with a getMasterPageAttributes of
+        an existing page than to create all your styles from code.
+
+=head3	updateStyle(style, options)
+
+        Modifies the characteristics of an existing style.
+
+        Options are the same as for createStyle except for "category",
+        "namespace" and "type" which cannot be changed in an existing style
+        since they form part of its basic identity. A style's logical name
+        can, however, be changed.
+
+        You can use the "prototype" option to update a style with another
+        style's characteristics, but this option does not replace the
+        style's name with the prototype's name.
+
+        By definition, the style already exists and can be indicated equally
+        well by reference or by name.
+
+        Returns the characteristics of the modified style, as in
+        getStyleAttributes.
+
+=head1	NOTES
+
+	See OpenOffice::OODoc::Notes(3) for the footnote citations ([n])
+	included in this page.
+
+	This man page has been generated from a chapter of the original
+	reference manual. This manual is in OpenOffice.org (SXW) format.
+	It's freely downloadable at http://www.genicorp.fr/devel/oodoc
+
+=head1	AUTHOR/COPYRIGHT
+
+	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
+
+	Initial English version of the reference manual
+	by Graeme A. Hunter <graeme.hunter@zen.co.uk>
+	
+	Licensing conditions:
+		- Genicorp General Public Licence v1.0
+		- GNU Lesser General Public License v2.1
+	Contact: oodoc@genicorp.com
+
+=cut

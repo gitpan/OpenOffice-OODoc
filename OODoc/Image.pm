@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Image.pm 1.007 2004-03-07 JMG$		(c) GENICORP 2004
+#	$Id : Image.pm 1.007 2004-03-11 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -656,9 +656,3 @@ sub	importImage
 
 #-----------------------------------------------------------------------------
 1;
-
-=head1	NAME
-
-OpenOffice::OODoc::Image - Image objects manipulation interface
-
-=cut

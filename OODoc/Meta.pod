@@ -1,0 +1,232 @@
+=head1	NAME
+
+	OpenOffice::OODoc::Meta
+
+=head1	DESCRIPTION
+
+        The OpenOffice::OODoc::Meta class is a specialist derivative of
+        OpenOffice::OODoc::XPath for XML members which describe the metadata
+        of OpenOffice.org documents.
+
+=head2	Methods
+
+=head3	Constructor : OpenOffice::OODoc::Meta->new(<parameters>)
+
+        Short Form: ooMeta(<parameters>)
+
+        See OpenOffice::OODoc::XPath->new
+
+        The XML member loaded by default is 'meta.xml'.
+
+        Example:
+
+            $my meta	= OpenOffice::OODoc::Meta->new
+            	(file => 'document.sxw');
+
+        returns a new object which represents the metadata of the
+        OpenOffice.org "document.sxw".
+
+=head3	addKeyword(text)
+
+        Adds the given text to the list of document keywords if not already
+        found.
+
+        Example:
+
+            $meta->addKeyword("GED");
+            $meta->addKeyword("office");
+            $meta->addKeyword("tech watch");
+
+=head3	creation_date
+
+        Without argument, returns the document's creation date in
+        OpenOffice.org format.
+
+        Example of returned value:
+
+            2002-11-12T08:22:50
+
+        With argument, inserts the given string (without checking) as the
+        creation date.
+
+=head3	creator
+
+        Without argument, returns the document author's name.
+
+        With argument, modifies the document author's name.
+
+=head3	date
+
+        Without argument, returns the document's date of last modification,
+        in OpenOffice.org format.
+
+        With argument, inserts the given string (without checking) as the
+        last modification date.
+
+=head3	description
+
+        Without argument, returns the contents of the document properties
+        "Description" field.
+
+        With argument, inserts the given text in the "Description" field.
+
+=head3	editing_cycles
+
+        Without argument, returns the number of edit sessions (i.e. saves,
+        under OpenOffice.org or StarOffice). Or, technically, the number of
+        versions.
+
+        With argument, modifies this number without checking.
+
+=head3	editing_duration
+
+        Without argument, returns the total editing time for the document,
+        in OpenOffice.org date/time format.
+
+        For example, the returned string can be:
+
+            P2DT11H27M33S
+
+        which in this case means that the document has been edited for 2
+        days, 11 hours, 27 minutes and 33 seconds.
+
+        With argument, forces a new value into this property without
+        checking.
+
+=head3	generator
+
+        Without argument, returns a label representing the signature of the
+        software which generated the document. Example of signature:
+
+            "OpenOffice.org 1.0.1 (Linux)"
+
+        With argument, inserts any signature.
+
+=head3	keywords
+
+        Without argument, returns a list of the document's keywords. In a
+        list context, the result is a table where each element is a keyword.
+        In a scalar context, the keywords are returned in a single character
+        string, each of which is separated by a comma and a space.
+
+        With arguments, adds a list of keywords to the existing one. The
+        only checking carried out is to see if the keyword already exists,
+        if so it is not added.
+
+=head3	language
+
+        Without argument, returns the content of the language variable.
+        Example:
+
+            fr_FR
+
+        With argument, changes the content of this variable without
+        checking.
+
+=head3	removeKeyword(keyword)
+
+        Removes the given keyword if it exists.
+
+=head3	statistic
+
+        Without argument, returns a hash which represents the entire
+        "statistics" section of the metadata. The content depends on the
+        type of document.
+
+        Text
+
+            'meta:table-count'	=> number of tables
+            'meta:image-count'	=> number of images
+            'meta:object-count'	=> number of OLE objects
+            'meta:page-count'		=> number of pages
+            'meta:paragraph-count'	=> number of paragraphs
+            'meta:word-count'		=> number of words
+            'meta:character-count'	=> number of characters
+
+        Spreadsheet
+
+        'meta:table-count'	=> number of sheets
+
+        'meta:cell-count'	=> number of non-empty cells
+
+        'meta:object-count'	=> number of objects (images, etc.)
+
+        Example:
+
+            my $meta	= OpenOffice::OODoc::Meta->new("invoice.sxc");
+            my %stat	= $meta->statistic;
+            print 	"This invoice contains " .
+            	$stat{'meta:cell-count'}	.
+            	" cells and "			.
+            	$stat{'meta:table-count'}	.
+            	" pages";
+
+        With arguments, you can modify (or falsify?!) all or some of the
+        statistical data and even create attributes which are not created by
+        the OpenOffice.org or StarOffice software. Arguments are passed in
+        pairs [key => value] and handled without checking.
+
+        Example:
+
+            $meta->statistic
+            	('meta:table-count' => '4', 'status' => 'OK');
+
+        This example forces the number of tables to 4 (whatever the reality)
+        and adds an arbitrary attribute 'status' with value 'OK' [18] .
+
+=head3	subject
+
+        Without argument, returns the document's subject.
+
+        With argument, adds a new subject to the document.
+
+=head3	title
+
+        Without argument, returns the document's title.
+
+        With argument, adds a new title to the document.
+
+=head3	user_defined
+
+        Returns a list of the four fields which appear in the User tab of
+        the Properties dialog in OpenOffice.org. These fields are called, by
+        default, "Info 1" to "Info 4". The end user can change their names
+        and their content.
+
+        The list is returned in the form of a hash of 4 elements whose
+        keywords represent the field names and whose values represent their
+        content.
+
+        By supplying a similar hash of 4 elements as an argument, this
+        method deletes and replaces the existing content.
+
+        If the number of elements supplied in the hash is less than 4, the
+        last fields are left untouched. If, however, the hash contains more
+        than 4 elements, only the first 4 are taken into account.
+
+=head2	Properties
+
+        As for OpenOffice::OODoc::XPath
+
+=head1	NOTES
+
+	See OpenOffice::OODoc::Notes(3) for the footnote citations ([n])
+	included in this page.
+
+	This man page has been generated from a chapter of the original
+	reference manual. This manual is in OpenOffice.org (SXW) format.
+	It's freely downloadable at http://www.genicorp.fr/devel/oodoc
+
+=head1	AUTHOR/COPYRIGHT
+
+	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
+
+	Initial English version of the reference manual
+	by Graeme A. Hunter <graeme.hunter@zen.co.uk>
+	
+	Licensing conditions:
+		- Genicorp General Public Licence v1.0
+		- GNU Lesser General Public License v2.1
+	Contact: oodoc@genicorp.com
+
+=cut

@@ -1,0 +1,1184 @@
+=head1	NAME
+
+	OpenOffice::OODoc::Text
+
+=head1	DESCRIPTION
+
+        The OpenOffice::OODoc::Text class is a specialist derivative of
+        OpenOffice::OODoc::XPath for XML elements which describe the content
+        of OpenOffice.org documents.
+
+        Designed for the handling of text elements. Should be used with
+        OpenOffice::OODoc::Styles, via the OpenOffice::OODoc::Document
+        class, if the application has to handle detailed presentation
+        parameters of text elements. This is because such parameters are
+        held in styles elements and not in the text elements themselves,
+        according to the principle of separation of content and presentation
+        which is one of the foundations of the OpenOffice.org format.
+
+=head2	Methods
+
+=head3	Constructor : OpenOffice::OODoc::Text->new(<parameters>)
+
+        Short Form: ooText(<parameters>)
+
+        See OpenOffice::OODoc::XPath->new
+
+        The XML member loaded by default is 'content.xml'. The most common
+        creation method is like this:
+
+            my $doc = OpenOffice::OODoc::Text->new
+            	(file => 'my_file.sxw');
+
+        Other parameters can be supplied as options (see the properties list
+        at the end of the chapter).
+
+        Example:
+
+            my %delim =
+            	(
+            	'text:h'		=>
+            		{
+            		begin	=> '\sect{',
+            		end	=> '}'
+            		},
+            	'text:list-item'	=>
+            		{
+            		begin	=> '\item'
+            		}
+            	'text:footnote-body' =>
+            		{
+            		begin	=> '\footnote{',
+            		end	=> '}'
+            		}
+            	);
+            my $doc = OpenOffice::OODoc::Text->new
+            		(
+            		file		=> 'filename.sxw',
+            		paragraph_style	=> 'My Paragraphs',
+            		header_style	=> 'My Headers',
+            		delimiters	=> { %delim }
+            		);
+
+        This technique gives the default styles to be used when creating new
+        text elements. It also gives the particular delimiters (in this case
+        LaTeX style markers) to be used at the beginning or end of some
+        elements (in this case headers, list elements, footers) where the
+        text is to be exported "as is". See the getText method of
+        OODoc::Text for information about exporting text.
+
+=head3	appendBodyElement(element [, options])
+
+        Copies an existing element of any type and appends it to the end of
+        the document body. No new element is created.
+
+=head3	appendHeader([options])
+
+        Creates a new header of any level and appends it to the end of the
+        document.
+
+        Options are given as a hash [key => value]:
+
+            'text'		=> <header text>
+            'level'		=> header level, default is 1
+            'style'		=> header style, default is 'Heading 1'
+
+        Examples:
+
+            $doc->appendHeader(text => 'Next section');
+
+        adds the text 'Next section' as 'Header 1'.
+
+            $doc->appendHeader
+            	(
+            	text	=> 'Chapter Conclusion',
+            	level	=> '2',
+            	style	=> 'Heading 2'
+            	);
+
+        adds a level 2 header to the end of the text body.
+
+        You can give any XML attribute to the new header except for style or
+        header level. In this case, the program must construct a hash
+        containing pairs of key-values for the attributes you want to create
+        and pass it using the 'attribute' option. Example:
+
+            my %attr	= ( 'att1' => 'value1', 'att2' => 'value2' );
+            $doc->appendHeader
+            	(
+            	text	=> 'Attributes are important',
+            	level	=> '1',
+            	style	=> 'Chapter header',
+            	attribute => %attr
+            	);
+
+        If the 'text' option is empty, the header is created with an empty
+        content.
+
+        Note: this method can only be used with a new header i.e. it adds
+        while it creates. To add an already available element using
+        getHeader from the same document or from another document, use the
+        appendElement method instead which is inherited from OODoc::XPath.
+
+=head3	appendItem(list, text => text [,style => style ,[other_options]])
+
+        Adds a new item to a list (ordered or unordered).
+
+        The first argument is the existing list element (created using
+        getOrderedList or getUnorderedList, for example). Options are the
+        same as for appendParagraph.
+
+        If the 'style' option is absent, the element is inserted according
+        to the following rule:
+
+
+=head3	appendItemList([type => list_type, [style => style [, options]]])
+
+        Creates a new (empty) list and appends it to the end of the
+        document.
+
+        An unordered list is the default. If the 'type' option is given with
+        the value 'ordered', then an ordered list is created.
+
+        The 'style' options controls the list's style (as opposed to each
+        item's style). If absent, the list takes the default paragraph style
+        (see appendParagraph).
+
+        Like appendParagraph, this method actually creates a new list
+        element. To copy an existing list in the same document or in
+        another, use appendElement or replicateElement instead.
+
+=head3	appendParagraph(<options>)
+
+        Creates a new paragraph and appends it to the end of the document.
+
+        Options:
+
+            'text'		=> <paragraph text>
+
+            'style'		=> <paragraph style>
+
+        An 'attribute' option is also available under the same conditions as
+        for the appendHeader method (see above) [19] .
+
+        If the 'text' option is empty, calling this method is the equivalent
+        of adding a line feed.
+
+        If the 'style' option is empty, the style from the 'paragraph_style'
+        property of the OODoc::Text instance is used.
+
+        Note: this method can only be used with a new paragraph i.e. it adds
+        while it creates. To add an already existing paragraph using
+        getParagraph from the same document or from another document, use
+        the appendElement or replicateElement methods instead which are
+        inherited from OODoc::XPath, or even appendText below.
+
+=head3	appendRow(table [, options])
+
+        Appends a row to the end of the given table either by reference, by
+        logical name or by sequential number. By default, the new row is
+        simply an exact copy of the preceding row (in terms of content and
+        presentation). You can pass an options hash which will give certain
+        attributes to the created row, under the same conditions as for the
+        appendElement method of OODoc::XPath. The returned value is the
+        created row element.
+
+        Example:
+
+            open SRC, '<', 'data.txt';
+            my $table = $doc->getTable("Table1");
+            my ($h, $l) = $doc->getTableSize($table);
+            for (my $i = 0 ; my $record = <SRC> ; $i++)
+            	{
+            	last unless $record;
+            	chomp $record;
+            	my @data = split ';', $record;
+            	my $row = $i < $h ?
+            		$doc->getRow($table, $i) :
+            		$doc->appendRow($table);
+            	for (my $j = 0 ; $j < $l ; $j++)
+            		{
+            		$doc->cellValue($row, $j, $data[$j]);
+            		}
+            	}
+
+        The above program reads a CSV format data file sequentially (one
+        record per line, comma-separated fields). Each record is split and
+        put into a row in table Table1. On reading each new record, the
+        reference for the following row is loaded by getRow, until the total
+        number of rows is reached (total obtained previously using
+        getTableSize). If the table is already full, it is lengthened by a
+        row using appendRow. The internal loop loads the read data into the
+        row's cells (pre-existing or newly created). See the sections on
+        getTable, getRow, getTableSize and cellValue for a better
+        understanding of this example.
+
+        However, if good performance is what you are after, massive
+        repetition of this method is not recommended (e.g. for lengthening a
+        table dynamically, row by row, whilst loading external data into
+        it). Rather than running dozens or hundreds of successive
+        appendRows, it would be better for the application to read the total
+        number of records to be loaded (using, for example, select count if
+        from a relational database or otherwise preloading the data into an
+        ordinary Perl table) and create a table of appropriate size in
+        advance using insertTable or appendTable.
+
+=head3	appendTable(name, rows, columns [, options])
+
+        Creates a new table with the given name, number of rows and number
+        of columns, and appends it by default to the end of the document
+        body. The name must be unique within the document (the call is
+        rejected if the name already exists). Returns the created table
+        element if successful.
+
+        By default, the table is set to fit the entire width between the
+        left and right margins with equal sized columns, cells of type
+        string and without borders or background colour.
+
+        Possible options:
+
+            'table-style'	=> table style
+            'cell-type'	=> default cell type
+            'cell-style'	=> default cell style
+            'text-style'	=> default cell text style
+
+        The first option is the name of a table style [20]  which defines
+        certain global properties for the table (width, background colour,
+        etc.).
+
+        The second option is the cells' default data type. The main types
+        available are string, float, currency, date, percentage. Caution: to
+        be properly treated as having a numeric format in OpenOffice.org, a
+        cell needs more than to be just marked 'numeric'. If the cell really
+        needs to be treated properly as a number, you must also give it a
+        cell style which itself refers to a number style. The cell-style
+        parameter can do this. However, even though the OODoc::Styles module
+        is there to otherwise help you create and add styles from a program,
+        this type of exercise can become very labour-intensive. We therefore
+        recommend using basic tables created in advance from document
+        templates or style libraries created from an office application,
+        rather than creating complex number tables from code.
+
+        The text-style option selects the paragraph style applicable to the
+        text displayed in each cell.
+
+        Once the table is created, you can obviously modify each cell's type
+        and style individually.
+
+        Example:
+
+            my $table = $doc->appendTable
+            			(
+            			"Rate", 22, 5,
+            			'table-style' => 'Table1',
+            			'text-style' => 'Text body'
+            			);
+
+=head3	appendTableRow(table)
+
+        See appendRow.
+
+=head3	appendText(element_name [, <options>])
+
+=head3	appendText(element [, <options])
+
+        Appends a text element, by default to the end of a document.
+
+        Two type of usage are possible:
+
+
+        If the 'attachment' option is used, which indicates an element
+        reference, the new element is attached as a "child" element of the
+        given element. This allows you to place text in special zones, other
+        than in the document body, which is not appropriate in all
+        applications.
+
+        This method should be used to append unusual text elements (i.e. not
+        paragraphs or headers) or existing elements (in its second usage
+        type) of any type.
+
+        Remember that:
+
+            $doc->appendText('text:p', text => 'My text'); [21]
+
+        is the same as:
+
+            $doc->appendParagraph(text => 'My text');
+
+=head3	cellFormula(table, row, column [, formula])
+
+=head3	cellFormula(cell [, formula])
+
+        Accessor which returns the formula (or function) contained in the
+        given table cell. Returns undef if no formula is found in the cell.
+
+        The cell address is the same as for getCellValue().
+
+        If a formula is given as the last argument, it is put into the cell,
+        overwriting any existing formula. No check of the syntax is carried
+        out on the inserted formula. It is up to the application to insert a
+        formula which conforms to OpenOffice.org syntax. Example:
+
+            $doc->cellFormula(1,3,2, "sum <C2:C5>");
+
+        Note 1: inserting or replacing a formula does not directly modify
+        the value or text of the cell. Proper interpretation of a formula
+        does not happen until the fields are updated when the document is
+        reloaded into OpenOffice.org.
+
+        Note 2: syntax and functionality of cell formulae differ greatly
+        between the Writer and Calc applications.
+
+=head3	columnStyle(column_element [, style])
+
+=head3	columnStyle(table, column [, style])
+
+        Returns the style name of the given column or replaces it with a new
+        one. A column can be indicated either directly by reference or by
+        the pair [table, column number]. The table itself can be indicated
+        either by a table element, its number or its logical name. If the
+        'style' argument is given, it replaces the old column style.
+
+        Giving a column a style is actually the only way to control the
+        width of a column in a table.
+
+        Example:
+
+            $doc->columnStyle('Table1', 2, 'NewStyle');
+
+        Caution: columns are numbered beginning at 0.
+
+=head3	getCell(table, row, column)
+
+        Returns the element which represents the given cell. Possible
+        arguments are respectively: the table number or its reference in the
+        document, row number and column number. Each table cell contained in
+        the body of an OpenOffice.org document can be referenced in this
+        manner, as if it belonged to a single 3D table irrespective of the
+        rest of the document [22] .
+
+        The first argument can be either the sequential number of the table
+        (starting at 0) or a 'table' object (which can be retrieved in
+        advance using getTable). If the third argument is omitted, the
+        returned element is the first cell in the row. If the row number is
+        omitted instead, the cell at the very top left of the table is
+        returned.
+
+        Numbers can also be negative, where position -1 is the last. For
+        example:
+
+            $cell = $doc->getCell(-1, -1, -1);
+
+        returns the very bottom right cell of the very last table in the
+        document $doc.
+
+        Returns a null value if the given cell does not exist.
+
+        Note: addressing cells in spreadsheets is considerably more complex
+        than in text document tables. OpenOffice::OODoc::Text methods which
+        address cells are primarily designed to work with text document
+        tables. However, it is still possible, with a few restrictions
+        (which cannot be gone into here), to use getCellxxx methods with
+        spreadsheets (.sxc).
+
+=head3	getCellValue(table, row, column)
+
+=head3	getCellValue(cell)
+
+        Returns the value of a table cell (and not the cell element as with
+        getCell).
+
+        The first form indicates a cell by its 3D coordinates, as with
+        getCell).
+
+        The second form (quicker) takes a cell element as its only argument
+        (e.g. as returned by a previous getCell call).
+
+        This method behaves in two different ways depending on the cell
+        type:
+
+            - returns the cell's text if the cell is set to literal (after
+            any UTF8 decoding. See OODoc::XPath).
+
+        This difference in handling is designed to allow programs to use
+        returned numeric values directly in calculations.
+
+        Note: To get information about a cell other than its value (numeric,
+        etc.), the best way is first to get its element reference with
+        getCell and then use it with getAttribute.
+
+=head3	getColumn(table, column)
+
+        Returns the element reference of the given column in the given
+        table. The first argument is either the table's sequential number in
+        the document, logical name or element reference. The second argument
+        is the column's number in the table. Synonym: getTableColumn.
+
+=head3	getFootnoteCitationList
+
+        Returns the list of all the footnote citations (i.e. references to
+        footnotes included in the text) contained in the document.
+
+=head3	getFootnoteList
+
+        Returns the list of all the footnote elements contained in the
+        document.
+
+=head3	getHeader(n)
+
+        Returns the nth+1 header element.
+
+        If n is negative, headers are counted backwards from the last.
+        getHeader(-1) returns the last header element of the document.
+
+        Caution: this method counts sequentially through all headers along a
+        single plane, irrespective of their level [24] . E.g. if you have a
+        level 1 header then two level 2 headers then a level 1 header, the
+        call getHeader(3) returns the last level 1 header.
+
+=head3	getHeaderList
+
+        Returns a list of header elements (i.e. elements called 'text:h' in
+        the document body).
+
+        This list actually contains the information necessary to create a
+        contents list of an OpenOffice.org document, from within a document
+        management application.
+
+=head3	getHeaderText(n)
+
+        Returns the text of the nth+1 header element. Elements are counted
+        in the same way as for getHeader.
+
+=head3	getHeaderTextList([filter])
+
+        Returns a list of document header texts.
+
+        An optional filter argument can be passed (literal or regular
+        expression). In this case, only headers whose content matches the
+        filter are returned.
+
+        In a list context, the result is returned in the form of a list of
+        character strings. In a scalar context, the result is a single
+        string in which the headers are separated by a line-feed character
+        ("\n").
+
+        Note: This list is "flat". It contains no information about the
+        headers' hierarchy. To get a hierarchical contents list, you must
+        start with the list of headers obtained using getHeaderList and
+        check each element's level attribute ('text:level').
+
+=head3	getItemElementList(list)
+
+        Returns a list of elements which represent items of an ordered or
+        unordered list. The argument is a "list" element (obtained
+        previously e.g. using getOrderedList or getUnorderedList). Each
+        element in this list can be used with item handling methods.
+
+=head3	getOrderedList(n)
+
+        Returns the element which represents the nth+1 ordered list in a
+        document if found.
+
+=head3	getParagraph(n)
+
+        Returns the nth+1 paragraph in the document body, or undef if the
+        given number is greater than or equal to the total number of
+        paragraphs in the document.
+
+        You can also pass a negative argument, in which case paragraphs are
+        counted backwards from the end (-1 being the last paragraph).
+
+        By paragraphs we mean 'text:p' elements, which excludes headers but
+        includes non-empty table cells, contents of list items and
+        footnotes.
+
+        Returned value is an element and not the text of the paragraph. All
+        read/write operations involving attributes and content can use this
+        element.
+
+=head3	getParagraphList
+
+        Returns a list of paragraph elements (i.e. 'text:p' elements in the
+        document body).
+
+=head3	getParagraphText(n)
+
+        Returns the text of the nth+1 paragraph, counted using the same
+        rules as for getParagraph.
+
+=head3	getParagraphTextList([filter])
+
+        Returns a list of texts contained in the paragraphs of a document
+        ('text:p' elements).
+
+        A filter can be passed as an optional argument (literal or regular
+        expression). In this case, only paragraph texts whose content match
+        the filter are returned.
+
+        In a list context, the result is returned in the form of a list of
+        character strings. In a scalar context, the result is a single
+        string in which the paragraphs are separated by a line-feed
+        character ("\n").
+
+=head3	getRow(table, row)
+
+        Returns the element reference which corresponds to a row in a table.
+        The first argument is either the table's sequential number in the
+        document, logical name or element reference. The second argument is
+        the row number in the table. Synonym: getTableRow.
+
+=head3	getSpanList
+
+        Returns a list of elements which correspond to texts which "stand
+        out" from the document i.e. which have been given a style which
+        makes them stand out from the rest of the paragraph containing them.
+
+        For example, a word in italics or in font size 12 in a paragraph of
+        mostly standard characters in font size 10 is a 'span' element and
+        would therefore appear in a list returned by getSpanList.
+
+=head3	getSpanTextList([filter])
+
+        Gets a list of texts which "stand out" in the same way as
+        getSpanList and returns it under the same conditions as
+        getParagraphTextList or getHeaderTextList, with optional filter.
+
+=head3	getStyle(path, position)
+
+=head3	getStyle(element)
+
+        Obsolete. See textStyle.
+
+=head3	getTable(n)
+
+=head3	getTable(name)
+
+        Returns the nth+1 table in a document, if found, or undef if not
+        found [25] .
+
+        The second form allows you to select a table by its logical name (as
+        it would appear to the end user when editing the table's
+        properties). This name is obviously easier to use than a number.
+        Moreover, this type of selection means the application will still
+        work even if a table changes position within a document.
+
+        The returned value is a table element and not a table's content.
+
+=head3	getTableColumn(table, column)
+
+        See getColumn.
+
+=head3	getTableList
+
+        Returns a list of table elements in a document.
+
+=head3	getTableRow(table, row)
+
+        See getRow.
+
+=head3	getTableSize(table)
+
+        Returns the size of a table as a pair of values which represent the
+        number of rows and columns. The table can be specified either by
+        number, logical name or reference.
+
+        Example:
+
+            my ($rows, $columns) = $doc->getTableSize("Table1");
+
+=head3	getTableText(n)
+
+        Returns the content of a table, if found, whose number or reference
+        is given as an argument. If not found, returns undef.
+
+        The content of each cell is extracted according to the rules of
+        getCellValue.
+
+        In a list context, the returned value is a 2D table with each
+        element containing the corresponding cell in the document.
+
+        In a scalar context, the content is returned as a single string in
+        CSV format. In this case, the rows are separated by a delimiter set
+        by the instance variable 'line_separator' and the fields by the
+        variable 'field_separator' in the OODoc::Text object. (These
+        delimiters are by default "\n" and ";" respectively.)
+
+=head3	getText(path, position)
+
+=head3	getText(element)
+
+        Exports the text contained in the given element according to the
+        means appropriate to that type of element.
+
+        If the 'use_delimiters' flag is set to 'on' (default), the text is
+        preceded and/or followed by a character string depending on the type
+        of element from which it was extracted. This also depends on the
+        settings given to the delimiter values 'begin' and 'end' by the
+        'delimiters' hash. In a default configuration where the application
+        has not provided any specific delimiters, the following delimiters
+        are used:
+
+            - '<<' before and '>>' after sections of text highlighted within
+            an element (e.g. words in bold or underlined within a paragraph
+            of 'standard' font characters).
+
+        footnote citations (in text body) are placed between square
+        brackets.
+
+        '{NOTE:' and '}' for the content of footnotes [26] .
+
+        An application can change these delimiters, add more for other types
+        of elements (e.g. paragraphs, headers, tables cells, etc.), or
+        deactivate them using outputDelimitersOff. This depends on where the
+        text is exported to e.g. display in editable "flat" format,
+        conversion to non-OpenOffice.org XML or a markup language other than
+        XML, generating code from text, etc..
+
+        If the element is an ordered or unordered list, the text produced is
+        a concatenation of all the lines in the list, each separated by a
+        line-feed ("\n") in addition to any delimiters.
+
+        If the element is a table cell, getText behaves like getCellValue.
+
+        If the element is a table, getText behaves like getTableText.
+
+=head3	getTextContent
+
+        Returns the text of a document, as "flat" editable text.
+
+        In a list context, the content is returned as a table with one text
+        element (header or paragraph) per element.
+
+        In a scalar context, the content is returned as a single character
+        string with each text unit (header or paragraph) separated by a
+        line-feed ("\n").
+
+        The returned text contains no style or level information, so there
+        is nothing to distinguish a header from a paragraph.
+
+        Same as selectTextContent('.*').
+
+=head3	getTextElementList
+
+        Returns the list of all the text elements, including headers,
+        paragraphs and item lists.
+
+=head3	getTopParagraph(n)
+
+        Same as getParagraph but only considers top level paragraphs. The
+        contents of lists, tables and footnotes are excluded.
+
+=head3	getUnorderedList(n)
+
+        Returns the element which represents the nth+1 unordered list in a
+        document, if found.
+
+=head3	insertHeader(path, position, options)
+
+=head3	insertHeader(element, options)
+
+        Same as appendHeader, but inserts the given header at the given
+        position.
+
+        Position is that of an existing element which can be another header
+        or a paragraph. Can be given by [path, position] or by element
+        reference.
+
+        Possible options are the same as for appendHeader, with the
+        additional option 'position' which determines if the header is
+        inserted before or after the element at the given position. Possible
+        values for this option are 'before' and 'after'. By default, the
+        element is inserted before the given element.
+
+=head3	insertItemList(path, position [, options])
+
+=head3	insertItemList(element [, options])
+
+        Same as appendItemList, but a new list is inserted at the given
+        position. The point of insertion can be given either by the pair
+        [path, position] or by element reference. Options are the same as
+        for insertParagraph.
+
+=head3	insertParagraph(path, position [, options])
+
+=head3	insertParagraph(element [, options])
+
+        Same as appendParagraph, but a new paragraph is inserted at the
+        given position.
+
+        Position is that of an existing element which can be another
+        paragraph or a header. Can be given by [path, position] or by
+        element reference.
+
+        Options are the same as for appendParagraph, with the additional
+        option 'position' which determines whether the paragraph is inserted
+        before or after the element at the given position. Possible values
+        for this options are 'before' and 'after'. By default, the element
+        is inserted before the given element.
+
+=head3	insertRow(table, row [, options])
+
+=head3	insertRow(row_element [, options])
+
+        Inserts a new row into a table. In its first form, pass the table
+        (reference, logical name or number) and the position number in the
+        table. In its second form, pass the element reference of the
+        existing row which is directly before or after the position where
+        you want to make the insertion.
+
+        By default, the new row is inserted at the position of the
+        referenced row, which displaces it and the rest of the table down by
+        one row position. However, you can insert it after by using the
+        'position => after' option. By default, the new row is an exact copy
+        of the referenced row, but you can assign particular attributes to
+        it in the same manner as the insertElement method of OODoc::XPath.
+
+=head3	insertTable(path, position, name, rows, columns [, options])
+
+=head3	insertTable(element, name, rows, columns [, options])
+
+        Creates a new table and inserts it immediately before or after
+        another element (paragraph, header, table). The referenced element
+        can be indicated as in insertParagraph. The other arguments and
+        options are the same as for appendTable with the additional option
+        'position' as in insertParagraph.
+
+=head3	insertTableRow(table, row [, options])
+
+=head3	insertTableRow(row_element [, options])
+
+        See insertRow.
+
+=head3	insertText(path, position, element_name, options)
+
+=head3	insertText(element, name, options)
+
+        As appendText, but a new text element is inserted at the given
+        position.
+
+        The position is that of an existing element (of any type). It can be
+        given by [path, position] or by element reference.
+
+        Options are the same as for appendText, with the additional option
+        'position' which determines whether the element is inserted before
+        or after the element at the given position. Possible values for this
+        option are 'before' and 'after'. By default, the element is inserted
+        before the given element.
+
+=head3	is[Xxxx]
+
+        This module implements a set of accessors which can be used like
+        native text element methods as opposed to OODoc::Text methods, and
+        which allow you to determine what type a given element is [27] . For
+        an element $e of document $d, the syntax is $e->isXxx instead of $d-
+        >isXxx($e).
+
+        Example:
+
+            print "This is a list" if $element->isItemList;
+
+        Here is the list of element type indicators:
+
+            isFootnoteBody		footnote
+
+            isFootnoteCitation	footnote citation
+
+            isHeader			header
+
+            isItemList		list (ordered or unordered)
+
+            isListItem		list item
+
+            isOrderedList		ordered list
+
+            isParagraph		paragraph
+
+            isSequenceDeclarations	set of sequence declarations
+
+            isTable			table
+
+            isTableCell		table cell
+
+            isUnorderedList		unordered list
+
+        For a neater and more direct access to element types, see the
+        getName method of XML::XPath [28] .
+
+=head3	outputDelimitersOn
+
+=head3	outputDelimitersOff
+
+        Turns delimiters on or off. Used to mark up text exported by certain
+        methods like getText or selectTextContent.
+
+        The delimiters actually used depends on the table loaded into the
+        OODoc::Text instance via the 'delimiters' property.
+
+=head3	removeHeader(position)
+
+=head3	removeHeader(element)
+
+        Removes the header at the given position (first form).
+
+        Example:
+
+            $doc->removeHeader(4);
+
+        removes the 5th header (whatever its level) counted from the
+        beginning of the document.
+
+        The header to be removed can be indicated by element reference
+        (second form). In this case, the type of element is not checked and
+        this method becomes the equivalent of removeElement.
+
+=head3	removeParagraph(position)
+
+=head3	removeParagraph(element)
+
+        Removes the paragraph at the given position (first form).
+
+        The paragraph to be removed can be indicated by element reference
+        (second form). In this case, the type of element is not checked and
+        this method becomes the equivalent of removeElement.
+
+=head3	removeSpan(path, position)
+
+=head3	removeSpan(element)
+
+        "Flattens" a text element, removing all presentation distinctions
+        which may mark out some sections of its content.
+
+        For example, the paragraph:
+
+            I consider OpenOffice.org Writer to be my word processor of
+            choice.
+
+        becomes:
+
+            I consider OpenOffice.org Writer to be my word processor of
+            choice.
+
+        when this method is applied.
+
+        See also setSpan.
+
+=head3	rowStyle(row_element [, style])
+
+=head3	rowStyle(table, row [, style])
+
+        Reads or modifies a table row's style, in the same way as
+        columnStyle does for columns.
+
+=head3	selectElementsByContent(filter)
+
+=head3	selectElementsByContent(filter, replacement)
+
+=head3	selectElementsByContent(filter, action [, other_arguments])
+
+        This method returns a list of text elements such as paragraphs,
+        headers or ordered/unordered lists whose content matches the search
+        criteria contained in 'filter' (which can be an exact string or a
+        regular expression).
+
+        The first form simply returns the given list without modifying the
+        text.
+
+        The second form returns the same list, but replaces all strings
+        which match the search criteria with the 'replacement' string as it
+        goes.
+
+        The third form, where the 'action' argument is a program function
+        reference, launches the given function each time the filter string
+        is matched. If defined, the value returned by the function is used
+        as the replacement value [29] . If the function returns a null value
+        (undef) then no replacement is made. If it returns an empty string,
+        the retrieved text is deleted. The called function receives the rest
+        of the arguments, in this order:
+
+
+        The returned list is the same one returned by the first two forms.
+
+        Example:
+
+            sub action
+            	{
+            	my ($d, $element, $value) = @_;
+            	if ($value < 100)
+            		{
+            		$d->removeElement($element);
+            		return undef;
+            		}
+            	else
+            		{
+            		return $value * 2;
+            		}
+            	}
+                        @list =
+             $doc->selectElementsByContent("[0-9]+", \&action, $doc);
+
+        In the above code, the subroutine "action" is called each time an
+        integer (one or more digits) is found. The subroutine receives the
+        document reference itself as its first argument (an OODoc::Text
+        object given by the application). Next, it automatically receives
+        the reference of the element in which the search string was found
+        (i.e. an integer) and, finally, it receives the exact number found
+        as its second-last and last arguments respectively. If this number
+        is less than 100, the element is removed. This is why the subroutine
+        needed the $doc object, used to invoke the removeElement method. If
+        more than 100, the number is multiplied by two and the result
+        replaces the original value in the element. The list returned by
+        selectElementsByContent contains all elements which contain the
+        search string, including any which might have been removed by the
+        called function while it was running.
+
+        It is the "main" elements containing strings which matched the
+        filter which are returned and not any of their sub-elements. For
+        example, if the returned string is found in one of the items in an
+        unordered list, the list element is selected and not the item.
+        Similarly, the table is selected when one of its cells matches the
+        filter, and the paragraph which is selected when the search string
+        is found in an attached footnote.
+
+        However, a character string cannot be considered to match the filter
+        unless it is entirely within the same sub-element and all its
+        characters have the same style. For example, if you were searching
+        for the string "OpenOffice" using selectElementsByContent, the
+        following paragraph would not be selected:
+
+        This document was created using OpenOffice.org 1.0.1
+
+        In this example, the word "OpenOffice" is there but it is divided by
+        a style change which the logic of selectElementsByContent treats as
+        belonging to two separate sub-elements. [30]  (This is not the same
+        logic applied by the search function of an office application.)
+
+        Note: This method can be used with a "non-filtering" regular
+        expression (".*") for unconditional movement through all text
+        elements.
+
+=head3	selectParagraphByStyle(stylename)
+
+        Returns the first paragraph (if any) using the given style.
+
+=head3	selectParagraphsByStyle(stylename)
+
+        Returns the list of the paragraphs using the given style.
+
+=head3	selectTextContent(filter)
+
+=head3	selectTextContent(filter, replacement)
+
+=head3	selectTextContent(filter, action [, other_arguments])
+
+        Returns a list of header texts and/or paragraphs (in the document's
+        own order) which match the given search criteria.
+
+        The filter can be an exact string or a regular expression. A filter
+        set to ".*" (no selection) will result in an export of the entire
+        text.
+
+        In all three forms, this method behaves like
+        selectElementsByContent, except that it returns text instead of a
+        list of elements.
+
+        Depending on the context (list or scalar), the result is returned in
+        the form of a list of rows or in the form of a single character
+        string where the elements are separated by a line-feed ("\n").
+
+        Note: called with a "non-filtering" regular expression, this method
+        will result in a "flat" export of the document:
+
+            print $doc->selectTextContent('.*');
+
+=head3	setSpan(path, position, [context,] expression, style)
+
+=head3	setSpan(element, [context,] expression, style)
+
+        Applies a "span" to part of the content of a text element.
+
+        In OpenOffice.org language, a "span" is a character string whose
+        presentation style differs from the style of the text element to
+        which it belongs. For example, in this text:
+
+            I consider OpenOffice.org Writer to be my word processor of
+            choice.
+
+        the string "OpenOffice.org Writer" is a "span" because it is in
+        italics while the rest of the paragraph is in normal characters. The
+        string "word processor" is another because its background colour is
+        different. A "span" is therefore a way to use several styles within
+        the same element, bearing in mind that the paragraph's global style
+        can be modified by setStyle.
+
+        The desired text element is normally indicated by [path, position]
+        or reference. The optional argument 'context' which consists of an
+        element reference, allows you (when using [path, position]) to limit
+        a search to child elements of a particular element (e.g. headers,
+        footers, unordered lists, etc.).
+
+        'expression' is the character string to be highlighted, and 'style'
+        is obviously the style describing the presentation characteristics
+        to give to it. See OODoc::Styles for how to construct styles from
+        code.
+
+        As a highlighted string can be quite long or not all known in
+        advance, you can represent it with a regular expression. Taking the
+        previous example again, you could use:
+
+            my @list = $doc->selectElementsByContent("OpenOffice");
+            foreach my $para (@list)
+            	{
+            	$doc->setSpan($para, "Open.*Writer", "Style1");
+            	$doc->setSpan($para, "word.*ssor", "Style2");
+            	}
+
+        This sequence selects all text elements (or, more simply,
+        paragraphs) which contain "OpenOffice". In each of them, the style
+        "Style1" is given to the string beginning with "Open" and ending
+        with "Writer" (if found) and the style "Style2" is given to the
+        string beginning with "word" and ending with "ssor". Defined
+        elsewhere, Style1 and Style2 would correspond to the required
+        presentation characteristics.
+
+        Caution: the current version of this method can neither recognise
+        nor handle a string located partly in a "span" and partly outside
+        it. It can, however, create a "span" inside another.
+
+        See also removeSpan.
+
+=head3	setStyle(path, position, style_name)
+
+=head3	setStyle(element, style_name)
+
+        Obsolete. See textStyle.
+
+=head3	setText(element, text ,[text, ...])
+
+        Alters the setText method of OODoc::XPath, so that it can handle
+        complex text elements.
+
+        If the element is a paragraph, a header of a list item (ordered or
+        unordered), its content is replaced by the 'text' argument. Caution:
+        setText deletes and replaces the previous content of the paragraph.
+
+        If the element is a table cell, this method is the same as
+        updateCell.
+
+        If the element is a list (ordered or unordered), the content of each
+        'text' argument (however many) forces the creation of a new item
+        which is appended to the list (existing items remain unchanged).
+        Example:
+
+            $doc->setText($element, "Peter", "Paul", "John")
+
+        adds three items to the list if $element is a list. If $element is,
+        for example, a paragraph, then the second argument ("Peter") becomes
+        the content of the paragraph and the other arguments are ignored.
+
+        For all other types of element, setText behaves normally as defined
+        in OODoc::XPath.
+
+=head3	tableStyle(table [, style])
+
+        Returns the current style of a given table, or replaces it with a
+        new style given as the second argument. The table can be indicated
+        by number, logical name or reference.
+
+=head3	textStyle(path, position [, style])
+
+=head3	textStyle(element [, style])
+
+        Reads a text element's style or, if a 'style' argument is given,
+        changes it.
+
+        The element can be indicated by the pair [path, position] or by
+        reference.
+
+        Note: the returned value is a literal style identifier or the value
+        of the element's 'text:style-name' attribute.
+
+        Note: this method allows you to attribute a non-existent style to a
+        paragraph or header. Such a style can be created later (e.g. using
+        createStyle) or not at all. The actual existence of the style is
+        only relevant to the needs of the application [31] .
+
+=head3	updateCell(table, row, column, value [, text])
+
+=head3	updateCell(element, value [, text])
+
+        Modifies the content of a table cell.
+
+        In its first form, indicates a cell by its 3D coordinates, as with
+        getCell. In its second form, indicates a cell by its element
+        reference.
+
+        If the cell is set to literal, its content is limited to its text.
+        In this case, the optional argument "text" is of no use (the text
+        equals the value).
+
+        If the cell is set to numeric (float, currency, date, etc.), you
+        should generally pass a literal argument as well as the value.
+
+        This method can be replaced by the accessor cellValue which allows
+        reads and writes.
+
+=head2	Properties
+
+        No class variables are exported.
+
+        Instance properties are the same as for OODoc::XPath, plus:
+
+            'delimiters'	=> delimiter table
+
+        hash giving the relation between element types and the delimiters to
+        use when exporting text (see getText).
+
+            'use_delimiters'	=> delimiter usage (see getText)
+
+        indicates whether delimiters are to be used by getText or not when
+        exporting text. Set to 'on' by default. Can be set to 'off' or
+        another value to stop or limit use of delimiters.
+
+            'header_style'	=> default header style
+
+        indicates the default header style to be used by element creation
+        methods when no style is specified. Set to 'Heading 1' by default.
+
+            'paragraph_style'	=> default paragraph style
+
+        indicates the default paragraph style to be used by element creation
+        methods when no style is specified. Set to 'Standard' by default.
+
+            'field_separator'	=> field separator
+
+        contains the character string to be used as the field separator when
+        exporting tables. By default it is ";".
+
+            'line_separator'	=> line separator
+
+        contains the string to be used to separate lines when exporting
+        "flat" text. By default, it is a line-feed ("\n").
+
+=head1	NOTES
+
+	See OpenOffice::OODoc::Notes(3) for the footnote citations ([n])
+	included in this page.
+
+	This man page has been generated from a chapter of the original
+	reference manual. This manual is in OpenOffice.org (SXW) format.
+	It's freely downloadable at http://www.genicorp.fr/devel/oodoc
+
+=head1	AUTHOR/COPYRIGHT
+
+	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
+
+	Initial English version of the reference manual
+	by Graeme A. Hunter <graeme.hunter@zen.co.uk>
+	
+	Licensing conditions:
+		- Genicorp General Public Licence v1.0
+		- GNU Lesser General Public License v2.1
+	Contact: oodoc@genicorp.com
+
+=cut
