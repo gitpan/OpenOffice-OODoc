@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 1.112 2004-07-02 JMG$
+#	$Id : Text.pm 1.113 2004-08-03 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -13,9 +13,9 @@
 
 package OpenOffice::OODoc::Text;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	1.113;
+use	OpenOffice::OODoc::XPath	1.115;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 1.112;
+our	$VERSION	= 1.113;
 
 #-----------------------------------------------------------------------------
 # default text style attributes

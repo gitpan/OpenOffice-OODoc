@@ -114,8 +114,8 @@ WriteMakefile
     	'PREREQ_PM'	=>
     		{
 		'XML::XPath'		=> '1.13',
-		'Archive::Zip'		=> '1.05',
-		'File::Temp'		=> '0.14',
+		'Archive::Zip'		=> 0,
+		'File::Temp'		=> '0.12',
 		'Time::Local'		=> '1.07'
 		},
 	);

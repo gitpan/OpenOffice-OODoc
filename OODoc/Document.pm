@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Document.pm 1.007 2004-07-02 JMG$
+#	$Id : Document.pm 1.008 2004-08-03 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -11,9 +11,9 @@
 #
 #-----------------------------------------------------------------------------
 
-use OpenOffice::OODoc::Text	1.112;
-use OpenOffice::OODoc::Image	1.008;
-use OpenOffice::OODoc::Styles	1.006;
+use OpenOffice::OODoc::Text	1.113;
+use OpenOffice::OODoc::Image	1.011;
+use OpenOffice::OODoc::Styles	1.007;
 
 package OpenOffice::OODoc::Document;
 our @ISA	= qw	(
@@ -21,7 +21,7 @@ our @ISA	= qw	(
 			OpenOffice::OODoc::Image
 			OpenOffice::OODoc::Styles
 			);
-our $VERSION	= 1.007;
+our $VERSION	= 1.008;
 
 #-----------------------------------------------------------------------------
 # constructor

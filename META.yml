@@ -1,12 +1,12 @@
 # http://module-build.sourceforge.net/META-spec.html
 #XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
 name:         OpenOffice-OODoc
-version:      1.202
+version:      1.203
 version_from: OODoc.pm
 installdirs:  site
 requires:
-    Archive::Zip:                  1.05
-    File::Temp:                    0.14
+    Archive::Zip:                  0
+    File::Temp:                    0.12
     Time::Local:                   1.07
     XML::XPath:                    1.13
 

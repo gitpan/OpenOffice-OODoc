@@ -1,13 +1,13 @@
 #!/usr/bin/perl -w
 #-----------------------------------------------------------------------------
 #
-#      $Id: createoodoc 0.001 2004-07-30$
+#      $Id: createoodoc 0.001 2004-08-04$
 #
 #-----------------------------------------------------------------------------
        
 =head1	NAME
 
-createoodoc - New OpenOffice.org file creation
+createoodoc - OpenOffice.org file creation
 
 =head1	SYNOPSIS
 
@@ -20,7 +20,7 @@ createoodoc - New OpenOffice.org file creation
 
 =head1	COMMENT
 
-This example show the way to simply create a new OpenOffice.org document.
+This example shows the way to simply create a new OpenOffice.org document.
 The user must provide only a name and the document class (i.e. "text",
 "spreadsheet", "presentation" or "drawing"). Optionnally, the user can
 provide a title as the 3rd argument.

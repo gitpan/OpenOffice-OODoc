@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Styles.pm 1.006 2004-07-30 JMG$
+#	$Id : Styles.pm 1.007 2004-08-03 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -13,9 +13,9 @@
 
 package OpenOffice::OODoc::Styles;
 use	5.006_001;
-our	$VERSION	= 1.006;
+our	$VERSION	= 1.007;
 
-use	OpenOffice::OODoc::XPath	1.112;
+use	OpenOffice::OODoc::XPath	1.115;
 use	File::Basename;
 require	Exporter;
 our	@ISA		= qw ( Exporter OpenOffice::OODoc::XPath );

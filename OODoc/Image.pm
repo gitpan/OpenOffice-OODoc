@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Image.pm 1.009 2004-07-28 JMG$
+#	$Id : Image.pm 1.011 2004-08-03 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -13,10 +13,10 @@
 
 package	OpenOffice::OODoc::Image;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	1.114;
+use	OpenOffice::OODoc::XPath	1.115;
 use	File::Basename;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 1.009;
+our	$VERSION	= 1.011;
 
 #-----------------------------------------------------------------------------
 # default attributes for image style

@@ -12,7 +12,7 @@ replaces "search string" by "replacement" in the file "myfile.sxw", highlights
 each replacement with a yellow (default) backgound, then writes the resulting
 document as "target.sxw"
 
-oohighlight "myfile.sxw" "search string" -color "#00ff00"
+oohighlight "myfile.sxw" "search string" -color "green"
 
 highlights each occurrence of "search string" in "myfile.sxw" with a green
 background color, without changing the text (without "-o" option, the changes
@@ -30,10 +30,7 @@ and represented with the "Standard" style.
 
 	-e --encoding "xxxxxx"
 
-		local character set to be used, knowing that the default
-		encoding is "iso-8859-1"; this option is mandatory if the
-		search string or the replacement one contains non-ASCII
-		characters
+		character set to use, if different from the default
 		
 	-r --replacement "new string"
 

@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : File.pm 1.105 2004-07-29 JMG$
+#	$Id : File.pm 1.106 2004-08-03 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -13,8 +13,8 @@
 
 package	OpenOffice::OODoc::File;
 use	5.006_001;
-our	$VERSION	= 1.105;
-use	Archive::Zip	1.05	qw ( :DEFAULT :CONSTANTS :ERROR_CODES );
+our	$VERSION	= 1.106;
+use	Archive::Zip		qw ( :DEFAULT :CONSTANTS :ERROR_CODES );
 use	File::Temp;
 
 #-----------------------------------------------------------------------------
@@ -24,7 +24,7 @@ our	$DEFAULT_COMPRESSION_METHOD	= COMPRESSION_DEFLATED;
 our	$DEFAULT_COMPRESSION_LEVEL	= COMPRESSION_LEVEL_BEST_COMPRESSION;
 our	$DEFAULT_EXPORT_PATH		= './';
 our	$WORKING_DIRECTORY		= '.';
-our	$TEMPLATE_PATH			= undef;
+our	$TEMPLATE_PATH			= '';
 our	$MIMETYPE_BASE			= 'application/vnd.sun.xml.';
 our	%OOTYPE				=
 		(
@@ -134,7 +134,6 @@ sub	ooCreateFile
 		}
 
 	require File::Basename;
-
 	my $basepath	=
 		$opt{'template_path'}
 			||
@@ -340,6 +339,8 @@ sub	new
 		'linked'		=> [],
 		'work_dir'		=>
 				$OpenOffice::OODoc::File::WORKING_DIRECTORY,
+		'template_path'		=>
+				 $OpenOffice::OODoc::File::TEMPLATE_PATH,
 		'temporary_files'	=> [],
 		'raw_members'		=> [],
 		@_

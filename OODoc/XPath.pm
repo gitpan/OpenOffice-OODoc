@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 1.114 2004-07-28 JMG$
+#	$Id : XPath.pm 1.115 2004-08-03 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -13,7 +13,7 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 1.114;
+our	$VERSION	= 1.115;
 use	XML::XPath	1.13;
 use	Encode;
 
@@ -539,9 +539,9 @@ sub	getElement
 	my $pos		= shift;
 	if (defined $pos && (($pos =~ /^\d*$/) || ($pos =~ /^[\d+-]\d+$/)))
 		{
-		my $context	= shift || $self->{'xpath'};
-		my $node	=
-			($context->find($path)->get_nodelist)[$pos];
+		my $context	= shift;
+		$context	= $self->{'xpath'} unless ref $context;
+		my $node	= ($context->find($path)->get_nodelist)[$pos];
 
 		return	$node && $node->isElementNode ? $node : undef;
 		}
@@ -778,15 +778,9 @@ sub	selectNodesByXPath
 	my $context	= undef;
 	if (ref $p1)	{ $context = $p1; $path = $p2; }
 	else		{ $path = $p1; $context = $p2; }
-	
-	if (ref $context)
-		{
-		return $context->find($path, @_)->get_nodelist;
-		}
-	else
-		{
-		return $self->{'xpath'}->find($path, @_)->get_nodelist;
-		}
+
+	$context = $self->{'xpath'} unless ref $context;
+	return $context->find($path, @_)->get_nodelist;
 	}
 
 #------------------------------------------------------------------------------

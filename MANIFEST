@@ -26,7 +26,6 @@ OODoc/Notes.pod
 OODoc/Styles.pod
 OODoc/Text.pod
 OODoc/XPath.pod
-examples/LOCALIZATION
 examples/change_style
 examples/command_doc
 examples/createoodoc

@@ -1,3 +1,10 @@
+1.203	2004-08-03
+	- Fixed a bug that prevented the user from using custom templates (File.pm)
+	- Removed Archive::Zip version control (due to a numbering anomaly in
+	the PPM/Windows Archive::Zip distribution)
+	- Downgraded File::Temp version control from 1.14 to 1.12 (that is the
+	current PPM/Windows version)
+	- Documentation update
 1.202	2004-07-30
 	- Removing an unneeded warning when no colormap is loaded
 1.201	2004-07-30

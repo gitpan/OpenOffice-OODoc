@@ -70,10 +70,12 @@ not necessarily in OpenOffice.org format.
 		template_path	=> "path"
 
 	to generate the new file from special, user-provided XML templates
-	instead of those included in the installation.
+	instead of those included in the installation. If this option is
+	not provided, the general template path (possibly changed with
+	the templatePath() function) is used.
 
-        The returned object, if successful, is a valid File instance, whose
-        methods listed below become available.
+        The returned object of new(), if successful, is a valid File object,
+	whose methods listed below become available.
 
         If unsuccessful (generally due to non-existent file or invalid zip
         archive or even a corrupt zip archive), the constructor returns a
@@ -266,6 +268,23 @@ not necessarily in OpenOffice.org format.
         unpredictable and, in any case, any document updates it could have
         made are lost.
 
+=head3	templatePath([path])
+
+	Class function (not to be used as a method).
+
+	Accessor to get/set the path for a user-defined set of XML templates,
+	to be used in case of new document creation. This path is empty by
+	default. Without an explicit template path, the default XML templates
+	provided with the OpenOffice::OODoc distribution are automatically
+	selected.
+
+	The given path, if any, must correspond to a directory with the
+	"text", "presentation", "spreadsheet" and "drawing" subdirectories,
+	each one containing the appropriates XML templates for the
+	corresponding document class and their associated non-XML data, if
+	any (ex: images). These templates can be produced, for example, by
+	uncompressing ordinary OpenOffice.org files.
+
 =head2	Properties
 
         No class variables are exported.
@@ -275,6 +294,10 @@ not necessarily in OpenOffice.org format.
 	save() method) when no object-specific path is provided through the
 	'work_dir' option. By default, the working directory is the current
 	directory ('.').
+
+	The $OpenOffice::OODoc::File::TEMPLATE_PATH, empty by default, can
+	contain an alternative path for document generation template files;
+	it can be set with the templatePath() function.
 
         Instance hash variables are:
 
