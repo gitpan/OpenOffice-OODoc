@@ -7,7 +7,7 @@ oometadoc - Document properties management interface
 
 =head1	SYNOPSIS
 
-	oometa <directory>
+	oometadoc <directory>
 
 =head1	DESCRIPTION
 
@@ -22,9 +22,15 @@ property, or insert/delete any keyword. A double-click on a word in the
 text content field appends the word to the keword list. 'OK' saves the changes
 in the file.
 
+=head1	LIMITS
+
+This script is provided as a demo and test tool, with a very basic user
+interface. There is no directory selection dialog box. Some file names with
+blank spaces and/or non-ASCII characters are not properly processed.
+
 =head1	REQUIREMENTS
 
-Requires Tk and TK::Dialog
+Requires Tk and some Tk extensions (TK::Dialog, Tk::LabFrame, Tk::LabEntry)
 
 =cut
 
@@ -99,15 +105,15 @@ sub	accesMeta
 		);
 	$D->withdraw;
 	my $fr2 = $D->Frame
-		-> pack(side => 'bottom', expand => 1, fill => 'x');
+		-> pack(-side => 'bottom', -expand => 1, -fill => 'x');
 	my $fr1 = $D->Frame
-		->pack(side => 'left', anchor => 'n');
+		->pack(-side => 'left', -anchor => 'n');
 	my $fr3	= $D->LabFrame
 		(
 		-label		=> 'Keywords',
 		-labelside	=> 'acrosstop'
 		)
-		->pack(side => 'right', expand => 1, fill => 'y');
+		->pack(-side => 'right', -expand => 1, -fill => 'y');
 	$fr1->LabEntry
 		(
 		-label			=> 'Title',
@@ -115,7 +121,7 @@ sub	accesMeta
 		-width			=> 40,
 		-bg			=> $couleur_saisie
 		)
-		-> pack(side => 'top', fill => 'x');
+		-> pack(-side => 'top', -fill => 'x');
 	$fr1->LabEntry
 		(
 		-label			=> 'Author',
@@ -123,7 +129,7 @@ sub	accesMeta
 		-width			=> 40,
 		-bg			=> $couleur_saisie
 		)
-		-> pack(side => 'top', fill => 'x');
+		-> pack(-side => 'top', -fill => 'x');
 	$fr1->LabEntry
 		(
 		-label			=> 'Subject',
@@ -131,12 +137,12 @@ sub	accesMeta
 		-width			=> 40,
 		-bg			=> $couleur_saisie
 		)
-		-> pack(side => 'top', fill => 'x');
+		-> pack(-side => 'top', -fill => 'x');
 	my $fr4 = $fr1->LabFrame
 		(
 		-label		=> 'Description',
 		)
-		-> pack(side => 'top', fill => 'x');
+		-> pack(-side => 'top', -fill => 'x');
 	$description = $fr4->Scrolled
 		(
 		'Text',
@@ -146,12 +152,12 @@ sub	accesMeta
 		-bg			=> $couleur_saisie,
 		-exportselection	=> 'yes'
 		)
-		-> pack(side => 'top', fill => 'both');
+		-> pack(-side => 'top', -fill => 'both');
 	my $fr5 = $fr1->LabFrame
 		(
 		-label		=> 'Content',
 		)
-		-> pack(side => 'top', fill => 'x');
+		-> pack(-side => 'top', -fill => 'x');
 	my $texte = $fr5->Scrolled
 		(
 		'Text',
@@ -161,7 +167,7 @@ sub	accesMeta
 		-bg			=> $couleur_lecture,
 		-exportselection	=> 'yes'
 		)
-		-> pack(side => 'top', fill => 'both');
+		-> pack(-side => 'top', -fill => 'both');
 	my $l = $fr3->Scrolled
 		(
 		'Listbox',
@@ -170,7 +176,7 @@ sub	accesMeta
 		-bg		=> $couleur_saisie,
 		-exportselection => 'yes'
 		)
-		-> pack(side => 'top', expand => 1, fill => 'x');
+		-> pack(-side => 'top', -expand => 1, -fill => 'x');
 	$texte->bind
 		(
 		'<Double-Button-1>'	=> sub
@@ -186,7 +192,7 @@ sub	accesMeta
 		-width		=> 18,
 		-bg		=> $couleur_saisie
 		)
-		-> pack(side => 'bottom', fill => 'x');
+		-> pack(-side => 'bottom', -fill => 'x');
 	$nm->bind	(
 			'<Return>'	=> sub
 					{
@@ -232,7 +238,7 @@ sub	accesMeta
 					$D->destroy;
 					}
 		)
-		-> pack(side => 'left', expand => 1, fill => 'x');
+		-> pack(-side => 'left', -expand => 1, -fill => 'x');
 	$fr2->Button
 		(
 		-text		=> 'Cancel',
@@ -242,7 +248,7 @@ sub	accesMeta
 					$D->destroy;
 					}
 		)
-		-> pack(side => 'left', expand => 1, fill => 'x');
+		-> pack(-side => 'left', -expand => 1, -fill => 'x');
 	$D->bind('<KeyPress-Escape>' => sub { $D->destroy });
 	$D->bind('<Destroy>' => sub { $f->deiconify; });
 	$D->update;			
@@ -295,9 +301,9 @@ $f	= MainWindow->new
 	(
 	title	=> 'Documents',
 	);
-$r1	= $f->Frame->pack(side => 'bottom', fill => 'x');
-my $dir	= $f->Entry(width => 32, textvariable => \$chemin)
-		->pack(side => 'top', expand => 'yes');
+$r1	= $f->Frame->pack(-side => 'bottom', -fill => 'x');
+my $dir	= $f->Entry(-width => 32, -textvariable => \$chemin)
+		->pack(-side => 'bottom', -expand => 'yes');
 $dir->bind('<Return>', sub { @liste = listeFichiers; });
 $boite_liste	= $f->Scrolled
 		(
@@ -307,15 +313,15 @@ $boite_liste	= $f->Scrolled
 		-height		=> 16,
 		-bg		=> $couleur_saisie
 		)
-		->pack(side => 'top', expand => 'yes');
+		->pack(-side => 'top', -expand => 'yes');
 my $OK		= $r1->Button
 		(
-		text	=> 'OK',
+		-text	=> 'OK',
 		)
-		->pack(side => 'left', expand => 1, fill => 'x');
+		->pack(-side => 'left', -expand => 1, -fill => 'x');
 $OK->configure
 		(
-		command	=> sub
+		-command	=> sub
 			{
 			my $f = $liste[$boite_liste->curselection];
 			$OK->configure
@@ -333,7 +339,7 @@ $boite_liste->bind
 		(
 		'<Double-Button-1>' => sub
 			{
-			my $f = $liste[$boite_liste->curselection];
+			my $f = $liste[($boite_liste->curselection)[0]];
 			$OK->configure
 				(
 				-text	=> 'Loading...'
@@ -347,10 +353,10 @@ $boite_liste->bind
 		);
 my $Annuler	= $r1->Button
 		(
-		text	=> 'Cancel',
-		command => [ $f => 'destroy' ]
+		-text	=> 'Cancel',
+		-command => [ $f => 'destroy' ]
 		)
-		->pack(side => 'left', fill => 'x');
+		->pack(-side => 'left', -fill => 'x');
 $f->bind('<KeyPress-Escape>' => sub { $f->destroy });
 
 tie @liste, "Tk::Listbox", $boite_liste;

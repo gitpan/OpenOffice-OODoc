@@ -1,3 +1,6 @@
+1.304	2005-02-18
+	- Bugfix in the oometadoc example
+	- Code cleaning and optimizations (Text.pm)
 1.303	2005-02-17
 	- Added a Tk graphical example (oometadoc)
 	- Fix some module version errors

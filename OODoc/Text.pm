@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 1.202 2005-02-17 JMG$
+#	$Id : Text.pm 1.203 2005-02-18 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -15,7 +15,7 @@ package OpenOffice::OODoc::Text;
 use	5.006_001;
 use	OpenOffice::OODoc::XPath	1.202;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 1.202;
+our	$VERSION	= 1.203;
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -318,6 +318,8 @@ sub	setText
 	my $pos		= (ref $path) ? undef : shift;
 	my $element	= $self->getElement($path, $pos);
 	return undef	unless $element;
+
+	return $self->SUPER::setText($element, @_) if $element->isParagraph;
 
 	my $line_break	= $self->{'line_separator'} || '';
 	if	($element->isItemList)
@@ -1382,7 +1384,7 @@ sub	getCellValue
 		}
 	else							# numeric value
 		{
-		return $cell->getAttribute('table:value');
+		return $cell->att('table:value');
 		}
 
 	return undef;
@@ -1416,11 +1418,19 @@ sub	cellValueType
 	my $newtype	= shift;
 	unless ($newtype)
 		{
-		return $cell->getAttribute('table:value-type');
+		return $cell->att('table:value-type');
 		}
 	else
 		{
-		return $cell->setAttribute('table:value-type', $newtype);
+		if ($newtype eq 'date')
+			{
+			$cell->del_att('table:value');
+			}
+		else
+			{
+			$cell->del_att('table:date-value');
+			}
+		return $cell->set_att('table:value-type', $newtype);
 		}
 	}
 
@@ -1450,12 +1460,12 @@ sub	cellCurrency
 	my $newcurrency	= shift;
 	unless ($newcurrency)
 		{
-		return $cell->getAttribute('table:currency');
+		return $cell->att('table:currency');
 		}
 	else
 		{
-		$cell->setAttribute('table:value-type', 'currency');
-		return $cell->setAttribute('table:currency', $newcurrency);
+		$cell->set_att('table:value-type', 'currency');
+		return $cell->set_att('table:currency', $newcurrency);
 		}
 	}
 
@@ -1504,6 +1514,7 @@ sub	updateCell
 	my $self	= shift;
 	my $p1		= shift;
 	my $cell	= undef;
+
 	if 	((! (ref $p1)) || $p1->isTable)
 		{
 		@_ = OpenOffice::OODoc::Text::_coord_conversion(@_);
@@ -1519,6 +1530,7 @@ sub	updateCell
 		}
 	return undef	unless $cell;
 
+	
 	my $value	= shift;
 	my $text	= shift;
 
@@ -1531,10 +1543,23 @@ sub	updateCell
 		}
 
 	my $p = $cell->first_child('text:p');
-	$p = $self->appendElement($cell, 'text:p') unless $p;
-	$self->OpenOffice::OODoc::XPath::setText($p, $text);
-	$cell->setAttribute('table:value', $value)
-		if ($cell_type && ($cell_type ne 'string'));
+	unless ($p)
+		{
+		$p = $self->createParagraph($text);
+		$p->paste_last_child($cell);
+		}
+	else
+		{
+		$self->SUPER::setText($p, $text);
+		}
+
+	unless ($cell_type eq 'string')
+		{
+		my $attribute = ($cell_type eq 'date') ?
+				'table:date-value' : 'table:value';
+		$cell->setAttribute($attribute, $value);
+		}
+	return $cell;
 	}
 
 #-----------------------------------------------------------------------------
@@ -1906,11 +1931,16 @@ sub	_build_table
 	my $cell_proto	= $self->createElement('table:table-cell');
 	$self->cellValueType($cell_proto, $opt{'cell-type'});
 	$self->cellStyle($cell_proto, $opt{'cell-style'});
-	my $para_proto	= $self->createElement('text:p');
-	$self->setAttribute
-		($para_proto, 'text:style-name', $opt{'text-style'})
-			if $opt{'text-style'};
-	$para_proto->paste_last_child($cell_proto);
+
+	if ($opt{'paragraphs'})
+		{
+		my $para_proto	= $self->createElement('text:p');
+		$self->setAttribute
+			($para_proto, 'text:style-name', $opt{'text-style'})
+				if $opt{'text-style'};
+		$para_proto->paste_last_child($cell_proto);
+		}
+
 	$cell_proto->paste_first_child($row_proto);
 	$cell_proto->replicateNode($cols - 1, 'after');
 
@@ -2128,6 +2158,32 @@ sub	appendBodyElement
 	}
 
 #-----------------------------------------------------------------------------
+# create a new paragraph
+
+sub	createParagraph
+	{
+	my $self	= shift;
+	my $text	= shift;
+	my $style	= shift;
+
+	my $p = XML::Twig::Elt->new('text:p');
+	if ($text)
+		{
+		$self->SUPER::setText($p, $text);
+		}
+	if ($style)
+		{
+		$self->setAttribute
+				(
+				$p,
+				'text:style-name',
+				$self->inputTextConversion($style)
+				);
+		}
+	return $p;
+	}
+
+#-----------------------------------------------------------------------------
 # add a new or existing text at the end of the document
 
 sub	appendText
@@ -2176,11 +2232,16 @@ sub	appendParagraph
 	my $self	= shift;
 	my %opt		=
 			(
-			style	=> $self->{'paragraph_style'},
+			style		=> $self->{'paragraph_style'},
 			@_
 			);
 
-	return $self->appendText('text:p', %opt);
+	my $paragraph = $self->createParagraph($opt{'text'}, $opt{'style'});
+
+	my $attachment	= $opt{'attachment'} || $self->getBody;
+	$paragraph->paste_last_child($attachment);
+
+	return $paragraph;
 	}
 
 #-----------------------------------------------------------------------------
