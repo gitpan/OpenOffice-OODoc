@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Styles.pm 1.004 2004-05-19 JMG$
+#	$Id : Styles.pm 1.005 2004-07-30 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -13,10 +13,13 @@
 
 package OpenOffice::OODoc::Styles;
 use	5.006_001;
+our	$VERSION	= 1.005;
+
 use	OpenOffice::OODoc::XPath	1.112;
 use	File::Basename;
-our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 1.004;
+require	Exporter;
+our	@ISA		= qw ( Exporter OpenOffice::OODoc::XPath );
+our	@EXPORT		= qw ( ooLoadColorMap oo2rgb rgb2oo );
 
 #-----------------------------------------------------------------------------
 
@@ -30,8 +33,121 @@ our	%STYLE_PATH		=
 	'footer'		=> 'style:footer-style/style:properties'
 	);
 
+our	$COLORMAP		= undef;
+our	%COLORMAP		=
+	(
+	'red'			=> '255,0,0',
+	'green'			=> '0,255,0',
+	'blue'			=> '0,0,255',
+	'white'			=> '255,255,255',
+	'black'			=> '0,0,0',
+	'brown'			=> '165,42,42',
+	'cyan'			=> '0,255,255',
+	'grey'			=> '190,190,190',
+	'magenta'		=> '255,0,255',
+	'orange'		=> '255,165,0',
+	'pink'			=> '255,192,203',
+	'violet'		=> '238,130,238',
+	'yellow'		=> '255,255,0'
+	);
+	
 #-----------------------------------------------------------------------------
+# loading a color map from an external file
+# the file format must be "%d %d %d %s"
+	
+sub	ooLoadColorMap
+	{
+	my $filename = shift || $COLORMAP;
+	unless ( -e $filename && -r $filename )
+		{
+		warn	"[" . __PACKAGE . "::ooLoadColorMap] "	.
+			"Color map file non existent or unreadable\n";
+		return undef;
+		}
+	my $r = open COLORS, "<", $filename;
+	unless ($r)
+		{
+		warn	"[" . __PACKAGE . "::ooLoadColorMap] "	.
+			"Error opening $filename\n";
+		return undef;
+		}
+	while (my $line = <COLORS>)
+		{
+		$line =~ s/^\s*//; $line =~ s/\s*$//;
+		next unless $line =~ /^[0-9]/;
+		$line =~ /(\d*)\s*(\d*)\s*(\d*)\s*(.*)/;
+		my $name = $4;
+		$COLORMAP{$name} = "$1,$2,$3" if $name;
+		}
+	close COLORS;
+	return 1;
+	}
 
+#-----------------------------------------------------------------------------
+# converting an hexadecimal OOo color code to decimal RGB
+
+sub	oo2rgb
+	{
+	my $hexcolor = shift; return undef unless $hexcolor;
+	return undef unless $hexcolor =~ /^#[0-9A-Fa-f]{6}$/;
+	$hexcolor =~ /#(..)(..)(..)/;
+	my ($red, $green, $blue) = ($1, $2, $3);
+	my @rgb = (hex($red), hex($green), hex($blue));
+	if (wantarray)
+		{
+		return @rgb;
+		}
+	else
+		{
+		my $color = join(",", @rgb);
+		foreach my $k (keys %COLORMAP)
+			{
+			return $k if ($COLORMAP{$k} eq $color);
+			}
+		return $color;
+		}
+	}
+
+#-----------------------------------------------------------------------------
+# converting a decimal RGB expression to an hexadecimal OOo color 
+
+sub	rgb2oo
+	{
+	my $colour = shift;
+	my ($red, $green, $blue);
+	if ($colour =~ /,/)
+		{
+		$colour =~ s/ //g;
+		($red, $green, $blue) = split(",", $colour);
+		}
+	elsif ($colour =~ /^[a-zA-Z]/)
+		{
+		if (defined $COLORMAP{$colour})
+			{
+			($red, $green, $blue) = split(",", $COLORMAP{$colour});
+			}
+		else
+			{
+			return undef;
+			}
+		}
+	elsif ($colour =~ /^#/)
+		{
+		my $rgb		= oo2rgb($colour);
+		return undef unless $rgb;
+		my $hexrgb	= rgb2oo($rgb);
+		return undef unless $hexrgb;
+		return (lc $hexrgb eq lc $colour) ? $colour : undef;
+		}
+	else
+		{
+		$red = $colour; ($green, $blue) = @_;
+		}
+	return sprintf("#%02x%02x%02x", $red, $green, $blue);
+	}
+	
+#-----------------------------------------------------------------------------
+	
 sub	XML::XPath::Node::Element::isStyle
 	{
 	my $element	= shift;

@@ -1,23 +1,50 @@
-OpenOffice::OODoc installation (May 2004)
+OpenOffice::OODoc installation (Jul 2004)
 
 SYSTEM REQUIREMENTS
 
 	Perl		>= 5.8.0
 	Archive::Zip	>= 1.05
 	XML::XPath	>= 1.13
+	Time::Local	>= 1.07
+	File::Temp	>= 0.14
 	
 TODO
 
 	Uncompress the distribution archive, enter the OpenOffice-OODoc-x.xxx
 	directory and (as system administrator), type the following commands:
 
-		perl Makefile.PL
-		make install test
+		perl Makefile.PL [options]
+		make test
+		make install
 
 	You will be warned about unsatisfied dependencies, if any.
+
+	You will be prompted for the following parameters:
+	- the local character set (default = iso-8859-1);
+	- an optional color map file (default = none), if the user needs to
+	use symbolic names instead of RGB values for color attributes in the
+	documents (this file can be the generally available "rgb.txt" file
+	of the X-Window system, or the "rgb.txt" provided with the Color::Rgb
+	Perl distribution, or any specific, user-defined file with the same
+	structure;
+	- the working directory for temporary files (by default, the working
+	directory is the current directory of each application).
+
+	The interactivity can be avoided by the --noprompt option.
+	The parameters can be provided at the command line with (respectively)
+	the --encoding <encoding>, --colormap <file>  and --workdir <path>
+	options. Example:
+	
+	perl Makefile.PL --noprompt --workdir "C:\Temp" --encoding iso-8859-15
+
+	These options define installation-level default values only; each of
+	these values can be overridden by the applications (thanks, for
+	example, to the ooLocalEncoding(), ooWorkingDirectory() and
+	ooLoadColorMap() functions. The installation-level options are stored
+	in a XML file (OODoc/config.xml) below the installation directory.
 
 	If the installation is successful, the test procedure generates an
 	OpenOffice.org document, writes some content in it, and checks the
 	result. You can later open this document with OpenOffice.org Writer
-	or a compatible software (the file is named 'ootest.sxw' and resides
-	in the working directory of the installation).
+	or a compatible software; the file is named 'ootest.sxw' and resides
+	in the working directory of the installation.

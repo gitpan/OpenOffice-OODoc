@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Meta.pm 1.003 2004-05-14 JMG$
+#	$Id : Meta.pm 1.004 2004-07-27 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -13,9 +13,39 @@
 
 package	OpenOffice::OODoc::Meta;
 use	5.006_001;
+our	$VERSION	= 1.004;
+
 use	OpenOffice::OODoc::XPath	1.112;
-our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 1.003;
+require Exporter;
+our	@ISA		= qw ( OpenOffice::OODoc::XPath Exporter );
+our	@EXPORT		= qw ( ooLocaltime ooTimelocal );
+
+#-----------------------------------------------------------------------------
+# date conversion from standard Perl localtime to OOo metadata format
+
+sub	ooLocaltime
+	{
+	my $time = shift || time();
+	my @t = localtime($time);
+	return sprintf
+			(
+			"%04d-%02d-%02dT%02d:%02d:%02d",
+			$t[5] + 1900, $t[4] + 1, $t[3], $t[2], $t[1], $t[0]
+			);
+	}
+
+#-----------------------------------------------------------------------------
+# date conversion from OOo metadata format to standard time()
+
+sub	ooTimelocal
+	{
+	require Time::Local;
+
+	my $ootime = shift;
+	return undef unless $ootime;
+	$ootime =~ /(\d*)-(\d*)-(\d*)T(\d*):(\d*):(\d*)/;
+	return Time::Local::timelocal($6, $5, $4, $3, $2 - 1, $1); 
+	}
 
 #-----------------------------------------------------------------------------
 # constructor : calling OOXPath constructor with 'meta' as member choice
@@ -98,7 +128,7 @@ sub	subject
 
 #-----------------------------------------------------------------------------
 # get/set the 'creation-date' field
-# in OpenOffice.org date format
+# in OpenOffice.org (normally ISO-8601) date format
 
 sub	creation_date
 	{

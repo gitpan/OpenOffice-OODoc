@@ -43,10 +43,10 @@ On the other hand, some styles are more complex than others as they
 describe the page layout. These styles can themselves contain text
 and images. A page style can actually be either:
 
-    - a header
-    - a footer
-    - margins
-    - or a background.
+- a header
+- a footer
+- margins
+- or a background.
 
 Headers and footers can contain text and images which can otherwise
 be handled by OODoc::Text and OODoc::Image.
@@ -238,7 +238,7 @@ at least a blank of each required style.
             	properties =>
             	 {
             	 'style:font-name'		=> 'Times',
-            	 'fo:font-size'		=> '14pt',
+            	 'fo:font-size'			=> '14pt',
             	 'fo:font-weight'		=> 'bold',
             	 'fo:font-style'		=> 'italic',
             	 'fo:color'			=> '#000080',
@@ -714,8 +714,8 @@ at least a blank of each required style.
             $doc->updateDefaultStyle
             	(
             	"paragraph",
-            	'fo:font-name'		=> 'Helvetica',
-            	'fo:font-size'		=> '10pt',
+            	'fo:font-name'			=> 'Helvetica',
+            	'fo:font-size'			=> '10pt',
             	'style:tab-stop-distance'	=> '1.5cm'
             	);
 
@@ -801,6 +801,109 @@ at least a blank of each required style.
 
         Returns the characteristics of the modified style, as in
         getStyleAttributes.
+
+=head2	Exported functions
+
+=head3	ooLoadColorMap($filename)
+
+	Populates the %OpenOffice::OODoc::Styles::COLORMAP hash from the
+	content of an RGB file. This file defines a colour dictionary.
+	Without argument, the content of the $COLORMAP variable is considered
+	as the filename.
+
+	Each line must contain 4 space-separated fields. The 3 first fields
+	represent, respectively, the red, green and blue values of a colour
+	and must be positive integer values in the 0-255 range. The remainder
+	of the line is considered as the symbolic name of a colour (it can
+	contain spaces). Example:
+
+		144 238 144	light green
+		139   0 139	dark magenta
+		255 105 180	hot pink
+		255  99  71	tomato
+
+	Such a file is sometimes provided in a system directory (for example
+	/usr/lib/X11/rgb.txt in some Unix systems). In any case, the users
+	can easily find and download it somewhere. For example, a convenient
+	rgb.txt file is provided with the Color::Rgb Perl module (CPAN).
+
+	When a COLORMAP is loaded, the programmer can provide symbolic, user-
+	friendly names in place of RGB values to the rgb2oo() function.
+	
+	Without argument, the content of the $COLORMAP variable is considered
+	as the filename.
+
+	When the OpenOffice::OODoc::Styles module is loaded as a consequence
+	of a "use OpenOffice::OODoc" statement, ooLoadColorMap() is
+	automatically executed if a valid filename is provided in the
+	<Styles-COLORMAP> element of the "OODoc/config.xml" file.
+
+=head3	oo2rgb($oocolor)
+
+	Returns the conventional RGB value of an OOo-encoded colour.
+
+	In array context, returns a 3-element array containing the red, green,
+	blue decimal values of the colour.
+
+	In scalar context, returns either a string with concatenated, comma
+	separated red, green, blue values, or, if these values exactly match
+	a known colour (according to the current %COLORMAP), the corresponding
+	symbolic name.
+
+	This function can be used to display or compute separately the RGB
+	values of any colour attribute of a style, or to export these values
+	to an image processing software. It produces the same result as the
+	hex2rgb() method of the Color::Rgb Perl module.
+
+=head3	rgb2oo($red, $green, $blue)
+=head3	rgb2oo("$red,$green,$blue")
+=head3	rgb2oo($colorname)
+
+	Converts an RGB or named colour in OOo-compliant hexadecimal format
+	(6 digits after a leading '#'). The 1st form has the same effect as
+	the rgb2hex() function of the Color::Rgb Perl module.
+
+	The resulting value can be used to set any colour attribute in a
+	style.
+
+	In the first form, the 3 arguments are the conventional numeric RGB
+	values (between 0 an 255). In the second form, the only one argument
+	is a string containing the comma-separated RGB values. In the third
+	form, the given string is the symbolic name of a colour (the name
+	must be an existing one in the %COLORMAP hash).
+
+	Example:
+
+		ooLoadColorMap("D:\MyDocuments\Colors.txt");
+		$doc->styleProperties
+			(
+			"HighColors",
+                 	'fo:color'                     => rgb2oo('black'),
+                 	'style:text-background-color'  => rgb2oo('yellow')
+			);
+	
+	If the argument seems to be already an hexadecimal RGB string (i.e.
+	it begins by "#"), rgb2oo() checks it and returns it unchanged if
+	it's a regular RGB value, or undef if not.
+
+=head2	Properties
+
+	The %COLORMAP hash, defined as a class variable, contains a name
+	to RGB translation table. When loaded, it allows the rgb2oo() function
+	to use symbolic names in place of RGB values.
+	
+	The keys are symbolic, user-defined colour names, and the values are
+	strings containing the concatenated, comma-separated RGB values.
+
+	Example:
+
+	%OpenOffice::OODoc::Styles::COLORMAP{'antique white'} = "250,235,215";
+
+	By default, this hash contains a short, arbitrary set of colour
+	definitions such as 'red', 'green', 'blue', 'white', 'black' and a few
+	others. The user can populate it from an external RGB file, through
+	the ooLoadColorMap() function previously described, and/or through
+	program instructions like the example above.
 
 =head1	NOTES
 

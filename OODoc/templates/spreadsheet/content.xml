@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE office:document-content PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "office.dtd">
+<office:document-content xmlns:office="http://openoffice.org/2000/office" xmlns:style="http://openoffice.org/2000/style" xmlns:text="http://openoffice.org/2000/text" xmlns:table="http://openoffice.org/2000/table" xmlns:draw="http://openoffice.org/2000/drawing" xmlns:fo="http://www.w3.org/1999/XSL/Format" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:number="http://openoffice.org/2000/datastyle" xmlns:svg="http://www.w3.org/2000/svg" xmlns:chart="http://openoffice.org/2000/chart" xmlns:dr3d="http://openoffice.org/2000/dr3d" xmlns:math="http://www.w3.org/1998/Math/MathML" xmlns:form="http://openoffice.org/2000/form" xmlns:script="http://openoffice.org/2000/script" office:class="spreadsheet" office:version="1.0">
+ <office:script/>
+ <office:font-decls>
+  <style:font-decl style:name="Andale Sans UI" fo:font-family="&apos;Andale Sans UI&apos;" style:font-pitch="variable"/>
+  <style:font-decl style:name="Tahoma" fo:font-family="Tahoma" style:font-pitch="variable"/>
+  <style:font-decl style:name="Albany" fo:font-family="Albany" style:font-family-generic="swiss" style:font-pitch="variable"/>
+ </office:font-decls>
+ <office:automatic-styles>
+  <style:style style:name="co1" style:family="table-column">
+   <style:properties fo:break-before="auto" style:column-width="2.267cm"/>
+  </style:style>
+  <style:style style:name="ro1" style:family="table-row">
+   <style:properties style:row-height="0.427cm" fo:break-before="auto" style:use-optimal-row-height="true"/>
+  </style:style>
+  <style:style style:name="ta1" style:family="table" style:master-page-name="Default">
+   <style:properties table:display="true"/>
+  </style:style>
+ </office:automatic-styles>
+ <office:body>
+  <table:table table:name="First sheet" table:style-name="ta1">
+   <table:table-column table:style-name="co1" table:default-cell-style-name="Default"/>
+   <table:table-row table:style-name="ro1">
+    <table:table-cell/>
+   </table:table-row>
+  </table:table>
+ </office:body>
+</office:document-content>

@@ -44,7 +44,7 @@ not necessarily in OpenOffice.org format.
         An optional argument can be passed in hash format (key => value),
         after the filename. Like this:
 
-            work_dir		=> "path"
+        	work_dir	=> "path"
 
         which designates the path to the XML working files also generated
         during a save for this object (each OpenOffice::OODoc::File object
@@ -54,6 +54,23 @@ not necessarily in OpenOffice.org format.
 
         Note: no content checking is carried out. The archive can be opened
         whether or not it is an OpenOffice.org document.
+
+	It's possible to create an OpenOffice::OODoc::File object without
+	providing an existing OpenOffice.org file. To do so, there is a
+	special option:
+
+		create		=> "class"
+
+	where "class" is the document class according to the OpenOffice.org
+	terminology, so it is one of the following values: "text",
+	spreadsheet", "presentation", "drawing". These values are the same
+	as the legal parameters of contentClass() in OpenOffice::OODoc::XPath.
+	For a very advanced use, it's possible to pass an additional option
+
+		template_path	=> "path"
+
+	to generate the new file from special, user-provided XML templates
+	instead of those included in the installation.
 
         The returned object, if successful, is a valid File instance, whose
         methods listed below become available.

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+	<comment>OpenOffice::OODoc local configuration file</comment>
+	<OpenOffice-OODoc>
+		<XPath-LOCAL_CHARSET>iso-8859-1</XPath-LOCAL_CHARSET>
+		<File-WORKING_DIRECTORY>.</File-WORKING_DIRECTORY>
+		<Styles-COLORMAP></Styles-COLORMAP>
+		<INSTALLATION_DATE>2004-07-30T17:24:53</INSTALLATION_DATE>
+	</OpenOffice-OODoc>
+</config>

@@ -101,9 +101,13 @@ document.
         If this parameter is used, it indicates that the image will be
         anchored to a page, and the given value is a page number. It does
         not matter if, when createImageElement is called, this number is
-        beyond the end of the document or not. All that matters is that the
-        particular page exists when it is opened by OpenOffice.org. If this
-        parameter is absent, the image is anchored to a paragraph.
+        beyond the end of the document or not. If the content class of the
+	document is "presentation" (Impress) or "drawing" (Draw), then the
+	page option is mandatory and must be either the visible name or the
+	element reference of an existing draw page. In a "text" content,
+	all that matters is that the particular page exists when it is opened
+	by OpenOffice.org and if this parameter is absent, the image is
+	anchored to a paragraph.
 
         	position	=> coordinates
 

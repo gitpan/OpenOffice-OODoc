@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE office:document-content PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "office.dtd">
+<office:document-content xmlns:office="http://openoffice.org/2000/office" xmlns:style="http://openoffice.org/2000/style" xmlns:text="http://openoffice.org/2000/text" xmlns:table="http://openoffice.org/2000/table" xmlns:draw="http://openoffice.org/2000/drawing" xmlns:fo="http://www.w3.org/1999/XSL/Format" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:number="http://openoffice.org/2000/datastyle" xmlns:presentation="http://openoffice.org/2000/presentation" xmlns:svg="http://www.w3.org/2000/svg" xmlns:chart="http://openoffice.org/2000/chart" xmlns:dr3d="http://openoffice.org/2000/dr3d" xmlns:math="http://www.w3.org/1998/Math/MathML" xmlns:form="http://openoffice.org/2000/form" xmlns:script="http://openoffice.org/2000/script" office:class="presentation" office:version="1.0">
+ <office:script/>
+ <office:automatic-styles>
+  <style:style style:name="dp1" style:family="drawing-page">
+   <style:properties presentation:background-visible="true" presentation:background-objects-visible="true"/>
+  </style:style>
+  <style:style style:name="gr1" style:family="graphics">
+   <style:properties draw:size-protect="true"/>
+  </style:style>
+  <style:style style:name="pr1" style:family="presentation" style:parent-style-name="Standard-notes">
+   <style:properties draw:fill-color="#ffffff" fo:min-height="11.41cm"/>
+  </style:style>
+ </office:automatic-styles>
+ <office:body>
+  <draw:page draw:name="First page" draw:style-name="dp1" draw:id="1" draw:master-page-name="Standard">
+   <presentation:notes>
+    <draw:page-thumbnail draw:style-name="gr1" draw:layer="layout" svg:width="13.706cm" svg:height="10.28cm" svg:x="3.647cm" svg:y="2.853cm" draw:page-number="1" presentation:class="page"/>
+    <draw:text-box presentation:style-name="pr1" draw:layer="layout" svg:width="14.517cm" svg:height="11.411cm" svg:x="3.249cm" svg:y="14.13cm" presentation:class="notes" presentation:placeholder="true"/>
+   </presentation:notes>
+  </draw:page>
+ </office:body>
+</office:document-content>

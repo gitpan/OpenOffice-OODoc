@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 1.113 2004-07-01 JMG$
+#	$Id : XPath.pm 1.114 2004-07-28 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -13,7 +13,7 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 1.113;
+our	$VERSION	= 1.114;
 use	XML::XPath	1.13;
 use	Encode;
 
@@ -173,13 +173,9 @@ sub	XML::XPath::Node::Element::_search_content
 #------------------------------------------------------------------------------
 # reserved properties (to be implemented)
 
-sub	isTextDocument		{}
 sub	isCalcDocument		{}
 sub	isImpressDocument	{}
 sub	isDrawDocument		{}
-sub	isContent		{}
-sub	isMeta			{}
-sub	isSettings		{}
 
 #------------------------------------------------------------------------------
 # constructor; accepts one from 3 types of parameters to create an instance:
@@ -206,8 +202,12 @@ sub	new
 		{
 		require OpenOffice::OODoc::File;
 
-		$self->{'archive'}	=
-			OpenOffice::OODoc::File->new($self->{'file'});
+		$self->{'archive'} = OpenOffice::OODoc::File->new
+				(
+				$self->{'file'},
+				create		=> $self->{'create'},
+				template_path	=> $self->{'template_path'}
+				);
 		}
 
 	unless ($self->{'xml'})
@@ -404,13 +404,62 @@ sub	reorganize
 	}
 
 #------------------------------------------------------------------------------
-# returns the root element of the XML document
+# returns the root of the XML document
 
 sub	getRoot
 	{
 	my $self	= shift;
 
 	return $self->getElement('/', 0);
+	}
+
+#------------------------------------------------------------------------------
+# returns the root element of the XML document
+
+sub	getRootElement
+	{
+	my $self	= shift;
+	return $self->getElement('/' . $self->{'element'}, 0);
+	}
+		
+#------------------------------------------------------------------------------
+# returns the content class (text, spreadsheet, presentation, drawing)
+
+sub	contentClass
+	{
+	my $self	= shift;
+	my $class	= shift;
+
+	my $element = $self->getRootElement;
+	$self->setAttribute($element, 'office:class', $class) if $class;
+	return $self->getAttribute($element, 'office:class');
+	}
+
+#------------------------------------------------------------------------------
+# member type checks
+
+sub	isContent
+	{
+	my $self	= shift;
+	return ($self->getRootName() eq $XMLNAMES{'content'}) ? 1 : undef;
+	}
+
+sub	isMeta
+	{
+	my $self	= shift;
+	return ($self->getRootName() eq $XMLNAMES{'meta'}) ? 1 : undef;
+	}
+	
+sub	isStyles
+	{
+	my $self	= shift;
+	return ($self->getRootName() eq $XMLNAMES{'styles'}) ? 1 : undef;
+	}
+	
+sub	isSettings
+	{
+	my $self	= shift;
+	return ($self->getRootName() eq $XMLNAMES{'settings'}) ? 1 : undef;
 	}
 
 #------------------------------------------------------------------------------
@@ -897,7 +946,7 @@ sub	selectElementByAttribute
 	my $self	= shift;
 	my $path	= shift;
 	my $key		= shift;
-	my $value	= shift;
+	my $value	= shift || '';
 
 	my @candidates	=  $self->getElementList($path);
 	return @candidates	unless $key;
@@ -921,7 +970,7 @@ sub	selectElementsByAttribute
 	my $self	= shift;
 	my $path	= shift;
 	my $key		= shift;
-	my $value	= shift;
+	my $value	= shift || '';
 
 	my @candidates	=  $self->getElementList($path);
 	return @candidates	unless $key;

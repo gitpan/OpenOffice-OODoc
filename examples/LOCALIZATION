@@ -15,12 +15,16 @@ immediately after the "use OpenOffice::OODoc;" line.
 Examples:
 
 # for Western Europe with Euro currency symbol:
-localEncoding 'iso-8859-15';
+ooLocalEncoding 'iso-8859-15';
 
 # for Central Europe:
-localEncoding 'iso-8859-2';
+ooLocalEncoding 'iso-8859-2';
 
 The supported values are the same as with the Encode Perl module.
+
+Starting with OpenOffice::OODoc 1.2, it's possible to select a
+user-defined default local character set at the installation time, or
+later by manually editing the "OODoc/config.xml" file.
 
 In real projects, even if the default encoding is convenient, it's
 strongly recommended to systematically use this statement with a

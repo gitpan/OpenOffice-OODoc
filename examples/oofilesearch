@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 #-----------------------------------------------------------------------------
 #
-#	$Id: oofilesearch 0.005 2004-07-08$
+#	$Id: oofilesearch 0.005 2004-07-26$
 #
 #-----------------------------------------------------------------------------
 
@@ -31,8 +31,8 @@
 
 	This utility allows the user to retrieve a list of files matching
 	a given set of keywords or regular expressions. A file is selected
-	when it contains, in its text and/or in its (title, subject, keywords
-	or description), all the given search strings.
+	when it contains, in its text and/or in its metadata (title, subject,
+	keywords or description), all the given search strings.
 
 	The selected files are echoed to the standard output (one file per
 	line), so this utility can be used as a filter piping its results
@@ -59,7 +59,8 @@
 		like -verbose, but then messages are sent to the given file
 		and don't pollute the standard output
 	-result <file>
-		send the list of matching_fileing files to the given file and not
+	-output <file>
+		send the list of matchin files to the given file and not
 		to the standard output
 	-criteria <file>
 		get search criteria from a file (one per line); the loaded
@@ -73,9 +74,9 @@
 		output ; if -verbose is on, the value returned by the
 		command is echoed
 	-encoding <encoding>
-		selects the user's character set ; this option is
-		mandatory if one or more search criteria contains some local,
-		non-ASCII characters
+		selects the user's character set ; this option is mandatory
+		if one or more search criteria contains characters not
+		belonging to the default character set
 
 =cut
 
@@ -125,7 +126,7 @@ sub	horodate
 	return sprintf
 		(
 		"[%02d/%02d/%04d %02d:%02d:%02d] ",
-		$d[3], $d[4], $d[5] + 1900, $d[2], $d[1], $d[0]
+		$d[3], $d[4] + 1, $d[5] + 1900, $d[2], $d[1], $d[0]
 		);
 	}
 

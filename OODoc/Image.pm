@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Image.pm 1.008 2004-05-14 JMG$
+#	$Id : Image.pm 1.009 2004-07-28 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -13,10 +13,10 @@
 
 package	OpenOffice::OODoc::Image;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	1.112;
+use	OpenOffice::OODoc::XPath	1.114;
 use	File::Basename;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 1.008;
+our	$VERSION	= 1.009;
 
 #-----------------------------------------------------------------------------
 # default attributes for image style
@@ -81,6 +81,8 @@ sub	createImageElement
 	my $name	= shift;
 	my %opt		= @_;
 
+	my $content_class = $self->contentClass;
+
 	my $attachment	= undef;
 	my $firstnode	= undef;
 	my $element	= undef;
@@ -88,8 +90,27 @@ sub	createImageElement
 	my $size	= undef;
 	my $position	= undef;
 	my $import	= undef;
+	my $path	= undef;
 
-	my $path		= $opt{'attachment'};
+	if	(
+			($content_class eq 'presentation')
+				or
+			($content_class eq 'drawing')
+		)
+		{
+		my $target = $opt{'page'} || '';
+		my $page = ref $target ?
+				$target		:
+				$self->selectElementByAttribute
+					('draw:page', '^' . $pagename . '$');
+		delete $opt{'page'};
+		$path = $page;
+		}
+	else
+		{
+		$path	= $opt{'attachment'};
+		}
+	delete $opt{'attachment'};
 	unless ($path)
 		{
 		$attachment	=
@@ -106,9 +127,7 @@ sub	createImageElement
 		}
 	else
 		{
-		$attachment	= ref $path ?
-					$path		:
-					$self->getElement($path, 0);
+		$attachment = ref $path ? $path : $self->getElement($path, 0);
 		}
 	unless ($attachment)
 		{
@@ -116,7 +135,6 @@ sub	createImageElement
 			"::createImageElement] No valid attachment\n";
 		return undef;
 		}
-	delete $opt{'attachment'};
 
 				# parameters translation
 	$opt{'draw:name'} = $name;

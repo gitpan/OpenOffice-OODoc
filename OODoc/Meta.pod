@@ -37,40 +37,50 @@ of OpenOffice.org documents.
             $meta->addKeyword("office");
             $meta->addKeyword("tech watch");
 
-=head3	creation_date
+=head3	creation_date()
 
         Without argument, returns the document's creation date in
-        OpenOffice.org format.
+        OpenOffice.org (ISO-8601) format.
 
         Example of returned value:
 
             2002-11-12T08:22:50
 
-        With argument, inserts the given string (without checking) as the
-        creation date.
+	The returned value can be converted in standard numeric time format
+	with the ooTimelocal() function.
 
-=head3	creator
+	With argument, inserts the given string (without checking) as the
+        creation date. The argument, if any, must comply with the OOo
+	(ISO-8601) date format. The ooLocaltime() function can be used in
+	order to convert a regular Perl time() value in OOo format.
+
+=head3	creator()
 
         Without argument, returns the document author's name.
 
         With argument, modifies the document author's name.
 
-=head3	date
+=head3	date()
 
         Without argument, returns the document's date of last modification,
         in OpenOffice.org format.
 
         With argument, inserts the given string (without checking) as the
-        last modification date.
+        last modification date. The argument, if any, must comply with the
+	OOo date format (ISO-8601). The ooLocaltime() function can be used
+	in order to convert a regular Perl time() value in OOo format.
 
-=head3	description
+	The returned value can be converted in standard numeric time format
+	with the ooTimelocal() function.
+
+=head3	description()
 
         Without argument, returns the contents of the document properties
         "Description" field.
 
         With argument, inserts the given text in the "Description" field.
 
-=head3	editing_cycles
+=head3	editing_cycles()
 
         Without argument, returns the number of edit sessions (i.e. saves,
         under OpenOffice.org or StarOffice). Or, technically, the number of
@@ -78,7 +88,7 @@ of OpenOffice.org documents.
 
         With argument, modifies this number without checking.
 
-=head3	editing_duration
+=head3	editing_duration()
 
         Without argument, returns the total editing time for the document,
         in OpenOffice.org date/time format.
@@ -93,16 +103,16 @@ of OpenOffice.org documents.
         With argument, forces a new value into this property without
         checking.
 
-=head3	generator
+=head3	generator()
 
         Without argument, returns a label representing the signature of the
         software which generated the document. Example of signature:
 
-            "OpenOffice.org 1.0.1 (Linux)"
+            "OpenOffice.org 1.1.1 (Linux)"
 
         With argument, inserts any signature.
 
-=head3	keywords
+=head3	keywords()
 
         Without argument, returns a list of the document's keywords. In a
         list context, the result is a table where each element is a keyword.
@@ -113,7 +123,7 @@ of OpenOffice.org documents.
         only checking carried out is to see if the keyword already exists,
         if so it is not added.
 
-=head3	language
+=head3	language()
 
         Without argument, returns the content of the language variable.
         Example:
@@ -127,41 +137,37 @@ of OpenOffice.org documents.
 
         Removes the given keyword if it exists.
 
-=head3	statistic
+=head3	statistic()
 
         Without argument, returns a hash which represents the entire
         "statistics" section of the metadata. The content depends on the
         type of document.
 
-        Text
+	Text
 
-            'meta:table-count'	=> number of tables
-            'meta:image-count'	=> number of images
-            'meta:object-count'	=> number of OLE objects
-            'meta:page-count'		=> number of pages
-            'meta:paragraph-count'	=> number of paragraphs
-            'meta:word-count'		=> number of words
-            'meta:character-count'	=> number of characters
+		'meta:table-count'	=> number of tables
+		'meta:image-count'	=> number of images
+		'meta:object-count'	=> number of OLE objects
+		'meta:page-count'	=> number of pages
+		'meta:paragraph-count'	=> number of paragraphs
+		'meta:word-count'	=> number of words
+		'meta:character-count'	=> number of characters
 
         Spreadsheet
 
-        'meta:table-count'	=> number of sheets
-
-        'meta:cell-count'	=> number of non-empty cells
-
-        'meta:object-count'	=> number of objects (images, etc.)
+		'meta:table-count'	=> number of sheets
+		'meta:cell-count'	=> number of non-empty cells
+		'meta:object-count'	=> number of objects (images, etc.)
 
         Example:
 
             my $meta	= OpenOffice::OODoc::Meta->new("invoice.sxc");
             my %stat	= $meta->statistic;
             print 	"This invoice contains " .
-            	$stat{'meta:cell-count'}	.
-            	" cells and "			.
-            	$stat{'meta:table-count'}	.
-            	" pages";
+            	"$stat{'meta:cell-count'} cells and "	.
+            	"$stat{'meta:table-count'} pages\n";
 
-        With arguments, you can modify (or falsify?!) all or some of the
+        With arguments, you can modify (or falsify ?!) all or some of the
         statistical data and even create attributes which are not created by
         the OpenOffice.org or StarOffice software. Arguments are passed in
         pairs [key => value] and handled without checking.
@@ -174,19 +180,19 @@ of OpenOffice.org documents.
         This example forces the number of tables to 4 (whatever the reality)
         and adds an arbitrary attribute 'status' with value 'OK' [18] .
 
-=head3	subject
+=head3	subject()
 
         Without argument, returns the document's subject.
 
         With argument, adds a new subject to the document.
 
-=head3	title
+=head3	title()
 
         Without argument, returns the document's title.
 
         With argument, adds a new title to the document.
 
-=head3	user_defined
+=head3	user_defined()
 
         Returns a list of the four fields which appear in the User tab of
         the Properties dialog in OpenOffice.org. These fields are called, by
@@ -207,6 +213,48 @@ of OpenOffice.org documents.
 =head2	Properties
 
         As for OpenOffice::OODoc::XPath
+
+=head2	Exported functions
+
+=head3	ooLocaltime([$time_value])
+
+	Converts the numeric time given in argument to an OpenOffice-compliant
+	date (ISO-8601). The argument type is the same as for the standard
+	Perl localtime() function, i.e. a number of seconds since the "epoch".
+	It can be, for example, a value previously returned by a time() call.
+
+	Without argument, returns the current local time in OOo format.
+
+	The result of this function can be used as an argument for the date()
+	or creation_date() methods of OpenOffice::OODoc::Meta.
+
+	Example:
+
+		$doc->date(ooLocaltime());
+
+	This line puts the current time as the last modification date in the
+	document (assuming $doc is an OpenOffice::OODoc::Meta object).
+
+=head3	ooTimelocal($oodate)
+
+	Converts a date in OOo format (ISO-8601) in a regular Perl numeric
+	time format, i.e. a number of seconds since the "epoch". So, the
+	returned value can be processed with any Perl date formatting or
+	calculation function.
+
+	Example:
+
+		my $date_created = ooTimelocal($doc->creation_date());
+		$lt = localtime($date_created);
+		$elapsed = time() - $date_created;
+		print "This document has been created $date_created\n";
+		print "$elapsed seconds ago";
+	
+	This sequence prints the creation date of a document in local time
+	string format, then prints the number of seconds between the creation
+	date and now.
+
+	Note: This function requires the Time::Local Perl module.
 
 =head1	NOTES
 

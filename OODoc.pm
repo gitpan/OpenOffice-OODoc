@@ -1,31 +1,84 @@
 #-----------------------------------------------------------------------------
-#	$Id : OODoc.pm 1.111 2004-07-11 JMG$
+#
+#	$Id : OODoc.pm 1.201 2004-07-30 JMG$
+#
+#	Initial developer: Jean-Marie Gouarne
+#	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
+#	Licensing conditions:
+#		- Licence Publique Generale Genicorp v1.0
+#		- GNU Lesser General Public License v2.1
+#	Contact: oodoc@genicorp.com
+#
 #-----------------------------------------------------------------------------
 
-use OpenOffice::OODoc::File		1.104;
-use OpenOffice::OODoc::Meta		1.003;
+use OpenOffice::OODoc::File		1.105;
+use OpenOffice::OODoc::Meta		1.004;
 use OpenOffice::OODoc::Document		1.006;
+use OpenOffice::OODoc::Manifest		1.001;
 
 #-----------------------------------------------------------------------------
 
 package	OpenOffice::OODoc;
 use 5.008_000;
-our $VERSION				= 1.111;
+our $VERSION				= 1.201;
 
 require Exporter;
 our @ISA    = qw(Exporter);
 our @EXPORT = qw
 	(
-	ooXPath ooFile ooText ooMeta ooImage ooDocument ooStyles
-	localEncoding ooEncodeText ooDecodeText workingDirectory
+	ooXPath ooFile ooText ooMeta ooManifest ooImage ooDocument ooStyles
+	localEncoding ooLocalEncoding ooEncodeText ooDecodeText
+	ooTemplatePath workingDirectory ooWorkingDirectory
+	readConfig ooReadConfig
 	);
 
 #-----------------------------------------------------------------------------
-# create a common reusable XML parser in the space of the main program
+# config loader
 
-sub	BEGIN
+sub	ooReadConfig
 	{
-	$main::XML_PARSER = XML::XPath::XMLParser->new;
+	my $filename = shift;
+	unless ($filename)
+		{
+		$filename = $INSTALLATION_PATH . '/config.xml'
+			if $INSTALLATION_PATH;
+		}
+	unless ($filename)
+		{
+		warn	"[" . __PACKAGE__ . "::readConfig] "	.
+			"Missing configuration file\n";
+		return undef;
+		}
+	my $config = XML::XPath->new
+			(
+			filename	=> $filename
+			);
+	unless ($config)
+		{
+		warn	"[" . __PACKAGE__ . "::readConfig] "	.
+			"Syntax error in configuration file $filename\n";
+		return undef;
+		}
+	my $root = ($config->find('//OpenOffice-OODoc')->get_nodelist)[0];
+	unless ($root && $root->isElementNode)
+		{
+		return undef;
+		}
+	foreach my $node ($root->getChildNodes)
+		{
+		next unless $node->isElementNode;
+		my $name = $node->getName; $name =~ s/-/::/g;
+		my $varname = 'OpenOffice::OODoc::' . $name;
+		$$varname = $node->string_value;
+		$$varname = ooDecodeText($$varname);
+		}
+	OpenOffice::OODoc::Styles::ooLoadColorMap();
+	return 1;
+	}
+
+sub	readConfig
+	{
+	return ooReadConfig(@_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -50,6 +103,11 @@ sub	ooMeta
 	return OpenOffice::OODoc::Meta->new(@_);
 	}
 
+sub	ooManifest
+	{
+	return OpenOffice::OODoc::Manifest->new(@_);
+	}
+
 sub	ooImage
 	{
 	return OpenOffice::OODoc::Image->new(@_);
@@ -68,7 +126,7 @@ sub	ooStyles
 #-----------------------------------------------------------------------------
 # accessor for local character set control
 
-sub	localEncoding
+sub	ooLocalEncoding
 	{
 	my $newcharset = shift;
 	if ($newcharset)
@@ -86,10 +144,23 @@ sub	localEncoding
 	return $OpenOffice::OODoc::XPath::LOCAL_CHARSET;
 	}
 
+sub	localEncoding
+	{
+	return ooLocalEncoding(@_);
+	}
+	
+#-----------------------------------------------------------------------------
+# accessor for default XML templates for document creation
+
+sub	ooTemplatePath
+	{
+	return OpenOffice::OODoc::File::templatePath(@_);
+	}
+
 #-----------------------------------------------------------------------------
 # accessor for default working directory control
 
-sub	workingDirectory
+sub	ooWorkingDirectory
 	{
 	my $path = shift;
 
@@ -101,6 +172,11 @@ sub	workingDirectory
 		);
 
 	return $OpenOffice::OODoc::File::WORKING_DIRECTORY;
+	}
+
+sub	workingDirectory
+	{
+	return ooWorkingDirectory(@_);
 	}
 	
 #-----------------------------------------------------------------------------
@@ -117,145 +193,15 @@ sub	ooDecodeText
 	}
 
 #-----------------------------------------------------------------------------
+# initialization
+
+sub	BEGIN
+	{
+	$main::XML_PARSER = XML::XPath::XMLParser->new;
+	my $module_path = $INC{"OpenOffice/OODoc.pm"};
+	$module_path =~ s/\.pm$//;
+	$OpenOffice::OODoc::INSTALLATION_PATH = $module_path;
+	ooReadConfig() if ( -e "$INSTALLATION_PATH/config.xml" );
+	}
+#-----------------------------------------------------------------------------
 1;
-
-=head1	NAME
-
-OpenOffice::OODoc - A library for direct OpenOffice.org document processing
-
-=head1	DESCRIPTION
-
-This toolbox allows direct read/write operations on documents, without
-using the OpenOffice.org software. It provides a high-level,
-document-oriented language, and isolates the programmer from the
-details of the OpenOffice.org XML dialect and file format.
-
-=head1	DETAILS
-
-The main module of the API, OpenOffice::OODoc, provides some code
-shortcuts for the programmer. So, its main function is to load the
-operational modules, i.e :
-
-	OpenOffice::OODoc::Document
-	OpenOffice::OODoc::File
-	OpenOffice::OODoc::Image
-	OpenOffice::OODoc::Meta
-	OpenOffice::OODoc::Styles
-	OpenOffice::OODoc::Text
-	OpenOffice::OODoc::XPath
-
-The detailed documentation is organised on a by-module basis.
-There is a man page for each one in the list above.
-But, before using it you should read the README of the standard
-distribution, or the OpenOffice::OODoc::Intro man page, to get
-an immediate knowledge of the functionality of each one.
-Alternatively, you can download the original reference manual
-in OpenOffice.org or PDF format from the project homepage
-(http://www.genicorp.com/devel/oodoc)
-
-=head2	Exported functions
-
-Every "ooXxx" function below is only a shortcut for the constructor
-("new") in a submodule of the API. See the man page of the
-corresponding module for details.
-
-=head3	localEncoding
-
-	Accessor to get/set the user's local character set
-	(see $OpenOffice::OODoc::XPath::LOCAL_CHARSET in the
-	OpenOffice::OODoc::XPath man page).
-
-	Example:
-
-		$old_charset = localEncoding();
-		localEncoding('iso-8859-15');
-
-	If the given argument is an unsupported encoding, an error
-	message is produced and the old encoding is preserved. So
-	this accessor is safer than a direct update of the
-	$OpenOffice::OODoc::XPath::LOCAL_CHARSET variable.
-
-	The default local character set is "iso-8859-1".
-	Should be set to the appropriate value by the application
-	before processing.
-
-	See the Encode::Supported (Perl) documentation for the list
-	of supported encodings.
-
-=head3	workingDirectory
-
-	Accessor to get/set the working directory to use for temporary
-	files (the default is the current directory).
-
-	If an argument is given, it replaces the current working
-	directory.
-
-	A warning is issued if the (existing or newly set) path is not
-	a directory with write permission.
-
-	This accessor sets only the default working directory for the
-	application. A special, separate working directory can be set
-	for each OOo document (see the manual page for OpenOffice::OODoc::File
-	for details, if needed).
-
-=head3	ooDecodeText($ootext)
-
-	Returns the translation of a raw OpenOffice.org (UTF-8) in
-	the local character set. For exceptional use; this translation
-	is normally done by the high level text read/write methods.
-
-=head3	ooEncodeText($ootext)
-
-	Returns the translation of an application-provided string,
-	made of local characters, in OpenOffice.org (UTF-8).
-	For exceptional use; this translation is normally done by the
-	high level text read/write methods.
-
-=head3	ooDocument
-
-	Shortcut for OpenOffice::OODoc::Document->new
-
-=head3	ooFile
-
-	Shortcut for OpenOffice::OODoc::File->new
-
-=head3	ooImage
-
-	Shortcut for OpenOffice::OODoc::Image->new
-
-=head3	ooStyles
-
-	Shortcut for OpenOffice::OODoc::Styles->new
-
-=head3	ooText
-
-	Shortcut for OpenOffice::OODoc::Text->new
-
-=head3	ooXPath
-
-	Shortcut for OpenOffice::OODoc::XPath->new
-
-=head2	Special variable
-
-	$XML_PARSER is a reserved variable in the space of the
-	main program. It contains a reusable XML Parser
-	(XML::XPath::XMLParser object), automatically created.
-	Advanced, XPath-aware applications may reuse this parser
-	(see the documentation of the XML::XPath Perl module) but
-	they must *NOT* set the variable.
-
-=head1	AUTHOR/COPYRIGHT
-
-Copyright 2004 by Genicorp, S.A. (http://www.genicorp.com)
-
-Initial developer: Jean-Marie Gouarne (http://jean.marie.gouarne.online.fr)
-
-Licensing conditions:
-
-	- Licence Publique Generale Genicorp v1.0
-	- GNU Lesser General Public License v2.1
-
-Contact: oodoc@genicorp.com
-
-=cut
-

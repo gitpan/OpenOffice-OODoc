@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : File.pm 1.104 2004-03-11 JMG$
+#	$Id : File.pm 1.105 2004-07-29 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -13,7 +13,7 @@
 
 package	OpenOffice::OODoc::File;
 use	5.006_001;
-our	$VERSION	= 1.104;
+our	$VERSION	= 1.105;
 use	Archive::Zip	1.05	qw ( :DEFAULT :CONSTANTS :ERROR_CODES );
 use	File::Temp;
 
@@ -24,6 +24,161 @@ our	$DEFAULT_COMPRESSION_METHOD	= COMPRESSION_DEFLATED;
 our	$DEFAULT_COMPRESSION_LEVEL	= COMPRESSION_LEVEL_BEST_COMPRESSION;
 our	$DEFAULT_EXPORT_PATH		= './';
 our	$WORKING_DIRECTORY		= '.';
+our	$TEMPLATE_PATH			= undef;
+our	$MIMETYPE_BASE			= 'application/vnd.sun.xml.';
+our	%OOTYPE				=
+		(
+		text		=> 'writer',
+		spreadsheet	=> 'calc',
+		presentation	=> 'impress',
+		drawing		=> 'draw',
+		);
+
+#-----------------------------------------------------------------------------
+# returns the mimetype string according to a document class
+
+sub	mime_type
+	{
+	my $class	= shift;
+	return undef unless ($class && $OOTYPE{$class});
+	return $MIMETYPE_BASE . $OOTYPE{$class};
+	}
+		
+#-----------------------------------------------------------------------------
+# error handler for low-level zipfile errors (to be customized if needed)
+
+sub	ZipError
+	{
+	warn "[" . __PACKAGE__ . "] Zip Alert\n";
+	}
+
+#-----------------------------------------------------------------------------
+# get/set the path for XML templates
+
+sub	templatePath
+	{
+	my $newpath	= shift;
+	$TEMPLATE_PATH = $newpath if defined $newpath;
+	return $TEMPLATE_PATH;
+	}
+	
+#-----------------------------------------------------------------------------
+# member storage
+
+sub	store_member
+	{
+	my $zipfile	= shift;
+	my %opt		=
+		(
+		compress	=> 1,
+		@_
+		);
+	unless ($opt{'member'})
+		{
+		warn	"[" . __PACKAGE__ . "::store_member] "	.
+			"Missing member name\n";
+		return undef;
+		}
+	my $m = undef;
+	if	($opt{'string'})
+		{
+		$m = $zipfile->addString($opt{'string'}, $opt{'member'});
+		}
+	elsif	($opt{'file'})
+		{
+		$m = $zipfile->addFile($opt{'file'}, $opt{'member'});
+		}
+	else
+		{
+		warn	"[" . __PACKAGE__ . "::store_member] "	.
+			"Missing content to store\n";
+		return undef;
+		}
+	unless ($m)
+		{
+		warn	"[" . __PACKAGE__ . "::store_member] "	.
+			"Member storage failure\n";
+		return undef;
+		}
+	unless ($opt{'compress'})
+		{
+		$m->desiredCompressionMethod(COMPRESSION_STORED);
+		}
+	else
+		{
+		$m->desiredCompressionMethod($DEFAULT_COMPRESSION_METHOD);
+		$m->desiredCompressionLevel($DEFAULT_COMPRESSION_LEVEL);
+		}
+	return $m;
+	}
+
+#-----------------------------------------------------------------------------
+# file creation from template
+
+sub	ooCreateFile
+	{
+	my %opt	=
+		(
+		class		=> 'text',
+		template_path	=> $TEMPLATE_PATH,
+		work_dir	=> $WORKING_DIRECTORY,
+		@_
+		);
+	
+	unless (checkWorkingDirectory($opt{'work_dir'}))
+		{
+                warn    "[" . __PACKAGE__ . "::createOOFile] "          .
+			"Write operation not allowed - "        .
+			"Working directory missing or non writable\n";
+		return undef;
+		}
+
+	require File::Basename;
+
+	my $basepath	=
+		$opt{'template_path'}
+			||
+		File::Basename::dirname($INC{"OpenOffice/OODoc/File.pm"}) .
+			'/templates';
+	my $path	= $basepath . '/' . $opt{'class'};
+	unless (-d $path)
+		{
+                warn    "[" . __PACKAGE__ . "::createOOFile] "          .
+			"No valid template access path\n";
+		return undef;
+		}
+	delete $opt{'class'};
+	my @files       = glob
+		("$path/mimetype $path/*.xml $path/*/*.xml $path/Pictures/*");
+	my $zipfile = Archive::Zip->new;
+	foreach my $file (@files)
+		{
+		next unless $file;
+		my $member = $file; $member =~ s/\Q$path\///;
+		next unless $member;
+		store_member
+			(
+			$zipfile,
+			member		=> $member,
+			file		=> $file,
+			compress	=> ($member eq 'meta.xml') ? 0 : 1
+			);
+		}
+	if ($opt{'filename'})
+		{
+		unless ($zipfile->writeToFileNamed($filename) == AZ_OK)
+			{
+                	warn    "[" . __PACKAGE__ . "::createOOFile] "          .
+				"Archive initialization error\n";
+			return undef;
+			}
+		return $filename;
+		}
+	else
+		{
+		return $zipfile;
+		}
+	}
 
 #-----------------------------------------------------------------------------
 # control & conversion of XML component names of the OO file
@@ -52,19 +207,11 @@ sub	CtrlMemberName
 	}
 
 #-----------------------------------------------------------------------------
-# error handler for low-level zipfile errors (to be customized if needed)
-
-sub	ZipError
-	{
-	warn "[" . __PACKAGE__ . "] Zip Alert\n";
-	}
-
-#-----------------------------------------------------------------------------
 # check working directory
 
 sub	checkWorkingDirectory
 	{
-	my $path	= shift;
+	my $path	= shift || $WORKING_DIRECTORY;
 
 	if (-d $path)
 		{
@@ -202,32 +349,44 @@ sub	new
 
 	unless	($sourcefile)
 		{
-		warn "[" . __PACKAGE__ . "::new] No source file name\n";
+		warn "[" . __PACKAGE__ . "::new] Missing file name\n";
 		return undef;
 		}
 	
-	unless	( -e $sourcefile && -f $sourcefile && -r $sourcefile )
+	unless ($self->{'create'})
 		{
-		warn	"[" . __PACKAGE__ .
-			"::new] File $sourcefile unavailable\n";
-		return undef;
-		}
-	
-	Archive::Zip::setErrorHandler ( \&ZipError );
-
-	$self->{'archive'}	= Archive::Zip->new;
-
-	if ($self->{'source_file'})
-		{
-		if ($self->{'archive'}->read($self->{'source_file'}) != AZ_OK)
+		unless	( -e $sourcefile && -f $sourcefile && -r $sourcefile )
 			{
-			warn "[" . __PACKAGE__ . "::new] Read error\n";
-			$self->{'archive'}	= undef;
+			warn	"[" . __PACKAGE__ . "::new] "	.
+				"File $sourcefile unavailable\n";
 			return undef;
 			}
-		$self->{'members'}	= [ $self->{'archive'}->memberNames ];
+		Archive::Zip::setErrorHandler ( \&ZipError );
+		$self->{'archive'} = Archive::Zip->new;
+		if ($self->{'archive'}->read($self->{'source_file'}) != AZ_OK)
+			{
+			delete $self->{'archive'};
+			warn "[" . __PACKAGE__ . "::new] Read error\n";
+			return undef;
+			}
 		}
-
+	else
+		{
+		$self->{'archive'} = ooCreateFile
+				(
+				class		=> $self->{'create'},
+				work_dir	=> $self->{'work_dir'},
+				template_path	=> $self->{'template_path'}
+				);
+		unless ($self->{'archive'} && ref $self->{'archive'})
+			{
+			delete $self->{'archive'};
+			warn	"[" . __PACKAGE__ . "::new] "	.
+				"File creation failure\n";
+			return undef;
+			}
+		}
+	$self->{'members'} = [ $self->{'archive'}->memberNames ];
 	return bless $self, $class;
 	}
 
@@ -375,19 +534,13 @@ sub	copyMember
 			"::copyMember] File extraction error\n";
 		return undef;
 		}
-		
-	$m	= $archive->addFile($tmpfile, $member);
-	unless ($member eq 'meta.xml')
-		{
-		$m->desiredCompressionMethod
-				($DEFAULT_COMPRESSION_METHOD);
-		$m->desiredCompressionLevel
-				($DEFAULT_COMPRESSION_LEVEL);
-		}
-	else
-		{
-		$m->desiredCompressionMethod(COMPRESSION_STORED);
-		}
+	store_member
+		(
+		$archive,
+		member		=> $member,
+		file		=> $tmpfile,
+		compress	=> ($member eq 'meta.xml') ? 0 : 1
+		);
 	}
 
 #-----------------------------------------------------------------------------
@@ -417,19 +570,30 @@ sub	addNewMember
 				
 				# member insertion/compression ---------------
 
-	my $m = $archive->addFile($tmpfile, $member);
-	unless ($member eq 'meta.xml')
-		{
-		$m->desiredCompressionMethod
-				($DEFAULT_COMPRESSION_METHOD);
-		$m->desiredCompressionLevel
-				($DEFAULT_COMPRESSION_LEVEL);
-		}
-	else
-		{
-		$m->desiredCompressionMethod(COMPRESSION_STORED);
-		}
-	return $m;
+	return	store_member
+			(
+			$archive,
+			member		=> $member,
+			file		=> $tmpfile,
+			compress	=> ($member eq 'meta.xml') ? 0 : 1
+			);
+	}
+
+#-----------------------------------------------------------------------------
+# update mimetype
+
+sub	change_mimetype
+	{
+	my $self	= shift;
+	my $class	= shift;
+	my $mimetype	= mime_type($class);
+	my $ootool	= $OOTYPE{$class};
+	
+	return undef unless $mimetype;
+	my $tmpfile = $self->store_temp_file($mimetype);
+	$self->raw_delete('mimetype');
+	$self->raw_import('mimetype', $tmpfile); 
+	return 1;
 	}
 
 #-----------------------------------------------------------------------------
@@ -533,12 +697,13 @@ sub	save
 	foreach my $raw_member (@{$self->{'raw_members'}}) # optional raw data
 		{
 		$archive->removeMember($raw_member->{'member'});
-		my $m = $archive->addFile
-			($raw_member->{'file'}, $raw_member->{'member'});
-		$m->desiredCompressionMethod
-			($DEFAULT_COMPRESSION_METHOD);
-		$m->desiredCompressionLevel
-			($DEFAULT_COMPRESSION_LEVEL);
+		store_member
+			(
+			$archive,
+			member		=> $raw_member->{'member'},
+			file		=> $raw_member->{'file'},
+			compress	=> 1
+			)
 		}
 
 	my $status = $archive->writeToFileNamed($outfile);

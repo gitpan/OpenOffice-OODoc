@@ -59,12 +59,41 @@ operations with document elements such as:
 	- page layout;
 	- metadata (i.e. title, subject, and other general properties).
 	
-The OODoc toolbox is organized in 3 logical layers (a diagram is included
-in the reference manual). It's not necessary for you to remember the
-(annoying) details given in the next few paragraphs, but there are described
-only to explain the general orgaisation of the modules. If you have only a
-few dozens of seconds for reading this document, please jump directly at
-the part II (practical examples) and come back later if you want know more.
+Every document processing begins by the initialization of an object
+abstraction of the document, using a constructor like:
+
+	OpenOffice::OODoc::object->new(options)
+
+where "object" is generally "Document", for full access to the content, but
+may be another specialized object such as "Manifest", "Styles", "Meta", etc.
+The long "OpenOffice::OODoc::...->new()" syntax can (and should) be avoided
+thanks to some predefined shortcut like "ooObject()". For example you can
+write "ooDocument()" instead of "OpenOffice::OODoc::Document->new()".
+
+A document object initialization requires one or more options. The most
+usual option is the file name, as in the first example. By default, this
+parameter is regarded as a previously existing file. It's possible to
+instantiate a document object with a new, empty document, with an
+additional "create" option giving the content class of the document to
+be generated. So, in our first example, the constructor could be:
+
+	my $document = ooDocument
+			(
+			file		=> 'filename.sxw',
+			create		=> 'text'
+			);
+
+This instruction creates a new file containing a text (i.e. an
+OpenOffice.org Writer) document (and replaces any previously existing file
+with the same name). However, the new file will be really created by the
+$document->save instruction, not by the object initialization.
+
+The OODoc toolbox is organized in 3 logical layers. It's not necessary for
+you to remember the (annoying) details given in the next few paragraphs,
+but there are described only to explain the general orgaisation of the
+modules. If you have only a few dozens of seconds for reading this document,
+please jump directly at the part II (practical examples) and come back later
+if you want to know more.
 
 The first layer consists of the OpenOffice::OODoc::File class (defined in the
 File.pm module). This class is responsible of read/write operations
@@ -260,7 +289,7 @@ provided that you have an OpenOffice.org attributes glossary at hand.
 The following example show the way to build the "Welcome" style.
 This piece of code declares "Welcome" as a paragraph style, whith
 "Text body" as parent style, and with some private properties
-(Times 16 bold font, yellow background and blue foreground).
+(Times 16 bold font, yellow background and navy blue foreground).
 
 	$doc->createStyle
 			(
@@ -269,13 +298,19 @@ This piece of code declares "Welcome" as a paragraph style, whith
 			parent		=> 'Text body',
 			properties	=>
 				{
-				'style:font-name'		=> 'Times',
-				'fo:font-size'			=> '16pt',
-				'fo:font-weight'		=> 'bold',
-				'style:text-background-color'	=> '#ffff00',
-				'fo:color'			=> '#000080'
+				'style:font-name'	=> 'Times',
+				'fo:font-size'		=> '16pt',
+				'fo:font-weight'	=> 'bold',
+				'fo:background-color'	=> '#ffff00',
+				'fo:color'		=> '#000080'
 				}
 			);
+
+The color attributes are encoded in RGB hexadecimal format. It's possible
+to use more mnemonic values or symbols, through conversion functions
+provided by the Styles module, and optional user-provided colour maps.
+For example, "#ffff00" could be replaced by rgb2oo(255,255,0) or more
+simply by rgb2oo("yellow").
 
 According to the application logic, each newly created style can be
 registered either as a "named" style (i.e. visible and reusable for the
@@ -298,13 +333,11 @@ it can be set with the localEncoding() function. Example:
 	use OpenOffice::OODoc;
 	localEncoding 'iso-8859-15';
 
-=head1	Some practical examples
+Starting from version 1.2, the default encoding can be selected by the
+user during the installation, and changed later by editing a configuration
+file.
 
-While the OODoc modules can read and modify any document, they can't
-operate without any existing document. If you want to generate the
-entire content and presentation of a document, you must provide an
-empty (or non empty) document as a template, then your program will be
-able to create/remove/change any element in it.
+=head1	Some practical examples
 
 To begin playing with the modules, you should before all see the
 self-documented sample scripts provided in the package. These scripts
@@ -351,6 +384,18 @@ requires the OODoc::File module, instantiates a corresponding object using
 the file name, connects to it, and asks it for the 'meta.xml' member of
 the file. All that annoying processing is hidden for the programmer. We
 have just to query for the useful object, the title.
+
+In the same way, we could get (or even change !) the document creation
+or last modification date registered by the OpenOffice.org software:
+
+        my $d1 = $doc->creation_date;
+	my $d2 = $doc->date;
+
+The dates, in the OpenOffice.org documents properties, are stored in
+ISO-8601 format (yyyy-mm-ddThh:mm:ss); this format is readable but not
+necessarily convenient for any application. But the API provides easy to use
+tools allowing conversion to or from the regular numeric time() format
+of the system, allowing any kind of formatting or calculation.
 
 We could get more complex metadata structures, such as the user defined
 fields:
@@ -667,9 +712,17 @@ changing the font size only:
 			prototype	=> $template,
 			properties	=>
 				{
-				"fo:font-size"	=> "12pt"
+				"fo:font-size"	=> "12pt",
+				"fo:color"	=> rgb2oo("dark blue")
 				}
 			);
+
+(Here a "dark blue" color has been given to the text; but "dark blue" is
+an arbitrary string, that must be present in a user-provided, previously
+loaded color map; without this color map, the users must, at their choice,
+either directly provide an hexadecimal, OOo-compliant color code (such as
+"#00008b", that is the translation of "dark blue" in my installation), or
+get it through the rgb2oo() function with 3 decimal RGB values as arguments.)
 
 Because a style is required for each image in a document, the OODoc::Document
 brings a more user-friendly createImageStyle method. This method allows you
@@ -706,15 +759,6 @@ provided in the distribution. In addition, you can have a look to the
 installation test scripts (the first one creates an OpenOffice.org file
 from scratch, using the Archive::Zip API and a set of XML templates, before
 accessing this new file with OpenOffice::OODoc).
-
-=head1	Conclusion
-
-OODoc is a work in progress, so there are probably some bugs to fix, a
-lot of new functionality to add, and maybe some basic design to
-reconsider. But it reasonably works, and has been practically used in
-small real-world projects.
-
-So any constructive remark or contribution is welcome.
 
 =head1	Author & Copyright
 

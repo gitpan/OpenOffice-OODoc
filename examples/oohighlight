@@ -39,11 +39,15 @@ and represented with the "Standard" style.
 
 		"new string" is used as a replacement for "search string"
 
-	-c --color "#xxxxxx"
+	-c --color "code"
 
-		a six-digit hexadecimal number, preceded by a "#",
-		representing a color (RGB) to be used in place of the
-		default one for the background of the selected areas
+		an RGB color code, expressed either as the concatenation of
+		3 comma-separated decimal values (each one in the range
+		0..255, ex: "72,61,139" for a dark slate blue), or a 6-digit
+		hexadecimal number, preceded by a "#" (ex: #00ff00 for green)
+		or, if a colormap is available and known in your
+		OpenOffice::OODoc installation, a symbolic color name (ex:
+		"sky blue")
 
 	-p --property "property=value"
 
@@ -67,17 +71,17 @@ and represented with the "Standard" style.
 
 #-----------------------------------------------------------------------------
 
-use OpenOffice::OODoc	1.107;
+use OpenOffice::OODoc	1.201;
 use Getopt::Long;
 
 #-----------------------------------------------------------------------------
 # getting the arguments and options
 
-my $encoding	= 'iso-8859-1';
-my $target	= undef;
-my $replace	= undef;
-my $color	= '#ffff00';
-my %properties	= ();
+my $encoding		= undef;
+my $target		= undef;
+my $replace		= undef;
+my $color		= '#ffff00'; # yellow
+my %properties		= ();
 
 GetOptions
 	(
@@ -88,6 +92,8 @@ GetOptions
 	'output|target=s'	=> \$target
 	);
 
+$color = rgb2oo($color); # color validity check
+
 #-----------------------------------------------------------------------------
 
 my $filename	= $ARGV[0];
@@ -95,12 +101,14 @@ my $search	= $ARGV[1];
 die "usage: oohighlight <file> <search_string> [-options]\n"
 	unless ($filename && $search);
 
+$color	= rgb2oo($color) or die "Color code is not valid\n";
+
 #-----------------------------------------------------------------------------
 # opening the document
 
 my $doc		= ooDocument(file => $filename)
 	or die "File unavailable or non-OOo file\n";
-localEncoding($encoding);
+ooLocalEncoding($encoding)	if ($encoding);
 
 #-----------------------------------------------------------------------------
 # creating the highlight style
@@ -109,7 +117,7 @@ $properties{'style:text-background-color'} = $color;
 
 $doc->createStyle
 	(
-	"HighLight",
+	"MyHighLight",
 	family		=> 'text',
 	properties	=> { %properties }
 	);
@@ -131,7 +139,7 @@ if (defined $replace)
 
 foreach my $element (@list)
 	{
-	$doc->setSpan($element, $search, "HighLight");
+	$doc->setSpan($element, $search, "MyHighLight");
 	}
 
 #-----------------------------------------------------------------------------

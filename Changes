@@ -1,3 +1,20 @@
+1.200	2004-07-30
+	- Many changes in File.pm to allow the creation of new documents
+	- Added many template files for document creation
+	- Added Manifest.pm and Manifest.pod
+	- Added contentClass() and getRootElement() in XPath.pm
+	- Added readConfig() function in OODoc.pm and config.xml file
+	- Added date conversion functions from OOo to time() format in Meta.pm
+	- Added contentClass() in XPath.pm
+	- Added oo2rgb(), rgb2oo(), ooLoadColorMap() in Styles.pm
+	- Changed createImageElement() in Image.pm, allowing easy use in presentation
+	  and drawing documents
+	- Included Time::Local and File::Temp in the PREREQ_PM
+	- Installation procedure is now parametrizable (Makefile.PL)
+	- Small changes in the test scripts
+	- Added an example and update some other ones
+	- Documentation update
+	- Created OODoc.pod; removed POD from OODoc.pm
 1.111	2004-07-11
 	- New method to generate unique names for temporary files (File.pm)
 	  due to an incompatibility with Archive::Zip 1.12

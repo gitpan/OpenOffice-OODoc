@@ -47,7 +47,7 @@
    <config:config-item config:name="IsKernAsianPunctuation" config:type="boolean">false</config:config-item>
    <config:config-item config:name="AlignTabStopPosition" config:type="boolean">false</config:config-item>
    <config:config-item config:name="CurrentDatabaseDataSource" config:type="string"/>
-   <config:config-item config:name="PrinterName" config:type="string">Plateforme 1</config:config-item>
+   <config:config-item config:name="PrinterName" config:type="string">Unknown</config:config-item>
    <config:config-item config:name="PrintFaxName" config:type="string"/>
    <config:config-item config:name="PrintRightPages" config:type="boolean">true</config:config-item>
    <config:config-item config:name="IsLabelDocument" config:type="boolean">false</config:config-item>

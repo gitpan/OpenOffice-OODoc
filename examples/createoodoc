@@ -1,0 +1,64 @@
+#!/usr/bin/perl -w
+#-----------------------------------------------------------------------------
+#
+#      $Id: createoodoc 0.001 2004-07-30$
+#
+#-----------------------------------------------------------------------------
+       
+=head1	NAME
+
+createoodoc - New OpenOffice.org file creation
+
+=head1	SYNOPSIS
+
+	createoodoc "mytext.sxw" "text"
+	createoodoc "mypresentation.sxi" "presentation" "My seminar"
+
+=head1	USAGE
+
+	[perl] createoodoc "filename" "document class" ["title"]
+
+=head1	COMMENT
+
+This example show the way to simply create a new OpenOffice.org document.
+The user must provide only a name and the document class (i.e. "text",
+"spreadsheet", "presentation" or "drawing"). Optionnally, the user can
+provide a title as the 3rd argument.
+
+The current local time, converted in OpenOffice.org format, is stored
+in the metadata as both the creation and the modification date.
+
+=cut
+
+use OpenOffice::OODoc	1.201;
+
+my $filename	= $ARGV[0];
+my $class	= $ARGV[1];
+die "Usage: createoodoc <filename> <class> [<title>]\n"
+	unless $filename;
+unless (OpenOffice::OODoc::File::mime_type($class))
+	{
+	print "Unknown document class. Possible values are:\n";
+	print " - $_\n" for (keys %OpenOffice::OODoc::File::OOTYPE);
+	exit;
+	}
+die "$filename exists. I don't erase it\n"
+	if (-e $filename);
+
+# create the File object
+my $oofile = ooFile($filename, create => $class)
+	or die "Something was wrong !\n";
+# get the current local time in OpenOffice.org-compliant format
+my $oodate = ooLocaltime;
+# get access to its metadata
+my $metadata = ooMeta(archive => $oofile);
+# set the current time as the creation date
+$metadata->creation_date($oodate);
+# set the current time as modification date
+$metadata->date($oodate);
+# set the title, if provided
+$metadata->title($ARGV[2]) if $ARGV[2];
+# saving (before here, the file didn't exist)
+$oofile->save;
+exit;
+

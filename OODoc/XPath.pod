@@ -118,6 +118,11 @@ methods.
             my $doc = OpenOffice::OODoc::XPath->new
             	(file => 'source.sxw', member => 'content');
 
+	(Remember you can replace "OpenOffice::OODDoc::XPath" by "ooXPath"
+	in the instructions above, provided that you have loaded the
+	main OpenOffice::OODoc module, that defines this shortcut, and not
+	only and explicitly OpenOffice::OODoc::XPath.)
+
         The first method returns an XML string directly (obtained or created
         previously by the program).
 
@@ -139,12 +144,9 @@ methods.
         A program which must access a spreadsheet's content and page layout
         simultaneously could do it like this:
 
-            my $archive	= OpenOffice::OODoc::File->new
-            	("invoice.sxc");
-            my $content	= OpenOffice::OODoc::XPath->new
-            	(archive => $archive, member => 'content');
-            my $styles	= OpenOffice::OODoc::XPath->new
-            	(archive => $archive, member => 'styles');
+            my $archive	= ooFile("invoice.sxc");
+            my $content	= ooXPath(archive => $archive, member => 'content');
+            my $styles	= ooXPath(archive => $archive, member => 'styles');
 
         Caution: being associated with an archive via OODoc::File, none of
         these OODoc::XPath objects should be deleted before the final save
@@ -165,9 +167,9 @@ methods.
         given for an OpenOffice.org document, a default element will be
         chosen according to the following table:
 
-            'meta'		=> 'office:document-meta'
+            'meta'	=> 'office:document-meta'
             'content'	=> 'office:document-content'
-            'styles'		=> 'office:document-styles'
+            'styles'	=> 'office:document-styles'
             'settings'	=> 'office:document-settings'
 
         Conversely, the 'element' parameter becomes mandatory if the chosen
@@ -188,7 +190,20 @@ methods.
         $XML_PARSER is automatically created without the application having
         to do anything.
 
-        Optional parameters can also be passed to the constructor (see
+	If the application needs to create a new document, and not process
+	an existing one, an additional option must be passed:
+
+		create		=> "class"
+
+	where "class" must be one of the following list: "text",
+	"spreadsheet", "presentation" or "drawing", according to the needed
+	content class. And, for very special needs, the user can pass an
+	additional "template_path" to select an ad hoc directory of XML
+	templates instead of the default one. This user-provided directory
+	must have the same kind of structure and content as the "templates"
+	subdirectory of the OpenOffice::OODoc installation.
+
+        Other optional parameters can also be passed to the constructor (see
         Properties below).
 
 =head3	appendElement(path, position, name/xml, [options]);
@@ -309,6 +324,27 @@ methods.
         method references one single physical content in two documents. Any
         modifications made to the content of either of these two documents
         applies equally to the other and vice-versa.
+
+=head3	contentClass([class name])
+
+	Accessor to get or set the class of the document content. If the
+	current member is a document content, returns its class according
+	to the OpenOffice.org terminology, i.e. one of the following values:
+	"text", "spreadsheet", "presentation", or "drawing".
+
+	Returns undef if the current member is not a document content (if
+	it's, for example, the "meta" or "styles" member).
+
+	With a given class name as an optional argument, this method can
+	change or set the document class; but this risky operation is, of
+	course, for advanced users knowing exactly that they do. Changing
+	the content class allows, for example, to turn a text containing
+	some tables in a spreadsheet. But some things must be changes
+	elsewhere in order to produce a consistent OpenOffice.org document.
+	For example, the MIME type of the document, stored in its manifest,
+	must be changed accordingly (see OpenOffice::OODoc::Manifest). And,
+	of course, the real content must be consistent with the declared
+	content class.
 
 =head3	createElement(name, text)
 
