@@ -14,7 +14,7 @@
 package	OpenOffice::OODoc::File;
 use	5.006_001;
 our	$VERSION	= 1.107;
-use	Archive::Zip		qw ( :DEFAULT :CONSTANTS :ERROR_CODES );
+use	Archive::Zip	1.14	qw ( :DEFAULT :CONSTANTS :ERROR_CODES );
 use	File::Temp;
 
 #-----------------------------------------------------------------------------

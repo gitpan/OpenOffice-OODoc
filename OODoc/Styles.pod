@@ -183,7 +183,7 @@ at least a blank of each required style.
         possible to create two styles with the same name, one in content.xml
         and the other in styles.xml.
 
-        Possible options are passed in the form of a hash.
+        Possible options are passed by hash.
 
         If the active OODoc::Styles object is associated with a document
         content (content.xml), the new style is always taken to be an
@@ -316,6 +316,11 @@ at least a blank of each required style.
         This new style called "Bigger" is an exact copy of the "Colour"
         style, except for the font size.
 
+	The given "parent" style is not necessarily defined yet and, if the
+	current document member is "content", it can be the name of a style
+	defined in the "styles" member. (See getAncestorStyle() and
+	getParentStyle()).
+
         Generally speaking, explicit parameters passed by an application
         (e.g. font size) prevail over prototype's parameters.
 
@@ -366,6 +371,42 @@ at least a blank of each required style.
 
             $doc->exportBackgroundImage
             	("First Page", "C:\Images\backgrnd.jpg");
+
+=head3	getAncestorStyle(style)
+
+	Returns the name of the primary known ancestor of the given style.
+
+	If the style has a standalone definition (i.e. it's its own ancestor),
+	the method returns it's name.
+
+	This method returns the ancestor name as it's known in the current
+	document space. The genealogy is not followed out of the scope of
+	the current XML member.
+	
+	For example, if we have an automatic paragraph style "P1", defined in
+	the "content" member and derivated from "Text body", the returned
+	ancestor name will be "Text body". However, "Text body" itself could
+	be a derivative of "Standard". But "Text body" is defined in the
+	"styles" member, so its definition (including the name of its parent
+	style) is out of the scope.
+
+	As a consequence, in a regular OOo document, there are 2 possible
+	situations:
+
+	- if the current space is "styles", the returned style name is really
+	the name of the primary ancestor, because a style defined in this
+	space can't inherit from anything elsewhere;
+
+	- if the current space is "content", the returned value can be the
+	name of a style defined elsewhere.
+
+	A possible check is a simple call to getStyleElement() with the
+	returned ancestor name. If getStyleElement() returns undef, then
+	the ancestor style is not defined in the current space (and, if
+	needed, we could reach it the "styles" member, if we currently work
+	with the "content" member).
+
+	See also getParentStyle().
 
 =head3	getAutoStyleList([options])
 
@@ -459,6 +500,16 @@ at least a blank of each required style.
         which can be either a logical name or a page style reference. If the
         argument is a master page, the method returns the corresponding page
         master.
+
+=head3	getParentStyle(style)
+
+	Returns the name of the parent of the given style, or undef if the
+	style has a standalone definition (without inheritance).
+
+	The returned parent name can be the name of a style defined elsewhere
+	(or not defined yet).
+
+	See also getAncestorStyle().
 
 =head3	getStyleAttributes(style)
 

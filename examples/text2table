@@ -25,7 +25,7 @@ The input values are processed as text values.
 
 =cut
 
-use OpenOffice::OODoc	1.301;
+use OpenOffice::OODoc	1.304;
 
 my ($input_file, $output_file, $lines, $columns) = @ARGV;
 
@@ -38,18 +38,20 @@ my $doc = ooDocument(file => $output_file, create => 'spreadsheet');
 	# select & size the 1st (and only) sheet in the document
 my $sheet = $doc->getTable(0, $lines, $columns);
 	# rename it as the input file (why not ?)
-$doc->renameTable($input_file);
+$doc->renameTable($sheet, $input_file);
 
 	# populate the table
 open INPUT, "<", $input_file or die "Input file $input_file unavailable\n";
 my $line = undef;
+my @rows = $doc->getTableRows($sheet);
 for (my $i = 0 ; $i < $lines && ($line = <INPUT>) ; $i++)
 	{
-	my $row = $doc->getTableRow($sheet, $i);
+	my $row = $rows[$i];
 	my @cellvalues = split ';', $line;
+	my @cells = $doc->getRowCells($row);
 	for (my $j = 0 ; $j < $columns && @cellvalues ; $j++)
 		{
-		$doc->cellValue($row, $j, shift @cellvalues);
+		$doc->cellValue($cells[$j], shift @cellvalues);
 		}
 	}
 

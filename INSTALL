@@ -3,17 +3,11 @@ OpenOffice::OODoc installation (Sep 2004)
 SYSTEM REQUIREMENTS
 
 	Perl		>= 5.8.0
-	Archive::Zip	>= 1.05  (*)
+	Archive::Zip	>= 1.14
 	XML::Twig	>= 3.15
 	Time::Local	>= 1.07
 	File::Temp	>= 0.12
 
-	* The Archive::Zip version is not a requirement, but only a
-	recommendation. No version check is done for this extension in the
-	present distribution. As a consequence of a numbering anomaly in some
-	deployed Archive::Zip distributions, this version control caused
-	unnecessary installation failures.
-	
 INSTALLATION
 
 	Uncompress the distribution archive, enter the OpenOffice-OODoc-x.xxx

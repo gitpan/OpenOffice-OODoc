@@ -1,3 +1,8 @@
+1.305	2005-03-01
+	- Added getParentStyle() and getAncestorStyle() in Styles.pm
+	- Added Archive::Zip version control (1.14) in Makefile.PL
+	- ABSTRACT in Makefile.PL
+	- Bug fix and optimization in the text2table example
 1.304	2005-02-18
 	- Bugfix in the oometadoc example
 	- Code cleaning and optimizations (Text.pm)

@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Styles.pm 1.008 2005-02-05 JMG$
+#	$Id : Styles.pm 1.009 2005-02-22 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -13,9 +13,9 @@
 
 package OpenOffice::OODoc::Styles;
 use	5.006_001;
-our	$VERSION	= 1.008;
+our	$VERSION	= 1.009;
 
-use	OpenOffice::OODoc::XPath	1.200;
+use	OpenOffice::OODoc::XPath	1.202;
 use	File::Basename;
 require	Exporter;
 our	@ISA		= qw ( Exporter OpenOffice::OODoc::XPath );
@@ -448,6 +448,51 @@ sub	getStyleElement
 	my $xpath	=	"//$namespace" . ':' .
 				"$type\[\@style:name=\"$style\"\]";
 	return $self->getNodeByXPath($xpath, $root);
+	}
+
+#-----------------------------------------------------------------------------
+# get the name of the parent style, if any
+
+sub	getParentStyle
+	{
+	my $self	= shift;
+	my $style	= $self->getStyleElement(@_);
+	unless ($style)
+		{
+		warn	"[" . __PACKAGE__ .
+			"::getParentStyle] Unknown style\n";
+		return undef;
+		}
+	return $self->getAttribute($style, 'style:parent-style-name');
+	}
+
+#-----------------------------------------------------------------------------
+# get the name of the primary ancestor
+# (returns the style name if it doesn't have any ancestor)
+
+sub	getAncestorStyle
+	{
+	my $self	= shift;
+	my $style	= $self->getStyleElement(@_);
+	unless ($style)
+		{
+		warn	"[" . __PACKAGE__ .
+			"::getAncestorStyle] Unknown style\n";
+		return undef;
+		}
+	my $name	= $self->styleName($style);
+	my $parent_name	= $self->getParentStyle($style);
+
+	while ($parent_name)
+		{
+		$name 		= $parent_name;
+		$style		= $self->getStyleElement($name);
+		$parent_name	= $style	?
+					$self->getParentStyle($style)	:
+					undef;
+		}
+
+	return $name;
 	}
 
 #-----------------------------------------------------------------------------
