@@ -11,7 +11,7 @@ codename of a particular submodule).
 
 A one-file reference manual of the API is available in SXW format
 (OpenOffice.org Writer document) of PDF. In can be downloaded from
-the project homepage at http://www.genicorp.com/devel/oodoc
+the project homepage (http://www.genicorp.com/devel/oodoc).
 
 =head1	Overview
 
@@ -718,9 +718,8 @@ So any constructive remark or contribution is welcome.
 
 =head1	Author & Copyright
 
-Initial developer : Jean-Marie Gouarne
-
 Copyright 2004 by Genicorp, S.A. (http://www.genicorp.com)
+Initial developer : Jean-Marie Gouarne (http://jean.marie.gouarne.online.fr)
 
 Licensing conditions:
 

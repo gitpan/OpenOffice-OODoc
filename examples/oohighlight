@@ -1,0 +1,160 @@
+#!/usr/bin/perl -w
+
+=head1	NAME
+
+oohighlight - search, replace and highlight text in a document
+
+=head1	SYNOPSIS
+
+This sample program allows the user to search and replace a given string
+in a whole document, and highlight the each processed area with a given
+background color.
+
+Usage: oohighliht filename "search string" [-options]
+
+Example:
+
+oohighlight myfile.sxw "to be replaced" -r "replacement" -c "#00ff00"
+
+replaces "to be replaced" by "replacement" everywhere in the document,
+and puts a green background at each replacement
+
+=head1	ARGUMENTS AND OPTIONS
+
+=head2	Default behaviour
+
+With the "minimal" command line, with only a filename and a string as
+arguments, each matching string is highlighted with a yellow background
+and represented with the "Standard" style.
+
+=head2	Options
+
+	-e --encoding "xxxxxx"
+
+		local character set to be used, knowing that the default
+		encoding is "iso-8859-1"; this option is mandatory if the
+		search string or the replacement one contains non-ASCII
+		characters
+		
+	-r --replacement "new string"
+
+		"new string" is used as a replacement for "search string"
+
+	-c --color "#xxxxxx"
+
+		a six-digit hexadecimal number, preceded by a "#",
+		representing a color (RGB) to be used in place of the
+		default one for the background of the selected areas
+
+	-p --property "property=value"
+
+		for OOo advanced users only ! this option can be repeated;
+		each occurrence gives an additional property for the
+		highlight style (font name, size, foreground color, ...)
+		For example, with the combination of -p fo:color=#ff0000
+		and -p fo:font-size=18pt, the highlighted text will be
+		made of 18pt-sized, red characters. In order to master
+		these option, you should have some knowledge of the
+		OpenOffice styling vocabulary
+	
+	-o --output "filename"
+	-t --target "filename"
+
+		an alternative filename to save the modified document, when
+		the source document must remain unchanged
+		
+=head1	COMMENT
+
+This script introduces the "Document" object, that allows content and
+presentation processing in the same session. createStyle() is inherited from
+the "Styles" class, while selectElementsByContent() and setSpan() come from
+the "Text" class.
+
+selectElementsByContent() is used with a subroutine (closure) as its second
+argument; in this way, the highlighting and the text replacement are
+executed in one pass.
+
+One should go to the OpenOffice::OODoc::Styles and
+OpenOffice::OODoc::Text manual pages, respectively, in order to get some
+documentation about these methods.
+
+=cut
+
+
+#-----------------------------------------------------------------------------
+
+use OpenOffice::OODoc	1.107;
+use Getopt::Long;
+
+#-----------------------------------------------------------------------------
+# getting the arguments and options
+
+my $encoding	= 'iso-8859-1';
+my $target	= undef;
+my $replace	= undef;
+my $color	= '#ffff00';
+my %properties	= ();
+
+GetOptions
+	(
+	'encoding=s'		=> \$encoding,
+	'replacement=s'		=> \$replace,
+	'color=s'		=> \$color,
+	'property=s'		=> \%properties,
+	'output|target=s'	=> \$target
+	);
+
+#-----------------------------------------------------------------------------
+
+my $filename	= $ARGV[0];
+my $search	= $ARGV[1];
+die "usage: oohighlight <file> <search_string> [-options]\n"
+	unless ($filename && $search);
+
+#-----------------------------------------------------------------------------
+# opening the document
+
+my $doc		= ooDocument(file => $filename)
+	or die "File unavailable or non-OOo file\n";
+localEncoding($encoding);
+
+#-----------------------------------------------------------------------------
+# creating the highlight style
+
+$properties{'style:text-background-color'} = $color;
+
+$doc->createStyle
+	(
+	"HighLight",
+	family		=> 'text',
+	properties	=> { %properties }
+	);
+
+#-----------------------------------------------------------------------------
+# searching and replacing
+
+my @list = $doc->selectElementsByContent($search, $replace);
+
+#-----------------------------------------------------------------------------
+# coloring
+
+if (defined $replace)
+	{
+		# just in order to avoid unneeded metacharacter processing
+	$replace =~ s/([\\\(\)\.\*\?\[\]\|\-])/\\$1/g;
+	$search	= $replace;
+	}
+
+foreach my $element (@list)
+	{
+	$doc->setSpan($element, $search, "HighLight");
+	}
+
+#-----------------------------------------------------------------------------
+# saving the result
+
+$doc->save($target);
+exit;
+
+#-----------------------------------------------------------------------------
+

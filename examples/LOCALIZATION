@@ -26,4 +26,3 @@ In real projects, even if the default encoding is convenient, it's
 strongly recommended to systematically use this statement with a
 variable argument, and to manage the local character set as a
 runtime parameter.
-

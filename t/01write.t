@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-# 01write.t	OpenOffice::OODoc 1.106 Installation test	(c) GENICORP
+# 01write.t	OpenOffice::OODoc 1.107 Installation test	(c) GENICORP
 #-----------------------------------------------------------------------------
 
 use Test;
@@ -10,7 +10,7 @@ ok(1);
 use Archive::Zip	1.05	qw ( :DEFAULT :CONSTANTS :ERROR_CODES );
 ok(1);
 
-use OpenOffice::OODoc	1.106;
+use OpenOffice::OODoc	1.107;
 ok(1);
 
 #-----------------------------------------------------------------------------

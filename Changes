@@ -1,3 +1,11 @@
+1.107	2004-07-06
+	- Fixed 2 bugs in the setSpan() method (Text.pm)
+	- Fixed an encoding issue in a search/replace low level routine (XPath.pm)
+	- Added getTopParagraph() method (Text.pm);
+	  this method was previously documented but not implemented
+	- Added ooDecodeText() and ooEncodeText() in the main module
+	- Minor corrections (again) in the documentation
+	- Added 2 more examples
 1.106	2004-05-27
 	- Minor fixes in POD files; no change in the code
 1.105	2004-05-26

@@ -910,6 +910,13 @@ which is one of the foundations of the OpenOffice.org format.
         the retrieved text is deleted. The called function receives the rest
         of the arguments, in this order:
 
+	1) all remaining arguments after 'action' ('other_arguments'), if any.
+	
+	2) the element containing the retrieved text.
+	
+	3) the string actually selected. If the filter is an exact string,
+	it is equal to the filter. If the filter is a regular expression,
+	it matches the "real" text retrieved.
 
         The returned list is the same one returned by the first two forms.
 
@@ -1018,12 +1025,16 @@ which is one of the foundations of the OpenOffice.org format.
             I consider OpenOffice.org Writer to be my word processor of
             choice.
 
-        the string "OpenOffice.org Writer" is a "span" because it is in
-        italics while the rest of the paragraph is in normal characters. The
-        string "word processor" is another because its background colour is
-        different. A "span" is therefore a way to use several styles within
-        the same element, bearing in mind that the paragraph's global style
-        can be modified by setStyle.
+        if the string "OpenOffice.org Writer" is in italics while the rest
+	of the paragraph is in normal characters, it's a "span".
+
+        A "span" is therefore a way to use several styles within the same
+	element, bearing in mind that the paragraph's global style can be
+	modified by setStyle.
+
+	The properties of a span can be related to any kind of character
+	string presentation, such as font, font size, font weight, font
+	style, and colors (background and foreground).
 
         The desired text element is normally indicated by [path, position]
         or reference. The optional argument 'context' which consists of an
@@ -1182,13 +1193,13 @@ included in this page.
 This man page has been adapted from a chapter of the original
 reference manual. This manual is in OpenOffice.org (SXW) format.
 
-It's freely downloadable at http://www.genicorp.com/devel/oodoc
+It's freely downloadable from the project page
+(http://www.genicorp.com/devel/oodoc)
 
 =head1	AUTHOR/COPYRIGHT
 
-Initial developer: Jean-Marie Gouarne
-
 Copyright 2004 by Genicorp, S.A. (http://www.genicorp.com)
+Initial developer: Jean-Marie Gouarne (http://jean.marie.gouarne.online.fr)
 
 Initial English version of the reference manual
 by Graeme A. Hunter <graeme.hunter@zen.co.uk>

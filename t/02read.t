@@ -1,11 +1,11 @@
 #-----------------------------------------------------------------------------
-# 02read.t	OpenOffice::OODoc 1.106 Installation test	(c) GENICORP
+# 02read.t	OpenOffice::OODoc 1.107 Installation test	(c) GENICORP
 #-----------------------------------------------------------------------------
 
 use Test;
 BEGIN	{ plan tests => 7 }
 
-use OpenOffice::OODoc	1.106;
+use OpenOffice::OODoc	1.107;
 ok(1);
 
 #-----------------------------------------------------------------------------

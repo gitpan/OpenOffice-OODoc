@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 1.111 2004-05-25 JMG$
+#	$Id : Text.pm 1.112 2004-07-02 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -13,9 +13,9 @@
 
 package OpenOffice::OODoc::Text;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	1.112;
+use	OpenOffice::OODoc::XPath	1.113;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 1.111;
+our	$VERSION	= 1.112;
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -571,31 +571,29 @@ sub	setSpan
 			next;
 			}
 		next unless ($n->isTextNode);
-		while ($n)
-		    {
-		    my $text = OpenOffice::OODoc::XPath::decode_text
+
+		my $text = OpenOffice::OODoc::XPath::decode_text
 						($n->getValue || "");
-		    next NODE_LOOP unless ($text =~ /(.*)($expression)(.*)/);
-		    my ($before, $selection, $after) = ($1, $2, $3);
-		    my $span = $self->createElement('text:span', $selection);
-		    $element->insertBefore($span, $n);
-		    $self->setAttribute($span, 'text:style-name', $style);
-		    $element->removeChild($n); $n = undef;
-		    if ($before)
+		while ($n && $text && ($text =~ /(.*)($expression)(.*)/))
 			{
-			$n = XML::XPath::Node::Text->new($before);
-			$element->insertBefore($n, $span);
+			my ($before, $selection, $after) = ($1, $2, $3);
+			my $span = $self->createElement
+						('text:span', $selection);
+			$element->insertBefore($span, $n);
+			$self->setAttribute($span, 'text:style-name', $style);
+			$element->removeChild($n); $n = undef; $text = undef;
+			if ($before)
+				{
+				$n = $self->createTextNode($before);
+				$element->insertBefore($n, $span);
+				$text = $before;
+				}
+			if ($after)
+				{
+				my $a = $self->createTextNode($after);
+				$element->insertAfter($a, $span);
+				}
 			}
-		    if ($after)
-			{
-			$element->insertAfter
-				(
-				XML::XPath::Node::Text->new($after),
-				$span
-				);
-			}
-		    }
-		last;
 		}
 	}
 
@@ -728,6 +726,16 @@ sub	getParagraph
 	my $self	= shift;
 
 	return $self->getElement('//text:p', @_);
+	}
+
+#-----------------------------------------------------------------------------
+# same as getParagraph() but only between the 1st level paragraphs
+
+sub	getTopParagraph
+	{
+	my $self	= shift;
+
+	return $self->getElement('//office:body/text:p', @_);
 	}
 
 #-----------------------------------------------------------------------------

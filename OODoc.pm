@@ -1,23 +1,23 @@
 #-----------------------------------------------------------------------------
-#	$Id : OODoc.pm 1.106 2004-05-27 JMG$
+#	$Id : OODoc.pm 1.107 2004-07-06 JMG$
 #-----------------------------------------------------------------------------
 
 use OpenOffice::OODoc::File		1.103;
 use OpenOffice::OODoc::Meta		1.003;
-use OpenOffice::OODoc::Document		1.005;
+use OpenOffice::OODoc::Document		1.006;
 
 #-----------------------------------------------------------------------------
 
 package	OpenOffice::OODoc;
 use 5.008_000;
-our $VERSION				= 1.106;
+our $VERSION				= 1.107;
 
 require Exporter;
 our @ISA    = qw(Exporter);
 our @EXPORT = qw
 	(
 	ooXPath ooFile ooText ooMeta ooImage ooDocument ooStyles
-	localEncoding
+	localEncoding ooEncodeText ooDecodeText
 	);
 
 #-----------------------------------------------------------------------------
@@ -87,6 +87,19 @@ sub	localEncoding
 	}
 
 #-----------------------------------------------------------------------------
+# shortcuts for low-level local/utf8 code conversion 
+
+sub	ooEncodeText
+	{
+	return OpenOffice::OODoc::XPath::encode_text(@_);
+	}
+
+sub	ooDecodeText
+	{
+	return OpenOffice::OODoc::XPath::decode_text(@_);
+	}
+
+#-----------------------------------------------------------------------------
 1;
 
 =head1	NAME
@@ -120,7 +133,8 @@ But, before using it you should read the README of the standard
 distribution, or the OpenOffice::OODoc::Intro man page, to get
 an immediate knowledge of the functionality of each one.
 Alternatively, you can download the original reference manual
-in OpenOffice.org or PDF format at http://www.genicorp.com/devel/oodoc
+in OpenOffice.org or PDF format from the project homepage
+(http://www.genicorp.com/devel/oodoc)
 
 =head2	Exported functions
 
@@ -150,6 +164,19 @@ corresponding module for details.
 
 	See the Encode::Supported (Perl) documentation for the list
 	of supported encodings.
+
+=head3	ooDecodeText($ootext)
+
+	Returns the translation of a raw OpenOffice.org (UTF-8) in
+	the local character set. For exceptional use; this translation
+	is normally done by the high level text read/write methods.
+
+=head3	ooEncodeText($ootext)
+
+	Returns the translation of an application-provided string,
+	made of local characters, in OpenOffice.org (UTF-8).
+	For exceptional use; this translation is normally done by the
+	high level text read/write methods.
 
 =head3	ooDocument
 
@@ -186,9 +213,8 @@ corresponding module for details.
 
 =head1	AUTHOR/COPYRIGHT
 
-Initial developer: Jean-Marie Gouarne
-
 Copyright 2004 by Genicorp, S.A. (http://www.genicorp.com)
+Initial developer: Jean-Marie Gouarne (http://jean.marie.gouarne.online.fr)
 
 Licensing conditions:
 

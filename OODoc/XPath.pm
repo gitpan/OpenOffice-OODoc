@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 1.112 2004-05-26 JMG$
+#	$Id : XPath.pm 1.113 2004-07-01 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -13,7 +13,7 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 1.112;
+our	$VERSION	= 1.113;
 use	XML::XPath	1.13;
 use	Encode;
 
@@ -84,7 +84,7 @@ sub	XML::XPath::Node::Attribute::toString
 sub	OpenOffice::OODoc::XPath::_find_text
 	{
 	my $text	= shift;
-	my $pattern	= shift;
+	my $pattern	= OpenOffice::OODoc::XPath::encode_text(shift);
 	my $replace	= shift;
 
 	if (defined $pattern)
@@ -119,7 +119,8 @@ sub	OpenOffice::OODoc::XPath::_find_text
 		    }
 		else
 		    {
-		    return undef unless ($text =~ s/$pattern/$replace/g);
+		    my $r = OpenOffice::OODoc::XPath::encode_text($replace);
+		    return undef unless ($text =~ s/$pattern/$r/g);
 		    }
 		}
 	    else

@@ -22,11 +22,13 @@ OODoc/Notes.pod
 OODoc/Styles.pod
 OODoc/Text.pod
 OODoc/XPath.pod
-examples/TODO
+examples/LOCALIZATION
 examples/change_style
 examples/command_doc
 examples/extract
 examples/oo2pod
+examples/oofilesearch
+examples/oohighlight
 examples/search
 examples/set_fields
 examples/set_title
