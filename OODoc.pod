@@ -52,12 +52,25 @@ details of the OpenOffice.org XML dialect and file format.
 =head1	HOW TO USE THE DOCUMENTATION
 
 The OpenOffice::OODoc documentation, as the API itself, is distributed
-amongst several manual pages on a thematic and technical basis.
+amongst several manual pages on a thematic and technical basis. The present
+page is not the most important one.
 
-For the newbie (I mean the OOo newbie, who is not necessarily a Perl
-beginner !) , it's strongly recommended to have a look at the
-OpenOffice::OODoc::Intro manual page, in order to get a quick and practical
-knowledge of the big picture.
+Each manual page correspond to a Perl module, with the exception of
+OpenOffice::OODoc::Intro. It's strongly recommended to have a look at
+this Intro, and to read the examples, before any other manual chapter, in
+order to get a quick and practical knowledge of the big picture.
+
+The API is object-oriented and, with the exception of the main module
+(OpenOffice::OODoc itself), each module defines a class. The features of each
+module are documented in a manual page with the same name. But, while some
+classes inherit from other ones, they bring a lot of features that are not
+documented in the corresponding manual page. The best example is
+OpenOffice::OODoc::Document: it contains a few method definitions by itself,
+but it's the most powerful class, because it inherits from four other classes,
+so it's features are documented in five manual pages. Fortunately, the classes
+are defined on a functional basis. So, for example, to know the text-related
+capabilities of a Document object, the user should select the Text manual page
+before the Document one.
 
 The detailed documentation of the API is distributed according to the
 following list:
@@ -75,11 +88,13 @@ This manual page contains detailed information about the physical access to
 the OpenOffice.org files. In some simple applications, this page can be
 ignored without risk.
 
-=head2	OpenOffice::OODoc::Xpath
+=head2	OpenOffice::OODoc::XPath
 
 This manual page describes the low level, XPath-based XML API of
 OpenOffice::OODoc. It can be necessary for advanced applications, but can be
-ignored at first look.
+ignored at first look. However, the Text, Image, Styles, Document and Meta
+objects inherit all the features of the XPath object, so this manual page
+can be useful even if the user don't need to work with explicit XPath objects.
 
 =head2	OpenOffice::OODoc::Text
 
@@ -104,7 +119,9 @@ and don't care with the presentation.
 =head2	OpenOffice::OODoc::Document
 
 This manual page describe some miscellaneous methods that deal simultaneously
-with text, presentation and/or images.
+with text, presentation and/or images. So, in order to discover the capabilities
+of a "Document" object (created with ooDocument), the user should use the Text,
+Image, Styles AND Document manual pages.
 
 =head2	OpenOffice::OODoc::Meta
 

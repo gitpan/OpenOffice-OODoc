@@ -60,14 +60,14 @@
 		and don't pollute the standard output
 	-result <file>
 	-output <file>
-		send the list of matchin files to the given file and not
+		send the list of matching files to the given file and not
 		to the standard output
 	-criteria <file>
 		get search criteria from a file (one per line); the loaded
 		search keywords may be combined with additional criteria
 		passed with the command line, if any.
 	-command <command> -exec <command>
-		execute a shell command for each matching_fileing file ; if the
+		execute a shell command for each matching file ; if the
 		command string contains "%f", this substring is replaced
 		with the name of the selected file ; if this option is
 		provided, the selection list is not echoed to the standard
@@ -75,7 +75,7 @@
 		command is echoed
 	-encoding <encoding>
 		selects the user's character set ; this option is mandatory
-		if one or more search criteria contains characters not
+		if one or more search criteria contain characters not
 		belonging to the default character set
 
 =cut

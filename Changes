@@ -1,3 +1,6 @@
+1.204	2004-09-07
+	- Fixed a MSWin32 issue that could cause failures in the ooCreateFile()
+	method (File.pm) - thanks to crazyinsomniac[at]yahoo.com
 1.203	2004-08-03
 	- Fixed a bug that prevented the user from using custom templates (File.pm)
 	- Removed Archive::Zip version control (due to a numbering anomaly in

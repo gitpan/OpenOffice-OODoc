@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : File.pm 1.106 2004-08-03 JMG$
+#	$Id : File.pm 1.107 2004-09-06 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -13,7 +13,7 @@
 
 package	OpenOffice::OODoc::File;
 use	5.006_001;
-our	$VERSION	= 1.106;
+our	$VERSION	= 1.107;
 use	Archive::Zip		qw ( :DEFAULT :CONSTANTS :ERROR_CODES );
 use	File::Temp;
 
@@ -139,6 +139,7 @@ sub	ooCreateFile
 			||
 		File::Basename::dirname($INC{"OpenOffice/OODoc/File.pm"}) .
 			'/templates';
+	$basepath =~ s/\\/\//g;
 	my $path	= $basepath . '/' . $opt{'class'};
 	unless (-d $path)
 		{
@@ -147,9 +148,10 @@ sub	ooCreateFile
 		return undef;
 		}
 	delete $opt{'class'};
-	my @files       = glob
-		("$path/mimetype $path/*.xml $path/*/*.xml $path/Pictures/*");
-	my $zipfile = Archive::Zip->new;
+        my $filter =
+                "$path/mimetype $path/*.xml $path/*/*.xml $path/Pictures/*";
+        my @files       = glob($filter);
+       	my $zipfile = Archive::Zip->new;
 	foreach my $file (@files)
 		{
 		next unless $file;

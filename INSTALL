@@ -1,4 +1,4 @@
-OpenOffice::OODoc installation (Aug 2004)
+OpenOffice::OODoc installation (Sep 2004)
 
 SYSTEM REQUIREMENTS
 
@@ -14,7 +14,7 @@ SYSTEM REQUIREMENTS
 	deployed Archive::Zip distributions, this version control caused
 	unnecessary installation failures.
 	
-TODO
+INSTALLATION
 
 	Uncompress the distribution archive, enter the OpenOffice-OODoc-x.xxx
 	directory and (as system administrator), type the following commands:
@@ -23,7 +23,17 @@ TODO
 		make test
 		make install
 
-	You will be warned about unsatisfied dependencies, if any.
+	For MSWin32, "make" can be replaced by "nmake". If the Microsoft NMAKE
+	utility is not present in your environment, you can get it at
+	http://download.microsoft.com/download/vc15/Patch/1.52/W95/EN-US/Nmake15.exe
+	
+	If Archive::Zip and XML::XPath are already installed, this CPAN
+	installation works without a C compiler, because OpenOffice::OODoc is
+	pure Perl. Otherwise, if these required modules are not installed and
+	if you don't have a C development environment, you should use another
+	distribution (such as the PPM one for ActivePerl, if available) instead,
+	knowing that the CPAN Archive::Zip and XML::XPath distributions can
+	indirectly bring a lot of C source code.
 
 	You will be prompted for the following parameters:
 	- the local character set (default = iso-8859-1);
@@ -34,7 +44,7 @@ TODO
 	Perl distribution, or any specific, user-defined file with the same
 	structure;
 	- the working directory for temporary files (by default, the working
-	directory is the current directory of each application).
+	directory is ".", i.e. the current directory of each application).
 
 	The interactivity can be avoided by the --noprompt option.
 	The parameters can be provided at the command line with (respectively)
