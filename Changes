@@ -1,3 +1,8 @@
+1.109	2004-07-08
+	- Removed redundant "use" statements in a test script
+	- Small documentation update; no change in the code
+1.108	2004-07-08
+	- Small documentation update; no change in the code
 1.107	2004-07-06
 	- Fixed 2 bugs in the setSpan() method (Text.pm)
 	- Fixed an encoding issue in a search/replace low level routine (XPath.pm)

@@ -14,7 +14,8 @@
 	oofilesearch -R "D:\Documents\*.sxw" openoffice desktop XML
 	
 	produces the list of the OOo-Writer documents present in the given
-	directory and its subdirectories
+	directory and its subdirectories, and containing the words
+	"openoffice", "desktop" AND "XML"
 	
 	oofilesearch -command "rm -f %f" "*.sxc *.sxw" lost dismiss cancel
 
@@ -25,13 +26,6 @@
 =head1	USAGE
 
 	oofilesearch [-options] <file filter> <keyword list>
-
-	oosearch "D:\Documents\*.sxw" openoffice desktop XML
-
-	Note:
-
-	The files filter may content one or more space-separated paths.
-	Each path may content jokers.
 
 =head1	DESCRIPTION
 

@@ -1,5 +1,5 @@
 #-----------------------------------------------------------------------------
-#	$Id : OODoc.pm 1.107 2004-07-06 JMG$
+#	$Id : OODoc.pm 1.109 2004-07-08 JMG$
 #-----------------------------------------------------------------------------
 
 use OpenOffice::OODoc::File		1.103;
@@ -10,7 +10,7 @@ use OpenOffice::OODoc::Document		1.006;
 
 package	OpenOffice::OODoc;
 use 5.008_000;
-our $VERSION				= 1.108;
+our $VERSION				= 1.109;
 
 require Exporter;
 our @ISA    = qw(Exporter);
