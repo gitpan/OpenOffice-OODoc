@@ -166,14 +166,14 @@ included in this page.
 
 =head1	AUTHOR/COPYRIGHT
 
-Copyright 2005 by Genicorp, S.A. (http://www.genicorp.com)
+Copyright 2004-2005 by Genicorp, S.A. (http://www.genicorp.com)
 
 Initial developer: Jean-Marie Gouarne (http://jean.marie.gouarne.online.fr)
 
 Initial English version of the reference manual
 by Graeme A. Hunter (graeme.hunter@zen.co.uk)
-	
-Licensing conditions:
+
+License:
 
 	- Genicorp General Public Licence v1.0
 	- GNU Lesser General Public License v2.1

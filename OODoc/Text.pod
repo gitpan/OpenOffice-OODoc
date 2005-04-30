@@ -774,6 +774,13 @@ which is one of the foundations of the OpenOffice.org format.
         document, logical name or element reference. The second argument is
         the row number in the table. Synonym: getTableRow.
 
+=head3	getRowCells(table, row)
+=head3	getRowCells(row)
+	
+	Returns the list of the cell elements corresponding to a given table row.
+	The row can be provided either by table ID and row number or by direct
+	row object.
+
 =head3	getSpanList()
 
         Returns a list of elements which correspond to texts which "stand
@@ -1598,14 +1605,14 @@ included in this page.
 
 =head1	AUTHOR/COPYRIGHT
 
-Copyright 2005 by Genicorp, S.A. (http://www.genicorp.com)
+Copyright 2004-2005 by Genicorp, S.A. (http://www.genicorp.com)
 
 Initial developer: Jean-Marie Gouarne (http://jean.marie.gouarne.online.fr)
 
 Initial English version of the reference manual
 by Graeme A. Hunter (graeme.hunter@zen.co.uk)
-	
-Licensing conditions:
+
+License:
 
 	- Genicorp General Public Licence v1.0
 	- GNU Lesser General Public License v2.1

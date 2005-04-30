@@ -122,7 +122,7 @@ to the "[nn]" note citations included in the other documents.
         selectElementByAttribute and select the 'text:level' attribute (see
         OODoc::XPath).
 
-        [25] See footnote 41.
+        [25] See note 41.
 
         [26] Footnotes are physically inserted into the text at the place
         where they are called, just after the link element indicating the
@@ -170,18 +170,14 @@ to the "[nn]" note citations included in the other documents.
 
 =head1	AUTHOR/COPYRIGHT
 
-Copyright 2004 by Genicorp, S.A. (http://www.genicorp.com)
+Copyright 2004-2005 by Genicorp, S.A. (http://www.genicorp.com)
 
 Initial developer: Jean-Marie Gouarne (http://jean.marie.gouarne.online.fr)
 
 Initial English version of the reference manual
 by Graeme A. Hunter (graeme.hunter@zen.co.uk)
 
-These notes are extracted from the initial reference manual, that is
-available in SXW or PDF format from the project homepage
-(http://www.genicorp.com/devel/oodoc)
-	
-Licensing conditions:
+License:
 
 	- Genicorp General Public Licence v1.0
 	- GNU Lesser General Public License v2.1

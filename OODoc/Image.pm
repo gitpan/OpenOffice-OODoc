@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Image.pm 1.013 2005-02-04 JMG$
+#	$Id : Image.pm 1.014 2005-04-29 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -16,7 +16,7 @@ use	5.006_001;
 use	OpenOffice::OODoc::XPath	1.200;
 use	File::Basename;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 1.013;
+our	$VERSION	= 1.014;
 
 #-----------------------------------------------------------------------------
 # default attributes for image style
@@ -608,9 +608,9 @@ sub	exportImages
 	my $count	= 0;
 
 	my @to_export	= $filter ?
-				$self->selectImageElementsByName($filter, @_)
+				$self->selectImageElementsByName($filter)
 				:
-				$self->getImageElementList(@_);
+				$self->getImageElementList();
 
 	IMAGE_LOOP: foreach my $image (@to_export)
 		{

@@ -401,7 +401,7 @@ Initial developer: Jean-Marie Gouarne (http://jean.marie.gouarne.online.fr)
 Initial English version of the reference manual by Graeme A. Hunter
 (graeme.hunter@zen.co.uk). 
 
-Licensing conditions:
+License:
 
 	- Licence Publique Generale Genicorp v1.0
 	- GNU Lesser General Public License v2.1

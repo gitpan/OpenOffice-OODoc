@@ -9,9 +9,12 @@ some basic features of the OODoc modules. The full reference manual
 is a set of OpenOffice::OODoc::xxx manual pages (where xxx is the
 codename of a particular submodule).
 
-There is a one-file documentation in OpenOffice.org (SXW) or PDF format, but
-it's not maintained in sync with the distribution, so it's largely outdated.
-However, it's available at the project page (http:://www.genicorp.fr/devel/oodoc) 
+Just before reading this intro, it's a good idea to have a look at the
+short (and commented) examples provided in the distribution.
+
+There is an alternative intro for french-reading users. It's available in
+PDF (http://jean.marie.gouarne.online.fr/doc/oodoc_guide.pdf) or SXW
+format (http://jean.marie.gouarne.online.fr/doc/oodoc_guide.sxw).
 
 =head1	Overview
 
@@ -60,15 +63,19 @@ operations with document elements such as:
 - metadata (i.e. title, subject, and other general properties).
 	
 Every document processing begins by the initialization of an object
-abstraction of the document, using a constructor like:
+abstraction of the document. The most usual constructor for this object is
+the ooDocument() function. When an object is initialized using this function,
+it brings a lot of methods allowing allowing the application to retrieve,
+read, update, delete or create almost every content and style element.
+Another constructor, ooMeta() is available in order to allow metadata
+processing (see below). These (and others) ooXxx() methods are shortcuts
+for
 
-	OpenOffice::OODoc::object->new(options)
+	OpenOffice::OODoc::Xxx->new(options)
 
-where "object" is generally "Document", for full access to the content, but
+where "Xxx" is generally "Document", for full access to the content, but
 may be another specialized object such as "Manifest", "Styles", "Meta", etc.
-The long "OpenOffice::OODoc::...->new()" syntax can (and should) be avoided
-thanks to some predefined shortcut like "ooObject()". For example you can
-write "ooDocument()" instead of "OpenOffice::OODoc::Document->new()".
+The long "OpenOffice::OODoc::...->new()" syntax can (and should) be avoided.
 
 A document object initialization requires one or more options. The most
 usual option is the file name, as in the first example. By default, this
@@ -87,6 +94,8 @@ This instruction creates a new file containing a text (i.e. an
 OpenOffice.org Writer) document (and replaces any previously existing file
 with the same name). However, the new file will be really created by the
 $document->save instruction, not by the object initialization.
+
+
 
 The OODoc toolbox is organized in 3 logical layers. It's not necessary for
 you to remember the (annoying) details given in the next few paragraphs,
@@ -123,7 +132,7 @@ For an example, if you want to get access to the content of any OO file
 (say 'foo.sxw'), you have to write something like:
 
 	use OpenOffice::OODoc;
-	my $doc = OpenOffice::OODoc::XPath->new
+	my $doc = ooXPath
 			(
 			file	=> 'foo.sxw',
 			member	=> 'content'
@@ -137,8 +146,13 @@ any content through simple methods like:
 
 The last instruction outputs the content of the 3rd paragraph as flat,
 editable text (because '//text:p' is the logical path to any paragraph,
-and the paragraphs are numbered from zero). You could also put your own
-text in the same paragraph with:
+and the paragraphs are numbered from zero). But don't worry about this
+XPath syntax, that is shown here in order to show the basic logic of the API.
+You don't need to remember the path of such usual objects as paragraphs,
+headers, lists, images, ..., and other well known document components, because
+the 3rd layer (see below) provides easy-to-use, predefined accessors.
+
+You could also put your own text in the same paragraph with:
 
 	$doc->setText('//text:p', 2, 'My text');
 
@@ -149,12 +163,8 @@ have just to do a
 
 	$doc->save;
 
-In order to avoid obscure coding for Perl/object beginners, the
-OpenOffice::OODoc::XPath->new initialization call can be replaced by
-"ooXPath", with the same arguments.
-
-OpenOffice::OODoc::XPath allows some quick element manipulation and exchange, and
-can operate on several documents in the same session. For example:
+OpenOffice::OODoc::XPath allows some quick element manipulation and exchange,
+and can operate on several documents in the same session. For example:
 
 	my $doc1 = ooXPath(file => 'file1.sxw', member => 'content');
 	my $doc2 = ooXPath(file => 'file2.sxw', member => 'content');
@@ -850,7 +860,7 @@ Copyright 2005 by Genicorp, S.A. (http://www.genicorp.com)
 
 Initial developer : Jean-Marie Gouarne (http://jean.marie.gouarne.online.fr)
 
-Licensing conditions:
+License:
 
 	- Licence Publique Generale Genicorp v1.0
 	- GNU Lesser General Public License v2.1
