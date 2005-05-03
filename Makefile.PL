@@ -110,7 +110,7 @@ WriteMakefile
     	'NAME'		=> 'OpenOffice::OODoc',
     	'VERSION_FROM'	=> 'OODoc.pm',
 	'ABSTRACT'	=> 'A library for direct OpenOffice.org document processing',
-    	'AUTHOR'	=> 'Jean-Marie Gouarné, Genicorp S.A.',
+    	'AUTHOR'	=> 'Jean-Marie Gouarné',
     	'PREREQ_PM'	=>
     		{
 		'XML::Twig'		=> '3.15',

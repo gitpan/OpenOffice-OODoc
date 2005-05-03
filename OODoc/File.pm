@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : File.pm 1.108 2005-03-31 JMG$
+#	$Id : File.pm 1.109 2005-05-03 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -13,7 +13,7 @@
 
 package	OpenOffice::OODoc::File;
 use	5.006_001;
-our	$VERSION	= 1.108;
+our	$VERSION	= 1.109;
 use	Archive::Zip	1.06	qw ( :DEFAULT :CONSTANTS :ERROR_CODES );
 use	File::Temp;
 
@@ -34,6 +34,16 @@ our	%OOTYPE				=
 		drawing		=> 'draw',
 		);
 
+our	@ARCHIVE_MEMBERS		=
+	(
+	'mimetype',
+	'content.xml',
+	'meta.xml',
+	'styles.xml',
+	'settings.xml',
+	'META-INF/manifest.xml'
+	);
+		
 #-----------------------------------------------------------------------------
 # returns the mimetype string according to a document class
 
@@ -44,6 +54,21 @@ sub	mime_type
 	return $MIMETYPE_BASE . $OOTYPE{$class};
 	}
 		
+#-----------------------------------------------------------------------------
+# parse the manifest.xml file to get the content of an OOo archive
+
+sub	get_template_manifest
+	{
+	my $path	= shift;
+	my @list	= ();
+	foreach my $entry (@OpenOffice::OODoc::File::ARCHIVE_MEMBERS)
+		{
+		my $fullname = $path . '/' . $entry;
+		push @list, $fullname;
+		}
+	return @list;
+	}
+
 #-----------------------------------------------------------------------------
 # error handler for low-level zipfile errors (to be customized if needed)
 
@@ -60,6 +85,11 @@ sub	templatePath
 	my $newpath	= shift;
 	$TEMPLATE_PATH = $newpath if defined $newpath;
 	return $TEMPLATE_PATH;
+	}
+
+sub	ooTemplatePath
+	{
+	return OpenOffice::OODoc::File::templatePath(@_);
 	}
 	
 #-----------------------------------------------------------------------------
@@ -97,7 +127,7 @@ sub	store_member
 	unless ($m)
 		{
 		warn	"[" . __PACKAGE__ . "::store_member] "	.
-			"Member storage failure\n";
+			"Member storage failure\n[" . $opt{'file'} . "]\n";
 		return undef;
 		}
 	unless ($opt{'compress'})
@@ -127,7 +157,7 @@ sub	ooCreateFile
 	
 	unless (checkWorkingDirectory($opt{'work_dir'}))
 		{
-                warn    "[" . __PACKAGE__ . "::createOOFile] "          .
+                warn    "[" . __PACKAGE__ . "::ooCreateFile] "          .
 			"Write operation not allowed - "        .
 			"Working directory missing or non writable\n";
 		return undef;
@@ -143,14 +173,12 @@ sub	ooCreateFile
 	my $path	= $basepath . '/' . $opt{'class'};
 	unless (-d $path)
 		{
-                warn    "[" . __PACKAGE__ . "::createOOFile] "          .
+                warn    "[" . __PACKAGE__ . "::ooCreateFile] "          .
 			"No valid template access path\n";
 		return undef;
 		}
 	delete $opt{'class'};
-        my $filter =
-                "$path/mimetype $path/*.xml $path/*/*.xml $path/Pictures/*";
-        my @files       = glob($filter);
+	my @files = OpenOffice::OODoc::File::get_template_manifest($path);
        	my $zipfile = Archive::Zip->new;
 	foreach my $file (@files)
 		{

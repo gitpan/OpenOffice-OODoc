@@ -1,3 +1,6 @@
+1.309	2005-05-03
+	- Fixed a bug that prevented new OOo file creation when the installation
+	full path included spaces - thanks to imacat[at]mail.imacat.idv.tw.
 1.308	2005-04-30
 	- Bug fix in Image.pm (exportImages)
 	- Documentation update

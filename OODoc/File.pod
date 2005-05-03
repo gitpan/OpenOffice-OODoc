@@ -130,6 +130,29 @@ not necessarily in OpenOffice.org format.
         OODoc::File objects. It does not have to be called directly by
         highest-level programs which only use OODoc::XPath objects.
 
+=head3	ooTemplatePath([path])
+
+	Class function (not to be used as a method).
+
+	Accessor to get/set the path for a user-defined set of XML templates,
+	to be used in case of new document creation. This path is empty by
+	default. Without an explicit template path, the default XML templates
+	provided with the OpenOffice::OODoc distribution are automatically
+	selected.
+
+	The given path, if any, must correspond to a directory with the
+	"text", "presentation", "spreadsheet" and "drawing" subdirectories,
+	each one containing the appropriates XML templates for the
+	corresponding document class and their associated non-XML data, if
+	any (ex: images). These templates can be produced, for example, by
+	uncompressing ordinary OpenOffice.org files.
+
+	The template directory must content "mimetype", "content.xml",
+	"styles.xml", "meta.xml", "settings.xml" and "META-INF/manifest.xml".
+	It's possible to change this requirement (for special uses and at the
+	user's risk) by loading another member list in the appropriate table,
+	i.e. @OpenOffice::OODoc::File::ARCHIVE_MEMBERS.
+
 =head3	raw_delete(member)
 
         Orders the deletion of any OpenOffice.org file member.
@@ -268,23 +291,6 @@ not necessarily in OpenOffice.org format.
         unpredictable and, in any case, any document updates it could have
         made are lost.
 
-=head3	templatePath([path])
-
-	Class function (not to be used as a method).
-
-	Accessor to get/set the path for a user-defined set of XML templates,
-	to be used in case of new document creation. This path is empty by
-	default. Without an explicit template path, the default XML templates
-	provided with the OpenOffice::OODoc distribution are automatically
-	selected.
-
-	The given path, if any, must correspond to a directory with the
-	"text", "presentation", "spreadsheet" and "drawing" subdirectories,
-	each one containing the appropriates XML templates for the
-	corresponding document class and their associated non-XML data, if
-	any (ex: images). These templates can be produced, for example, by
-	uncompressing ordinary OpenOffice.org files.
-
 =head2	Properties
 
         No class variables are exported.
@@ -297,7 +303,10 @@ not necessarily in OpenOffice.org format.
 
 	The $OpenOffice::OODoc::File::TEMPLATE_PATH, empty by default, can
 	contain an alternative path for document generation template files;
-	it can be set with the templatePath() function.
+	it can be set with the ooTemplatePath() function.
+
+	The @OpenOffice::OODoc::File::ARCHIVE_MEMBERS contains the list of the
+	template files needed to create a new file.
 
         Instance hash variables are:
 
