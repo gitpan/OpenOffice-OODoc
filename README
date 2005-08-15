@@ -1,7 +1,7 @@
 ------------------------------------------------------------------------
 
 OpenOffice::OODoc - Open Office Document Connector
-(http://search.cpan.org/dist/OpenOffice-OODoc
+(http://search.cpan.org/dist/OpenOffice-OODoc)
 
 -------------------------------------------------------------------------
 
@@ -13,16 +13,22 @@ link:
 
 http://search.cpan.org/dist/OpenOffice-OODoc/OODoc/Intro.pod
 
+There is an alternative intro for french-reading users. It's available in
+PDF (http://jean.marie.gouarne.online.fr/doc/oodoc_guide.pdf) or SXW
+format (http://jean.marie.gouarne.online.fr/doc/oodoc_guide.sxw).
 
 See INSTALL for system requirements and installation instructions.
 
+The present version supports both the OpenOffice.org 1.0 document format
+and the OASIS Open Document Format.
+
+-------------------------------------------------------------------------
 
 This software is free software. For more information about the licence,
 see LICENCE.EN (English) or LICENCE.FR (French).
 
 Comments are welcome. They should be sent to
-	oodoc[at]genicorp.fr
-or
+
 	jmgdoc[at]cpan.org
 
 -------------------------------------------------------------------------

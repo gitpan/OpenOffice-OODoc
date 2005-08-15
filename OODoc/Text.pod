@@ -8,10 +8,25 @@ This man chapter describes the text-oriented methods of OpenOffice::OODoc,
 implemented by the OpenOffice::OODoc::Text class, and inherited by the
 OpenOffice::OODoc::Document class.
 
+This class should not be explictly used in an ordinary application, because
+all its features are available in the OpenOffice::OODoc::Document class, in
+combination with other features. Practically, the present manual is provided
+to describe the text-oriented features of OpenOffice::OODoc::Document (knowing
+that these features are technically supported by the OpenOffice::OODoc::Text
+component of the API).
+
+These features are text-oriented, but can be used against any class document,
+such as spreadsheets or presentations as well as text documents.
+
 The OpenOffice::OODoc::Text class is a specialist derivative of
 OpenOffice::OODoc::XPath for XML elements which describe the text content
 of OpenOffice.org documents. Here, "text content" means containers that can
 host text content (i.e. tables, lists...) as well as flat text.
+
+Knowing that the "styles.xml" member of an OpenOffice.org file can contain
+text (because some style definitions, such as page headers or footers, can
+contain text), the presently described features can be used against this
+member as well as the "content.xml" member.
 
 This module Should be used with OpenOffice::OODoc::Styles, via the
 OpenOffice::OODoc::Document class, if the application has to handle detailed
@@ -141,8 +156,10 @@ which is one of the foundations of the OpenOffice.org format.
         Creates a new (empty) list and appends it to the end of the
         document.
 
-        An unordered list is the default. If the 'type' option is given with
-        the value 'ordered', then an ordered list is created.
+	In OpenOffice.org 1 documents, an unordered list is the default,
+        and if the 'type' option is given with the value 'ordered', then an
+	ordered list is created. In Open Documents, the 'type' option is
+	ignored because there are generic lists only.
 
         The 'style' options controls the list's style (as opposed to each
         item's style). If absent, the list takes the default paragraph style
@@ -718,13 +735,28 @@ which is one of the foundations of the OpenOffice.org format.
 
         Returns a list of elements which represent items of an ordered or
         unordered list. The argument is a "list" element (obtained
-        previously e.g. using getOrderedList or getUnorderedList). Each
-        element in this list can be used with item handling methods.
+        previously e.g. using getItemList, getOrderedList or
+	getUnorderedList). Each element in this list can be used with item
+	handling methods.
+
+=head3	getItemList(n)
+
+	Returns the element which represents the nth+1 ordered list in a
+	document if found.
+
+	WARNING: In the OpenOffice.org 1 documents, only "ordered lists" and
+	"unordered lists" can be present. In the Open Document format, there
+	are generic list objects only, and each one is made "ordered" or
+	"unordered" by its style. So, this method will never return anything
+	from an OOo 1 document.
 
 =head3	getOrderedList(n)
 
         Returns the element which represents the nth+1 ordered list in a
         document if found.
+
+	WARNING: Ordered lists are possible in the OpenOffice.org 1 format
+	only. Don't use it against Open Documents.
 
 =head3	getParagraph(n)
 
@@ -743,7 +775,7 @@ which is one of the foundations of the OpenOffice.org format.
         read/write operations involving attributes and content can use this
         element.
 
-=head3	getParagraphList
+=head3	getParagraphList()
 
         Returns a list of paragraph elements (i.e. 'text:p' elements in the
         document body).
@@ -954,6 +986,9 @@ which is one of the foundations of the OpenOffice.org format.
 
         Returns the element which represents the nth+1 unordered list in a
         document, if found.
+
+	WARNING: Ordered lists are possible in the OpenOffice.org 1 format
+	only. Don't use it against Open Documents.
 
 =head3	getUserFieldElement(name)
 

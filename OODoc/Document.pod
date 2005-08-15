@@ -7,28 +7,30 @@ OpenOffice::OODoc::Document - Top level component for content processing
 This module defines the top level Document class, allowing any kind
 of content and presentation processing.
 
-This module is designed simply to create objects which include all
-the functionality of OODoc::Text, OODoc::Image and OODoc::Styles
-(which do not need to be called directly by applications).
+The most usual instruction to get access to any member of a document, with
+the exception if the metadata (meta.xml) should be something like:
 
-The documentation provided for the three constituent modules and, of
-course, OODoc::XPath which is the common base, mostly covers this
-module. So, in order to get a detailed documentation for each kind
-of functionality, see the following man pages:
+	my $doc = ooDocument([options]);
+
+This constructor, if successful, returns an object that can be used
+(according to its "member" option) to process styles, images and text.
+
+This module is designed simply to create objects which include all
+the functionality of OODoc::Text, OODoc::Image, OODoc::Styles and
+OODoc::XPath (which do not need to be called directly by applications).
+
+While OODoc::Document inherits all the methods and properties of these
+classes, its detailed documentation in essentially provided in
+the following manual pages: 
 
 	OpenOffice::OODoc::Text		-> text content
 	OpenOffice::OODoc::Styles	-> style & layout
 	OpenOffice::OODoc::Image	-> graphic objects
 	OpenOffice::OODoc::XPath	-> low-level API
 
-Remember that any OpenOffice::OODoc::Document object (created from
-a ooDocument() call) inherits all the methods and properties of the
-classes listed above (and brings only a few additional methods by its
-own).
-
-OODoc::Document itself only provides those methods (there are
-currently very few) which cover the need to combine at least two or
-three constituent modules.
+The OODoc::Document class itself only provides those methods (there are
+very few) which cover the need to combine at least two or three constituent
+modules. These additional methods are described in the present manual page.
 
 =head2	Methods
 
@@ -38,9 +40,9 @@ three constituent modules.
 
         See OpenOffice::OODoc::XPath->new.
 
-        Options are the same as for the OODoc::XPath constructor. If no
-        "member" parameter is given, the member selected by default is
-        "content.xml".
+        Options are the same as for the OODoc::XPath constructor (and for its
+	Text, Styles and Image derivatives). If no "member" parameter is
+	given, the member selected by default is "content.xml".
 
 =head3	createImageStyle(name [, options])
 

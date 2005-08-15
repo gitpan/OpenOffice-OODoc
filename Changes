@@ -1,3 +1,18 @@
+2.003	2005-08-15
+	- Table cell value & style processing improvements for ODF
+	- Fixed a bug and improved page style vocabulary in Styles.pm
+	- Improved support for ODF in Styles.pm
+	- Bug fix in XPath.pm (getAttributes)
+	- Doc update
+	- First CPAN version supporting ODF
+2.002	2005-07-07 [developer release]
+	- Bug fix in XPath.pm (replicateElement)
+2.001	2005-06-28 [developer release]
+	- Bug fixes (item lists in OD)
+	- Doc update, mainly about OOo/OD functional differences
+2.000	2005-05-19 [developer release]
+	- OASIS Open Document (OD) support
+	- XML template management change
 1.309	2005-05-03
 	- Fixed a bug that prevented new OOo file creation when the installation
 	full path included spaces - thanks to imacat[at]mail.imacat.idv.tw.

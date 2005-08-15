@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : File.pm 1.109 2005-05-03 JMG$
+#	$Id : File.pm 2.109 2005-05-19 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -13,13 +13,14 @@
 
 package	OpenOffice::OODoc::File;
 use	5.006_001;
-our	$VERSION	= 1.109;
+our	$VERSION	= 2.109;
 use	Archive::Zip	1.06	qw ( :DEFAULT :CONSTANTS :ERROR_CODES );
 use	File::Temp;
 
 #-----------------------------------------------------------------------------
 # some defaults
 
+our	$DEFAULT_OFFICE_FORMAT		= 1;	# OpenOffice.org 1 format
 our	$DEFAULT_COMPRESSION_METHOD	= COMPRESSION_DEFLATED;
 our	$DEFAULT_COMPRESSION_LEVEL	= COMPRESSION_LEVEL_BEST_COMPRESSION;
 our	$DEFAULT_EXPORT_PATH		= './';
@@ -33,16 +34,6 @@ our	%OOTYPE				=
 		presentation	=> 'impress',
 		drawing		=> 'draw',
 		);
-
-our	@ARCHIVE_MEMBERS		=
-	(
-	'mimetype',
-	'content.xml',
-	'meta.xml',
-	'styles.xml',
-	'settings.xml',
-	'META-INF/manifest.xml'
-	);
 		
 #-----------------------------------------------------------------------------
 # returns the mimetype string according to a document class
@@ -55,18 +46,22 @@ sub	mime_type
 	}
 		
 #-----------------------------------------------------------------------------
-# parse the manifest.xml file to get the content of an OOo archive
+# returns the template member list
+
+our	@_archive_members;
+
+sub	_fill_manifest
+	{
+	push @_archive_members, $File::Find::name;
+	}
 
 sub	get_template_manifest
 	{
+	require File::Find;
 	my $path	= shift;
-	my @list	= ();
-	foreach my $entry (@OpenOffice::OODoc::File::ARCHIVE_MEMBERS)
-		{
-		my $fullname = $path . '/' . $entry;
-		push @list, $fullname;
-		}
-	return @list;
+	@_archive_members = ();
+	File::Find::find(\&_fill_manifest, $path);
+	return @_archive_members;
 	}
 
 #-----------------------------------------------------------------------------
@@ -163,12 +158,21 @@ sub	ooCreateFile
 		return undef;
 		}
 
-	require File::Basename;
-	my $basepath	=
-		$opt{'template_path'}
-			||
-		File::Basename::dirname($INC{"OpenOffice/OODoc/File.pm"}) .
-			'/templates';
+	my $basepath = undef;
+	if ($opt{'template_path'})
+		{
+		$basepath = $opt{'template_path'};
+		}
+	else
+		{
+		require File::Basename;
+		$basepath = 
+			File::Basename::dirname
+				($INC{"OpenOffice/OODoc/File.pm"}) .
+			'/templates/';
+		$basepath .= $opt{'opendocument'} ?
+				'opendocument' : 'ooffice';
+		}
 	$basepath =~ s/\\/\//g;
 	my $path	= $basepath . '/' . $opt{'class'};
 	unless (-d $path)
@@ -182,7 +186,7 @@ sub	ooCreateFile
        	my $zipfile = Archive::Zip->new;
 	foreach my $file (@files)
 		{
-		next unless $file;
+		next unless ($file && -f $file);
 		my $member = $file; $member =~ s/\Q$path\///;
 		next unless $member;
 		store_member
@@ -227,7 +231,7 @@ sub	CtrlMemberName
 			}
 		}
 
-	foreach my $m ( @{ $self->{'members'} } )
+	foreach $m ( @{ $self->{'members'} } )
 		{
 		return $member if ($member eq $m);
 		}
@@ -375,7 +379,28 @@ sub	new
 		'raw_members'		=> [],
 		@_
 		};
-	
+
+	my $od = lc $self->{'opendocument'};
+	unless ($od)
+		{
+		if ($OpenOffice::OODoc::File::DEFAULT_OFFICE_FORMAT == 2)
+			{ $self->{'opendocument'} = 1; }
+		}
+	elsif (($od eq '1') || ($od eq 'on') || ($od eq 'true'))
+		{
+		$self->{'opendocument'} = 1;
+		}
+	elsif (($od eq '0') || ($od eq 'off') || ($od eq 'false'))
+		{
+		delete $self->{'opendocument'};
+		}
+	else
+		{
+		warn "[" . __PACKAGE__ . "::new] Wrong 'opendocument' option\n";
+		return undef;
+		}
+		
+
 	$self->{'source_file'}	= $sourcefile;
 
 	unless	($sourcefile)
@@ -407,7 +432,8 @@ sub	new
 				(
 				class		=> $self->{'create'},
 				work_dir	=> $self->{'work_dir'},
-				template_path	=> $self->{'template_path'}
+				template_path	=> $self->{'template_path'},
+				opendocument	=> $self->{'opendocument'}
 				);
 		unless ($self->{'archive'} && ref $self->{'archive'})
 			{

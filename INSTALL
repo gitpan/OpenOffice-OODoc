@@ -1,4 +1,4 @@
-OpenOffice::OODoc installation (Mar 2005)
+OpenOffice::OODoc installation (Aug 2005)
 
 SYSTEM REQUIREMENTS
 
@@ -36,21 +36,24 @@ INSTALLATION
 	documents (this file can be the generally available "rgb.txt" file
 	of the X-Window system, or the "rgb.txt" provided with the Color::Rgb
 	Perl distribution, or any specific, user-defined file with the same
-	structure;
+	structure);
 	- the working directory for temporary files (by default, the working
-	directory is ".", i.e. the current directory of each application).
+	directory is ".", i.e. the current directory of each application);
+	- the preferred file format, to be used when you create a new
+	document from scratch (answer "1" for OpenOffice.org, "2" for OASIS
+	Open Document, default is "1").
 
 	The interactivity can be avoided by the --noprompt option.
 	The parameters can be provided at the command line with (respectively)
-	the --encoding <encoding>, --colormap <file>  and --workdir <path>
-	options. Example:
+	the --encoding <encoding>, --colormap <file>, --workdir <path> and
+	--format <number> options. Example:
 	
 	perl Makefile.PL --noprompt --workdir "C:\Temp" --encoding "cp1252"
 
 	These options define installation-level default values only; each of
 	these values can be overridden by the applications (thanks, for
 	example, to the ooLocalEncoding(), ooWorkingDirectory() and
-	ooLoadColorMap() functions. The installation-level options are stored
+	ooLoadColorMap() functions). The installation-level options are stored
 	in a XML file (OODoc/config.xml) below the installation directory.
 	This file can be manually edited at any time after the installation
 	in order to change any parameter.
@@ -58,5 +61,6 @@ INSTALLATION
 	If the installation is successful, the test procedure generates an
 	OpenOffice.org document, writes some content in it, and checks the
 	result. You can later open this document with OpenOffice.org Writer
-	or a compatible software; the file is named 'ootest.sxw' and resides
+	or a compatible software; the file is named 'ootest.sxw' or
+	'ootest.odt' (according to your default file format) and resides
 	in the working directory of the installation.

@@ -1,19 +1,19 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Document.pm 1.019 2005-04-30 JMG$
+#	$Id : Document.pm 2.019 2005-05-18 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
-#	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
-#	Licensing conditions:
+#	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
+#	License:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
 #	Contact: oodoc@genicorp.com
 #
 #-----------------------------------------------------------------------------
 
-use OpenOffice::OODoc::Text	1.204;
-use OpenOffice::OODoc::Image	1.014;
-use OpenOffice::OODoc::Styles	1.009;
+use OpenOffice::OODoc::Text	2.204;
+use OpenOffice::OODoc::Image	2.014;
+use OpenOffice::OODoc::Styles	2.009;
 
 package OpenOffice::OODoc::Document;
 our @ISA	= qw	(
@@ -21,7 +21,7 @@ our @ISA	= qw	(
 			OpenOffice::OODoc::Image
 			OpenOffice::OODoc::Styles
 			);
-our $VERSION	= 1.019;
+our $VERSION	= 2.019;
 
 #-----------------------------------------------------------------------------
 # constructor
@@ -53,7 +53,7 @@ sub	createImageStyle
 			%OpenOffice::OODoc::Image::DEFAULT_IMAGE_STYLE,
 			@_
 			);
-	
+	$opt{'family'} = $self->{'opendocument'} ? 'graphic' : 'graphics';
 	return $self->createStyle($stylename, %opt);
 	}
 

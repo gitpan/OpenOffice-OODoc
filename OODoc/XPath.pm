@@ -1,10 +1,10 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 1.202 2005-02-17 JMG$
+#	$Id : XPath.pm 2.203 2005-08-13 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
-#	Licensing conditions:
+#	License:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
 #	Contact: oodoc@genicorp.com
@@ -13,7 +13,7 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 1.202;
+our	$VERSION	= 2.203;
 use	XML::Twig	3.15;
 use	Encode;
 
@@ -406,8 +406,19 @@ sub	_search_content
 	}
 
 #------------------------------------------------------------------------------
-# document class check
+# is this an OASIS Open Document or an OpenOffice 1.x Document ?
 
+sub	isOpenDocument
+	{
+	my $self	= shift;
+	my $root	= $self->getRootElement;
+	my $ns		= $root->att('xmlns:office');
+	return $ns && ($ns =~ /opendocument/) ? 1 : undef;
+	}
+
+#------------------------------------------------------------------------------
+# document class check
+	
 sub	isContent
 	{
 	my $self	= shift;
@@ -450,10 +461,12 @@ sub	new
 	my $class	= ref($caller) || $caller;
 	my $self	=
 		{
-		body_path		=> '//office:body',
 		auto_style_path		=> '//office:automatic-styles',
 		master_style_path	=> '//office:master-styles',
 		named_style_path	=> '//office:styles',
+		image_container		=> 'draw:image',
+		image_xpath		=> '//draw:image',
+		image_fpath		=> '#Pictures/',
 		local_encoding		=>
 				$OpenOffice::OODoc::XPath::LOCAL_CHARSET,
 		@_
@@ -521,6 +534,7 @@ sub	new
 				(
 				$self->{'file'},
 				create		=> $self->{'create'},
+				opendocument	=> $self->{'opendocument'},
 				template_path	=> $self->{'template_path'}
 				);
 			$self->{'member'} = 'content'
@@ -546,7 +560,16 @@ sub	new
 		return undef;
 		}
 	$self->{'twig'} = $twig;
-	return bless $self, $class;
+	bless $self, $class;
+	$self->{'opendocument'} = $self->isOpenDocument;
+	if ($self->{'opendocument'})
+		{
+		$self->{'image_container'}	= 'draw:frame';
+		$self->{'image_xpath'}		= '//draw:frame';
+		$self->{'image_fpath'}		= 'Pictures/';
+		}
+	$self->{'body'} = $self->getBody;
+	return $self;
 	}
 
 #------------------------------------------------------------------------------
@@ -558,6 +581,9 @@ sub	DESTROY
 	delete $self->{'file'};
 	delete $self->{'xpath'};
 	delete $self->{'xml'};
+	delete $self->{'body'};
+	delete $self->{'content_class'};
+	$self->{'twig'}->dispose	if $self->{'twig'};
 	delete $self->{'twig'};
 	delete $self->{'archive'};
 	delete $self->{'twig_options'};
@@ -747,12 +773,15 @@ sub	getRootElement
 sub	contentClass
 	{
 	my $self	= shift;
-	my $class	= shift;
 
-	my $element = $self->getRootElement;
-	return undef unless $element;
-	$self->setAttribute($element, 'office:class', $class) if $class;
-	return $self->getAttribute($element, 'office:class') || '';
+	my $content_class	=
+		$self->getRootElement->getAttribute('office:class');
+	return $content_class if $content_class;
+
+	my $body = $self->getBody	or return undef;
+	my $name = $body->name		or return undef;
+	$name =~ /(.*):(.*)/;
+	return $2;
 	}
 
 #------------------------------------------------------------------------------
@@ -792,10 +821,28 @@ sub	getBody
 	{
 	my $self	= shift;
 
-	return	$self->getRootElement->selectChildElement
+	return $self->{'body'} if $self->{'body'};
+
+	if ($self->{'body_path'})
+		{
+		return $self->getElement($self->{'body_path'}, 0);
+		}
+	my $office_body = $self->getElement('//office:body', 0);
+	if ($office_body)
+		{
+		return $self->{'opendocument'} ?
+		    $office_body->selectChildElement
+			('office:(text|spreadsheet|presentation|drawing)')
+			:
+		    $office_body;
+		}
+	else
+		{
+		return	$self->getRootElement->selectChildElement
 				(
 				'office:(body|meta|master-styles|settings)'
 				);
+		}
 	}
 
 #------------------------------------------------------------------------------
@@ -1459,7 +1506,8 @@ sub	getAttributes
 	return undef	unless $path;
 
 	my %attributes	= ();
-	my %atts	= %{$node->atts(@_)};
+	my $aa		= $node->atts(@_);
+	my %atts	= %{$aa} if $aa;
 	foreach my $a (keys %atts)
 		{
 		$attributes{$a}	= $self->outputTextConversion($atts{$a});
@@ -1581,7 +1629,7 @@ sub	replicateElement
 	$position	= 'end'	unless $position;
 
 	my $element		= $proto->copy;
-	$element->set_atts($options => 'attribute');
+	$self->setAttributes($element, %{$options{'attribute'}});
 
 	if	(ref $position)
 		{
@@ -1744,6 +1792,7 @@ sub	appendElement
 		}
 	$element->paste_last_child($parent);
 	$self->setAttributes($element, %{$opt{'attribute'}});
+
 	return $element;
 	}
 

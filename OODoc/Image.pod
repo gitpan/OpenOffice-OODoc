@@ -10,17 +10,23 @@ objects contained in documents. It mainly allows you to modify the
 size and position of an image and exchange its content outside the
 document.
 
-It must be used in conjunction with OpenOffice::OODoc::Styles (via
-OpenOffice::OODoc::Document) if the application must also manipulate
-the numerous graphics parameters supported by OpenOffice.org. These
-parameters are described in graphics styles and not directly in the
-image elements themselves.
+This class should not be explictly used in an ordinary application, because
+all its features are available in the OpenOffice::OODoc::Document class, in
+combination with other features. Practically, the present manual is provided
+to describe the image-container processing features of
+OpenOffice::OODoc::Document (knowing that these features are technically
+supported by the OpenOffice::OODoc::Image component of the API).
 
-It can equally be used with images contained in style sheets
-(headers, footers) as with images contained in the body of a
-document. It can therefore be associated just as well with a
-"styles.xml" member as with a "content.xml" member of an
-OpenOffice.org file.
+Knowing that an image is displayed or printed according to a style,
+the OpenOffice::OODoc::Image features should be used in conjunction with
+the OpenOffice::OODoc::Styles ones. The OpenOffice::OODoc::Document class
+allows the user to invoke text-, style- and image-focused methods from
+the same object.
+
+All the methods described here can equally be used with images contained in
+style sheets (headers, footers) as with images contained in the body of a
+document. It can therefore be associated just as well with a "styles.xml"
+member as with a "content.xml" member of an OpenOffice.org file.
 
 This class works with all types of document (text, presentation,
 etc.).

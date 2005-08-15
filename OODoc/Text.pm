@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 1.204 2005-03-16 JMG$
+#	$Id : Text.pm 2.205 2005-08-14 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -13,9 +13,9 @@
 
 package OpenOffice::OODoc::Text;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	1.202;
+use	OpenOffice::OODoc::XPath	2.203;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 1.204;
+our	$VERSION	= 2.205;
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -77,6 +77,7 @@ sub	new
 	my %options	=
 		(
 		member		=> 'content',	# default XML member
+		level_attr	=> 'text:level', # level attribute for headers
 		paragraph_style	=> 'Standard',	# default paragraph style
 		header_style	=> 'Heading 1',	# default header style
 		use_delimiters	=> 'on',	# use text output delimiters
@@ -94,6 +95,10 @@ sub	new
 	if ($object)
 		{
 		bless $object, $class;
+		if ($object->{'opendocument'})
+			{
+			$object->{'level_attr'}	= 'text:outline-level';
+			}
 		}
 	return $object;
 	}
@@ -121,9 +126,13 @@ sub	XML::Twig::Elt::isItemList
 	my $name	= $element->getName;
 	return (
 		$name &&
+		    (
+			($name eq 'text:list')
+				||
 			($name eq 'text:ordered-list')
 				||
 			($name eq 'text:unordered-list')
+		    )
 		)	?
 		1 : undef;
 	}
@@ -152,7 +161,7 @@ sub	XML::Twig::Elt::isHeader
 sub	XML::Twig::Elt::headerLevel
 	{
 	my $element	= shift;
-	return $element->getAttribute('text:level');
+	return $element->getAttribute($self->{'level_attr'});
 	}
 
 sub	XML::Twig::Elt::isTable
@@ -275,7 +284,8 @@ sub	getText
 		)
 		{
 		my $p = $element->getFirstChild('text:p');
-		$text .= ($self->SUPER::getText($p) || '');
+		my $t = $self->SUPER::getText($p);
+		$text .= $t if defined $t;
 		}
 	elsif	($element->isTable)
 		{
@@ -283,7 +293,8 @@ sub	getText
 		}
 	else
 		{
-		$text .= ($self->SUPER::getText($element) || '');
+		my $t = $self->SUPER::getText($element);
+		$text .= $t if defined $t;
 		}
 
 	$text	.= $end_text;
@@ -375,7 +386,7 @@ sub	selectElementsByContent
 	my $pattern	= shift;
 	
 	my @elements	= ();
-	foreach my $element ($self->getBody->getChildNodes)
+	foreach my $element ($self->{'body'}->getChildNodes)
 		{
 		next if
 			(
@@ -417,7 +428,7 @@ sub	selectElementByContent
 	my $self	= shift;
 	my $pattern	= shift;
 	
-	foreach my $element ($self->getBody->getChildNodes)
+	foreach my $element ($self->{'body'}->getChildNodes)
 		{
 		next if
 			(
@@ -450,7 +461,7 @@ sub	selectTextContent
 
 	my $line_break	= $self->{'line_separator'} || '';
 	my @lines	= ();
-	foreach my $element ($self->getBody->getChildNodes)
+	foreach my $element ($self->{'body'}->getChildNodes)
 		{
 		next if
 			(
@@ -486,7 +497,7 @@ sub	getTextElementList
 	my $self	= shift;
 	return $self->selectChildElementsByName
 			(
-			$self->getBody,
+			$self->{'body'},
 			't(ext:(h|p|.*list|table.*)|able:.*)'
 			);
 	}
@@ -833,9 +844,11 @@ sub	getHeader
 		}
 	else
 		{
-		my $level = $opt{'level'};
-		$header = $self->getElement
-				("//text:h[\@text:level=\"$level\"]", $pos); 
+		my $path	=	'//text:h[@'		.
+					$self->{'level_attr'}	.
+					'="' . $opt{'level'} . '"]';	       	
+		$header = $self->getElement($path, $pos);
+		#	("//text:h[\@text:outline-level=\"$level\"]", $pos); 
 		}
 	return undef unless $header;
 	}
@@ -866,7 +879,7 @@ sub	getLevel
 	my $pos		= (ref $path) ? undef : shift;
 
 	my $element	= $self->getElement($path, $pos, @_);
-	return $element->getAttribute('text:level') || "";
+	return $element->getAttribute($self->{'level_attr'}) || "";
 	}
 
 #-----------------------------------------------------------------------------
@@ -879,7 +892,7 @@ sub	setLevel
 	my $level	= shift;
 
 	my $element	= $self->getElement($path, $pos, @_);
-	return $element->setAttribute('text:level' => $level);
+	return $element->setAttribute($self->{'level_attr'} => $level);
 	}
 
 #-----------------------------------------------------------------------------
@@ -923,7 +936,7 @@ sub	getTopParagraph
 	{
 	my $self	= shift;
 
-	return $self->getElement('//office:body/text:p', @_);
+	return $self->getElement('//office:body/office:text/text:p', @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -966,16 +979,37 @@ sub	getParagraphText
 	}
 
 #-----------------------------------------------------------------------------
+# get list element
+
+sub	getList
+	{
+	my $self	= shift;
+	my $pos		= shift;
+	if (ref $pos)
+		{
+		return $pos->isList ? $pos : undef;
+		}
+	return $self->getElement('//text:list', $pos);
+	}
+
+sub	getItemList
+	{
+	my $self	= shift;
+	return $self->getList(@_);
+	}
+
+#-----------------------------------------------------------------------------
 # get ordered list root element
 
 sub	getOrderedList
 	{
 	my $self	= shift;
 	my $pos		= shift;
-
-	return	(ref $pos)	?
-		$pos		:
-		$self->getElement('//text:ordered-list', $pos);
+	if (ref $pos)
+		{
+		return $pos->isOrderedList ? $pos : undef;
+		}
+	return $self->getElement('//text:ordered-list', $pos);
 	}
 
 #-----------------------------------------------------------------------------
@@ -985,10 +1019,11 @@ sub	getUnorderedList
 	{
 	my $self	= shift;
 	my $pos		= shift;
-
-	return	(ref $pos)	?
-		$pos		:
-		$self->getElement('//text:unordered-list', $pos);
+	if (ref $pos)
+		{
+		return $pos->isUnorderedList ? $pos : undef;
+		}
+	return $self->getElement('//text:unordered-list', $pos);
 	}
 
 #-----------------------------------------------------------------------------
@@ -998,7 +1033,6 @@ sub	getItemElementList
 	{
 	my $self	= shift;
 	my $list	= shift;
-
 	return $list->children('text:list-item');
 	}
 
@@ -1109,15 +1143,22 @@ sub	appendItemList
 	{
 	my $self	= shift;
 	my %opt		= @_;
+	my $name	= 'text:unordered-list';
 	$opt{'attribute'}{'text:style-name'} = $opt{'style'} if $opt{'style'};
 	$opt{'attribute'}{'text:style-name'} = $self->{'paragraph_style'}
 		unless $opt{'attribute'}{'text:style-name'};
 
-	my $name	= 'text:unordered-list';
-	if (defined $opt{'type'} && ($opt{'type'} eq 'ordered'))
-		{ $name = 'text:ordered-list' ; }
+	if ($self->{'opendocument'})
+		{
+		$name	= 'text:list';
+		}
+	else
+		{
+		if (defined $opt{'type'} && ($opt{'type'} eq 'ordered'))
+			{ $name = 'text:ordered-list' ; }
+		}
 
-	return $self->appendElement($self->getBody, $name, %opt);
+	return $self->appendElement($self->{'body'}, $name, %opt);
 	}
 
 #-----------------------------------------------------------------------------
@@ -1131,13 +1172,20 @@ sub	insertItemList
 				$path	:
 				$self->getElement($path, shift);
 	my %opt		= @_;
+	my $name	= 'text:unordered-list';
 	$opt{'attribute'}{'text:style-name'} = $opt{'style'} if $opt{'style'};
 	$opt{'attribute'}{'text:style-name'} = $self->{'paragraph_style'}
 		unless $opt{'attribute'}{'text:style-name'};
 
-	my $name	= 'text:unordered-list';
-	if (defined $opt{'type'} && ($opt{'type'} eq 'ordered'))
-		{ $name = 'text:ordered-list' ; }
+	if ($self->{'opendocument'})
+		{
+		$name	= 'text:list';
+		}
+	else
+		{
+		if (defined $opt{'type'} && ($opt{'type'} eq 'ordered'))
+			{ $name = 'text:ordered-list' ; }
+		}
 
 	return $self->insertElement($posnode, $name, %opt);
 	}
@@ -1151,7 +1199,9 @@ sub	_expand_row
 	my $row		= shift;
 	unless ($row)
 		{
-		warn "Unknown table row\n"; return undef;
+		warn	"[" . __PACKAGE__ . "::_expand_row] "	.
+			"Unknown table row\n";
+		return undef;
 		}
 	my $width	= shift || $self->{'max_cols'};
 
@@ -1547,7 +1597,9 @@ sub	getCellValue
 
 	return undef unless $cell;
 
-	my $cell_type	= $cell->getAttribute('table:value-type');
+	my $prefix = $self->{'opendocument'} ? 'office' : 'table';
+	
+	my $cell_type	= $cell->getAttribute($prefix . ':value-type');
 	if ((! $cell_type) || ($cell_type eq 'string'))		# text value
 		{
 		return $self->getText
@@ -1555,9 +1607,13 @@ sub	getCellValue
 			$cell->first_child('text:p')
 			);
 		}
-	else							# numeric value
+	elsif ($cell_type eq 'date') 		# date
+		{				# thanks to Rafel Amer Ramon
+		return $cell->att($prefix . ':date-value');
+		}
+	else					# numeric
 		{
-		return $cell->att('table:value');
+		return $cell->att($prefix . ':value');
 		}
 
 	return undef;
@@ -1589,21 +1645,22 @@ sub	cellValueType
 	return undef unless $cell;
 
 	my $newtype	= shift;
+	my $prefix = $self->{'opendocument'} ? 'office' : 'table';
 	unless ($newtype)
 		{
-		return $cell->att('table:value-type');
+		return $cell->att($prefix . ':value-type');
 		}
 	else
 		{
 		if ($newtype eq 'date')
 			{
-			$cell->del_att('table:value');
+			$cell->del_att($prefix . ':value');
 			}
 		else
 			{
-			$cell->del_att('table:date-value');
+			$cell->del_att($prefix . ':date-value');
 			}
-		return $cell->set_att('table:value-type', $newtype);
+		return $cell->set_att($prefix . ':value-type', $newtype);
 		}
 	}
 
@@ -1615,6 +1672,7 @@ sub	cellCurrency
 	my $self	= shift;
 	my $p1		= shift;
 	my $cell	= undef;
+
 	if 	((! (ref $p1)) || $p1->isTable)
 		{
 		@_ = OpenOffice::OODoc::Text::_coord_conversion(@_);
@@ -1631,14 +1689,15 @@ sub	cellCurrency
 	return undef unless $cell;
 
 	my $newcurrency	= shift;
+	my $prefix	= $self->{'opendocument'} ? 'office' : 'table';
 	unless ($newcurrency)
 		{
-		return $cell->att('table:currency');
+		return $cell->att($prefix . ':currency');
 		}
 	else
 		{
-		$cell->set_att('table:value-type', 'currency');
-		return $cell->set_att('table:currency', $newcurrency);
+		$cell->set_att($prefix . ':value-type', 'currency');
+		return $cell->set_att($prefix . ':currency', $newcurrency);
 		}
 	}
 
@@ -1707,11 +1766,13 @@ sub	updateCell
 	my $value	= shift;
 	my $text	= shift;
 
+	my $prefix = $self->{'opendocument'} ? 'office' : 'table';
+
 	$text		= $value	unless defined $text;
-	my $cell_type	= $cell->getAttribute('table:value-type');
+	my $cell_type	= $cell->getAttribute($prefix . ':value-type');
 	unless ($cell_type)
 		{
-		$cell->setAttribute('table:value-type', 'string');
+		$cell->setAttribute($prefix . ':value-type', 'string');
 		$cell_type = 'string';
 		}
 
@@ -1729,8 +1790,8 @@ sub	updateCell
 	unless ($cell_type eq 'string')
 		{
 		my $attribute = ($cell_type eq 'date') ?
-				'table:date-value' : 'table:value';
-		$cell->setAttribute($attribute, $value);
+				':date-value' : ':value';
+		$cell->setAttribute($prefix . $attribute, $value);
 		}
 	return $cell;
 	}
@@ -2135,7 +2196,7 @@ sub	appendTable
 	my $cols	= shift || $self->{'max_cols'} || 1;
 	my %opt		=
 			(
-			'attachment'	=> $self->getBody,
+			'attachment'	=> $self->{'body'},
 			'table-style'	=> $name,
 			@_
 			);
@@ -2367,7 +2428,7 @@ sub	appendBodyElement
 	{
 	my $self	= shift;
 
-	return $self->appendElement($self->getBody, @_);
+	return $self->appendElement($self->{'body'}, @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -2405,7 +2466,7 @@ sub	appendText
 	my $name	= shift;
 	my %opt		= @_;
 
-	my $attachment	= $opt{'attachment'} || $self->getBody;
+	my $attachment	= $opt{'attachment'} || $self->{'body'};
 	$opt{'attribute'}{'text:style-name'} = $opt{'style'}
 			if $opt{'style'};
 	unless ((ref $name) || $opt{'attribute'}{'text:style-name'})
@@ -2451,7 +2512,7 @@ sub	appendParagraph
 
 	my $paragraph = $self->createParagraph($opt{'text'}, $opt{'style'});
 
-	my $attachment	= $opt{'attachment'} || $self->getBody;
+	my $attachment	= $opt{'attachment'} || $self->{'body'};
 	$paragraph->paste_last_child($attachment);
 
 	return $paragraph;
@@ -2470,7 +2531,7 @@ sub	appendHeader
 			@_
 			);
 
-	$opt{'attribute'}{'text:level'}	= $opt{'level'};
+	$opt{'attribute'}{$self->{'level_attr'}}	= $opt{'level'};
 	
 	return $self->appendText('text:h',%opt);
 	}
@@ -2509,7 +2570,7 @@ sub	insertHeader
 			@_
 			);
 
-	$opt{'attribute'}{'text:level'}	= $opt{'level'};
+	$opt{'attribute'}{$self->{'level_attr'}}	= $opt{'level'};
 
 	return (ref $path) ?
 		$self->insertText($path, 'text:h', %opt)		:

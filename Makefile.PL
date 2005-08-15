@@ -11,11 +11,14 @@ GetOptions
 	'prompt!'	=> \(my $prompt = 1),
 	'encoding=s'	=> \(my $encoding = 'iso-8859-1'),
 	'colormap=s'	=> \(my $colormap = ''),
-	'workdir=s'	=> \(my $workdir = '.')
+	'workdir=s'	=> \(my $workdir = '.'),
+	'format=s'	=> \(my $format = 1)
 	);
 
 #---
 
+print "OpenOffice::OODoc 2 [EXPERIMENTAL] Installation\n";
+	
 if ($config)
 	{
 	my $config_file = 'OODoc/config.xml';
@@ -53,6 +56,7 @@ if ($config)
 			{
 			warn	"\tWARNING: This directory doesn't exist.\n";
 			}
+		print "- Your preferred file format is [$format] (OOo=1 OD=2).\n";
 		$answer = lc (prompt("Is that OK (y/n) ?", "y"));
 		$prompt = '' unless $answer ne "y";
 		last unless $prompt;
@@ -71,6 +75,16 @@ if ($config)
 			"What is your working directory for temporary files ?",
 			$workdir
 			);
+		$format		= prompt
+			(
+			"What is your preferred format for new documents (OOo=1, OD=2) ?",
+			$format
+			);
+		unless ($format eq "1" or $format eq "2")
+			{
+			warn "\tWARNING: Unknown format $format\n";
+			$format = 1;
+			}
 		$encoding = '' unless $encoding gt ' ';
 		$colormap = '' unless $colormap gt ' ';
 		$workdir  = '' unless $workdir gt ' ';
@@ -94,6 +108,7 @@ if ($config)
 	print CF "<config>\n";
 	print CF "\t<comment>OpenOffice::OODoc local configuration file</comment>\n";
 	print CF "\t<OpenOffice-OODoc>\n";
+	print CF "\t\t<File-DEFAULT_OFFICE_FORMAT>$format</File-DEFAULT_OFFICE_FORMAT>\n";
 	print CF "\t\t<XPath-LOCAL_CHARSET>$encoding</XPath-LOCAL_CHARSET>\n";
 	print CF "\t\t<File-WORKING_DIRECTORY>$workdir</File-WORKING_DIRECTORY>\n";
 	print CF "\t\t<Styles-COLORMAP>$colormap</Styles-COLORMAP>\n";
@@ -108,14 +123,16 @@ if ($config)
 WriteMakefile
 	(
     	'NAME'		=> 'OpenOffice::OODoc',
-    	'VERSION_FROM'	=> 'OODoc.pm',
+	'VERSION'	=> '2.003',
+	# 'VERSION_FROM'	=> 'OODoc.pm',
 	'ABSTRACT'	=> 'A library for direct OpenOffice.org document processing',
-    	'AUTHOR'	=> 'Jean-Marie Gouarné',
+    	'AUTHOR'	=> 'Jean-Marie Gouarné, Genicorp S.A.',
     	'PREREQ_PM'	=>
     		{
 		'XML::Twig'		=> '3.15',
 		'Archive::Zip'		=> '1.06',
 		'File::Temp'		=> '0.12',
+		'File::Find'		=> '1.01',
 		'Time::Local'		=> '1.07'
 		},
 	'EXE_FILES'	=>

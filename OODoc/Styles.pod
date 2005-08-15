@@ -5,7 +5,21 @@ OpenOffice::OODoc::Styles - Document styles and layout processing
 =head1	DESCRIPTION
 
 This class is designed to handle styles, whether automatic or named,
-contained in styles.xml or content.xml.
+contained in styles.xml or content.xml. It inherits from the common
+OpenOffice::OODoc::XPath class and brings style-focused features.
+
+All the features of OpenOffice::OODoc::Styles are available in the
+OpenOffice::OODoc::Document class (see the corresponding manual page),
+so any object created through ooDocument() allows both style and content
+processing. In other words, it's not necessary to explicitly use ooStyles()
+or OpenOffice::OODoc::Styles().
+
+This class should not be explictly used in an ordinary application, because
+all its features are available in the OpenOffice::OODoc::Document class, in
+combination with other features. Practically, the present manual is provided
+to describe the style processing features of OpenOffice::OODoc::Document
+(knowing that these features are technically supported by the
+OpenOffice::OODoc::Styles component of the API).
 
 Remember that named styles are those that the end user can see and
 edit using the Stylist tool in OpenOffice.org. Such styles usually
@@ -39,9 +53,16 @@ OpenOffice.org, you must create it as a named style. This is no more
 complicated, but it is better to avoid making hundreds of styles
 visible to the user that they do not need to see.
 
-On the other hand, some styles are more complex than others as they
-describe the page layout. These styles can themselves contain text
-and images. A page style can actually be either:
+There are some structural differences between the old OpenOffice.org
+1.0 format and the new OASIS Open Document (ODF) one. A few of these
+differences aren't made fully transparent by OpenOffice::OODoc. So,
+in some cases, a program including style definitions or updates
+doesn't produce exactly the same results with both OOo 1 and OOo 2
+documents.
+
+Some styles are more complex than others as they describe the page
+layout. These styles can themselves contain text and images. A page
+style can actually be either:
 
 - a header
 - a footer
@@ -64,15 +85,15 @@ As for page styles, the OpenOffice.org format contains a concept
 which must be understood in order to use some of the following
 methods. By virtue of the principle of separation of content and
 presentation, the definition of a page style is based on two
-distinct objects: "master page" and "page master". A "master page"
+distinct objects: "master page" and "page layout". A "master page"
 object encompasses any page style content (i.e. the content of
-headers and footers) and links to a "page master" object which
+headers and footers) and links to a "page layout" object which
 describes page presentation characteristics (with large numbers of
 parameters from page dimensions to background colour to footnote
 separator size, etc.). Names which appear in the list of page styles
 in OpenOffice.org are actually names of "master pages". However, to
 work with physical aspects of the presentation, you have to access
-the associated "page master".
+the associated "page layout".
 
 To complicate matters, there are also header and footer styles. Each
 object contained in a header or footer (e.g. paragraph or image) has
@@ -84,10 +105,10 @@ masking some of this complexity.
 In OODoc::Styles methods, styles are normally indicated by their
 logical names (which must be unique), but, except where otherwise
 stated, they can also be indicated by their style element reference.
-Moreover, when a method is expecting a page master as an argument
+Moreover, when a method is expecting a page layout as an argument
 but the programmer passes it a master page instead (whether by
 design or by mistake), it "knows" in most cases how to automatically
-select the associated page master.
+select the associated page layout.
 
 Defining a style requires a great many attributes. Some appear in
 code examples in this manual, but for a full list of possible
@@ -123,8 +144,8 @@ at least a blank of each required style.
         See imageLink in OODoc::Image about links. Put more simply, a link
         is the address of the graphics file which corresponds to the
         physical content of the image. Even though the background image
-        belongs to the "page master", the first argument can also be either
-        a "master page" or a "page master".
+        belongs to the "page layout", the first argument can also be either
+        a "master page" or a "page layout".
 
         If the second argument "link" is given, its value replaces the
         existing link in the same way as with imageLink.
@@ -146,10 +167,10 @@ at least a blank of each required style.
 
         Creates a new page style. Options are:
 
-            'page-master'	=> 'page master' style name
-            'next'		=> next 'page master' style name
+            'layout'	=> page layout name
+            'next'	=> next master page style name
 
-        The association with a "page master" allows you to associate a
+        The association with a "page layout" allows you to associate a
         layout to the page. Otherwise the page will have a default layout.
 
         Example:
@@ -157,8 +178,8 @@ at least a blank of each required style.
             $doc->createMasterPage
             		(
             		"MyPageStyle",
-            		'page-master'	=> 'pm1',
-            		'next'		=> 'Standard'
+            		layout	=> 'pm1',
+            		next	=> 'Standard'
             		);
 
         See the OpenOffice.org documentation (or the 'Organizer' tab in the
@@ -166,10 +187,14 @@ at least a blank of each required style.
         is. The optional "next" parameter simply gives the name of a "master
         page", which can be the one you are currently creating.
 
+=head3	createPageLayout(name, options)
+
+        Creates a new layout style (page layout) which can be used by a page
+        style (master page). Options are the same as for updatePageLayout.
+
 =head3	createPageMaster(name, options)
 
-        Creates a new layout style (page master) which can be used by a page
-        style (master page). Options are the same as for updatePageMaster.
+	See createPageLayout()
 
 =head3	createStyle(name, options)
 
@@ -236,14 +261,17 @@ at least a blank of each required style.
             	family	=> 'paragraph',
             	parent	=> 'Standard',
             	properties =>
-            	 {
-            	 'style:font-name'		=> 'Times',
-            	 'fo:font-size'			=> '14pt',
-            	 'fo:font-weight'		=> 'bold',
-            	 'fo:font-style'		=> 'italic',
-            	 'fo:color'			=> '#000080',
-            	 'style:text-background-color'	=> '#ffff00'
-            	 }
+            		{
+			'fo:margin-left'	=> '2cm',
+			'fo:margin-right'	=> '1.5cm',
+			'fo:text-align'		=> 'justify',
+            		'style:font-name'	=> 'Times',
+            		'fo:font-size'		=> '14pt',
+            		'fo:font-weight'	=> 'bold',
+            		'fo:font-style'		=> 'italic',
+            		'fo:color'		=> '#000080',
+            		'fo:background-color'	=> '#ffff00'
+            		}
             	);
             $doc->setStyle($doc->getParagraph(3), "P3");
 
@@ -251,10 +279,21 @@ at least a blank of each required style.
         in dark blue size 14 bold italics on a yellow background. This is
         done using a style called "Colour" (reusable later for other
         paragraphs) based on the "Standard" style. You will note that the
-        colour codes are in RGB hexadecimal preceded by a '#' [35] . In this
-        example, "namespace" and "type" are not specified because the
-        default namespace and type are appropriate here. (Rest assured that
-        this is often the case when working with text styles.)
+        colour codes are in RGB hexadecimal preceded by a '#' [35].
+	We could replace '#000080' with rgb2oo('navy blue') if we used the
+	standard rgb.txt colour table from the Xorg distribution (see
+	rgb2oo() below). A large part of these layout properties come from
+	the FO (Form Object) language, that is a part of the OpenOffice.org
+	XML vocabulary. You should look at the Open Document Format
+	specification for an exhaustive presentation.
+
+	In this example, "namespace" and "type" are not specified because
+	the default namespace and type are appropriate here. (Rest assured
+	that this is often the case when working with text styles.)
+
+	Be careful: the example above works with an OOo 1 document, put some
+	of the given properties are ignored with an OOo 2 one. See below about
+	the differences between the two formats.
 
         Another example:
 
@@ -288,6 +327,65 @@ at least a blank of each required style.
         will freshen the image and highlight the vibrancy of the
         chlorophyll. There are yet more in the list of options, so don't
         throw out your holiday snaps!
+
+	While all the properties of a given style are directly available
+	through a single "properties" structure in OOo 1 documents, they are
+	stored in separate, specialised structures in OOo 2 (ODF) documents.
+	A property name can be used (with different effects) in more than one
+	property area. For example, with an OOo 2 document, we should rewrite
+	our "Colour" style definition using 2 separate instructions as shown
+	below:
+
+            $doc->createStyle
+        	(
+            	"Colour",
+            	family	=> 'paragraph',
+            	parent	=> 'Standard',
+            	properties =>
+            		{
+			'fo:margin-left'	=> '2cm',
+			'fo:margin-right'	=> '1.5cm',
+			'fo:text-align'		=> 'justify',
+            	 	'fo:background-color'	=> '#ffff00'
+            		}
+            	);
+	    $doc->updateStyle
+		(
+		"Colour",
+		properties  =>
+			{
+			'area'			=> 'text',
+            	 	'style:font-name'	=> 'Times',
+			'fo:font-size'		=> '14pt',
+            	 	'fo:font-weight'	=> 'bold',
+            	 	'fo:font-style'		=> 'italic',
+			'fo:color'		=> '#000080',
+			}
+		);
+
+	The first instruction creates the style with properties that apply
+	to the "paragraph" area. The second one brings additional properties
+	for the text content of the paragraph. A paragraph style includes
+	"paragraph properties", such as the margins, the text alignment, the
+	background color, and "text properties", such as any font-focused
+	attribute. The "area" option is not a property; it's only a switch
+	that indicates what is the target property area. Without this option,
+	the default area name is the family name (so, for a paragraph style,
+	the default area for updateStyle() is "paragraph properties". This
+	sophistication sounds strange at first look, but it could prove
+	very useful because, knowing that the new ODF will bring more
+	features than the old OOo format, the same property name can be
+	used in more than one area, with different effects. For example,
+	we could put a 'fo:background-color' in the 'text' area AND another
+	in the 'paragraph' area; the 'text' background color should apply
+	to the text-covered areas only, while the 'paragraph' background
+	is a rectangular area, that is not always fully covered by text.
+
+	So, while OpenOffice::OODoc supports both OOo 1 and ODF with the
+	same API, the present version can't completely hide the differences
+	between the two formats. However, the program's logic can hide these
+	differences for the end-user, because it can know the format of
+	the current document (see isOpenDocument in OpenOffice::OODoc::XPath).
 
         Defining a style entirely from code can be made a lot easier by
         reusing an already existing style. The simplest way is by
@@ -347,6 +445,9 @@ at least a blank of each required style.
         available in other documents, but you can also create automatic
         styles in content.xml which are derived from named styles found in
         styles.xml and vice-versa.
+
+	WARNING: the "prototype" option can produce unexpected results if
+	the two documents are not in the same format (OOo 1 or OOo 2).
 
         Always be careful of dependencies. There are often dependencies
         between styles (heritage or usage). An application must be wary of
@@ -474,10 +575,10 @@ at least a blank of each required style.
         OpenOffice.org documents this list should be empty in all elements
         except styles.xml.
 
-=head3	getPageMasterAttributes(page)
+=head3	getPageLayoutAttributes(page)
 
-        Returns the description of a page master style. The argument can be
-        either a page master style directly or a master page style which
+        Returns the description of a page layout. The argument can be
+        either a page layout directly or a master page style which
         refers to it.
 
         The structure of returned data is a hash of hashes. It contains four
@@ -494,12 +595,20 @@ at least a blank of each required style.
 
         Attributes are displayed according to OpenOffice.org specifications.
 
-=head3	getPageMasterElement(page)
+=head3	getPageMasterAttributes(page)
 
-        Returns the page master element reference from a search argument
+	See getPageLayoutAttributes()
+
+=head3	getPageLayoutElement(page)
+
+        Returns the page layout element reference from a search argument
         which can be either a logical name or a page style reference. If the
         argument is a master page, the method returns the corresponding page
         master.
+
+=head3	getPageMasterElement(page)
+
+	See getPageLayoutElement()
 
 =head3	getParentStyle(style)
 
@@ -558,7 +667,7 @@ at least a blank of each required style.
         Imports a background image into the given page style from an
         external file.
 
-        The page style can be either a page master or a master page. An
+        The page style can be either a page layout or a master page. An
         optional link can be inserted (e.g. to reuse an existing link). See
         backgroundImageLink or imageLink (in OODoc::Image) for information
         about links. Otherwise, an internal link under "Pictures/" is
@@ -585,12 +694,16 @@ at least a blank of each required style.
         If the second argument is a content element, it is added to the
         header. If the header does not exist, it is created.
 
+=head3	pageLayout(master_page [, page_master])
+
+        Returns or modifies the layout of a given page style (master page).
+	If the second argument is given, it replaces the old page layout value
+	(i.e. it changes the layout of the page without changing the header or
+	footer content.
+
 =head3	pageMasterStyle(master_page [, page_master])
 
-        Returns or modifies the layout style name (page master) of a given
-        page style (master page). If the second argument is given, it
-        replaces the old page master value i.e. it changes the layout of the
-        page without changing the header or footer content.
+	See pageLayout()
 
 =head3	removeStyleElement(style [, options])
 
@@ -640,7 +753,7 @@ at least a blank of each required style.
 =head3	setBackgroundImage(page, options)
 
         Inserts or replaces a background image in a page style. The "page"
-        argument points either to the page master directly, or to the master
+        argument points either to the page layout directly, or to the master
         page to which it refers. Options point to the graphics object and
         how it is presented. The returned value is the created or modified
         background image's element reference (see
@@ -744,11 +857,41 @@ at least a blank of each required style.
         property without giving it a new value, you must pass the
         corresponding option giving it a null value.
 
+	If the current document is an OASIS Open Document, an additional
+	"area" option should be provides, because a style's properties may
+	be stored in logical parts. For example, in a paragraph style, some
+	properties apply to the paragraph itself, while some other ones apply
+	to its text content (and some text properties can have the same name
+	as some paragraph properties). The default value is the name of the
+	style family. For example, if the style family is "paragraph", the
+	"paragraph" part is selected by default. Because it updates font
+	attributes (that are text properties), the example above couldn't
+	work against an Open Document without an additional "area" option
+	with the appropriate value:
+
+            $doc->styleProperties
+            		(
+            		"Colour",
+			area		=> 'text',
+            		'fo:color'	=> "#ff0000",
+            		'fo:font-style'	=> undef
+            		);
+
+	The "area" option is silently ignored with OOo 1 documents.
+		
 =head3	switchPageOrientation(page)
 
         Switches a portrait page to landscape and vice-versa.
 
-        The argument is a page style (page master or master page).
+        The argument is a page style (page layout or master page).
+
+	'portrait' and 'landscape' are not style properties. The logic of
+	this method is very simplistic: it makes a swap between the height
+	and the witdh of the page.
+
+	CAUTION: don't try to give a page number as the argument. This
+	method apply on a page style (i.e. master page) and not on a
+	real page selected by its number.
 
 =head3	updateDefaultStyle(family, options)
 
@@ -770,11 +913,11 @@ at least a blank of each required style.
             	'style:tab-stop-distance'	=> '1.5cm'
             	);
 
-=head3	updatePageMaster(page, options)
+=head3	updatePageLayout(page, options)
 
         Modifies all types of page presentation style characteristics (page
         master). The style given as the first argument can be either the
-        appropriate page master style directly, or a page style (master
+        appropriate page layout style directly, or a page style (master
         page) to which it refers.
 
         Options can be passed in the form of a hash of hashes (each option
@@ -799,10 +942,10 @@ at least a blank of each required style.
         only need to specify the attributes which you want to change.
 
         A "prototype" option allows you to clone the characteristics of an
-        existing page master. This option can indicate either an existing
-        page master reference, its logical name, or even the reference or
+        existing page layout. This option can indicate either an existing
+        page layout reference, its logical name, or even the reference or
         logical name of a master page which refers to it. Only the first
-        method is supported if the prototype page master belongs to another
+        method is supported if the prototype page layout belongs to another
         document. The style name is not replaced by the prototype style
         name. See also createStyle about using a prototype style.
 
@@ -811,7 +954,7 @@ at least a blank of each required style.
         background colour, maximum footnote height, minimum header height
         and the colour and width of the footnote separator.
 
-            $doc->updatePageMaster
+            $doc->updatePageLayout
             	(
             	"Right page",
             	properties	=>
@@ -834,14 +977,22 @@ at least a blank of each required style.
         Once again, it is better to start with a getMasterPageAttributes of
         an existing page than to create all your styles from code.
 
+=head3	updatePageMaster(page, options)
+
+	See updatePageLayout()
+
 =head3	updateStyle(style, options)
 
         Modifies the characteristics of an existing style.
 
-        Options are the same as for createStyle except for "category",
+        Options are the same as for createStyle() except for "category",
         "namespace" and "type" which cannot be changed in an existing style
         since they form part of its basic identity. A style's logical name
         can, however, be changed.
+
+	In the 'properties' structure, the 'area' switch is required with
+	ODF (OOo 2) documents if the property area is not the default one
+	(see styleProperties and createStyle about the 'area' option). 
 
         You can use the "prototype" option to update a style with another
         style's characteristics, but this option does not replace the
@@ -929,8 +1080,8 @@ at least a blank of each required style.
 		$doc->styleProperties
 			(
 			"HighColors",
-                 	'fo:color'                     => rgb2oo('black'),
-                 	'style:text-background-color'  => rgb2oo('yellow')
+                 	'fo:color'		=> rgb2oo('black'),
+                 	'fo:background-color'	=> rgb2oo('yellow')
 			);
 	
 	If the argument seems to be already an hexadecimal RGB string (i.e.

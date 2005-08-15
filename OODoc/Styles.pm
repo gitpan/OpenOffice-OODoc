@@ -1,10 +1,10 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Styles.pm 1.009 2005-02-22 JMG$
+#	$Id : Styles.pm 2.010 2005-08-15 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
-#	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
-#	Licensing conditions:
+#	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
+#	License:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
 #	Contact: oodoc@genicorp.com
@@ -13,25 +13,15 @@
 
 package OpenOffice::OODoc::Styles;
 use	5.006_001;
-our	$VERSION	= 1.009;
+our	$VERSION	= 2.010;
 
-use	OpenOffice::OODoc::XPath	1.202;
+use	OpenOffice::OODoc::XPath	2.203;
 use	File::Basename;
 require	Exporter;
 our	@ISA		= qw ( Exporter OpenOffice::OODoc::XPath );
 our	@EXPORT		= qw ( ooLoadColorMap oo2rgb rgb2oo );
 
 #-----------------------------------------------------------------------------
-
-our	%STYLE_PATH		=
-	(
-	'properties'		=> 'style:properties',
-	'background-image'	=> 'style:properties/style:background-image',
-	'footnote-separator'	=> 'style:properties/style:footnote-sep',
-	'footnote-sep'		=> 'style:properties/style:footnote-sep',
-	'header'		=> 'style:header-style/style:properties',
-	'footer'		=> 'style:footer-style/style:properties'
-	);
 
 our	$COLORMAP		= undef;
 our	%COLORMAP		=
@@ -201,6 +191,55 @@ sub	new
 	}
 
 #-----------------------------------------------------------------------------
+# get the tag name of the "properties" style sub-element
+
+sub	_properties_tagname
+	{
+	my $self	= shift;
+	my $element	= shift;
+	my $part	= shift;
+
+	my $prefix	= $element->getPrefix;
+	if ($prefix eq 'number')
+		{
+		return 'number:number';
+		}
+	elsif ($self->{'opendocument'})
+		{
+		unless ($part)
+			{
+			$part = $element->att('style:family');
+			}
+		return $part ?
+			$prefix . ':' . $part . '-properties'	:
+			$element->name() . '-properties';
+		}
+	else
+		{
+		return 'style:properties';
+		}
+	}
+
+#-----------------------------------------------------------------------------
+# get the path of an individual style property node
+
+sub	_get_property_path
+	{
+	my $self	= shift;
+	my $element	= shift;
+	my $nodename	= shift;
+	my $part	= shift;
+
+	if (($nodename eq 'header') || ($nodename eq 'footer'))
+		{
+		return 'style:' . $nodename . '-style/style:properties';
+		}
+	my $path = $self->_properties_tagname($element, $part);
+	$path .= ('/' . $nodename)	if $nodename;
+	return $path;
+	}
+
+#-----------------------------------------------------------------------------
 # get a particular node in a main style element
 
 sub	getStyleNode
@@ -208,10 +247,7 @@ sub	getStyleNode
 	my $self	= shift;
 	my $element	= shift;
 	my $nodename	= shift;
-
-	my $xpath	= $STYLE_PATH{$nodename} ?
-				$STYLE_PATH{$nodename}	:
-				$nodename;
+	my $xpath	= $self->_get_property_path($element, $nodename);
 	return $self->getNodeByXPath($element, $xpath);
 	}
 
@@ -223,9 +259,7 @@ sub	setStyleNode
 	my $self	= shift;
 	my $element	= shift;
 	my $nodename	= shift;
-	my $xpath	= $STYLE_PATH{$nodename} ?
-				$STYLE_PATH{$nodename}	:
-				$nodename;
+	my $xpath	= $self->_get_property_path($element, $nodename);
 	return $self->makeXPath($element, $xpath);	
 	}
 
@@ -580,10 +614,11 @@ sub	styleProperties
 	{
 	my $self	= shift;
 	my $style	= shift;
-	my %new_p	= @_;
-	my $namespace	= $new_p{'namespace'};
-	my $type	= $new_p{'type'};
-	my $path	= $new_p{'path'} || $new_p{'category'};
+	my %opt		= @_;
+	my $namespace	= $opt{'namespace'};
+	my $type	= $opt{'type'};
+	my $path	= $opt{'path'};
+	my $part_name	= $opt{'area'};
 	my $element	= $self->getStyleElement
 					(
 					$style,
@@ -592,22 +627,50 @@ sub	styleProperties
 					category	=> $path
 					);
 	return undef	unless $element;
-	delete	$new_p{'namespace'};
-	delete	$new_p{'type'};
+	delete	$opt{'namespace'};
+	delete	$opt{'type'};
+	delete	$opt{'path'};
+	delete	$opt{'area'};
+
 	my $change	= undef;
 	my $e_prefix	= $element->getPrefix;
-	my $prop_name	= $e_prefix eq 'number' ?
-				'number:number' : 'style:properties';
-	my $properties	= $self->getChildElementByName($element, $prop_name);
+	my $tag_name	= undef;
+
+	unless ($part_name)
+		{
+		if ($e_prefix eq 'number')
+			{
+			$tag_name = 'number:number';
+			}
+		elsif ($self->{'opendocument'})
+			{
+			my $family = $element->att('style:family');
+			$tag_name = $family ?
+				$e_prefix . ':' . $family . '-properties' :
+				$element->name() . '-properties';
+			}
+		else
+			{
+			$tag_name = 'style:properties';
+			}
+		}
+	else
+		{
+		$tag_name = $self->{'opendocument'} ?
+			$e_prefix . ':' . $part_name . '-properties'	:
+			'style:properties';
+		}
+	
+	my $properties	= $self->getChildElementByName($element, $tag_name);
 	my %attr	= ();
-	foreach my $k (keys %new_p)
+	foreach my $k (keys %opt)
 		{
 		my $a = $k =~ /:/ ? $k : $e_prefix . ':' . $k;
-		$attr{$a} = $new_p{$k}; $change = 1;
+		$attr{$a} = $opt{$k}; $change = 1;
 		}
 	if ($change)
 		{
-		$properties = $self->appendElement($element, $prop_name)
+		$properties = $self->appendElement($element, $tag_name)
 				unless $properties;
 		$self->setAttributes($properties, %attr); 
 		}
@@ -642,8 +705,8 @@ sub	getDefaultStyleElement
 	my $style	= shift;
 	if (ref $style)
 		{
-		return ($family->getName eq 'style:default-style') ?
-			$family	: undef;
+		return ($style->getName eq 'style:default-style') ?
+			$style	: undef;
 		}
 	else
 		{
@@ -823,25 +886,30 @@ sub	getPageMasterElement
 	my $page	= shift;
 	my $name	= undef;
 	my $pagemaster	= undef;
+
+	my $l = $self->{'opendocument'} ?  'layout' : 'master';
+	my $layout_tag_name	= 'style:page-' . $l;
+	my $layout_key		= $layout_tag_name . '-name';
+	my $layout_path		= '//' . $layout_tag_name;
+
 	if (ref $page)
 		{	# it is an element
 		$name	= $page->getName || "";
 			# is it pagemaster element ?
-		if	($name eq 'style:page-master')
+		if	($name eq $layout_tag_name)
 			{	# OK, return it
 			return $page;
 			}
 			# is it a master page element ?
 		elsif	($name eq 'style:master-page')
 			{	# yes, get the page master name
-			$page = $self->getAttribute
-					($page, 'style:page-master-name')
+			$page = $self->getAttribute($page, $layout_key)
 				or return undef;
 			}
 		}
 		# here we have a name
 	$pagemaster = $self->selectElementByAttribute
-			('//style:page-master', 'style:name', $page);
+			($layout_path, 'style:name', $page);
 	return $pagemaster if $pagemaster;
 		# it's not a page master name,
 		# so we try it as a master page name
@@ -849,10 +917,16 @@ sub	getPageMasterElement
 			('//style:master-page', 'style:name', $page)
 			or return undef;
 		# great! we got the master page, so get the page master name
-	$name	= $self->getAttribute($masterpage, 'style:page-master-name');
+	$name	= $self->getAttribute($masterpage, $layout_key);
 		# and cross the fingers
 	return $self->selectElementByAttribute
-			('//style:page-master', 'style:name', $name);
+			($layout_path, 'style:name', $name);
+	}
+
+sub	getPageLayoutElement
+	{
+	my $self	= shift;
+	return $self->getPageMasterElement(@_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -888,17 +962,25 @@ sub	getPageMasterAttributes
 	return %attributes;
 	}
 
+sub	getPageLayoutAttributes
+	{
+	my $self	= shift;
+	return $self->getPageMasterAttributes(@_);
+	}
+
 #-----------------------------------------------------------------------------
 
 sub	createPageMaster
 	{
 	my $self	= shift;
 	my $name	= shift;
+	my $layout_name	= $self->{'opendocument'} ?
+			'page-layout' : 'page-master';
 	my %opt		=
 			(
 			category	=> 'auto',
 			namespace	=> 'style',
-			type		=> 'page-master',
+			type		=> $layout_name,
 			@_
 			);
 	my $pagemaster	= undef;
@@ -906,7 +988,7 @@ sub	createPageMaster
 	if ($opt{'prototype'})
 		{
 		my $proto = $self->getStyleElement
-				($opt{'prototype'}, type => 'page-master');
+				($opt{'prototype'}, type => $layout_name);
 		unless ($proto)
 			{
 			warn	"[" . __PACKAGE__ . "::createPageMaster] " .
@@ -931,6 +1013,12 @@ sub	createPageMaster
 	return $pagemaster;
 	}
 
+sub	createPageLayout
+	{
+	my $self	= shift;
+	return $self->createPageMaster(@_);
+	}
+	
 #-----------------------------------------------------------------------------
 
 sub	updatePageMaster
@@ -999,6 +1087,12 @@ sub	updatePageMaster
 	return $self->getPageMasterAttributes($pagemaster);
 	}
 
+sub	updatePageLayout
+	{
+	my $self	= shift;
+	return $self->updatePageMaster(@_);
+	}
+	
 #-----------------------------------------------------------------------------
 # switch page orientation (portrait -> landscape or landscape -> portrait)
 
@@ -1052,10 +1146,11 @@ sub	pageMasterStyle
 	my $self	= shift;
 	my $masterpage	= $self->getMasterPageElement(shift) or return undef;
 	my $pagemaster	= shift;
+	my $ln		= $self->{'opendocument'} ?  'layout' : 'master';
+	my $layout_key	= 'style:page-' . $ln . '-name';
 	unless ($pagemaster)
 		{
-		return $self->getAttribute
-				($masterpage, 'style:page-master-name');
+		return $self->getAttribute($masterpage, $layout_key);
 		}
 	else
 		{
@@ -1063,12 +1158,17 @@ sub	pageMasterStyle
 			$pm_name = $self->getAttribute
 					($pagemaster, 'style:name')	:
 			$pagemaster;
-		$self->setAttribute
-			($masterpage, 'style:page-master-name' => $pm_name);
+		$self->setAttribute($masterpage, $layout_key => $pm_name);
 		return $pm_name;
 		}
 	}
 
+sub	pageLayout
+	{
+	my $self	= shift;
+	return $self->pageMasterStyle(@_);
+	}
+	
 #-----------------------------------------------------------------------------
 # get the background image node in a given page master
 
@@ -1114,8 +1214,10 @@ sub	backgroundImageLink
 		}
 	else
 		{
-		my $xpath =	$STYLE_PATH{'background-image'}		.
+		my $xpath = $self->_get_property_path
+				($element, 'background-image')		.
 				'[@xlink:href="' . $newlink . '"]';
+		
 		return $self->makeXPath($pagemaster, $xpath);
 		}
 	}
@@ -1158,7 +1260,8 @@ sub	setBackgroundImage
 	my $node = $self->makeXPath
 				(
 				$pagemaster,
-				$STYLE_PATH{'background-image'}
+				$self->_get_property_path
+					($pagemaster, 'background-image')
 				)
 				or return undef;
 	if ($opt{'link'})
@@ -1211,17 +1314,18 @@ sub	importBackgroundImage
 		File::Basename::fileparse($filename, '\..*');
 
 	my $link	= shift;
+	my $fpath	= $self->{'image_fpath'};
 	if ($link)
 		{
-		$link = '#Pictures/' . $link unless $link =~ /^#Pictures\//;
+		$link = $fpath . $link unless $link =~ /^$fpath/;
 		$self->backgroundImageLink($pagemaster, $link);
 		}
 	else
 		{
 		$link	= $self->backgroundImageLink($pagemaster);
-		unless ($link && $link =~ /^#Pictures\//)
+		unless ($link && $link =~ /^$fpath/)
 			{
-			$link = '#Pictures/' . $base . $suffix;
+			$link = $fpath . $base . $suffix;
 			$self->backgroundImageLink($pagemaster, $link);
 			}
 		}
@@ -1252,9 +1356,16 @@ sub	createMasterPage
 		}
 
 	$opt{'style:name'} = $name;
-	if ($opt{'page-master'})
+	my $page_layout	=	$opt{'layout'}		||
+				$opt{'page-layout'}	||
+				$opt{'page-master'};
+	if ($page_layout)
 		{
-		$opt{'style:page-master-name'}	= $opt{'page-master'};
+		my $ln = $self->{'opendocument'} ? 'layout' : 'master';
+		my $layout_key = 'style:page-' . $ln . '-name';
+		$opt{$layout_key}	= $page_layout;
+		delete $opt{'layout'};
+		delete $opt{'page-layout'};
 		delete $opt{'page-master'};
 		}
 	if ($opt{'next'})

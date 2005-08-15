@@ -1,10 +1,10 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Image.pm 1.014 2005-04-29 JMG$
+#	$Id : Image.pm 2.014 2005-05-17 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
-#	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
-#	Licensing conditions:
+#	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
+#	License:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
 #	Contact: oodoc@genicorp.com
@@ -13,10 +13,10 @@
 
 package	OpenOffice::OODoc::Image;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	1.200;
+use	OpenOffice::OODoc::XPath	2.202;
 use	File::Basename;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 1.014;
+our	$VERSION	= 2.014;
 
 #-----------------------------------------------------------------------------
 # default attributes for image style
@@ -52,8 +52,16 @@ package	XML::Twig::Elt;
 sub	isImage
 	{
 	my $element	= shift;
-	my $name	= $element->getName;
-	return ($name && ($name eq 'draw:image')) ? 1 : undef;
+	my $name	= $element->getName	or return undef;
+	if ($name eq 'draw:frame')
+		{
+		my $child = $element->first_child('draw:image');
+		return $child ? 1 : undef;
+		}
+	else
+		{
+		return ($name eq 'draw:image') ? 1 : undef;
+		}
 	}
 
 #-----------------------------------------------------------------------------
@@ -71,7 +79,7 @@ sub	new
 		@_
 		);
 	my $object = $class->SUPER::new(%options);
-	return	$object	?
+	return $object ?
 		bless $object, $class	:
 		undef;
 	}
@@ -86,7 +94,7 @@ sub	createImageElement
 	my %opt		= @_;
 
 	my $content_class = $self->contentClass;
-
+	my $container	= $self->{'image_container'};
 	my $attachment	= undef;
 	my $firstnode	= undef;
 	my $element	= undef;
@@ -122,7 +130,7 @@ sub	createImageElement
 	unless ($path)
 		{
 		$attachment	=
-			($self->getElement('//office:body', 0))
+			($self->{'body'})
 			||
 			($self->getElement('//style:header', 0))
 			||
@@ -186,10 +194,16 @@ sub	createImageElement
 		$element	= $firstnode ?	# is there a text element ?
 			$self->insertElement	# yes, insert before it
 				(
-				$firstnode, 'draw:image', position => 'before'
+				$firstnode,
+				$container,
+				position => 'before'
 				)
 				:		# no, append to parent element
-			$self->appendElement($attachment, 'draw:image');
+			$self->appendElement
+				(
+				$attachment,
+				$container
+				);
 		delete $opt{'page'};
 		}
 	else
@@ -197,12 +211,25 @@ sub	createImageElement
 		if	($path)	# append to the given attachment if any
 			{
 			$element = $self->appendElement
-				($attachment, 'draw:image');
+						($attachment, $container);
 			}
 		else		# else append to a new paragraph at the end
 			{
 			my $p = $self->appendElement($attachment, 'text:p');
-			$element = $self->appendElement($p, 'draw:image');
+			$element = $self->appendElement($p, $container);
+			}
+		}
+
+	if ($self->{'opendocument'})
+		{
+		my $img = $self->appendElement($element, 'draw:image');
+		foreach my $a (keys %opt)
+			{
+			if ($a =~ /^xlink:/)
+				{
+				$self->setAttribute($img, $a, $opt{$a});
+				delete $opt{$a};
+				}
 			}
 		}
 
@@ -230,19 +257,39 @@ sub	insertImageElement
 sub	getImageElementList
 	{
 	my $self	= shift;
-
-	return $self->getElementList('//draw:image', @_);
+	return $self->getElementList($self->{'image_xpath'}, @_);
 	}
 
 #-----------------------------------------------------------------------------
-# select an individual image element by image
+# select an individual frame element by name
+
+sub	selectFrameElementByName
+	{
+	my $self	= shift;
+	my $text	= shift;
+	return $self->selectNodeByXPath
+			("//draw:frame\[\@draw:name=\"$text\"\]", @_);
+	}
+
+#-----------------------------------------------------------------------------
+# select an individual image element by name
 
 sub	selectImageElementByName
 	{
 	my $self	= shift;
 	my $text	= shift;
-	return $self->selectNodeByXPath
+
+	unless ($self->{'opendocument'})
+		{
+		return $self->selectNodeByXPath
 			("//draw:image\[\@draw:name=\"$text\"\]", @_);
+		}
+	else
+		{
+		my $frame = $self->selectFrameElementByName($text);
+		my $child = $frame->first_child('draw:image');
+		return $child ? $frame : undef;
+		}
 	}
 
 #-----------------------------------------------------------------------------
@@ -251,9 +298,8 @@ sub	selectImageElementByName
 sub	selectImageElementsByName
 	{
 	my $self	= shift;
-
 	return $self->selectElementsByAttribute
-			('//draw:image', 'draw:name', @_);
+				($self->{'image_xpath'}, 'draw:name', @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -308,7 +354,8 @@ sub	getImageElement
 			$self->selectImageElementByName($image, @_);
 		}
 	return undef unless $element;
-	return $element->isImage ? $element : undef;
+	my $name = $element->name;
+	return ($name eq $self->{'image_container'}) ? $element : undef;
 	}
 
 #-----------------------------------------------------------------------------
@@ -321,6 +368,10 @@ sub	imageAttribute
 	my $attribute	= shift;
 	my $value	= shift;
 	my $element	= $self->getImageElement($image);
+	if ($self->{'opendocument'} && ($attribute =~ /^xlink:/))
+		{
+		$element = $element->first_child('draw:image');
+		}
 	return undef	unless $element;
 	return	(defined $value)	?
 		$self->setAttribute($element, $attribute => $value)	:
@@ -334,8 +385,10 @@ sub	selectImageElementByLink
 	{
 	my $self	= shift;
 	my $link	= shift;
-	return $self->selectNodeByXPath
+	
+	my $node = $self->selectNodeByXPath
 			("//draw:image\[\@xlink:href=\"$link\"\]", @_);
+	return $self->{'opendocument'} ? $node->parent : $node;
 	}
 
 #-----------------------------------------------------------------------------
@@ -345,8 +398,22 @@ sub	selectImageElementsByLink
 	{
 	my $self	= shift;
 
-	return $self->selectElementsByAttribute
+	if ($self->{'opendocument'})
+		{
+		my @list1 = $self->selectElementsByAttribute
 			('//draw:image', 'xlink:href', @_);
+		my @list2 = ();
+		foreach my $frame (@list1)
+			{
+			push @list2, $frame if $frame;
+			}
+		return @list2;
+		}
+	else
+		{
+		return $self->selectElementsByAttribute
+			($self->{'image_xpath'}, 'xlink:href', @_);
+		}
 	}
 
 #-----------------------------------------------------------------------------
@@ -366,7 +433,8 @@ sub	getInternalImagePath
 	my $self	= shift;
 	my $image	= shift;
 	my $link	= $self->imageLink($image);
-	if ($link && ($link =~ /^#Pictures\//))
+	my $tmpl	= $self->{'image_fpath'};
+	if ($link && ($link =~ /^$tmpl/))
 		{
 		$link =~ s/^#//;
 		return $link;
@@ -520,8 +588,7 @@ sub	setImageDescription
 	my $element	= $self->getImageElement($image);
 	return undef	unless $element;
 	my $text	= shift;
-	my $desc	= $self->selectChildElementByName
-					($element, 'svg:desc');
+	my $desc	= $element->first_child('svg:desc');
 	unless ($desc)
 		{
 		$self->appendElement($element, 'svg:desc', text => $text)
@@ -567,7 +634,8 @@ sub	exportImage
 	my $element	= $self->getImageElement(shift);
 	return undef	unless $element;
 	my $path	= $self->imageLink($element)	or return undef;
-	unless ($path =~ /^#Pictures\//)
+	my $tmpl	= $self->{'image_fpath'};
+	unless ($path =~ /^$tmpl/)
 		{
 		warn	"[" . __PACKAGE__ . "::exportImage] "		.
 			"Image content $path is an external link. "	.
@@ -612,10 +680,12 @@ sub	exportImages
 				:
 				$self->getImageElementList();
 
+	my $tmpl	= $self->{'image_fpath'};
+
 	IMAGE_LOOP: foreach my $image (@to_export)
 		{
 		my $link	= $self->imageLink($image);
-		next IMAGE_LOOP unless ($link && ($link =~ /^#Pictures\//));
+		next IMAGE_LOOP unless ($link && ($link =~ /^$tmpl/));
 		my $filename	= undef;
 		my $extension	= undef;
 		my $target	= undef;
@@ -660,19 +730,19 @@ sub	importImage
 		}
 	my ($base, $path, $suffix) =
 		File::Basename::fileparse($filename, '\..*');
-
+	my $tmpl	= $self->{'image_fpath'};
 	my $link	= shift;
 	if ($link)
 		{
-		$link = '#Pictures/' . $link unless $link =~ /^#Pictures\//;
+		$link = $tmpl . $link unless $link =~ /^$tmpl/;
 		$self->imageLink($element, $link);
 		}
 	else
 		{
 		$link	= $self->imageLink($element);
-		unless ($link && $link =~ /^#Pictures\//)
+		unless ($link && $link =~ /^$tmpl/)
 			{
-			$link = '#Pictures/' . $base . $suffix;
+			$link = $tmpl . $base . $suffix;
 			$self->imageLink($element, $link);
 			}
 		}

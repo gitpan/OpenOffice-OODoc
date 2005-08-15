@@ -9,6 +9,12 @@ inheriting anything from it) along with the classes defined in the
 XML::Twig module. It's a common basis for the other, more user-
 friendly, document-oriented modules.
 
+The OpenOffice::OODoc::XPath class should not be explicitly used in the
+applications, because all its features are available in more user-oriented
+classes such as OODoc::Text, OODoc::Styles, OODoc::Image, OODoc::Document
+and OODoc::Meta. The present manual page is provided to describe the
+common methods and properties that are available with all these classes.
+
 This chapter can be skipped by programmers who are only interested
 in document types handled by the specialist classes which follow.
 Understanding these classes is easier and using them requires less
@@ -227,6 +233,12 @@ methods.
 	must have the same kind of structure and content as the "templates"
 	subdirectory of the OpenOffice::OODoc installation.
 
+	An additional 'opendocument' option, set to '1' (or 'true') should be
+	provided if the new document must comply with the OASIS Open Document
+	specification, knowing that the default format is OpenOffice.org v1.
+	Be careful: the 'opendocument' option should not be set against
+	previously existing documents.
+
 	OODoc::XPath can process OOo documents provided through XML flat
 	files as well as in the compressed (zip) format. The given file is
 	automatically processed as flat XML if either it's name ends by ".xml"
@@ -376,16 +388,7 @@ methods.
 	Returns an empty string if the current member is not a document
 	content (if it's, for example, the "meta" or "styles" member).
 
-	With a given class name as an optional argument, this method can
-	change or set the document class; but this risky operation is, of
-	course, for advanced users knowing exactly that they do. Changing
-	the content class allows, for example, to turn a text containing
-	some tables in a spreadsheet. But some things must be changes
-	elsewhere in order to produce a consistent OpenOffice.org document.
-	For example, the MIME type of the document, stored in its manifest,
-	must be changed accordingly (see OpenOffice::OODoc::Manifest). And,
-	of course, the real content must be consistent with the declared
-	content class.
+	This accessor is read-only.
 
 =head3	createElement(name, text)
 
@@ -813,6 +816,13 @@ methods.
 
         Note: to add an element to the end of a document, it would obviously
         be better to use appendElement.
+
+=head3	isOpenDocument()
+
+	Returns 1 (true) if the current document is an OASIS Open Document.
+	To be used every time the application  needs to know the format of
+	the document, knowing that some differences between the two formats
+	can't be completely hidden by the API.
 
 =head3	makeXPath(expression)
 
@@ -1283,6 +1293,7 @@ methods.
             'xml'		=> <XML string>
             'element'		=> <name of loaded XML element>
 	    'xpath'		=> <XML::Twig object>
+	    'opendocument'	=> <true if OASIS Open Document>
 
         However, the 'xml' variable is cleared almost immediately after a
         successful constructor call, in order to save memory. As soon as the
@@ -1301,6 +1312,12 @@ methods.
         functionality of the XML::Twig API, bearing in mind that all
         operations using this interface will have a direct effect on the
         content of the $doc object.
+
+	The 'opendocument' property, if true, means that the document is
+	declared as an OASIS Open Document. If this property is false or
+	undef, the document format is OpenOffice.org version 1. This property
+	should not be changed (as long as OpenOffice::OODoc can't change the
+	format of an existing document).
 
 =head1	NOTES
 

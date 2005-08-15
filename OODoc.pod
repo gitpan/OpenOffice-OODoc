@@ -295,6 +295,7 @@ separate "member".
 		<XPath-LOCAL_CHARSET>my_charset</XPath-LOCAL_CHARSET>
 		<Styles-COLORMAP>my_colormap_file</Styles-COLORMAP>
 		<File-WORKING_DIRECTORY>my_path</File-WORKING_DIRECTORY>
+		<File-DEFAULT_OFFICE_FORMAT>1</File-DEFAULT_OFFICE_FORMAT>
 		<INSTALLATION_DATE>my_oo_date</INSTALLATION_DATE>
 		</OpenOffice-OODoc>
 	</config>

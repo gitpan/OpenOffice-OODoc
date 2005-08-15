@@ -297,7 +297,7 @@ provided that you have an OpenOffice.org attributes glossary at hand.
 The following example show the way to build the "Welcome" style.
 This piece of code declares "Welcome" as a paragraph style, whith
 "Text body" as parent style, and with some private properties
-(Times 16 bold font, yellow background and navy blue foreground).
+(Times 16 bold font and navy blue foreground).
 
 	$doc->createStyle
 			(
@@ -306,10 +306,10 @@ This piece of code declares "Welcome" as a paragraph style, whith
 			parent		=> 'Text body',
 			properties	=>
 				{
+				'area'			=> 'text',
 				'style:font-name'	=> 'Times',
 				'fo:font-size'		=> '16pt',
 				'fo:font-weight'	=> 'bold',
-				'fo:background-color'	=> '#ffff00',
 				'fo:color'		=> '#000080'
 				}
 			);
@@ -808,6 +808,7 @@ changing the font size only:
 			prototype	=> $template,
 			properties	=>
 				{
+				"area"		=> "text",
 				"fo:font-size"	=> "12pt",
 				"fo:color"	=> rgb2oo("dark blue")
 				}

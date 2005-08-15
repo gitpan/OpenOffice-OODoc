@@ -1,10 +1,10 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Mamifest.pm 1.003 2005-02-07 JMG$
+#	$Id : Mamifest.pm 2.003 2005-04-30 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
-#	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
-#	Licensing conditions:
+#	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
+#	License:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
 #	Contact: oodoc@genicorp.com
@@ -13,9 +13,9 @@
 
 package	OpenOffice::OODoc::Manifest;
 use	5.006_001;
-our	$VERSION	= 1.003;
+our	$VERSION	= 2.003;
 
-use	OpenOffice::OODoc::XPath	1.200;
+use	OpenOffice::OODoc::XPath	2.200;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
 
 #-----------------------------------------------------------------------------

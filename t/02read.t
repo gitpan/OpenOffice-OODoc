@@ -5,12 +5,13 @@
 use Test;
 BEGIN	{ plan tests => 9 }
 
-use OpenOffice::OODoc	1.309;
-ok($OpenOffice::OODoc::VERSION >= 1.309);
+use OpenOffice::OODoc	2.000;
+ok($OpenOffice::OODoc::VERSION >= 2.000);
 
 #-----------------------------------------------------------------------------
 
-my $testfile	=	"ootest.sxw";
+my $testfile    =       $OpenOffice::OODoc::File::DEFAULT_OFFICE_FORMAT == 2 ?
+                "ootest.odt" : "ootest.sxw";
 my $generator	=	"OpenOffice::OODoc " . $OpenOffice::OODoc::VERSION .
 			" installation test";
 
