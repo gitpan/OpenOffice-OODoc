@@ -1,3 +1,5 @@
+2.004	xxxx-xx-xx
+	- Bug fix in XPath.pm (setAttribute)
 2.003	2005-08-15
 	- Table cell value & style processing improvements for ODF
 	- Fixed a bug and improved page style vocabulary in Styles.pm

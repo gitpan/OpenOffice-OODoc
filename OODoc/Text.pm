@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.205 2005-08-14 JMG$
+#	$Id : Text.pm 2.206 2005-08-17 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -13,9 +13,9 @@
 
 package OpenOffice::OODoc::Text;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	2.203;
+use	OpenOffice::OODoc::XPath	2.204;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.205;
+our	$VERSION	= 2.206;
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -2416,8 +2416,17 @@ sub	userFieldValue
 	my $value_type	= $field->att('text:value-type');
 	my $value_att	= $value_type eq 'string' ?
 				'text:string-value' : 'text:value';
-	$self->setAttribute($field, $value_att, $value)
-			if defined $value;
+	if (defined $value)
+		{
+		if ($value)
+			{
+			$self->setAttribute($field, $value_att, $value);
+			}
+		else
+			{
+			$field->set_att($value_att => $value);
+			}
+		}
 	return $self->getAttribute($field, $value_att);
 	}
 

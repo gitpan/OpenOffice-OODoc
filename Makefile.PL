@@ -17,7 +17,7 @@ GetOptions
 
 #---
 
-print "OpenOffice::OODoc 2 [EXPERIMENTAL] Installation\n";
+print "OpenOffice::OODoc Installation\n";
 	
 if ($config)
 	{
@@ -123,10 +123,9 @@ if ($config)
 WriteMakefile
 	(
     	'NAME'		=> 'OpenOffice::OODoc',
-	'VERSION'	=> '2.003',
-	# 'VERSION_FROM'	=> 'OODoc.pm',
+	'VERSION_FROM'	=> 'OODoc.pm',
 	'ABSTRACT'	=> 'A library for direct OpenOffice.org document processing',
-    	'AUTHOR'	=> 'Jean-Marie Gouarné, Genicorp S.A.',
+    	'AUTHOR'	=> 'Jean-Marie Gouarné <jmgdoc@cpan.org>',
     	'PREREQ_PM'	=>
     		{
 		'XML::Twig'		=> '3.15',
