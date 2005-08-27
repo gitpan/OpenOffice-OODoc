@@ -1,6 +1,6 @@
 =head1	NAME
 
-OpenOffice::OODoc - A library for direct OpenOffice.org document processing
+OpenOffice::OODoc - A library for Open Document processing
 
 =head1	SYNOPSIS
 
@@ -45,9 +45,33 @@ OpenOffice::OODoc - A library for direct OpenOffice.org document processing
 =head1	DESCRIPTION
 
 This toolbox allows direct read/write operations on documents, without
-using the OpenOffice.org software. It provides a high-level,
-document-oriented language, and isolates the programmer from the
-details of the OpenOffice.org XML dialect and file format.
+using OpenOffice.org or any OpenDocument-compatible desktop software. It
+provides a high-level, document-oriented language, and isolates the programmer
+from the details of the XML dialect and file format. It supports both the
+OpenOffice.org 1.0 format and the OASIS OpenDocument format. It works with the
+different document classes (text, spreadsheet, presentation, and drawing). It
+can retrieve or update styles and images as well as text content.
+
+A typical application generally begins with one or more ooDocument() calls,
+each one instantiating a logical document handler. This handler is an object
+bringing various access methods, and allowing easy read and update operations on
+a lot of content and presentation elements.
+
+If the application needs to work with meta-data (i.e. document properties), it
+must use ooMeta() instead of ooDocument(). Then it can process such data as
+title, subject, author, description and keywords. And to get access to the
+'manifest' of the OOo/OpenDocument file (i.e. the member which describes the
+content of the archive), the application must use ooManifest(); but this last
+access is generally not required.
+
+OpenOffice::OODoc is primarily designed in order to retrieve and/or update data
+in existing documents, but is can generate new documents from scratch (or, more
+exactly, from templates included in the distribution, knowing that the advanced
+developers can use custom templates as well).
+
+See the OpenOffice::OODoc::Intro manual page to have a look at the main
+features. The reference manual is provided in several separate chapters as
+described below.
 
 =head1	HOW TO USE THE DOCUMENTATION
 
@@ -57,7 +81,7 @@ page is not the most important one.
 
 Each manual page correspond to a Perl module, with the exception of
 OpenOffice::OODoc::Intro. It's strongly recommended to have a look at
-this Intro, and to read the examples, before any other manual chapter, in
+the Intro, and to read the examples, before any other manual chapter, in
 order to get a quick and practical knowledge of the big picture.
 
 The API is object-oriented and, with the exception of the main module
@@ -90,6 +114,8 @@ ignored without risk.
 
 =head2	OpenOffice::OODoc::XPath
 
+It describes all the common features, that are provided by the corresponding
+class, and available in every other class with the exception of OODoc::File.
 This manual page describes the low level, XPath-based XML API of
 OpenOffice::OODoc. It can be necessary for advanced applications, but can be
 ignored at first look. However, the Text, Image, Styles, Document and Meta
@@ -116,15 +142,17 @@ to control the presentation of these images.
 This manual page describes the methods to be used to control the styles
 of a document, knowing that each page layout, each text element, and each
 image is displayed or printed according to a style. This part of the
-documentation can be ignored if the user's programs are strictly text-focused
-and don't care with the presentation.
+documentation can be ignored if the user's programs are strictly content-
+focused and don't care with the presentation.
 
 =head2	OpenOffice::OODoc::Document
 
 This manual page describe some miscellaneous methods that deal simultaneously
 with text, presentation and/or images. So, in order to discover the capabilities
 of a "Document" object (created with ooDocument), the user should use the Text,
-Image, Styles AND Document manual pages.
+Image, Styles AND Document manual pages. The OpenOffice::OODoc::Document class
+inherits all the features provided by the other classes with the exceptions of
+OpenOffice::OODoc::File and OpenOffice::OODoc::Meta.
 
 =head2	OpenOffice::OODoc::Meta
 
@@ -407,7 +435,7 @@ License:
 	- Licence Publique Generale Genicorp v1.0
 	- GNU Lesser General Public License v2.1
 
-Contact: oodoc@genicorp.com
+Contact: jmgdoc@cpan.org
 
 =cut
 

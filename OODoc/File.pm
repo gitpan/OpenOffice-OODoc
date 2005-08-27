@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : File.pm 2.109 2005-05-19 JMG$
+#	$Id : File.pm 2.110 2005-08-24 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -13,7 +13,7 @@
 
 package	OpenOffice::OODoc::File;
 use	5.006_001;
-our	$VERSION	= 2.109;
+our	$VERSION	= 2.110;
 use	Archive::Zip	1.06	qw ( :DEFAULT :CONSTANTS :ERROR_CODES );
 use	File::Temp;
 
@@ -111,7 +111,16 @@ sub	store_member
 		}
 	elsif	($opt{'file'})
 		{
-		$m = $zipfile->addFile($opt{'file'}, $opt{'member'});
+		if (-d $opt{'file'})
+			{
+			$m = $zipfile->addDirectory
+				($opt{'file'}, $opt{'member'});
+			}
+		else
+			{
+			$m = $zipfile->addFile
+				($opt{'file'}, $opt{'member'});
+			}
 		}
 	else
 		{
@@ -220,7 +229,7 @@ sub	CtrlMemberName
 	{
 	my $self	= shift;
 	my $member	= shift;
-
+	
 	my $m = lc $member;
 	foreach my $n ('content', 'meta', 'styles', 'settings')
 		{
@@ -285,6 +294,7 @@ sub	store_temp_file
 	my $data	= shift;
 
 	my $tmpfile	= $self->new_temp_file_name;
+	
 	unless (open FH, '>:utf8', $tmpfile)
 		{
 		warn	"[" . __PACKAGE__ . "::store_temp_file] "	.
@@ -319,8 +329,7 @@ sub	extract_temp_file
 			$member		:
 			$self->{'archive'}->memberNamed($member);
 
-	my $tmpfile	= $self->new_temp_file_name;
-
+	my $tmpfile	= $self->new_temp_file_name;	
 	my $result = $m->extractToFileNamed($tmpfile);
 	if ($result == AZ_OK)
 		{
@@ -345,7 +354,9 @@ sub	remove_temp_files
 	while (@{$self->{'temporary_files'}})
 		{
 		my $tmpfile	= shift @{$self->{'temporary_files'}};
-		my $r		= unlink $tmpfile;
+		my $r		= undef;
+		unless ( -d $tmpfile )	{ $r = unlink $tmpfile; }
+		else			{ $r = rmdir $tmpfile; }
 		unless ($r > 0)
 			{
 			warn
@@ -591,6 +602,7 @@ sub	copyMember
 			"::copyMember] File extraction error\n";
 		return undef;
 		}
+		
 	store_member
 		(
 		$archive,

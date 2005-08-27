@@ -95,8 +95,6 @@ OpenOffice.org Writer) document (and replaces any previously existing file
 with the same name). However, the new file will be really created by the
 $document->save instruction, not by the object initialization.
 
-
-
 The OODoc toolbox is organized in 3 logical layers. It's not necessary for
 you to remember the (annoying) details given in the next few paragraphs,
 but there are described only to explain the general organisation of the
@@ -104,8 +102,8 @@ modules. If you have only a few dozens of seconds for reading this document,
 please jump directly at the part II (practical examples) and come back later
 if you want to know more.
 
-The first layer consists of the OpenOffice::OODoc::File class (defined in the
-File.pm module). This class is responsible of read/write operations
+The first layer consists of the OpenOffice::OODoc::File class (defined in
+the File.pm module). This class is responsible of read/write operations
 with the OpenOffice.org physical files. It does every I/O and
 compression/uncompression processing. It's mainly an easy-to-use,
 OpenOffice-oriented wrapper for the standard Archive::Zip Perl
@@ -207,7 +205,8 @@ much more sophisticated processing, and you have not a lot of time to
 learn the XML path of any kind of document element (paragraph, header,
 item list, style, ...).
 
-So there is a third, more user-friendly layer.
+So there is a third, more user-friendly layer, that should be the only one
+visible for most of the applications.
 
 The third layer is designed as a set of application-oriented
 classes, inherited from OpenOffice::OODoc::XPath. In this layer, the basic
@@ -453,13 +452,24 @@ to issue a:
 	$doc->save;
 
 I said OODoc::Meta (which is an OODoc::XPath) did not know anything about
-files and data compression. But in my example, the object has been
+the OOo/OpenDocument compressed files. But in my example,the object has been
 created with a 'file' argument and associated with an implicit
 OODoc::File object. So, the 'save' method of OODoc::XPath is only a
 stub method which sends a 'save' command to the connected OODoc::File
 object. With an object created with an 'xml' parameter (providing
 the metadata through an XML string, without reference to a file), a
-'save' call generates a 'No archive' error.
+'save' call generates a 'No archive object' error. However, if the object
+had been created from an XML flat file (instead of a regular
+OOo/OpenDocument compressed file), the output would be a flat XML file
+as well.
+
+Note: A document is always saved in the same file format as it's source.
+The save() can't act as a format converter. So, you can't save an OOo 1.0
+file in OASIS OpenDocument format and vice versa, and you can't directly
+(without intermediate processing) save in OOo/OpenDocument compressed format
+a document loaded from XML data. However, thanks to the getXMLContent()
+method, you can write the flat XML to the standard output or a given file
+handle.
 
 If you prefer to keep the original file unchanged, you can issue a
 
@@ -469,6 +479,10 @@ that produces the same thing as 'File/SaveAs' in your favorite office
 software: if called with an argument, 'save' creates a new file
 containing all the changed and unchanged members of the original
 one.
+
+Of course, whatever the way you will use (or not use) the save() method,
+you will never process valuable documents with OpenOffice::OODoc without
+a backup copy...
 
 =head2	Example 2 - Manipulating text
 
@@ -703,25 +717,44 @@ API) can be used to retrieve a text element:
 =head2	Dealing with text AND metadata
 
 Sometimes we must access both the text content and the metadata. So, we need
-two OODoc::XPath objects : one OODoc::Text and one OODoc::Meta. And to avoid
-ugly and inefficient I/O operations, we need to connect the 2 objects with the
-same OODoc::File "server".
+two OODoc::XPath objects : one OODoc::Document and one OODoc::Meta. And to
+avoid collisions and inefficient I/O operations, we need to connect the 2
+objects with the same OODoc::File "server".
 
 	use OpenOffice::OODoc;
 
 	my $archive	= ooFile('myfile.sxw');
-	my $content	= ooText(archive => $archive);
+	my $content	= ooDocument(archive => $archive);
 	my $meta	= ooMeta(archive => $archive);
 	# process content and metadata
 	$archive->save;
 
-In this case, the OODoc::Text and OODoc::Meta objects are created with
+In this case, the OODoc::Document and OODoc::Meta objects are created with
 an 'archive' parameter, so they are required to connect to an existing
 OODoc::File object. After processing, a 'save' call directly addressed
 to the OODoc::File is sufficient to do the physical file update, because
 this object "knows" the list of the OODoc::XPath objects connected to it,
 and "asks" to each of them the XML content it's responsible of (the other
 XML members of the file remain unchanged).
+
+However, the explicit use of OODoc::File is not mandatory. The example above
+could be written in a different way:
+
+	use OpenOffice::OODoc;
+
+	my $content	= ooDocument(file => 'myfile.sxw');
+	my $meta	= ooMeta(file => $content);
+	# process content and metadata
+	$content->save;
+
+This last sequence sounds strange because the 'file' option of ooMeta()
+is an OODoc::Document (i.e. an OODoc::XPath object) and not a file. But
+OpenOffice::OODoc encourages your laziness: if the value type of the
+'file' option is OODoc::XPath (and not scalar), it knows you want share
+a file interface already used. So you get the same result as in the
+previous example, but the common OODoc::File object is not visible. The
+final save() could be issued from anyone of the document objects.
+
 There is an example of simultaneous access to content and metadata in the
 script 'set_title' (where some text content is used to generate a piece
 of metadata).
@@ -866,7 +899,7 @@ License:
 	- Licence Publique Generale Genicorp v1.0
 	- GNU Lesser General Public License v2.1
 
-Contact: oodoc@genicorp.com
+Contact: jmgdoc@cpan.org
 
 The initial main reference manual has been written in French by the developer,
 then translated in English by Graeme A. Hunter (graeme.hunter@zen.co.uk)

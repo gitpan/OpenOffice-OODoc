@@ -2,6 +2,42 @@
 
 OpenOffice::OODoc::Document - Top level component for content processing
 
+=head1	SYNOPSIS
+
+	# get an OOo file handler
+	my $oofile = ooFile("myfile.sxw");
+	# connect a content-focused document interface
+	my $content = ooDocument
+			(
+			archive => $oofile,
+			member => 'content'
+			);
+	# connect a style-focused document interface
+	my $styles = ooDocument
+			(
+			archive => $oofile,
+			member => 'styles'
+			);
+	# process any content and style element
+	$content->appendParagraph
+			(
+			text => "An additional paragraph",
+			style => "BlueStyle"
+			);
+	$styles->createStyle
+			(
+			"BlueStyle",
+			parent => 'Text body',
+			family => 'paragraph',
+			properties =>
+				{
+				area		=> 'text',
+				'fo:color'	=> rgb2oo('blue')
+				}
+			);
+	# commit the changes using the file handler
+	$oofile->save;
+
 =head1	DESCRIPTION
 
 This module defines the top level Document class, allowing any kind
@@ -17,7 +53,15 @@ This constructor, if successful, returns an object that can be used
 
 This module is designed simply to create objects which include all
 the functionality of OODoc::Text, OODoc::Image, OODoc::Styles and
-OODoc::XPath (which do not need to be called directly by applications).
+OODoc::XPath (which should not be called directly by applications).
+
+For example
+
+	my $styles = ooDocument(file => "source.sxw", member => "styles");
+
+is generally better than
+
+	my styles = ooStyles(file => "source.sxw");
 
 While OODoc::Document inherits all the methods and properties of these
 classes, its detailed documentation in essentially provided in
@@ -26,23 +70,26 @@ the following manual pages:
 	OpenOffice::OODoc::Text		-> text content
 	OpenOffice::OODoc::Styles	-> style & layout
 	OpenOffice::OODoc::Image	-> graphic objects
-	OpenOffice::OODoc::XPath	-> low-level API
+	OpenOffice::OODoc::XPath	-> common features & low-level API
 
-The OODoc::Document class itself only provides those methods (there are
-very few) which cover the need to combine at least two or three constituent
-modules. These additional methods are described in the present manual page.
+For example, the appendParagraph() and createStyle() methods used in the
+synopsis above are respectively described in OpenOffice::OODoc::Text and
+OpenOffice::OODoc::Styles.
+
+The present manual page only describes those methods (there are very few)
+which combine layout and content processing.
 
 =head2	Methods
 
 =head3	Constructor : OpenOffice::OODoc::Document->new(<parameters>)
 
         Short Form: ooDocument(<parameters>)
-
+	
         See OpenOffice::OODoc::XPath->new.
-
+	
         Options are the same as for the OODoc::XPath constructor (and for its
 	Text, Styles and Image derivatives). If no "member" parameter is
-	given, the member selected by default is "content.xml".
+	given, the member selected by default is "content".
 
 =head3	createImageStyle(name [, options])
 
@@ -180,6 +227,6 @@ License:
 	- Genicorp General Public Licence v1.0
 	- GNU Lesser General Public License v2.1
 
-Contact: oodoc@genicorp.com
+Contact: jmgdoc@cpan.org
 
 =cut

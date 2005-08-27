@@ -22,22 +22,16 @@ Perl and XML expertise. However, calling OODoc::XPath remains a good
 rescue option as it allows all kinds of operations on all types of
 XML members contained in any OpenOffice.org document.
 
-This class forms the basis of OODoc::Meta, OODoc::Text,
+This class is the common foundation of OODoc::Meta, OODoc::Text,
 OODoc::Styles and OODoc::Image. It contains the lowest layer of
 navigation services for XML documents and handles the link with
 OODoc::File for file access. Its primary role is as an interface
 with the XML::Twig API.
 
-OODoc::XPath is based on the XML::Twig module (see CPAN
-documentation). In the following chapters, you will see elements
-often mentioned. When it says that a module expects a parameter or
-returns an element (either singly or as a list), it is referring to
-an XML element. More precisely, it is referring to an object of the
-XML::Twig::Elt class (unless otherwise stated) and all available
-methods this object confers. Generally speaking, it is not
-necessary to call these low-level methods contained within
-OODoc::XPath and its descendants using their simpler form. It is
-however important to distinguish elements from their content
+In the following chapters, you will see "elements" often mentioned.
+When it says that a module expects a parameter or returns an element
+(either singly or as a list), it is referring to an XML element.
+It is important to distinguish elements from their content
 (elements being simply references to XML data structures). To read
 or modify the content of an element such as its text or XML
 attributes, use the accessors also available within OODoc::XPath.
@@ -47,8 +41,16 @@ as an argument, there are two ways of proceeding:
 
 - reference the element directly (obtained previously)
 
-- or give the XML::XPath path and position, being a string and
-an integer respectively [2]
+- or give an XPath expression and a position, being a string and an
+integer respectively [2]
+
+The second way requires the knowledge of an appropriate XPath
+expression (according the OOo/OpenDocument XML format specification).
+And a given XPath expression is not necessarily the same with an
+OpenDocument as in an OpenOffice.org document. So you should
+preferently use high level accessors (provided by derivative classes
+such as OODoc::Document) and avoid XPath hardcoding. However, you
+know you can at any time reach any element with XPath.
 
 Some methods accept both forms which means that if the first
 parameter is recognised as an element reference, the position does
@@ -66,9 +68,9 @@ Methods which may return several lines of text (e.g. getTextList) do
 so either in the form of an unique character string containing "\n"
 separators or in table form.
 
-Unless otherwise stated, the word document in this chapter only
+Unless otherwise stated, the word 'document' in this chapter only
 refers to XML documents contained within OODoc::XPath objects and
-not OpenOffice.org documents (as an end user would use).
+not, say, OpenOffice.org files (as an end user would use).
 
 Amongst the different methods which return elements, attributes or
 text, some are called getXxx, others selectXxx or findXxx. Read
@@ -94,15 +96,15 @@ class, and that all methods associated with this class are directly
 applicable to them, on top of the functionality described in this
 manual. However, this should not normally be needed.
 
-Important note: We recommend using OODoc::Meta and OODoc::Document
-(which are both OODoc::XPath derivatives) to manipulate metadata
-(for all document types) and content (for text documents)
-respectively. These two objects provide highest-level methods which
-are neater and more productive. Explicit use of XPath methods (which
-sometimes require large numbers of parameters) should only be
-considered as a last resort in unexpected circumstances for access
-to any element or XML attribute not handled by more "friendly"
-methods.
+Important note: The applications should not explicitly work with this
+class. We recommend using OODoc::Meta and OODoc::Document (which are both
+OODoc::XPath derivatives). These two objects provide highest-level methods
+which are neater and more productive. Explicit use of OODoc::XPath methods
+(which sometimes require large numbers of parameters) should only be
+considered as a last resort in unexpected circumstances for access to any
+element or XML attribute not handled by more friendly methods. However,
+the present manual chapter could prove helpful because all the common
+features of OODoc::Meta and OODoc::Document are described here.
 
 =head2	Methods
 
@@ -115,7 +117,7 @@ methods.
 
 	Example:
 
-		my $doc = ooXpath
+		my $doc = ooXPath
 				(
 				file	=> "myfile.sxc",
 				member	=> "content"
@@ -132,33 +134,49 @@ methods.
 
         Parameters are named (hash key => value). The constructor must get
         at least one parameter giving a means of obtaining the XML document
-        that it will represent. Three options are available:
+        that it will represent. Several options are available; each one is
+	represented through the following examples:
 
-            my $doc = OpenOffice::OODoc::XPath->new(xml => $xml_string);
+	    # option 1 (using an existing flat XML document)
+            my $doc = ooXPath(xml => $xml_string);
 
-            my $doc = OpenOffice::OODoc::XPath->new
-            	(archive => $oofile, member => 'meta');
+	    # option 2 (using a previously created OOo file interface)
+	    my $oofile = ooFile('source.sxw');
+            my $doc = ooXPath(archive => $oofile, member => 'meta');
 
-            my $doc = OpenOffice::OODoc::XPath->new
-            	(file => 'source.sxw', member => 'content');
+	    # option 3 (using a regular OOo file directly)
+            my $doc = ooXPath(file => 'source.sxw', member => 'content');
+	
+	    # option 4 (multiple instances aginst a single file)
+	    my $content = ooXPath(file => 'source.sxw', member => 'content');
+	    my $meta = ooXPath(file => $content, member => 'meta');
+	    my $styles = ooXPath(file => $content, member => 'styles');
 
-	(Remember you can replace "OpenOffice::OODDoc::XPath" by "ooXPath"
-	in the instructions above, provided that you have loaded the
-	main OpenOffice::OODoc module, that defines this shortcut, and not
-	only and explicitly OpenOffice::OODoc::XPath.)
+	Remember "ooXPath()" represents "OpenOffice::OODoc::XPath->new()" 
+	in the instructions above, and you can (and should) use this shortcut
+	provided that you have loaded the main OpenOffice::OODoc module, and
+	not only and explicitly the OpenOffice::OODoc::XPath module.
 
-        The first method returns an XML string directly (obtained or created
-        previously by the program).
+        The first form uses an XML string directly (previously loaded or
+        created by the program). To be used for very specific applications
+	working with flat XML documents exports and not with standard
+	OOo/OpenDocument files.
 
         The second method links OODoc::XPath to an existing OODoc::File
         object (so-called "archive" because it's a zip archive used through
 	an object-oriented API) and indicates which XML member it is to
 	extract (metadata, content, styles, etc). The OODoc::File is an
-	abstraction of an already open OOo file.
+	abstraction of an already open OOo file. It can be shared, i.e.
+	several OODoc::XPath objects can be instantiated with the same
+	OODoc::File object, and this possibility must be used when
+	several OODoc::XPath objects must bring consistent changes in
+	a single file (see option 4 below). In order to create the
+	required OODoc::File object, simply use ooFile() with a filename
+	as argument (for advanced use, see OpenOffice::OODoc::File).
 
 	The third method is the easiest, because the user just provide
 	a filename and a member, and all the file interface is run silently
-	(i.e. an invisible OODoc::File object is automtically created and
+	(i.e. an invisible OODoc::File object is automatically created and
 	used to get the content). It's probably the most used approach; its
 	recommended when the user doesn't need to get more than one member
 	in the same file.
@@ -166,39 +184,41 @@ methods.
 	The 'member' option is a selector that tells what component is
 	needed (the content of the document, the styles, the metadata, ...)
 	knowing that an OODoc::XPath object can handle only one component.
+	Its default value is 'content'.
+	
 	If the application needs to process, say, the content and the styles
 	in the same session, it must create two, or more, OODoc::XPath objects
-	possibly associated with the same OOo file.
-
-	The explicit instantiation of an OODoc::File object is required
-	when the user needs a read/write access to two or more components
-	in the same OOo file. For example, a program which must access a
-	spreadsheet's content and page layout simultaneously could do it
-	like this:
-
-            my $archive	= ooFile("invoice.sxc");
-            my $content	= ooXPath(archive => $archive, member => 'content');
-            my $styles	= ooXPath(archive => $archive, member => 'styles');
-
-        Caution: being associated with an archive via OODoc::File, none of
-        these OODoc::XPath objects should be deleted before the final save
-        call for this archive. So by calling a save, the File object "calls
-        up" all the XPath objects which were "connected" to it in order to
-        "ask" each of them for the changes which were made to the XML
+	possibly associated with the same file interface. The appropriate way
+	is shown in our last example above. The first instance is associated
+	with a filename. Then the other instances are created with the first
+	one, provided as the value of the 'file' option instead of a filename.
+	The constructor tries to be user-friendly: if the 'file' value is
+	a character string, it's processed as a filename, but if this value,
+	is an existing OpenOffice::OODoc::XPath, the new object is
+	automatically connected to the same file interface as the other one.
+	The file interface is transparently provided by a common shared
+	OpenOffice::OODoc::File object (you can safely ignore the features
+	of this object, but a corresponding manual chapter is available for
+	more details).
+	
+	Be careful: creating more than one OpenOffice::OODoc::XPath objects
+	linked by their 'file' parameters to the same explicit filename (and
+	not linked with each other) produce wrong (and sometimes unpredictable)
+	results, and poor performances.
+        
+	Caution: being associated with a common interface via OODoc::File,
+	none of these OODoc::XPath objects should be deleted before the final
+	save() call for this archive. So by calling a save, the File object
+	"calls up" all the XPath objects which were "connected" to it in order
+	to "ask" each of them for the changes which were made to the XML
         (content, styles, meta, etc.). The results are unpredictable if any
-        of them is absent when called. In short, an application should never
-        delete (undef) OODoc::XPath objects; their number should be kept to
-        an absolute minimum and their lifespan should be the same as that of
-        the program itself.
+        of them is absent when called.
 
 	If the provided filename has a ".xml" or ".XML" suffix, or whatever
 	the name if the 'flat_xml' option is set to 1, the file is processed
 	as flat XML and not as a regular OOo file. No OODoc::File object is
-	created, so the save() method is not available. To save the changes
-	made in the document, the application can either export the document
-	as flat XML to a text file (see getXMLContent() below) or select some
-	elements of the document to inert them into another OODoc::XPath
-	object.
+	created, and the result of a subsequent call of the save() method
+	produces a flat XML export (and not a regular OOo/OpenDocument file).
 
         You can pass the optional parameter 'element' in any case where the
         constructor is called without the 'xml' parameter. Bearing in mind
@@ -237,7 +257,10 @@ methods.
 	provided if the new document must comply with the OASIS Open Document
 	specification, knowing that the default format is OpenOffice.org v1.
 	Be careful: the 'opendocument' option should not be set against
-	previously existing documents.
+	previously existing documents. OpenOffice::OODoc::XPath can create
+	and process either OpenOffice.org documents or Open Documents but
+	can't automatically convert a document from one format to the other
+	one.
 
 	OODoc::XPath can process OOo documents provided through XML flat
 	files as well as in the compressed (zip) format. The given file is
@@ -795,7 +818,7 @@ methods.
             $doc->insertElement
             	(
             	'//text:p', 4, 'text:h',
-            	position		=> 'after',
+            	position	=> 'after',
             	text		=> 'New section',
             	attribute	=> $attributes
             	);
@@ -1061,13 +1084,55 @@ methods.
 
 =head3	save([filename])
 
-        Calls the 'save' method of an OODoc::File object to which the
-        current object is connected, passing the filename argument to it (if
-        provided). Only works if an OODoc::File object is indeed connected
-        (this generally means that the current OODoc::XPath object was
-        created with the constructor parameter 'file'). If not, an error is
-        produced.
+	Saves the content of the current document through a physical
+	output.
+	
+	The behaviour of this method depends on the way the current
+	OpenOffice::OODoc::XPath object has been created.
+	
+	If the document is explicitly linked (through the 'file' option
+	of it's constructor) to a regular OOo or OpenDocument file, the
+	document is saved either in the source file, or (if a filename
+	is provided as an argument) in a new file.
+	
+	If the document is linked to the same file interface as one or
+	more other OpenOffice::OODoc::XPath objects, the behaviour is
+	the same as in the previous case, but all the changes made by
+	all the linked objects are automatically saved in the target
+	file. Example:
+	
+		my $content	= ooXPath
+				(
+				file	=> 'source.odt',
+				member	=> 'content'
+				);
+		my $styles	= ooXPath
+				(
+				file	=> $content,
+				member	=> 'styles'
+				)
+		my $meta	= ooXPath
+				(
+				file	=> $content,
+				member	=> 'meta'
+				);
+		# ... a lot of content processing
+		# ... a lot of style processing
+		# ... a lot of metadata processing
+		$content->save('target.odt');
+	
+	At the end of the sequence above, all the changes made through
+	the $content, $styles and $meta objects are saved in 'target.odt'
+	because these objects share a common file interface. Note that
+	in such a situation, the save() method can be issued from anyone
+	of the objects sharing the file interface (i.e. $content->save
+	could be replaced by $styles->save or $meta->save).
 
+	Note: OpenOffice::OODoc::XPath doesn't really know anything about
+	the physical archive file; here save() is only a stub method and
+	the real job is done by the save() method of the associated
+	OpenOffice::OODoc::File object.
+			
 	If the document is not associated with a regular OpenOffice.org
 	compressed file (used through an OODoc::File object), it's saved
 	as "flat XML" to the given file. In such a situation, if the file name
@@ -1338,6 +1403,6 @@ License:
 	- Genicorp General Public Licence v1.0
 	- GNU Lesser General Public License v2.1
 
-Contact: oodoc@genicorp.com
+Contact: jmgdoc@cpan.org
 
 =cut

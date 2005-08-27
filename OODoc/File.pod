@@ -1,19 +1,18 @@
 =head1	NAME
 
-OpenOffice::OODoc::File - I/O operations with OpenOffice.org files
+OpenOffice::OODoc::File - I/O operations with OpenOfficune.org files
 
 =head1	DESCRIPTION
 
-The explicit use of this module is necessary only in programs which
-need to access several XML elements in the same OpenOffice.org
-document in the same session, e.g. Metadata, content and page
-layout. In this case, it will in effect be calling several
-OODoc::XPath derivative objects (e.g. an OODoc::Meta and an
-OODoc::Text), each one accessing a distinct XML element, but all
-working on the same file. It is advisable, then, to create firstly
-an OODoc::File object which handles the overall file access, then to
-create two or more OODoc::XPath objects which will use it as a
-"server".
+The explicit use of this module is generally required only in
+programs which need to do some raw data import or export operations
+in OOo/OpenDocument files. This module can be used as a special
+wrapper of Archve::Zip.
+
+However, a look at the constructor and the save() methods is
+recommended, in order to get a better knowledge of the file interface
+which is used by the document-oriented modules (i.e. OODoc::XPath and
+its derivatives).
 
 If the program is only concerned with a single XML element from the
 file, it is unnecessary to create an OODoc::File explicitly. Just
@@ -351,6 +350,6 @@ License:
 	- Genicorp General Public Licence v1.0
 	- GNU Lesser General Public License v2.1
 
-Contact: oodoc@genicorp.com
+Contact: jmgdoc@cpan.org
 
 =cut

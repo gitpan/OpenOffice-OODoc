@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 2.204 2005-08-17 JMG$
+#	$Id : XPath.pm 2.204 2005-08-25 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -510,12 +510,40 @@ sub	new
 			);
 		}
 
+	unless ($self->{'archive'})
+		{
+		if (ref $self->{'file'})
+			{
+		 	my $obj = $self->{'file'};
+			if	($obj->isa("OpenOffice::OODoc::File"))
+				{
+				$self->{'archive'} = $obj;
+				}
+			elsif	($obj->isa("OpenOffice::OODoc::XPath"))
+				{
+				$self->{'archive'} = $obj->{'archive'};
+				}
+			else
+				{
+				warn "[" . __PACKAGE__ . "::new] " .
+					"Invalid file object\n";
+				return undef;
+				}
+			delete $self->{'file'};
+			}
+		}
+		
 	if ($self->{'xml'})		# load from XML string
 		{
 		$self->{'xpath'} = $twig->safe_parse($self->{'xml'});
 		}
-	elsif ($self->{'archive'})	# load from existig OOFile
+	elsif ($self->{'archive'})	# load from existing OOFile
 		{
+		unless ($self->{'archive'}->isa("OpenOffice::OODoc::File"))
+			{
+			warn "[" . __PACKAGE__ . "] Invalid archive\n";
+			return undef;
+			}
 		$self->{'member'} = 'content' unless $self->{'member'};
 		$self->{'xml'} = $self->{'archive'}->link($self);
 		$self->{'xpath'} = $twig->safe_parse($self->{'xml'});
@@ -550,13 +578,13 @@ sub	new
 		}
 	else
 		{
-		warn "[" . __PACKAGE__ . "] No XML content\n";
+		warn "[" . __PACKAGE__ . "::new] No XML content\n";
 		return undef;
 		}
 	delete $self->{'xml'};
 	unless ($self->{'xpath'})
 		{
-		warn "[" . __PACKAGE__ . "] No well formed content\n";
+		warn "[" . __PACKAGE__ . "::new] No well formed content\n";
 		return undef;
 		}
 	$self->{'twig'} = $twig;

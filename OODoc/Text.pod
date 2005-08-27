@@ -1258,21 +1258,9 @@ which is one of the foundations of the OpenOffice.org format.
 =head3	removeSpan(element)
 
         "Flattens" a text element, removing all presentation distinctions
-        which may mark out some sections of its content.
+        which may mark out some substrings of its content.
 
-        For example, the paragraph:
-
-            I consider OpenOffice.org Writer to be my word processor of
-            choice.
-
-        becomes:
-
-            I consider OpenOffice.org Writer to be my word processor of
-            choice.
-
-        when this method is applied.
-
-        See also setSpan.
+        See also setSpan().
 
 =head3	rowStyle(row_element [, style])
 
@@ -1443,7 +1431,7 @@ which is one of the foundations of the OpenOffice.org format.
 	element, bearing in mind that the paragraph's global style can be
 	modified by setStyle.
 
-	The properties of a span can be related to any kind of character
+	The properties of a text span can be related to any kind of character
 	string presentation, such as font, font size, font weight, font
 	style, and colors (background and foreground).
 
@@ -1460,7 +1448,9 @@ which is one of the foundations of the OpenOffice.org format.
 
         As a highlighted string can be quite long or not all known in
         advance, you can represent it with a regular expression. Taking the
-        previous example again, you could use:
+        following paragraph as an example:
+	
+	"OpenOffice.org is my favourite word processor"
 
             my @list = $doc->selectElementsByContent("OpenOffice");
             foreach my $para (@list)
@@ -1475,7 +1465,17 @@ which is one of the foundations of the OpenOffice.org format.
         with "Writer" (if found) and the style "Style2" is given to the
         string beginning with "word" and ending with "ssor". Defined
         elsewhere, Style1 and Style2 would correspond to the required
-        presentation characteristics.
+        presentation characteristics. "Style1" and "Style2" must be defined
+	as text styles (not paragraph styles); these styles can be present
+	in the source document or created (before or later) by the program
+	(see createStyle() in OpenOffice::OODoc::Styles).
+	
+	It's possible, in a single setSpan() call, to give the same style
+	to more than one text area in a text container. To do so, you just
+	need to provide several text strings, separated by pipes ("|"), as
+	the search expression. Example:
+	
+		$doc->setSpan($para, "OpenOffice|Writer", "MyStyle");
 
         Caution: the current version of this method can neither recognise
         nor handle a string located partly in a "span" and partly outside
@@ -1652,6 +1652,6 @@ License:
 	- Genicorp General Public Licence v1.0
 	- GNU Lesser General Public License v2.1
 
-Contact: oodoc@genicorp.com
+Contact: jmgdoc@cpan.org
 
 =cut

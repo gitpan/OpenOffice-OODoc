@@ -3,7 +3,7 @@
 
 =head1	NAME
 
-oometadoc - Document properties management interface
+oometadoc 0.2 - Document properties management interface
 
 =head1	SYNOPSIS
 
@@ -292,7 +292,7 @@ sub	listeFichiers
 		$chemin = $sv_chemin;
 		chdir $chemin or warn "$chemin is not available\n";
 		}
-	return <*.sx?>;
+	return $OpenOffice::OODoc::VERSION >= 2 ? <*.sx? *.od?> : <*.sx?>;
 	}
 
 #------------------------------------------------------------------------------
@@ -323,7 +323,7 @@ $OK->configure
 		(
 		-command	=> sub
 			{
-			my $f = $liste[$boite_liste->curselection];
+			my $f = $liste[($boite_liste->curselection)[0]];
 			$OK->configure
 				(
 				-text	=> 'Loading...'

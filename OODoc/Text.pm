@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.206 2005-08-17 JMG$
+#	$Id : Text.pm 2.207 2005-08-27 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -15,7 +15,7 @@ package OpenOffice::OODoc::Text;
 use	5.006_001;
 use	OpenOffice::OODoc::XPath	2.204;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.206;
+our	$VERSION	= 2.207;
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -566,6 +566,39 @@ sub	getSpanTextList
 #-----------------------------------------------------------------------------
 # set a span style within a text element
 
+sub	setSpanInNode
+	{
+	my $self	= shift;
+	my $n		= shift	or return undef;
+	my $expression	= shift;
+	my $style	= shift;
+
+	my $text = OpenOffice::OODoc::XPath::decode_text($n->getValue || "");
+	if ($text && ($text =~ /(.*)($expression)(.*)/))
+		{
+		my $before	= $1;
+		my $selection	= $2;
+		my $after	= $3;
+		my $again	= $4;
+	
+		my $span = $self->createElement('text:span', $selection);
+		$span->paste_before($n);
+		$self->setAttribute($span, 'text:style-name', $style);
+		$n->delete; $n = undef; $text = undef;
+		if ($before)
+			{
+			my $bn = $self->createTextNode($before);
+			$bn->paste_before($span);
+			$self->setSpanInNode($bn, $expression, $style);
+			}
+		if ($after)
+			{
+			my $an = $self->createTextNode($after);
+			$an->paste_after($span);
+			}
+		}
+	}
+
 sub	setSpan
 	{
 	my $self	= shift;
@@ -596,7 +629,7 @@ sub	setSpan
 		}
 	my $expression	= shift		or return undef;
 	my $style	= shift	|| $self->{'paragraph_style'};
-	my @nodes	= $element->getChildNodes;	
+	my @nodes	= $element->getChildNodes;
 	NODE_LOOP : foreach my $n (@nodes)
 		{
 		if ($n->isElementNode)
@@ -605,29 +638,7 @@ sub	setSpan
 			next;
 			}
 		next unless ($n->isTextNode);
-
-		my $text = OpenOffice::OODoc::XPath::decode_text
-						($n->getValue || "");
-		while ($n && $text && ($text =~ /(.*)($expression)(.*)/))
-			{
-			my ($before, $selection, $after) = ($1, $2, $3);
-			my $span = $self->createElement
-						('text:span', $selection);
-			$span->paste_before($n);
-			$self->setAttribute($span, 'text:style-name', $style);
-			$n->delete; $n = undef; $text = undef;
-			if ($before)
-				{
-				$self->createTextNode($before)
-						->paste_before($span);
-				$text = $before;
-				}
-			if ($after)
-				{
-				$self->createTextNode($after)
-						->paste_after($span);
-				}
-			}
+		$self->setSpanInNode($n, $expression, $style) if $n;
 		}
 	}
 
