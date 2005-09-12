@@ -549,6 +549,9 @@ which is one of the foundations of the OpenOffice.org format.
         manner, as if it belonged to a single 3D table irrespective of the
         rest of the document [22] .
 
+	If the cell is defined in the spreadsheet but covered (because of a
+	cell merge), the return value is undef.
+	
         The first argument can be either the sequential number of the table
         (starting at 0), the logical name of the table, or a 'table' object
 	(which can be retrieved in advance using getTable). If it's a number
@@ -618,7 +621,7 @@ which is one of the foundations of the OpenOffice.org format.
 =head3	getCellValue(cell)
 
         Returns the value of a table cell (and not the cell element as with
-        getCell).
+        getCell), if the cell is defined and uncovered.
 
         The first form indicates a cell by its 3D coordinates, as with
         getCell).

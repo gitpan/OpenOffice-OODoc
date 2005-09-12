@@ -1,3 +1,6 @@
+2.007	2005-09-12
+	- Bug fix in Text.pm (wrong cell addressing in rows containing
+	covered cells)
 2.006	2005-08-27
 	- Bug fix in Text.pm (setSpan)
 	- Bug fix and update in oometadoc example

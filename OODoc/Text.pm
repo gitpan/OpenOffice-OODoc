@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.207 2005-08-27 JMG$
+#	$Id : Text.pm 2.208 2005-09-12 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -15,7 +15,7 @@ package OpenOffice::OODoc::Text;
 use	5.006_001;
 use	OpenOffice::OODoc::XPath	2.204;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.207;
+our	$VERSION	= 2.208;
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -1216,7 +1216,8 @@ sub	_expand_row
 		}
 	my $width	= shift || $self->{'max_cols'};
 
-	my @cells	= $row->children('table:table-cell');
+	my @cells	= $row->selectChildElements
+					('table:(covered-|)table-cell');
 
 	my $cell	= undef;
 	my $last_cell	= undef;

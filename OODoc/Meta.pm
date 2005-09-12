@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Meta.pm 2.006 2005-05-10 JMG$
+#	$Id : Meta.pm 2.007 2005-09-12 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -13,9 +13,9 @@
 
 package	OpenOffice::OODoc::Meta;
 use	5.006_001;
-our	$VERSION	= 2.006;
+our	$VERSION	= 2.007;
 
-use	OpenOffice::OODoc::XPath	2.115;
+use	OpenOffice::OODoc::XPath	2.204;
 require Exporter;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath Exporter );
 our	@EXPORT		= qw ( ooLocaltime ooTimelocal );
