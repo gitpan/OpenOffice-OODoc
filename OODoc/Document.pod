@@ -1,6 +1,6 @@
 =head1	NAME
 
-OpenOffice::OODoc::Document - Top level component for content processing
+OpenOffice::OODoc::Document - Top level component for content and layout processing
 
 =head1	SYNOPSIS
 

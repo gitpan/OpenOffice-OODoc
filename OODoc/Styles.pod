@@ -308,7 +308,7 @@ at least a blank of each required style.
             		'style:horizontal-pos'	=> 'from-left',
             		'style:vertical-rel'	=> 'page',
             		'style:horizontal-rel'	=> 'page',
-            		'draw:luminance'		=> '4%',
+            		'draw:luminance'	=> '4%',
             		'draw:contrast'		=> '2%',
             		'draw:gamma'		=> '1.1',
             		'draw:transparency'	=> '5%',
@@ -383,7 +383,7 @@ at least a blank of each required style.
 	is a rectangular area, that is not always fully covered by text.
 	
 	The 'area' switch is silently ignored when used with OOo documents,
-	and sometimes required for ODF, you can safely use it if you want
+	and sometimes required for ODF, so you can safely use it if you want
 	to write portable code.
 
 	So, while OpenOffice::OODoc supports both OOo 1 and ODF with the
@@ -555,13 +555,17 @@ at least a blank of each required style.
 
             my $def_para = $doc->getDefaultStyleElement("paragraph");
 
-=head3	getFooterParagraph(page, number)
+=head3	getFooterParagraph(masterpage, number)
 
-        Returns a footer paragraph's reference, if the page has a footer and
-        the paragraph exists. Arguments are master page and paragraph
-        number.
+        In a text document, returns a footer paragraph's reference, if the
+	master page has a footer and the paragraph exists. Arguments are
+	master page and paragraph number.
+	
+	Caution: the first argument can't be a page number, knowing that
+	printable pages are dynamically created by the office software and
+	don't exist in the stored document.
 
-=head3	getHeaderParagraph(page, number)
+=head3	getHeaderParagraph(masterpage, number)
 
         Like getFooterParagraph, but for a header.
 
@@ -838,16 +842,16 @@ at least a blank of each required style.
         of object. The same data structure can be used to modify a style's
         properties by passing options as a hash. This structure is the same
         as the sub-hash "properties" of getStyleAttributes or updateStyle.
-
-        If you wanted to redo the style we called "Colour" (see
-        createStyle), for example, changing the colour of the characters to
-        red and replacing the italics with standard font, you could do it as
-        follows:
+	
+        If you wanted to redo the style we called "Colour" (see createStyle),
+	for example, changing the colour of the characters to red and
+	replacing the italics with standard font, you could do it as follows:
 
             $doc->styleProperties
             		(
             		"Colour",
-            		'fo:color'	=> "#ff0000",
+			area		=> 'text',
+            		'fo:color'	=> rgb2oo("red"),
             		'fo:font-style'	=> undef
             		);
 
@@ -856,6 +860,10 @@ at least a blank of each required style.
         quantity of red is given by the first two hexadecimal digits, which
         here are set to maximum, and by setting the green and blue to zero.
         The "font-style" attribute had previously been set to "italic".
+	Here, the 'area' option is neutral if the document format is OOo,
+	but it must be set to 'text' for an ODF document, because all that
+	is related to characters belongs to the 'text' area in a paragraph
+	style (see below).
 
         styleProperties returns all the style's properties but only modifies
         those that have been set using options. To clear an existing
@@ -863,7 +871,7 @@ at least a blank of each required style.
         corresponding option giving it a null value.
 
 	If the current document is an OASIS Open Document, an additional
-	"area" option should be provides, because a style's properties may
+	"area" option should be provided, because a style's properties may
 	be stored in logical parts. For example, in a paragraph style, some
 	properties apply to the paragraph itself, while some other ones apply
 	to its text content (and some text properties can have the same name
@@ -1006,7 +1014,11 @@ at least a blank of each required style.
 
         You can use the "prototype" option to update a style with another
         style's characteristics, but this option does not replace the
-        style's name with the prototype's name.
+        style's name with the prototype's name. Be careful, the "prototype"
+	option doesn't work for any kind of style, and it's not recommended
+	in this method. The best approach for replicating an existing style
+	consists of creating a new style with the "prototype" option (see
+	createStyle).
 
         By definition, the style already exists and can be indicated equally
         well by reference or by name.

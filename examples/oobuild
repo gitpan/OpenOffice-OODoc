@@ -2,7 +2,7 @@
 
 =head1	NAME
 
-oobuild - OpenOffice.org file creation utility - (c) Genicorp 2004
+oobuild - OpenOffice.org file creation utility
 
 =head1	SYNOPSIS
 
@@ -18,6 +18,10 @@ cat data.txt | oobuild filename.sxw -
 
 	--class		Document class (text, spreadsheet, drawing, presentation)
 			Default: text
+	--opendocument	(no value). If this option is on, the document will be in
+			OpenDocument format. Without this option, the format will
+			be selected according to the general configuration of the
+			OpenOffice::OODoc installation.
 	--creator	The author of the document. Default: the current user's
 			login name.
 	--date		Creation date. Default is current local time.
@@ -49,19 +53,23 @@ cat data.txt | oobuild filename.sxw -
 			where H is the number of lines and W the number of columns.
 			Default: '16x8'
 	--title		The title of the document. Default: "Untitled".
-
+	--readable_XML	(no value). For debugging only. If this option is on, the XML
+			content of the target file is indented, in order to be later
+			edited.
 
 =cut
 
 #----------------------------------------------------------------------------------------
 
-use OpenOffice::OODoc	1.204;
+use OpenOffice::OODoc	2.005;
 use Getopt::Long;
 
 my $INPUT	= undef;
 my $input	= undef;
 
-my $generator = 'Genicorp OpenOffice::OODoc ' . $OpenOffice::OODoc::VERSION;
+my $generator	= 'Genicorp OpenOffice::OODoc ' . $OpenOffice::OODoc::VERSION;
+my $title	= "Generated document";
+my $description	= "This file has been created with OpenOffice::OODoc";
 
 my $targetfile = $ARGV[0]
 	or die "Usage: oobuild <filename> [--options]\n";
@@ -72,15 +80,17 @@ GetOptions
 	'class=s'		=> \(my $class = 'text'),
 	'date=s'		=> \(my $date = ooLocaltime),
 	'generator=s'		=> \$generator,
-	'title=s'		=> \(my $title = 'Untitled'),
+	'title=s'		=> \$title,
 	'subject=s'		=> \(my $subject = ''),
-	'description=s'		=> \(my $description = ''),
+	'description=s'		=> \$description,
 	'keywords=s'		=> \(my $keywords = ''),
 	'creator=s'		=> \(my $creator = scalar getpwuid($<)),
 	'source=s'		=> \(my $source = undef),
 	'tablesize=s'		=> \(my $tablesize = '16x8'),
 	'tablename=s'		=> \(my $tablename = undef),
-	'force'			=> \(my $force = undef)
+	'force'			=> \(my $force = undef),
+	'opendocument'		=> \(my $odf = undef),
+	'readable_XML'		=> \(my $rxml = undef)
 	);
 
 if ( -e $targetfile && ! defined $force)
@@ -88,16 +98,24 @@ if ( -e $targetfile && ! defined $force)
 	die	"File $targetfile exists. I don't create it.\n"	.
 		"Use --force to replace it.\n";
 	}
+my $odf_flag = $odf ? 'on' : undef;
+my $rxml_flag = $rxml ? 'on' : undef;
 
-my $archive	= ooFile($targetfile, create => $class)
+my $archive	= ooFile
+			(
+			$targetfile,
+			create		=> $class,
+			opendocument	=> $odf_flag
+			)
 	or die "File creation failure\n";
 
 #----------------------------------------------------------------------------------------
 
-my $meta	= ooMeta(archive => $archive);
+my $meta	= ooMeta(archive => $archive, readable_XML => $rxml_flag);
 $meta->creation_date($date);
 $meta->date($date);
 $meta->generator($generator);
+$meta->initial_creator($creator);
 $meta->creator($creator);
 $meta->title($title);
 $meta->subject($subject);
@@ -122,7 +140,7 @@ if ($stdin || $source)
 			$INPUT = *SOURCE;
 			}
 		}
-	my $content = ooDocument(archive => $archive);
+	my $content = ooDocument(archive => $archive, readable_XML => $rxml_flag);
 	if ($class eq 'text')
 		{
 		my $first_para = $content->getParagraph(0);
@@ -169,10 +187,11 @@ if ($stdin || $source)
 	close $INPUT unless ($source eq '-');
 	}
 
+
+	
 #----------------------------------------------------------------------------------------
 
 $archive->save;
 exit;
 
 #----------------------------------------------------------------------------------------
-

@@ -1,6 +1,6 @@
 =head1	NAME
 
-OpenOffice::OODoc::File - I/O operations with OpenOfficune.org files
+OpenOffice::OODoc::File - I/O operations with OpenDocument/OpenOffice files
 
 =head1	DESCRIPTION
 

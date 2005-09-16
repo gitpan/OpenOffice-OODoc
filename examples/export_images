@@ -25,7 +25,7 @@ Usage : export_images <filename> [<filter>]
 
 =cut
 
-use OpenOffice::OODoc	1.103;
+use OpenOffice::OODoc;
 
 ooImage(file => $ARGV[0], member => 'content')
 	->exportImages(name => $ARGV[1]);

@@ -1,19 +1,18 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 2.204 2005-08-25 JMG$
+#	$Id : XPath.pm 2.205 2005-09-15 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
 #	License:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
-#	Contact: oodoc@genicorp.com
 #
 #-----------------------------------------------------------------------------
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 2.204;
+our	$VERSION	= 2.205;
 use	XML::Twig	3.15;
 use	Encode;
 
@@ -984,6 +983,18 @@ sub	getChildElementByName
 	return $self->selectChildElementByName(@_);
 	}
 
+#-----------------------------------------------------------------------------
+
+sub	createSpaces
+	{
+	my $self	= shift;
+	my $length	= shift	or return undef;
+	
+	my $element = $self->createElement('text:s');
+	$element->set_att('text:c' => $length);
+	return $element;
+	}
+
 #------------------------------------------------------------------------------
 # replaces any previous content of an existing element by a given text
 
@@ -1033,6 +1044,12 @@ sub	extendText
 	
 	my $element 	= $self->getElement($path, $pos);
 	return undef	unless $element;
+	
+	if (ref $text)
+		{
+		$text->paste_last_child($element) if $text->isElementNode;
+		return $text;
+		}
 
 	my @lines	= split "\n", $text;
 	while (@lines)
@@ -1090,6 +1107,13 @@ sub	getText
 	my $name	= $element->getName;
 	if	($name eq 'text:tab-stop')	{ return "\t"; }
 	if	($name eq 'text:line-break')	{ return "\n"; }
+	if	($name eq 'text:s')
+		{
+		my $spaces = "";
+		my $count = $element->att('text:c') || 1;
+		while ($count > 0) { $spaces .= ' '; $count--; }
+		return $spaces;
+		}
 	foreach my $node ($element->getChildNodes)
 		{
 		if ($node->isElementNode)

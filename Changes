@@ -1,3 +1,10 @@
+2.008	2005-09-16
+	- Changed getText() and getCellValue() in order to export the
+	full text content of multi-paragraph table cells (Text.pm)
+	- Bug fix in Styles.pm (masterPageHeader, masterPageFooter)
+	- Changed getText(), extendText() and created createSpaces()
+	in XPath.pm in order to improve the management of repeated spaces
+	- Doc update
 2.007	2005-09-12
 	- Bug fix in Text.pm (wrong cell addressing in rows containing
 	covered cells)

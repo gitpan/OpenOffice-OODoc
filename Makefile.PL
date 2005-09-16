@@ -1,9 +1,13 @@
+#------------------------------------------------------
+# OpenOffice::OODoc packaging & installation 2005-09-14
+#------------------------------------------------------
+
 use 5.008;
 use Getopt::Long;
 use Encode;
 use ExtUtils::MakeMaker;
 
-#---
+#------------------------------------------------------
 
 GetOptions
 	(
@@ -15,7 +19,7 @@ GetOptions
 	'format=s'	=> \(my $format = 1)
 	);
 
-#---
+#------------------------------------------------------
 
 print "OpenOffice::OODoc Installation\n";
 	
@@ -92,7 +96,7 @@ if ($config)
 	
 	Encode::from_to($workdir, $encoding, 'utf8');
 
-#---
+#------------------------------------------------------
 
 	my @lt = localtime();
 	my $install_date = sprintf
@@ -101,7 +105,7 @@ if ($config)
 		$lt[5] + 1900, $lt[4] + 1, $lt[3], $lt[2], $lt[1], $lt[0]
 		);
 
-#---
+#------------------------------------------------------
 
 	open CF, ">", $config_file;
 	print CF '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
@@ -118,13 +122,13 @@ if ($config)
 	close CF;
 	}
 
-#---
+#------------------------------------------------------
 
 WriteMakefile
 	(
     	'NAME'		=> 'OpenOffice::OODoc',
 	'VERSION_FROM'	=> 'OODoc.pm',
-	'ABSTRACT'	=> 'A library for direct OpenOffice.org document processing',
+	'ABSTRACT'	=> 'A library for OpenDocument processing',
     	'AUTHOR'	=> 'Jean-Marie Gouarné <jmgdoc@cpan.org>',
     	'PREREQ_PM'	=>
     		{
@@ -146,4 +150,4 @@ WriteMakefile
 		]
 	);
 
-#---
+#------------------------------------------------------

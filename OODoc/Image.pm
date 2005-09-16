@@ -7,7 +7,6 @@
 #	License:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
-#	Contact: oodoc@genicorp.com
 #
 #-----------------------------------------------------------------------------
 

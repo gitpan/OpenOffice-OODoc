@@ -46,8 +46,10 @@ which is one of the foundations of the OpenOffice.org format.
         The XML member loaded by default is 'content.xml'. The most common
         creation method is like this:
 
-            my $doc = OpenOffice::OODoc::Text->new
-            	(file => 'my_file.sxw');
+            my $doc = ooText(file => 'my_file.sxw');
+	    
+	This constructor should generally not be called directly, because it's
+	inherited by ooDocument().
 
         Other parameters can be supplied as options (see the properties list
         at the end of the chapter).
@@ -71,7 +73,7 @@ which is one of the foundations of the OpenOffice.org format.
             		end	=> '}'
             		}
             	);
-            my $doc = OpenOffice::OODoc::Text->new
+            my $doc = ooText
             		(
             		file		=> 'filename.sxw',
             		paragraph_style	=> 'My Paragraphs',
@@ -90,6 +92,20 @@ which is one of the foundations of the OpenOffice.org format.
 
         Copies an existing element of any type and appends it to the end of
         the document body. No new element is created.
+
+=head3	appendDrawPage([options])
+
+	In a presentation or drawing document, appends a new page at the en
+	of the document.
+	
+	Possible options are:
+	
+		name		=> page name (unique)
+		id		=> page numeric ID (unique)
+		style		=> page style name
+		master		=> master page name
+	
+	Returns the new draw page element if successful, undef if not.
 
 =head3	appendHeader([options])
 
@@ -171,7 +187,7 @@ which is one of the foundations of the OpenOffice.org format.
 
 =head3	appendParagraph(<options>)
 
-        Creates a new paragraph and appends it to the end of the document.
+        Creates a new paragraph and appends it to the document.
 
         Options:
 
@@ -187,12 +203,30 @@ which is one of the foundations of the OpenOffice.org format.
 
         If the 'style' option is empty, the style from the 'paragraph_style'
         property of the OODoc::Text instance is used.
+	
+	By default, the new paragraph takes place at the end of the document.
+	But it's possible to attach it as the last child of an existing
+	text container (ex: a table cell). To do so, the container must be
+	provided through an 'attachment' option. For example, to append a new
+	paragraph in a table cell, one can write
+	
+		my $cell = $doc->getCell("Table1", "B12");
+		$doc->appendParagraph
+			(
+			text		=> "The cell, reloaded",
+			attachment	=> $cell
+			);
 
         Note: this method can only be used with a new paragraph i.e. it adds
         while it creates. To add an already existing paragraph using
         getParagraph from the same document or from another document, use
         the appendElement or replicateElement methods instead which are
         inherited from OODoc::XPath, or even appendText below.
+	
+	Note: The repeated spaces are not properly processed, so any sequence
+	of spaces (whatever its length) in the 'text' string is replaced by a
+	single space in the target document. See setText() and extendText() in
+	OpenOffice::OODoc::XPath.
 
 =head3	appendRow(table [, options])
 
@@ -309,7 +343,6 @@ which is one of the foundations of the OpenOffice.org format.
         Appends a text element, by default to the end of a document.
 
         Two type of usage are possible:
-
 
         If the 'attachment' option is used, which indicates an element
         reference, the new element is attached as a "child" element of the
@@ -513,6 +546,23 @@ which is one of the foundations of the OpenOffice.org format.
 
 	Deletes the given bookmark (if defined).
 
+=head3	drawPageId(page [, new_id])
+
+	Returns the internal identifier of a presentation page, and changes
+	it if a second argument is provided. The page id is a positive
+	integer.
+	
+	The first argument must comply to the same rules as with getDrawPage.
+	
+=head3	drawPageName(page [, newname])
+
+	Returns the visible name of a presentation or drawing page.
+	The first agument can be a page order number, a page element or the
+	present page name (see getDrawPage). The page is renamed if a
+	second argument is provided. Example:
+	
+		$doc->drawPageName("oldname", "newname");
+
 =head3	getBibliographyElements([id])
 
 	Returns the list of the bibliographic entry elements contained in the
@@ -597,14 +647,14 @@ which is one of the foundations of the OpenOffice.org format.
 	Addressing cells in spreadsheets is considerably more complex
         than in text document tables. However, the same addressing scheme
 	in allowed in the "Calc" documents than in the "Writer" ones,
-	provided the targeted cells belong to a "managed area" (beginnning
-	to the upper-left cell, and ending at a parametrizable position).
-	If the 'expand_tables' property of the document is set to 'on', this
-	managed area is automatically initialized when the sheet is
-	targeted for the first time. So, the first access to a given sheet
-	(whatever the row or the cell) can be significantly more costly
-	than any subsequent access. See normalizeSheet() for more
-	explanations. Remember that the table addressing is zero-based and
+	provided the targeted cells belong to a preprocessed workspace
+	(beginnning at the upper-left cell, and ending at a parametrizable
+	position). It's possible to use normalizeSheet() or getTable() in
+	order to make this workspace available.
+	
+	See normalizeSheet() for more explanations.
+	
+	Remember that the table addressing is zero-based and
 	the row comes before the column in OpenOffice::OODoc, so, for
 	example:
 
@@ -668,6 +718,23 @@ which is one of the foundations of the OpenOffice.org format.
         the document, logical name or element reference. The second argument
         is the column's number in the table. Synonym: getTableColumn.
 
+=head3	getDrawPage(pos/name)
+
+	For presentation and drawing documents.
+	
+	Returns the element reference of the given page name or postion.
+	
+	If the argument contains an integer, the page is according to its
+	zero-based position. If the value is negative, the position is counted
+	backwards from the end.
+	
+	If the argument is alphanumeric, it's regarded as a page name, and the
+	page is selected accordingly.
+	
+	Caution: This method can't retrieve a page by name if the name
+	contains numeric characters only; selectDrawPageByName() should be
+	preferred to do so.
+	
 =head3	getFootnoteCitationList()
 
         Returns the list of all the footnote citations (i.e. references to
@@ -812,9 +879,9 @@ which is one of the foundations of the OpenOffice.org format.
 =head3	getRowCells(table, row)
 =head3	getRowCells(row)
 	
-	Returns the list of the cell elements corresponding to a given table row.
-	The row can be provided either by table ID and row number or by direct
-	row object.
+	Returns the list of the uncovered cell elements corresponding to a
+	given table row. The row can be provided either by table ID and row
+	number or by direct row object.
 
 =head3	getSpanList()
 
@@ -953,9 +1020,15 @@ which is one of the foundations of the OpenOffice.org format.
 
         If the element is an ordered or unordered list, the text produced is
         a concatenation of all the lines in the list, each separated by a
-        line-feed ("\n") in addition to any delimiters.
+        line-break in addition to any delimiters. The default line break
+	character is "\n", but it can be set to any other string (including
+	an empty string) through the 'line_separator' property of the document
+	object.
 
-        If the element is a table cell, getText behaves like getCellValue.
+        If the element is a string table cell, getText behaves like
+	getCellValue. If the cell contains more than one paragraph, the text
+	produced is a concatenation of all the paragraph contents, each
+	separated in the same way as list items.
 
         If the element is a table, getText behaves like getTableText.
 
@@ -1003,6 +1076,26 @@ which is one of the foundations of the OpenOffice.org format.
 	Returns the UTF8 conversion of the given text, supposed to be in
 	the local character set of the document (see the 'local_encoding'
 	property).
+
+=head3	insertDrawPage(page/pos [, options])
+
+	In a presentation or drawing document, inserts a new page before
+	or after an existing page.
+	
+	Possible options are the same as for appendDrawPage(), with an
+	additional one:
+	
+		position	=> 'before' or 'after' (default 'before')
+		
+	The new page is inserted before or after the reference page, according
+	to the 'position' option.
+	
+	The first argument can be a draw page element reference (recommended)
+	previously returned, for example, by a previous page retrieval or
+	creation method call. Alternatively, it can be a page position or
+	visible name, so it's regarded in the same way as in getDrawPage().
+	
+	Returns the new page element, or undef in case of failure.
 
 =head3	insertHeader(path, position, options)
 
@@ -1140,6 +1233,10 @@ which is one of the foundations of the OpenOffice.org format.
 	To be used with spreadsheets. This method preprocesses a given
 	sheet so its components (rows, cells) become available for all the
 	table-oriented methods described in this chapter.
+	
+	normalizeSheet() is useless for tables which can be selected with
+	getTable(); the getTable() method, when executed with the length
+	and width optional arguments, executes the same job.
 
 	This method is not needed for tables included in OpenOffice.org
 	Writer (sxw) documents, because these tables are "normalized" (i.e.
@@ -1271,6 +1368,14 @@ which is one of the foundations of the OpenOffice.org format.
 
         Reads or modifies a table row's style, in the same way as
         columnStyle does for columns.
+
+=head3	selectDrawPageByName(name)
+
+	In a presentation or drawing document, returns the page element
+	identified by the given name, or undef if the name is unknown.
+	
+	The names to be used correspond to the displayed page names in
+	OpenOffice.org Impress.
 
 =head3	selectElementByBookmark(name)
 
@@ -1517,6 +1622,11 @@ which is one of the foundations of the OpenOffice.org format.
 
         For all other types of element, setText behaves normally as defined
         in OODoc::XPath.
+	
+	Note: setText(), as any other text input method, can't properly
+	process repeated spaces. So, a sequence of spaces, whatever its
+	length, is replaced by a single space. See setText() and extendText()
+	in OpenOffice::OODoc::XPath.
 
 =head3	tableStyle(table [, style])
 

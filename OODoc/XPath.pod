@@ -193,8 +193,8 @@ features of OODoc::Meta and OODoc::Document are described here.
 	with a filename. Then the other instances are created with the first
 	one, provided as the value of the 'file' option instead of a filename.
 	The constructor tries to be user-friendly: if the 'file' value is
-	a character string, it's processed as a filename, but if this value,
-	is an existing OpenOffice::OODoc::XPath, the new object is
+	a character string, it's regarded as a filename, but if this value,
+	is an existing OpenOffice::OODoc::XPath object, the new object is
 	automatically connected to the same file interface as the other one.
 	The file interface is transparently provided by a common shared
 	OpenOffice::OODoc::File object (you can safely ignore the features
@@ -203,8 +203,8 @@ features of OODoc::Meta and OODoc::Document are described here.
 	
 	Be careful: creating more than one OpenOffice::OODoc::XPath objects
 	linked by their 'file' parameters to the same explicit filename (and
-	not linked with each other) produce wrong (and sometimes unpredictable)
-	results, and poor performances.
+	not linked with each other) produces useless extra I/O operations and
+	possible conflicts.
         
 	Caution: being associated with a common interface via OODoc::File,
 	none of these OODoc::XPath objects should be deleted before the final
@@ -413,6 +413,12 @@ features of OODoc::Meta and OODoc::Document are described here.
 
 	This accessor is read-only.
 
+=head3	createSpaces(length)
+
+	Creates a special element containing repeated spaces. Such an element
+	can be used in order to insert a sequence of more than spaces in a
+	text container. See setText() and extendText().
+
 =head3	createElement(name, text)
 
 =head3	createElement(xml)
@@ -503,7 +509,7 @@ features of OODoc::Meta and OODoc::Document are described here.
 
 	Deletes the calling document object. Recommended as soon as the
 	object is no longer needed by the application, and sometimes
-	mandatory to avoid memory leaks.
+	mandatory to avoid memory leaks, especially in long-running processes.
 
 =head3	exportXMLBody()
 
@@ -564,6 +570,22 @@ features of OODoc::Meta and OODoc::Document are described here.
 	
 	Assuming $p is a regular text element (ex: a paragraph), its
 	content becomes "Initial content extended".
+	
+	If the second argument is an element itself, it's appended
+	as is to the first element. This feature can be used, for
+	example, in order to append sequences of repeated spaces:
+	
+		$doc->setText($p, "Begin");
+		$spaces = $doc->createSpaces(6);
+		$doc->extentText($p, $spaces);
+		$doc->extendText($p, "End");
+	
+	After the code sequence above, the $p element contains:
+	
+		"Begin      End"
+	
+	knowing that a single string containing repeated spaces could
+	not be properly processed by extendtext() or setText().
 
 	(See also setText()).
 
@@ -812,7 +834,7 @@ features of OODoc::Meta and OODoc::Document are described here.
 
             my $attributes	=
             	{
-            	'text:style-name'	=> 'Header 2',
+            	'text:style-name'	=> 'Heading 2',
             	'text:level'		=> '2'
             	};
             $doc->insertElement
@@ -1314,6 +1336,19 @@ features of OODoc::Meta and OODoc::Document are described here.
 	Use the given text as the content of the given element.
 
 	Any previous content is replaced by the given one.
+	
+	Note: The strings containing repeated spaces are not properly
+	processed. A sequence of repeated spaces, whatever its length,
+	is replaced by a single space in the target document. So
+
+		$doc->setText($p, "Begin        End");
+	
+	produces the same visible result as
+	
+		$doc->setText($p, "Begin End");
+	
+	See createSpaces() and extendText() for a workaround if you
+	need to insert repeated spaces.
 
 	(See also extendText())
 

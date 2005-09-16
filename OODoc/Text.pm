@@ -1,21 +1,20 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.208 2005-09-12 JMG$
+#	$Id : Text.pm 2.210 2005-09-16 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
 #	Licensing conditions:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
-#	Contact: oodoc@genicorp.com
 #
 #-----------------------------------------------------------------------------
 
 package OpenOffice::OODoc::Text;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	2.204;
+use	OpenOffice::OODoc::XPath	2.205;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.208;
+our	$VERSION	= 2.210;
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -229,12 +228,18 @@ sub	XML::Twig::Elt::isSequenceDeclarations
 
 sub	XML::Twig::Elt::isBibliographyMark
 	{
-	
 	my $element	= shift;
 	my $name	= $element->getName;
 	return ($name && ($name eq 'text:bibliography-mark')) ? 1 : undef;
 	}
 
+sub	XML::Twig::Elt::isDrawPage
+	{
+	my $element	= shift;
+	my $name	= $element->getName;
+	return ($name && ($name eq 'draw:page')) ? 1 : undef;	
+	}
+	
 #-----------------------------------------------------------------------------
 # getText() method adaptation for complex elements
 # and text output "enrichment"
@@ -283,9 +288,14 @@ sub	getText
 		$element->isTableCell
 		)
 		{
-		my $p = $element->getFirstChild('text:p');
-		my $t = $self->SUPER::getText($p);
-		$text .= $t if defined $t;
+		my @paragraphs = $element->children('text:p');
+		while (@paragraphs)
+			{
+			my $p = shift @paragraphs;
+			my $t = $self->SUPER::getText($p);
+			$text .= $t if defined $t;
+			$text .= $line_break if @paragraphs;
+			}
 		}
 	elsif	($element->isTable)
 		{
@@ -990,6 +1000,143 @@ sub	getParagraphText
 	}
 
 #-----------------------------------------------------------------------------
+# select a draw page by name
+
+sub	selectDrawPageByName
+	{
+	my $self	= shift;
+	my $text	= shift;
+	return $self->selectNodeByXPath
+			("//draw:page\[\@draw:name=\"$text\"\]", @_);
+	}
+#-----------------------------------------------------------------------------
+# get a draw page by position or name
+
+sub	getDrawPage
+	{
+	my $self	= shift;
+	my $p		= shift;
+	return undef unless defined $p;	
+	if (ref $p)	{ return ($p->isDrawPage) ? $p : undef; }
+	if ($p =~ /^[\-0-9]*$/)
+		{
+		return $self->getElement('//draw:page', $p, @_);
+		}
+	else
+		{
+		return $self->selectDrawPageByName($p, @_);
+		}
+	}
+
+#-----------------------------------------------------------------------------
+# create a draw page (to be inserted later)
+
+sub	createDrawPage
+	{
+	my $self        = shift;
+	my $class	= $self->contentClass;
+	unless ($class eq 'presentation' || $class eq 'drawing')
+		{
+		warn	"[" . __PACKAGE__ . "::createDrawPage] "	.
+			"Unsupported operation for this document\n";
+		return undef;
+		}
+        my %opt         = @_;
+        my $body        = $self->getBody;
+
+        my $p = $self->createElement('draw:page');
+        $self->setAttribute($p, 'draw:name' => $opt{'name'})
+                        if $opt{'name'};
+        $self->setAttribute($p, 'draw:id' => $opt{'id'})
+                        if $opt{'id'};
+        $self->setAttribute($p, 'draw:style-name' => $opt{'style'})
+                        if $opt{'style'};
+        $self->setAttribute($p, 'draw:master-page-name' => $opt{'master'})
+                        if $opt{'master'};
+        return $p;
+	}
+
+#-----------------------------------------------------------------------------
+# append a new draw page to the document
+
+sub	appendDrawPage
+	{
+	my $self        = shift;
+        my $page	= $self->createDrawPage(@_) or return undef;
+        my $body        = $self->getBody;
+        $self->appendElement($body, $page);
+        return $page;
+ 	}
+
+#-----------------------------------------------------------------------------
+# insert a new draw page before or after an existing one
+
+sub	insertDrawPage
+	{
+	my $self	= shift;
+	my $pos		= shift	or return undef;
+	my $pos_page	= $self->getDrawPage($pos);
+	unless ($pos_page)
+		{
+		warn	"[" . __PACKAGE__ . "::insertDrawPage] "	.
+			"Unknown position\n";
+		return undef;
+		}
+	my %opt = @_;
+	my $page = $self->createDrawPage(%opt) or return undef;
+	$self->insertElement($pos_page, $page, position => $opt{'position'});
+	
+	return $page;
+	}
+
+#-----------------------------------------------------------------------------
+
+sub	drawPageAttribute
+	{
+	my $self	= shift;
+	my $att		= shift;
+	my $pos		= shift;
+	my $page	= $self->getDrawPage($pos)	or return undef;
+	my $value	= shift;
+
+	return $value ?
+		$self->setAttribute($page, $att, $value)	:
+		$self->getAttribute($page, $att);
+	}
+
+#-----------------------------------------------------------------------------
+
+sub	drawPageName
+	{
+	my $self	= shift;
+	return $self->drawPageAttribute('draw:name', @_);
+	}
+
+#-----------------------------------------------------------------------------
+
+sub	drawPageStyle
+	{
+	my $self	= shift;
+	return $self->drawPageAttribute('draw:style-name', @_);
+	}
+
+#-----------------------------------------------------------------------------
+
+sub	drawPageId
+	{
+	my $self	= shift;
+	return $self->drawPageAttribute('draw:id', @_);
+	}
+
+#-----------------------------------------------------------------------------
+
+sub	drawMasterPage
+	{
+	my $self	= shift;
+	return $self->drawPageAttribute('draw:master-page-name', @_);
+	}
+
+#-----------------------------------------------------------------------------
 # get list element
 
 sub	getList
@@ -1614,10 +1761,7 @@ sub	getCellValue
 	my $cell_type	= $cell->getAttribute($prefix . ':value-type');
 	if ((! $cell_type) || ($cell_type eq 'string'))		# text value
 		{
-		return $self->getText
-			(
-			$cell->first_child('text:p')
-			);
+		return $self->getText($cell);
 		}
 	elsif ($cell_type eq 'date') 		# date
 		{				# thanks to Rafel Amer Ramon

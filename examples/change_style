@@ -52,8 +52,10 @@ unless ($content_file && $style_file && $target_file)
 	}
 
 		# focus on the 'styles.xml' member of each source file
-my $style_doc	= OpenOffice::OODoc::XPath->new(file => $style_file, member => STYLES);
-my $content_doc	= OpenOffice::OODoc::XPath->new(file => $content_file, member => STYLES);
+my $style_doc	= OpenOffice::OODoc::XPath->new
+			(file => $style_file, member =>'styles');
+my $content_doc	= OpenOffice::OODoc::XPath->new
+			(file => $content_file, member => 'styles');
 		# copy the presentation from $style_doc to $content_doc
 $content_doc->cloneContent($style_doc);
 		# and save the result as $target_file

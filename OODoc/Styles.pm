@@ -1,21 +1,20 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Styles.pm 2.011 2005-09-12 JMG$
+#	$Id : Styles.pm 2.013 2005-09-16 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
 #	License:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
-#	Contact: oodoc@genicorp.com
 #
 #-----------------------------------------------------------------------------
 
 package OpenOffice::OODoc::Styles;
 use	5.006_001;
-our	$VERSION	= 2.011;
+our	$VERSION	= 2.013;
 
-use	OpenOffice::OODoc::XPath	2.204;
+use	OpenOffice::OODoc::XPath	2.205;
 use	File::Basename;
 require	Exporter;
 our	@ISA		= qw ( Exporter OpenOffice::OODoc::XPath );
@@ -748,13 +747,31 @@ sub	createStyle
 			"Missing style name\n";
 		return	undef;
 		}
-	my %opt		= @_;
+	my %opt		= (check => 'on', @_);
 
-	if ($self->getStyleElement($name, %opt))
+	if ((lc $check eq 'on') && $self->getStyleElement($name, %opt))
 		{
 		warn	"[" . __PACKAGE__ . "::createStyle] "	.
 			"Style $name exists\n";
 		return	undef;
+		}
+	delete $opt{'check'};
+	if ($opt{'prototype'})
+		{
+		my $p = $opt{'prototype'};
+		delete $opt{'prototype'};
+		my $proto = $self->getStyleElement($p, %opt);
+		unless ($proto)
+			{
+			warn	"[" . __PACKAGE__ . "::createStyle] "	.
+				"Unknown prototype style\n";
+			return	undef;
+			}
+		my $newstyle = $proto->copy;
+		$newstyle->paste_after($proto);
+		$self->setAttribute($newstyle, 'style:name', $name);
+		$self->updateStyle($newstyle, %opt);
+		return $newstyle;
 		}
 	my $path	= undef;
 	my $type	= $opt{'type'} || 'style';
@@ -1390,7 +1407,7 @@ sub	masterPageHeader
 	my $element	= shift;
 	unless ($element)
 		{
-		return $self->getNodeByXPath($masterpage, '/style:header');
+		return $self->getNodeByXPath($masterpage, '//style:header');
 		}
 	else
 		{
@@ -1408,7 +1425,7 @@ sub	masterPageFooter
 	my $element	= shift;
 	unless ($element)
 		{
-		return $self->getNodeByXPath($masterpage, '/style:footer');
+		return $self->getNodeByXPath($masterpage, '//style:footer');
 		}
 	else
 		{
