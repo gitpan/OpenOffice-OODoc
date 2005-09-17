@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.210 2005-09-16 JMG$
+#	$Id : Text.pm 2.211 2005-09-17 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -14,7 +14,7 @@ package OpenOffice::OODoc::Text;
 use	5.006_001;
 use	OpenOffice::OODoc::XPath	2.205;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.210;
+our	$VERSION	= 2.211;
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -2413,7 +2413,8 @@ sub	insertTable
 						$name,
 					'table:style-name'	=>
 						$opt{'table-style'}
-					}
+					},
+				%opt
 				)
 			or return undef;
 

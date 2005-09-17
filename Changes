@@ -1,3 +1,5 @@
+2.009	2005-09-17
+	- Bug fix in insertParagraph (Text.pm)
 2.008	2005-09-16
 	- Changed getText() and getCellValue() in order to export the
 	full text content of multi-paragraph table cells (Text.pm)
