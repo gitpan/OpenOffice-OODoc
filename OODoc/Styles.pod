@@ -382,6 +382,9 @@ at least a blank of each required style.
 	to the text-covered areas only, while the 'paragraph' background
 	is a rectangular area, that is not always fully covered by text.
 	
+	The same result could be obtained (more efficiently) with
+	styleProperties instead of updateStyle (see styleProperties).
+	
 	The 'area' switch is silently ignored when used with OOo documents,
 	and sometimes required for ODF, so you can safely use it if you want
 	to write portable code.
@@ -428,28 +431,48 @@ at least a blank of each required style.
         (e.g. font size) prevail over prototype's parameters.
 
         The prototype parameter can be a style name (as in the above
-        example) or a style element reference. In any case, the latter form
-        is mandatory if the copied style comes from another document (or
-        from another XML member in the same OpenOffice.org archive). You
-        cannot actually search for a style using its logical name unless
-        that style exists in the current document.
-
+        example) or a style element. If it's an element, its origin doesn't
+	matter (it can be a copy of a style element previously extracted from
+	another document). If it's a name, the prototype style is retrieved
+	either in the current document (default) or, if the 'source' option
+	is provided, in another document.
+	
+	The value of the 'source' option is another OODoc::Styles (or
+	OODoc::Document) object. If this option is provided, createStyle
+	looks in the indicated document for the prototype style. If 'source'
+	is provided without 'prototype', the prototype style is supposed to
+	have the same name as the style to be created.
+	
         If you want to create a style called "MyStyle", for example, in
         document $doc1 which imitates a style called "HisStyle" in document
         $doc2 (where both documents are OODoc::Styles or OODoc::Document
         objects), you can do the following:
 
-            $doc1->createStyle
-            	(
-            	"MyStyle",
-            	prototype => $doc2->getStyleElement("HisStyle")
-            	);
+        	$doc1->createStyle
+            		(
+            		"MyStyle",
+            		prototype	=> "HisStyle",
+			source		=> $doc2
+            		);
+	
+	but if you write
+	
+		$doc1-createStyle
+			(
+			"MyStyle",
+			source		=> $doc2
+			);
+	
+	the local style "MyStyle" is built as a copy of the so-named style
+	in the source document (it's a direct import).
+	
+	Whatever the origin of the prototype style, any property can be
+	set or redefined in the new style.
 
-        The getStyleElement (called in $doc2) provides the style element
-        which corresponds to the given name. Not only can you import styles
-        available in other documents, but you can also create automatic
-        styles in content.xml which are derived from named styles found in
-        styles.xml and vice-versa.
+        Not only can you import styles available in other documents, but
+	you can also create automatic styles in a 'content' member which
+	are derived from named styles found in the 'styles' member and
+	vice-versa.
 
 	WARNING: the "prototype" option can produce unexpected results if
 	the two documents are not in the same format (OOo 1 or OOo 2).
@@ -462,6 +485,11 @@ at least a blank of each required style.
         but table, page and graphic styles, for example, have more complex
         dependencies.
 
+	When a font name is set (generally through a 'style:font-name'
+	text property) in a new style, take care of the availability of
+	the corresponding font declaration in the document. A font is not
+	rendered if it's not declared. (See importFontDeclaration.)
+	
         See the OpenOffice.org format documentation for a complete list of
         possible attributes for each type of style.
 
@@ -554,6 +582,20 @@ at least a blank of each required style.
         For example, to get the default paragraph style of a document, use:
 
             my $def_para = $doc->getDefaultStyleElement("paragraph");
+
+=head3	getFontDeclaration(fontname)
+
+	Returns the font declaration element corresponding to the given font
+	name, or undef if the font is not declared in the current document.
+	
+	Example:
+	
+		unless ($doc->getFontDeclaration("Times New Roman"))
+			{
+			$doc->importFontDeclaration($doc2, "Times New Roman");
+			}
+
+	(See also importFontDeclaration.)
 
 =head3	getFooterParagraph(masterpage, number)
 
@@ -686,6 +728,49 @@ at least a blank of each required style.
 
         Caution: the actual import is not made until a save is called (see
         importImage in OODoc::Image).
+
+=head3	importFontDeclaration(doc, fontname)
+
+=head3	importFontDeclaration(xml_string)
+
+	In the first form, retrieves a font declaration in another document
+	and installs it in the current document. The first argument is a
+	OODoc::Styles or OODoc::Document object.
+	
+	Example:
+	
+		my $source = ooDocument
+			(
+			file => "source.sxw", member => "styles"
+			);
+		my $target = ooDocument
+			(
+			file => "target.sxw", member => "styles"
+			);
+		$target->importFontDeclaration($source, "Helvetica");
+	
+	In the second form, the single argument is the XML string
+	containing a font declaration.
+
+	The following example creates a declaration for the "Comic Sans MS"
+	font in an OpenDocument:
+	
+		$doc->importFontDeclaration
+		    (
+		    '<style:font-face '				.
+		        'style:name="Comic Sans MS" '		.
+			'svg:font-family="Comic Sans MS"	.
+		    />'
+		    );
+	
+	This last import feature is not mainly provided in order to encourage
+	raw XML coding! Be careful, the XML font declaration syntax is not
+	exactly the same with the two supported document formats. This feature
+	should be used in order to import previously exported font declarations
+	(see exportXMLElement in OODoc::XPath).   
+		    
+	A font declaration must be imported if it's used in a newly
+	created style and not currently available in the target document.
 
 =head3	masterPageFooter(page [, element])
 
@@ -882,7 +967,7 @@ at least a blank of each required style.
 	work against an Open Document without an additional "area" option
 	with the appropriate value:
 
-            $doc->styleProperties
+        	$doc->styleProperties
             		(
             		"Colour",
 			area		=> 'text',
@@ -890,6 +975,33 @@ at least a blank of each required style.
             		'fo:font-style'	=> undef
             		);
 
+	After creating a new paragraph style in an Open Document, this method
+	should be used in order to set the properties which have not been set
+	by createStyle because of the separation in two areas. In the
+	following example, the 'paragraph' properties are directly set with
+	createStyle, then the 'text' properties are set with styleProperties:
+	
+		my $style = $doc->createStyle
+			(
+			"CenteredStyle",
+			family		=> 'paragraph',
+			parent		=> 'Standard',
+			properties	=>
+				{
+				area			=> 'paragraph',
+				'fo:text-align'		=> 'center',
+				'fo:margin-left'	=> '0.5cm',
+				'fo:margin-right'	=> '0.5cm'
+				}
+			);
+		$doc->styleProperties
+			(
+			$style, area => 'text',
+			'fo:color'		=> oo2rgb("blue"),
+			'fo:font-weight'	=> 'bold',
+			'style:font-name'	=> 'Times New Roman'
+			);
+	
 	The "area" option is silently ignored with OOo 1 documents.
 		
 =head3	switchPageOrientation(page)

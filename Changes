@@ -1,3 +1,7 @@
+2.011	2005-09-21
+	- Fixed an issue related to style copying from one doc to another one
+	and improved the style importation feature in createStyle (Styles.pm)
+	- Added font declaration processing methods (Styles.pm)
 2.009	2005-09-17
 	- Bug fix in insertParagraph (Text.pm)
 2.008	2005-09-16

@@ -1,4 +1,4 @@
-OpenOffice::OODoc installation (Aug 2005)
+OpenOffice::OODoc installation (Sep 2005)
 
 SYSTEM REQUIREMENTS
 
@@ -50,6 +50,9 @@ INSTALLATION
 	
 	perl Makefile.PL --noprompt --workdir "C:\Temp" --encoding "cp1252"
 
+	The full customization step can be avoided with the --noconfig option.
+	If this option is used, all the default values are installed.
+	
 	These options define installation-level default values only; each of
 	these values can be overridden by the applications (thanks, for
 	example, to the ooLocalEncoding(), ooWorkingDirectory() and
@@ -57,6 +60,11 @@ INSTALLATION
 	in a XML file (OODoc/config.xml) below the installation directory.
 	This file can be manually edited at any time after the installation
 	in order to change any parameter.
+	
+	A variable $OpenOffice::OODoc::INSTALLATION_DATE is available for the
+	applications; it contains the installation date in ISO-8601 format.
+	If the customization has been skipped (due the --noconfig option),
+	this variable contains the packaging date of the distribution.
 
 	If the installation is successful, the test procedure generates an
 	OpenOffice.org document, writes some content in it, and checks the

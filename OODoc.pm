@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : OODoc.pm 2.009 2005-09-17 JMG$
+#	$Id : OODoc.pm 2.011 2005-09-19 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -19,7 +19,7 @@ use OpenOffice::OODoc::Manifest		2.003;
 
 package	OpenOffice::OODoc;
 use 5.008_000;
-our $VERSION				= 2.009;
+our $VERSION				= 2.011;
 
 require Exporter;
 our @ISA    = qw(Exporter);

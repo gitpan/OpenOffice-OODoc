@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Styles.pm 2.013 2005-09-16 JMG$
+#	$Id : Styles.pm 2.014 2005-09-21 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -12,7 +12,7 @@
 
 package OpenOffice::OODoc::Styles;
 use	5.006_001;
-our	$VERSION	= 2.013;
+our	$VERSION	= 2.014;
 
 use	OpenOffice::OODoc::XPath	2.205;
 use	File::Basename;
@@ -290,6 +290,92 @@ sub	getMasterStyleRoot
 	}
 
 #-----------------------------------------------------------------------------
+# get the root of font declarations
+
+sub	getFontDeclarationBody
+	{
+	my $self	= shift;
+	
+	my $path = $self->{'opendocument'} ?
+		'//office:font-face-decls' : '//office:font-decls';
+	return $self->getElement($path, 0);
+	}
+
+#-----------------------------------------------------------------------------
+# get a font declaration element
+
+sub	getFontDeclaration
+	{
+	my $self	= shift;
+	my $font	= shift		or return undef;
+	my $tag		= $self->{'opendocument'} ?
+			"style:font-face" : "style:font-decl";
+	if (ref $font)
+		{
+		my $n = $font->name;
+		if ($n && ($n eq $tag))
+			{
+			return $font;
+			}
+		else
+			{
+			warn	"[" . __PACKAGE__ . "::getFontDeclaration] " .
+				"Invalid font declaration element\n";
+			return undef;
+			}
+		}
+	else
+		{
+		my $context = $self->getFontDeclarationBody;
+		my $path = "//$tag\[\@style:name=\"$font\"]";
+		my $font_element = $self->getNodeByXPath($context, $path);
+		unless ($font_element)
+			{
+			warn	"[" . __PACKAGE__ . "::getFontDeclaration] " .
+				"Unknown font name\n";
+			return undef;
+			}
+		return $font_element;
+		}
+	}
+
+#-----------------------------------------------------------------------------
+# imports a copy of an existing font declaration
+
+sub	importFontDeclaration
+	{
+	my $self	= shift;
+	my $p1		= shift		or return undef;
+	
+	my $font_element = undef;
+	
+	if (ref $p1)
+		{
+		my $e = undef;
+		if ($p1->isa('OpenOffice::OODoc::Styles'))
+			{		# copy from another document
+			my $font_name = shift;
+			$e = $p1->getFontDeclaration($font_name);
+			}
+		else
+			{		# replicate from the same document
+			$e = $self->getFontDeclaration($p1);
+			}
+		$font_element = $e->copy if $e;
+		}
+	else
+		{			# from anything (we hope XML)
+		$font_element =
+			OpenOffice::OODoc::XPath::new_element($p1);
+		}
+					# check the element type
+	$font_element = $self->getFontDeclaration($font_element);
+	$font_element->paste_last_child($self->getFontDeclarationBody);
+	
+	return $font_element;
+	}
+
+#-----------------------------------------------------------------------------
 # select a list of style elements matching a given attribute, value pair
 # $path may be 'auto' or 'named' to search only in automatic or named styles
 # without args, returns the full style list
@@ -478,8 +564,9 @@ sub	getStyleElement
 			return undef;
 			}
 		}
+	my $attr 	= $self->{'retrieve_by'} || 'name';
 	my $xpath	=	"//$namespace" . ':' .
-				"$type\[\@style:name=\"$style\"\]";
+				"$type\[\@style:$attr\=\"$style\"\]";
 	return $self->getNodeByXPath($xpath, $root);
 	}
 
@@ -748,7 +835,6 @@ sub	createStyle
 		return	undef;
 		}
 	my %opt		= (check => 'on', @_);
-
 	if ((lc $check eq 'on') && $self->getStyleElement($name, %opt))
 		{
 		warn	"[" . __PACKAGE__ . "::createStyle] "	.
@@ -756,29 +842,13 @@ sub	createStyle
 		return	undef;
 		}
 	delete $opt{'check'};
-	if ($opt{'prototype'})
-		{
-		my $p = $opt{'prototype'};
-		delete $opt{'prototype'};
-		my $proto = $self->getStyleElement($p, %opt);
-		unless ($proto)
-			{
-			warn	"[" . __PACKAGE__ . "::createStyle] "	.
-				"Unknown prototype style\n";
-			return	undef;
-			}
-		my $newstyle = $proto->copy;
-		$newstyle->paste_after($proto);
-		$self->setAttribute($newstyle, 'style:name', $name);
-		$self->updateStyle($newstyle, %opt);
-		return $newstyle;
-		}
+
+	my $element	= undef;
 	my $path	= undef;
 	my $type	= $opt{'type'} || 'style';
-	delete $opt{'type'};
+	
 	my $namespace	= $opt{'namespace'} || 'style';
-	delete $opt{'namespace'};
-
+	
 	if	($self->getElement('//office:document-content', 0))
 		{
 		$path = $self->{'auto_style_path'};
@@ -799,12 +869,28 @@ sub	createStyle
 			"Style creation is not allowed in the area\n";
 		return undef;
 		}
-	delete $opt{'path'};
-	delete $opt{'category'};
 
-	my $element	= $self->createElement($namespace . ':' . $type);
+	if ($opt{'prototype'} || $opt{'source'})
+		{
+		my $p = $opt{'prototype'} || $name;
+		delete $opt{'prototype'};
+		my $source = $opt{'source'} || $self;
+		delete $opt{'source'};
+		my $proto = $source->getStyleElement($p, %opt);
+		unless ($proto)
+			{
+			warn	"[" . __PACKAGE__ . "::createStyle] "	.
+				"Unknown prototype style\n";
+			return	undef;
+			}
+		$element = $proto->copy;
+		}
+	else
+		{
+		$element = $self->createElement($namespace . ':' . $type);
+		}
 	my $attachment	= $self->getElement($path, 0);
-	$attachment->appendChild($element);
+	$element->paste_last_child($attachment);
 	if 	($type eq 'default-style')
 		{ $opt{'family'}			= $name; }
 	elsif	($type eq 'number-style')
@@ -814,6 +900,12 @@ sub	createStyle
 		}
 	else
 		{ $opt{'references'}{'style:name'}	= $name; }
+		
+	delete $opt{'type'};
+	delete $opt{'namespace'};
+	delete $opt{'path'};
+	delete $opt{'category'};	
+	
 	$self->updateStyle($element, %opt);
 	return $element;
 	}
