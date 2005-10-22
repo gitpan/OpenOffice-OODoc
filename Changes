@@ -1,3 +1,6 @@
+2.013	2005-10-22
+	- Code cleaning in Image.pm
+	- Text.pm: Added hyperlinkURL()
 2.012	2005-10-22
 	- Added OpenOffice::OODoc::Element package
 	- XML::Twig 3.22 required

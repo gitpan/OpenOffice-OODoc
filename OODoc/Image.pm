@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Image.pm 2.014 2005-05-17 JMG$
+#	$Id : Image.pm 2.015 2005-10-22 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -12,10 +12,10 @@
 
 package	OpenOffice::OODoc::Image;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	2.202;
+use	OpenOffice::OODoc::XPath	2.207;
 use	File::Basename;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.014;
+our	$VERSION	= 2.015;
 
 #-----------------------------------------------------------------------------
 # default attributes for image style
@@ -44,27 +44,6 @@ our	%DEFAULT_IMAGE_STYLE =
 		}
 	);
 
-#-----------------------------------------------------------------------------
-package	XML::Twig::Elt;
-#-----------------------------------------------------------------------------
-
-sub	isImage
-	{
-	my $element	= shift;
-	my $name	= $element->getName	or return undef;
-	if ($name eq 'draw:frame')
-		{
-		my $child = $element->first_child('draw:image');
-		return $child ? 1 : undef;
-		}
-	else
-		{
-		return ($name eq 'draw:image') ? 1 : undef;
-		}
-	}
-
-#-----------------------------------------------------------------------------
-package	OpenOffice::OODoc::Image;
 #-----------------------------------------------------------------------------
 # constructor : calling OO XPath constructor
 
@@ -747,6 +726,25 @@ sub	importImage
 		}
 	$self->raw_import($link, $filename);	
 	return $link;
+	}
+
+#-----------------------------------------------------------------------------
+package	OpenOffice::OODoc::Element;
+#-----------------------------------------------------------------------------
+
+sub	isImage
+	{
+	my $element	= shift;
+	my $name	= $element->getName	or return undef;
+	if ($name eq 'draw:frame')
+		{
+		my $child = $element->first_child('draw:image');
+		return $child ? 1 : undef;
+		}
+	else
+		{
+		return ($name eq 'draw:image') ? 1 : undef;
+		}
 	}
 
 #-----------------------------------------------------------------------------

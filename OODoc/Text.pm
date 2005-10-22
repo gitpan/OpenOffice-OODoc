@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.212 2005-10-22 JMG$
+#	$Id : Text.pm 2.213 2005-10-22 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -14,7 +14,7 @@ package OpenOffice::OODoc::Text;
 use	5.006_001;
 use	OpenOffice::OODoc::XPath	2.207;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.212;
+our	$VERSION	= 2.213;
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -558,6 +558,25 @@ sub	selectHyperlinkElement
 	my $url		= shift;
 	return $self->selectElementByAttribute
 		('//text:a', 'xlink:href', $url);
+	}
+
+#-----------------------------------------------------------------------------
+
+sub	hyperlinkURL
+	{
+	my $self	= shift;
+	my $hl		= shift	or return undef;
+	unless (ref $hl)
+		{
+		$hl = $self->selectHyperlinkElement($hl);
+		return undef unless $hl;
+		}
+	my $url		= shift;
+	if ($url)
+		{
+		$self->setAttribute($hl, 'xlink:href', $url);
+		}
+	return $self->getAttribute($hl, 'xlink:href');
 	}
 
 #-----------------------------------------------------------------------------

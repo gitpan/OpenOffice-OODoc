@@ -471,7 +471,7 @@ documents. But it can't process the images themselves.
 
 =head3	isImage
 
-        Method added to XML::XPath::Node::Element class objects by the
+        Method added to OpenOffice::OODoc::Element class objects by the
         OODoc::Image package and is an element method rather than a document
         method. Allows you to "ask" an element if it is an image.
 

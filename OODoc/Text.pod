@@ -1080,6 +1080,17 @@ presentation which is one of the foundations of the OpenDocument format.
 	Returns the element (if defined) representing a user-defined field,
 	and corresponding to the given name. See also userFieldValue().
 
+=head3	hyperlinkURL(hyperlink [, url])
+
+	Get/set the URL of an hyperlink element. The first argument may be
+	a previously retrieved hyperlink element (see selectHyperlinkElement
+	below), or the URL of an existing hyperlink. If a second argument is
+	provided, it replaces the URL of the hyperlink element.
+	
+	With only one argument, just returns the existing URL of the link,
+	or undef if the first argument doesn't match an existing hyperlink
+	element.
+	
 =head3	inputTextConversion(text)
 
 	Returns the UTF8 conversion of the given text, supposed to be in
