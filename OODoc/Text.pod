@@ -28,12 +28,12 @@ text (because some style definitions, such as page headers or footers, can
 contain text), the presently described features can be used against this
 member as well as the "content.xml" member.
 
-This module Should be used with OpenOffice::OODoc::Styles, via the
-OpenOffice::OODoc::Document class, if the application has to handle detailed
-presentation parameters of text elements. This is because such parameters are
-held in styles elements and not in the text elements themselves,
-according to the principle of separation of content and presentation
-which is one of the foundations of the OpenOffice.org format.
+This module Should be used in combination with OpenOffice::OODoc::Styles,
+via the OpenOffice::OODoc::Document class, if the application has to handle
+detailed presentation parameters of text elements. This is because such
+parameters are held in styles elements and not in the text elements
+themselves, according to the principle of separation of content and
+presentation which is one of the foundations of the OpenDocument format.
 
 =head2	Methods
 
@@ -666,6 +666,14 @@ which is one of the foundations of the OpenOffice.org format.
 	Note: in a spreadsheet, (0,0) are the coordinates of the "A1" cell,
 	and, for example, (16, 25) are the coordinates of the "Z17" cell.
 
+=head3	getCellParagraphs(table, row, column)
+
+=head3	getCellParagraphs(cell)
+
+	Returns the list of the paragraph elements contained in a given
+	table cell (knowing that a single cell can contain one or more
+	paragraphs).
+	
 =head3	getCellValue(table, row, column)
 
 =head3	getCellValue(cell)
@@ -905,12 +913,13 @@ which is one of the foundations of the OpenOffice.org format.
 
         Obsolete. See textStyle.
 
-=head3	getTable(n [, length, width])
+=head3	getTable(number [, length, width])
 
 =head3	getTable(name [, length, width])
 
-        Returns the nth+1 table in a document, if found, or undef if not
-        found [25] .
+        If the first argument is a number, returns the nth+1 table in a
+	document (table numbers are zero-based; if the argument is negative,
+	the tables are counted from the end). 
 
         The second form allows you to select a table by its logical name (as
         it would appear to the end user when editing the table's
@@ -1189,44 +1198,6 @@ which is one of the foundations of the OpenOffice.org format.
         option are 'before' and 'after'. By default, the element is inserted
         before the given element.
 
-=head3	is[Xxxx]
-
-        This module implements a set of accessors which can be used like
-        native text element methods as opposed to OODoc::Text methods, and
-        which allow you to determine what type a given element is [27] . For
-        an element $e of document $d, the syntax is $e->isXxx instead of $d-
-        >isXxx($e).
-
-        Example:
-
-            print "This is a list" if $element->isItemList;
-
-        Here is the list of element type indicators:
-
-            isFootnoteBody		footnote
-
-            isFootnoteCitation	footnote citation
-
-            isHeader			header
-
-            isItemList		list (ordered or unordered)
-
-            isListItem		list item
-
-            isOrderedList		ordered list
-
-            isParagraph		paragraph
-
-            isSequenceDeclarations	set of sequence declarations
-
-            isTable			table
-
-            isTableCell		table cell
-
-            isUnorderedList		unordered list
-
-        For a neater and more direct access to element types, see the
-        getName method of XML::Twig [28] .
 
 =head3	normalizeSheet(sheet [, rows [, columns]])
 
@@ -1337,6 +1308,13 @@ which is one of the foundations of the OpenOffice.org format.
         (second form). In this case, the type of element is not checked and
         this method becomes the equivalent of removeElement.
 
+=head3	removeHyperlink(path, position)
+	
+=head3	removeHyperlink(element)
+	
+	Removes any hyperlink contained in the given element, leaving
+	in place the previously hyperlinked text.
+	
 =head3	removeParagraph(position)
 
 =head3	removeParagraph(element)
@@ -1487,6 +1465,29 @@ which is one of the foundations of the OpenOffice.org format.
         expression (".*") for unconditional movement through all text
         elements.
 
+=head3	selectHyperlinkElement(url_filter)
+
+	Retrieves the first hyperlink element (if any) whose the URL matches
+	the argument. Example:
+	
+		my $e = $doc->selectHyperlinkElement("cpan");
+	
+	could return an hyperlink element containing "www.cpan.org" as
+	well as "search.cpan.org", etc. The URL filter is processed as
+	a regex.
+	
+	Note: In order to get the text container (ex: paragraph) where the
+	hyperlink is located, the application can use the parent() element
+	method. Example:
+	
+		 my $e = $doc->selectHyperlinkElement("www.cpan.org");
+		 my $p = $e->parent if $e;
+
+=head3	selectHyperlinkElements(url_filter)
+
+	Returns the list of the hyperlink elements whose the URL matches
+	the argument (and not only the first one).
+	
 =head3	selectParagraphByStyle(stylename)
 
         Returns the first paragraph (if any) using the given style.
@@ -1520,6 +1521,21 @@ which is one of the foundations of the OpenOffice.org format.
         will result in a "flat" export of the document:
 
             print $doc->selectTextContent('.*');
+
+=head3	setHyperlink(path, position, [context,] expression, url)
+
+=head3	setHyperlink(element, [context,] expression, url)
+
+	Puts an hyperlink on a text area in a given text element.
+	
+	Example:
+	
+	    $doc->setHyperlink($para, "CPAN", "http://www.cpan.org");
+	
+	This method works in the same was as setSpan(), described below,
+	but the text span is hyperlinked, and not presented according
+	a particular style. So, the last argument must be an URL instead
+	of a style.
 
 =head3	setSpan(path, position, [context,] expression, style)
 
@@ -1628,6 +1644,17 @@ which is one of the foundations of the OpenOffice.org format.
 	length, is replaced by a single space. See setText() and extendText()
 	in OpenOffice::OODoc::XPath.
 
+=head3	tableName(table [, newname])
+	
+	Returns the current name of a given table, or replaces it with a new
+	name given as the second argument. The table can be indicated
+        by number, logical name or reference.
+	
+	Returns undef unless the given table is defined.
+	
+	If the new name is the name of an existing table, the table is not
+	renamed and an error message is produced. 	
+
 =head3	tableStyle(table [, style])
 
         Returns the current style of a given table, or replaces it with a
@@ -1688,6 +1715,60 @@ which is one of the foundations of the OpenOffice.org format.
 	by OpenOffice.org. For example, 'Tuesday, March 1, 2005' is a possible
 	displayed value for 38412.
 
+=head2	OpenOffice::OODoc::Element methods
+
+	While all the methods above belong to the document object, some
+	additional methods are defined for individual text containers. These
+	methods belong to the OpenOffice::OODoc::Element class.
+	
+=head3	isXXX() methods
+
+        A set of "isXXX" methods, returning true or false, allow the
+	to check the type of a given element.
+
+        Example:
+
+            print "This is a list" if $element->isItemList;
+	  
+        Here is the list of element type indicators:
+
+            isBibliographyMark		bibliography mark (in the doc. body)
+	    
+	    isCovered			covered (invisible) table cell
+	    
+	    isDrawPage			presentation or drawing page
+	    
+	    isFootnoteBody		footnote body
+	    
+            isFootnoteCitation		footnote citation
+
+            isHeader			header
+
+            isItemList			list (ordered or unordered)
+
+            isListItem			list item
+
+            isOrderedList		ordered list (OOo 1.x only)
+
+            isParagraph			paragraph
+
+            isSequenceDeclarations	set of sequence declarations
+	    
+	    isSpan			span element (see setSpan)
+
+            isTable			table
+
+            isTableCell			table cell
+	    
+	    isTableRow			table row
+
+            isUnorderedList		unordered list (OOo 1.x only)
+
+=head3	Other element methods
+    
+        For a neater and more direct access to element types, see the
+        getName method of XML::Twig::Elt [28]. Remember that all the
+	features of XML::Twig::Elt are available for any text container.
 
 =head2	Properties
 

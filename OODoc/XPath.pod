@@ -91,10 +91,11 @@ the destination position's context [3] .
 
 For advanced users familiar with the XML::Twig API, it might be
 interesting to know that all the objects called "elements" in the
-following chapters are objects of the XML::Twig::Elt
-class, and that all methods associated with this class are directly
-applicable to them, on top of the functionality described in this
-manual. However, this should not normally be needed.
+following chapters are objects of the OpenOffice::OODoc::Element
+class, which is an XML::Twig::Elt derivative. So all methods associated
+with this class are directly applicable to these elements, on top of the
+functionality described in this manual. However, the knowledge of XML::Twig
+is not mandatory.
 
 Important note: The applications should not explicitly work with this
 class. We recommend using OODoc::Meta and OODoc::Document (which are both
@@ -1032,7 +1033,6 @@ features of OODoc::Meta and OODoc::Document are described here.
         reference, the called function receives the remainder of the
         arguments which follow it, in this order:
 
-
 =head3	replicateElement(element, position [, options])
 
         Makes a copy of the given element and inserts it into the current
@@ -1086,23 +1086,6 @@ features of OODoc::Meta and OODoc::Document are described here.
 	document structure, to be later attached), the XML::Twig::Elt copy()
 	method should be preferred.
 
-=head3	replicateNode(count [, position])
-
-	It's method is an element method, not a document method. It allows
-	the caller object to be replicated one or more time. It's particularly
-	useful to insert lines in tables, but it can be used to replicate any
-	kind of element (paragraphs, sheets in Calc documents, styles, etc).
-	Example:
-
-		$doc->getTableRow('MyTable', 5)->replicateNode(3);
-	
-	This line of code replicates 3 times the row 5 in the table "MyTable"
-	(the 3 new rows are inserted immediately after the calling row).
-
-	Without any argument, the calling element is replicated once. The
-	second argument must be 'before' or 'after' (default is 'after');
-	it controls the position of the copies, related to the original
-	element (but it generally doesn't matter).
 
 =head3	save([filename])
 
@@ -1352,6 +1335,68 @@ features of OODoc::Meta and OODoc::Document are described here.
 
 	(See also extendText())
 
+=head2	Element methods
+
+	Every document element is an OpenOffice::OODoc::Element object,
+	and OpenOffice::OODoc::Element inherits all the features of
+	XML::Twig::Elt, including the very powerful copy, cut, paste,
+	move and replace methods. These methods are described in the
+	XML::Twig documentation.
+	
+	(Remember these methods belong to the element and not to the
+	document !)
+	
+=head3	appendChild(newnode)
+
+	Appends a node as the last child of the calling node.
+	
+	If the argument is an existing node, it'a appended as is.
+	If the argument is a string, a new node is created, with the
+	given string as the XML tag name.
+
+=head3	appendTextChild(text)
+
+	Append a text node (PCDATA) as the last child of the calling
+	element.
+
+=head3	replicateNode(count, position)
+
+	Produces one or more copies of the calling element and inserts
+	the copies before or after it. The position argument should be
+	'before' or 'after'; its default is 'after'. Technically, the
+	position argument could be anyone of the position options of
+	the XML::Twig::Elt->paste method, including 'first_child',
+	'last_child' or 'within'; but any other than 'before' and 'after'
+	probably don't make sense in an OpenDocument-compliant data
+	structure.
+
+	Without any argument, the calling element is replicated once.
+	
+	Example :
+	
+		my $row = $doc->getTableRow("Table1", -1);
+		$row->replicateNode(5);
+		
+	This sequence appends 5 more rows to a table; each new row is a
+	copy of the last original row, including each individual cell
+	and its content.
+	
+=head3	selectChildElement(filter)
+
+	Like selectChildElements() below, but returns only the first node
+	matching the filter.
+	
+	Note: the first_child() method of XML::Twig::Elt should be preferred
+	when the filter is the exact tag name of the needed element.
+	
+=head3	selectChildElements(filter)
+
+	Selects the children with XML tag names matching a given filter.
+	The filter is processed as a regex.
+	
+	Note: the children() method of XML::Twig::Elt should be preferred
+	if the filter is the exact tag name of the needed elements.
+	
 =head2	Properties
 
         No class variables are exported; the applications, if needed,

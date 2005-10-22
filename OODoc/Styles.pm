@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Styles.pm 2.014 2005-09-21 JMG$
+#	$Id : Styles.pm 2.015 2005-10-10 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -12,9 +12,9 @@
 
 package OpenOffice::OODoc::Styles;
 use	5.006_001;
-our	$VERSION	= 2.014;
+our	$VERSION	= 2.015;
 
-use	OpenOffice::OODoc::XPath	2.205;
+use	OpenOffice::OODoc::XPath	2.206;
 use	File::Basename;
 require	Exporter;
 our	@ISA		= qw ( Exporter OpenOffice::OODoc::XPath );
@@ -136,7 +136,7 @@ sub	rgb2oo
 	}
 	
 #-----------------------------------------------------------------------------
-package	XML::Twig::Elt;
+package	OpenOffice::OODoc::Element;
 #-----------------------------------------------------------------------------
 	
 sub	isStyle

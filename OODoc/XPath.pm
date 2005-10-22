@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 2.205 2005-09-15 JMG$
+#	$Id : XPath.pm 2.207 2005-10-22 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -12,8 +12,8 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 2.205;
-use	XML::Twig	3.15;
+our	$VERSION	= 2.207;
+use	XML::Twig	3.22;
 use	Encode;
 
 #------------------------------------------------------------------------------
@@ -60,11 +60,11 @@ sub	OpenOffice::OODoc::XPath::new_element
 	
 	if ($name =~ /^<.*>$/)	# create element from XML string
 		{
-		return XML::Twig::Elt->parse($name, @_);
+		return OpenOffice::OODoc::Element->parse($name, @_);
 		}
 	else			# create element from name and optional data
 		{
-		return XML::Twig::Elt->new($name, @_);
+		return OpenOffice::OODoc::Element->new($name, @_);
 		}
 	}
 
@@ -76,217 +76,6 @@ sub	OpenOffice::OODoc::XPath::new_text_node
 	return OpenOffice::OODoc::XPath::new_element('#PCDATA');
 	}
 
-#------------------------------------------------------------------------------
-# some wrappers for XML Twig elements
-package	XML::Twig::Elt;
-#------------------------------------------------------------------------------
-
-sub	setName
-	{
-	my $node	= shift;
-	return $node->set_tag(shift);
-	}
-
-sub	getPrefix
-	{
-	my $node	= shift;
-	return $node->ns_prefix;
-	}
-
-sub	selectChildElements
-	{
-	my $node	= shift;
-	my $filter	= shift;
-	return $node->getChildNodes() unless $filter;
-	my @list	= ();
-	my $fc = $node->first_child;
-	my $name = $fc->name if $fc;
-	while ($fc)
-		{
-		if ($name && ($name =~ /$filter/))
-			{
-			return $fc unless wantarray;
-			push @list, $fc;
-			}
-		$fc = $fc->next_sibling;
-		$name = $fc->name if $fc;;
-		}
-	return @list;
-	}
-
-sub	selectChildElement
-	{
-	my $node	= shift;
-	my $filter	= shift;
-	my $pos		= shift || 0;
-
-	my $count	= 0;
-	my $fc = $node->first_child;
-	my $name = $fc->name if $fc;
-	while ($fc)
-		{
-		if ($name && ($name =~ $filter))
-			{
-			return $fc if ($count >= $pos);
-			$count++;
-			}
-		$fc = $fc->next_sibling;
-		$name = $fc->name if $fc;
-		}
-	return undef;
-	}
-
-sub	getParentNode
-	{
-	my $node	= shift;
-	return $node->parent;
-	}
-	
-sub	getFirstChild
-	{
-	my $node	= shift;
-	my $fc = $node->first_child(@_);
-	my $name = $fc->name if $fc;
-	while ($name && ($name =~ /^#/))
-		{
-		$fc = $fc->next_sibling(@_);
-		$name = $fc->name if $fc;
-		}
-	return $fc;
-	}
-
-sub	getLastChild
-	{
-	my $node	= shift;
-	my $lc = $node->last_child(@_);
-	my $name = $lc->name;
-	while ($name && ($name =~ /^#/))
-		{
-		$lc = $lc->prev_sibling(@_);
-		$name = $lc->name;
-		}
-	return $lc;
-	}
-
-sub	getDescendantNodes
-	{
-	my $node	= shift;
-	my @children	= $node->getChildNodes(@_);
-	my @descendants = ();
-	foreach my $child (@children)
-		{
-		push @descendants, $child, $child->getDescendantNodes(@_);
-		}
-	return @descendants;
-	}
-
-sub	getDescendantTextNodes
-	{
-	my $node	= shift;
-	return $node->descendants('#PCDATA');
-	}
-
-sub	appendChild
-	{
-	my $node	= shift;
-	my $child	= shift;
-	unless (ref $child)
-		{
-		$child = OpenOffice::OODoc::XPath::new_element($child, @_);
-		}
-	return $child->paste_last_child($node);
-	}
-
-sub	removeChildNodes
-	{
-	my $node	= shift;
-	return $node->cut_children(@_);
-	}
-
-sub	replicateNode
-	{
-	my $node	= shift;
-	my $number	= shift || 1;
-	my $position	= shift || 'after';
-	my $lastnode	= $node;
-	while ($number > 0)
-		{
-		my $newnode	= $node->copy;
-		$newnode->paste($position => $lastnode);
-		$last_node	= $newnode;
-		$number--;
-		}
-	return $last_node;
-	}
-
-sub	getNodeValue
-	{
-	my $node	= shift;
-	return $node->text;
-	}
-
-sub	getValue
-	{
-	my $node	= shift;
-	return $node->text;
-	}
-
-sub	setNodeValue
-	{
-	my $node	= shift;
-	return $node->set_text(@_);
-	}
-
-sub	appendTextChild
-	{
-	my $node	= shift;
-	my $text	= shift or return undef;
-	my $text_node	= XML::Twig::Elt->new('#PCDATA' => $text);
-	return $text_node->paste(last_child => $node);
-	}
-
-sub	getAttribute
-	{
-	my $node	= shift;
-	return $node->att(@_);
-	}
-
-sub	getAttributes
-	{
-	my $node	= shift;
-	return %{$node->atts(@_)};
-	}
-
-sub	setAttribute
-	{
-	my $node	= shift or return undef;
-	my $attribute	= shift;
-	my $value	= shift;
-	if (defined $value)
-		{
-		return $node->set_att($attribute, $value, @_);
-		}
-	else
-		{
-		if ($node->{$attribute})
-			{
-			return $node->del_att($attribute);
-			}
-		else
-			{
-			return undef;
-			}
-		}
-	}
-
-sub	removeAttribute
-	{
-	my $node	= shift or return undef;
-	return $node->del_att(shift);
-	}
-
-#------------------------------------------------------------------------------
-package	OpenOffice::OODoc::XPath;
 #------------------------------------------------------------------------------
 # basic conversion between internal & printable encodings (object version)
 
@@ -492,6 +281,7 @@ sub	new
 		{
 		$twig = XML::Twig->new
 			(
+			elt_class	=> "OpenOffice::OODoc::Element",
 			twig_roots	=>
 				{
 				$self->{'element'}	=> 1
@@ -504,6 +294,7 @@ sub	new
 		{
 		$twig = XML::Twig->new
 			(
+			elt_class	=> "OpenOffice::OODoc::Element",
 			pretty_print	=> $self->{'readable_XML'},
 			%{$self->{'twig_options'}}
 			);
@@ -1077,7 +868,7 @@ sub	createTextNode
 	my $self	= shift;
 	my $text	= shift		or return undef;
 	my $content	= $self->inputTextConversion($text);
-	return XML::Twig::Elt->new('#PCDATA' => $text);
+	return OpenOffice::OODoc::Element->new('#PCDATA' => $text);
 	}
 
 #------------------------------------------------------------------------------
@@ -1919,6 +1710,224 @@ sub	cutElement
 	$e->cut;
 
 	return $e;
+	}
+
+#------------------------------------------------------------------------------
+# some extensions for XML Twig elements
+package	OpenOffice::OODoc::Element;
+our @ISA	= qw ( XML::Twig::Elt );
+#------------------------------------------------------------------------------
+
+sub	hasTagName
+	{
+	my $node	= shift;
+	my $name	= $node->getName;
+	my $value	= shift;
+	return ($name && ($name eq $value)) ? 1 : undef;
+	}
+
+sub	setName
+	{
+	my $node	= shift;
+	return $node->set_tag(shift);
+	}
+
+sub	getPrefix
+	{
+	my $node	= shift;
+	return $node->ns_prefix;
+	}
+
+sub	selectChildElements
+	{
+	my $node	= shift;
+	my $filter	= shift;
+	return $node->getChildNodes() unless $filter;
+	my @list	= ();
+	my $fc = $node->first_child;
+	my $name = $fc->name if $fc;
+	while ($fc)
+		{
+		if ($name && ($name =~ /$filter/))
+			{
+			return $fc unless wantarray;
+			push @list, $fc;
+			}
+		$fc = $fc->next_sibling;
+		$name = $fc->name if $fc;;
+		}
+	return @list;
+	}
+
+sub	selectChildElement
+	{
+	my $node	= shift;
+	my $filter	= shift;
+	my $pos		= shift || 0;
+
+	my $count	= 0;
+	my $fc = $node->first_child;
+	my $name = $fc->name if $fc;
+	while ($fc)
+		{
+		if ($name && ($name =~ $filter))
+			{
+			return $fc if ($count >= $pos);
+			$count++;
+			}
+		$fc = $fc->next_sibling;
+		$name = $fc->name if $fc;
+		}
+	return undef;
+	}
+
+sub	getParentNode
+	{
+	my $node	= shift;
+	return $node->parent;
+	}
+	
+sub	getFirstChild
+	{
+	my $node	= shift;
+	my $fc = $node->first_child(@_);
+	my $name = $fc->name if $fc;
+	while ($name && ($name =~ /^#/))
+		{
+		$fc = $fc->next_sibling(@_);
+		$name = $fc->name if $fc;
+		}
+	return $fc;
+	}
+
+sub	getLastChild
+	{
+	my $node	= shift;
+	my $lc = $node->last_child(@_);
+	my $name = $lc->name;
+	while ($name && ($name =~ /^#/))
+		{
+		$lc = $lc->prev_sibling(@_);
+		$name = $lc->name;
+		}
+	return $lc;
+	}
+
+sub	getDescendantNodes
+	{
+	my $node	= shift;
+	my @children	= $node->getChildNodes(@_);
+	my @descendants = ();
+	foreach my $child (@children)
+		{
+		push @descendants, $child, $child->getDescendantNodes(@_);
+		}
+	return @descendants;
+	}
+
+sub	getDescendantTextNodes
+	{
+	my $node	= shift;
+	return $node->descendants('#PCDATA');
+	}
+
+sub	appendChild
+	{
+	my $node	= shift;
+	my $child	= shift;
+	unless (ref $child)
+		{
+		$child = OpenOffice::OODoc::XPath::new_element($child, @_);
+		}
+	return $child->paste_last_child($node);
+	}
+
+sub	removeChildNodes
+	{
+	my $node	= shift;
+	return $node->cut_children(@_);
+	}
+
+sub	replicateNode
+	{
+	my $node	= shift;
+	my $number	= shift || 1;
+	my $position	= shift || 'after';
+	my $lastnode	= $node;
+	while ($number > 0)
+		{
+		my $newnode	= $node->copy;
+		$newnode->paste($position => $lastnode);
+		$last_node	= $newnode;
+		$number--;
+		}
+	return $last_node;
+	}
+
+sub	getNodeValue
+	{
+	my $node	= shift;
+	return $node->text;
+	}
+
+sub	getValue
+	{
+	my $node	= shift;
+	return $node->text;
+	}
+
+sub	setNodeValue
+	{
+	my $node	= shift;
+	return $node->set_text(@_);
+	}
+
+sub	appendTextChild
+	{
+	my $node	= shift;
+	my $text	= shift or return undef;
+	my $text_node	= OpenOffice::OODoc::Element->new('#PCDATA' => $text);
+	return $text_node->paste(last_child => $node);
+	}
+
+sub	getAttribute
+	{
+	my $node	= shift;
+	return $node->att(@_);
+	}
+
+sub	getAttributes
+	{
+	my $node	= shift;
+	return %{$node->atts(@_)};
+	}
+
+sub	setAttribute
+	{
+	my $node	= shift or return undef;
+	my $attribute	= shift;
+	my $value	= shift;
+	if (defined $value)
+		{
+		return $node->set_att($attribute, $value, @_);
+		}
+	else
+		{
+		if ($node->{$attribute})
+			{
+			return $node->del_att($attribute);
+			}
+		else
+			{
+			return undef;
+			}
+		}
+	}
+
+sub	removeAttribute
+	{
+	my $node	= shift or return undef;
+	return $node->del_att(shift);
 	}
 
 #------------------------------------------------------------------------------

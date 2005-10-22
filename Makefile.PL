@@ -1,5 +1,5 @@
 #------------------------------------------------------
-# OpenOffice::OODoc packaging & installation 2005-09-14
+# OpenOffice::OODoc packaging & installation 2005-10-15
 #------------------------------------------------------
 
 use 5.008;
@@ -132,7 +132,7 @@ WriteMakefile
     	'AUTHOR'	=> 'Jean-Marie Gouarné <jmgdoc@cpan.org>',
     	'PREREQ_PM'	=>
     		{
-		'XML::Twig'		=> '3.15',
+		'XML::Twig'		=> '3.22',
 		'Archive::Zip'		=> '1.06',
 		'File::Temp'		=> '0.12',
 		'File::Find'		=> '1.01',

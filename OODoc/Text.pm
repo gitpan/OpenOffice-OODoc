@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.211 2005-09-17 JMG$
+#	$Id : Text.pm 2.212 2005-10-22 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -12,9 +12,9 @@
 
 package OpenOffice::OODoc::Text;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	2.205;
+use	OpenOffice::OODoc::XPath	2.207;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.211;
+our	$VERSION	= 2.212;
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -100,144 +100,6 @@ sub	new
 			}
 		}
 	return $object;
-	}
-
-#-----------------------------------------------------------------------------
-# text element type detection (add-in for XML::Twig::Elt)
-
-sub	XML::Twig::Elt::isOrderedList
-	{
-	my $element	= shift;
-	my $name	= $element->getName;
-	return ($name && ($name eq 'text:ordered-list')) ?  1 : undef;
-	}
-
-sub	XML::Twig::Elt::isUnorderedList
-	{
-	my $element	= shift;
-	my $name	= $element->getName;
-	return ($name && ($name eq 'text:unordered-list')) ?  1 : undef;
-	}
-
-sub	XML::Twig::Elt::isItemList
-	{
-	my $element	= shift;
-	my $name	= $element->getName;
-	return (
-		$name &&
-		    (
-			($name eq 'text:list')
-				||
-			($name eq 'text:ordered-list')
-				||
-			($name eq 'text:unordered-list')
-		    )
-		)	?
-		1 : undef;
-	}
-
-sub	XML::Twig::Elt::isListItem
-	{
-	my $element	= shift;
-	my $name	= $element->getName;
-	return ($name && ($name eq 'text:list-item')) ?  1 : undef;
-	}
-
-sub	XML::Twig::Elt::isParagraph
-	{
-	my $element	= shift;
-	my $name	= $element->getName;
-	return ($name && ($name eq 'text:p')) ? 1 : undef;
-	}
-
-sub	XML::Twig::Elt::isHeader
-	{
-	my $element	= shift;
-	my $name	= $element->getName;
-	return ($name && ($name eq 'text:h')) ? 1 : undef;
-	}
-
-sub	XML::Twig::Elt::headerLevel
-	{
-	my $element	= shift;
-	return $element->getAttribute($self->{'level_attr'});
-	}
-
-sub	XML::Twig::Elt::isTable
-	{
-	my $element	= shift;
-	my $name	= $element->getName;
-	return ($name && ($name eq 'table:table')) ? 1 : undef;
-	}
-
-sub	XML::Twig::Elt::isTableRow
-	{
-	my $element	= shift;
-	my $name	= $element->getName;
-	return ($name && ($name eq 'table:table-row')) ? 1 : undef;
-	}
-
-sub	XML::Twig::Elt::isTableColumn
-	{
-	my $element	= shift;
-	my $name	= $element->getName;
-	return ($name && ($name eq 'table:table-column')) ? 1 : undef;
-	}
-
-sub	XML::Twig::Elt::isTableCell
-	{
-	my $element	= shift;
-	my $name	= $element->getName;
-	return ($name && ($name eq 'table:table-cell')) ? 1 : undef;
-	}
-
-sub	XML::Twig::Elt::isCovered
-	{
-	my $element	= shift;
-	my $name	= $element->getName;
-	return ($name && ($name =~ /covered/)) ? 1 : undef;
-	}
-	
-sub	XML::Twig::Elt::isSpan
-	{
-	my $element	= shift;
-	my $name	= $element->getName;
-	return ($name && ($name eq 'text:span')) ? 1 : undef;
-	}
-
-sub	XML::Twig::Elt::isFootnoteCitation
-	{
-	my $element	= shift;
-	my $name	= $element->getName;
-	return ($name && ($name eq 'text:footnote-citation')) ? 1 : undef;
-	}
-
-sub	XML::Twig::Elt::isFootnoteBody
-	{
-	my $element	= shift;
-	my $name	= $element->getName;
-	return ($name && ($name eq 'text:footnote-body')) ? 1 : undef;
-	}
-
-sub	XML::Twig::Elt::isSequenceDeclarations
-	{
-	my $element	= shift;
-	my $name	= $element->getName;
-	return ($name && ($name eq 'text:sequence-decls')) ? 1 : undef;
-	}
-
-sub	XML::Twig::Elt::isBibliographyMark
-	{
-	my $element	= shift;
-	my $name	= $element->getName;
-	return ($name && ($name eq 'text:bibliography-mark')) ? 1 : undef;
-	}
-
-sub	XML::Twig::Elt::isDrawPage
-	{
-	my $element	= shift;
-	my $name	= $element->getName;
-	return ($name && ($name eq 'draw:page')) ? 1 : undef;	
 	}
 	
 #-----------------------------------------------------------------------------
@@ -582,7 +444,19 @@ sub	setSpanInNode
 	my $n		= shift	or return undef;
 	my $expression	= shift;
 	my $style	= shift;
+	my $link	= shift;
 
+	my $tagname	= 'text:span';
+	my $attname	= 'text:style-name';
+	my $attvalue	= $style;
+	if ($link)
+		{
+		$tagname	= 'text:a';
+		$attname	= 'xlink:href';
+		$attvalue	= $link;
+		}
+	
+	my $span	= undef;
 	my $text = OpenOffice::OODoc::XPath::decode_text($n->getValue || "");
 	if ($text && ($text =~ /(.*)($expression)(.*)/))
 		{
@@ -591,9 +465,9 @@ sub	setSpanInNode
 		my $after	= $3;
 		my $again	= $4;
 	
-		my $span = $self->createElement('text:span', $selection);
+		$span = $self->createElement($tagname, $selection);
 		$span->paste_before($n);
-		$self->setAttribute($span, 'text:style-name', $style);
+		$self->setAttribute($span, $attname, $attvalue);
 		$n->delete; $n = undef; $text = undef;
 		if ($before)
 			{
@@ -607,8 +481,11 @@ sub	setSpanInNode
 			$an->paste_after($span);
 			}
 		}
+	return $span;
 	}
 
+#-----------------------------------------------------------------------------
+	
 sub	setSpan
 	{
 	my $self	= shift;
@@ -616,6 +493,7 @@ sub	setSpan
 	my $pos		= ref $path ? undef : shift;
 
 	my $element	= undef;
+	my $span	= undef;
 
 	if (ref $path)
 		{
@@ -644,12 +522,42 @@ sub	setSpan
 		{
 		if ($n->isElementNode)
 			{
-			$self->setSpan($n, $expression, $style);
+			$self->setSpan($n, $expression, $style, @_);
 			next;
 			}
 		next unless ($n->isTextNode);
-		$self->setSpanInNode($n, $expression, $style) if $n;
+		$self->setSpanInNode($n, $expression, $style, @_) if $n;
 		}
+	}
+
+#-----------------------------------------------------------------------------
+
+sub	setHyperlink
+	{
+	my $self	= shift;
+	my $url		= pop;
+	push @_, 'nostyle', $url;
+	return $self->setSpan(@_);
+	}
+
+#-----------------------------------------------------------------------------
+
+sub	selectHyperlinkElements
+	{
+	my $self	= shift;
+	my $url		= shift;
+	return $self->selectElementsByAttribute
+		('//text:a', 'xlink:href', $url);
+	}
+
+#-----------------------------------------------------------------------------
+
+sub	selectHyperlinkElement
+	{
+	my $self	= shift;
+	my $url		= shift;
+	return $self->selectElementByAttribute
+		('//text:a', 'xlink:href', $url);
 	}
 
 #-----------------------------------------------------------------------------
@@ -659,6 +567,7 @@ sub	removeSpan
 	my $self	= shift;
 	my $path	= shift;
 	my $pos		= ref $path ? undef : shift;
+	my $tagname	= shift	|| 'text:span';
 
 	my $element	= ref $path ?
 				$path	:
@@ -675,12 +584,12 @@ sub	removeSpan
 			{
 			$last_text_node	= $n;
 			}
-		elsif	($n->isElementNode && $n->isSpan)
+		elsif	($n->isElementNode && $n->hasTagName($tagname))
 			{
 			my $t = $n->string_value;
 			if ($last_text_node)
 				{
-				$last_text_node->appendText($t);
+				$last_text_node->append_pcdata($t);
 				}
 			else
 				{
@@ -688,11 +597,19 @@ sub	removeSpan
 				    OpenOffice::OODoc::XPath::new_text_node($t);
 				$element->insertBefore($last_text_node, $n);
 				}
-			$element->removeChild($n);
+			$n->delete;
 			}
 		}
 
 	return $element;
+	}
+
+#-----------------------------------------------------------------------------
+
+sub	removeHyperlink
+	{
+	my $self	= shift;
+	return $self->removeSpan(@_, 'text:a');
 	}
 
 #-----------------------------------------------------------------------------
@@ -1732,6 +1649,15 @@ sub	getRowCells
 	}
 
 #-----------------------------------------------------------------------------
+
+sub	getCellParagraphs
+	{
+	my $self	= shift;
+	my $cell	= $self->getTableCell(@_)	or return undef;
+	return $cell->children('text:p');
+	}
+
+#-----------------------------------------------------------------------------
 # get table cell value
 
 sub	getCellValue
@@ -2440,6 +2366,17 @@ sub	renameTable
 
 #-----------------------------------------------------------------------------
 
+sub	tableName
+	{
+	my $self	= shift;
+	my $table	= $self->getTable(shift) or return undef;
+	my $newname	= shift;
+	$self->renameTable($table, $newname) if $newname;
+	return $self->getAttribute($table, 'table:name');
+	}
+
+#-----------------------------------------------------------------------------
+
 sub	tableStyle
 	{
 	my $self	= shift;
@@ -2606,7 +2543,7 @@ sub	createParagraph
 	my $text	= shift;
 	my $style	= shift;
 
-	my $p = XML::Twig::Elt->new('text:p');
+	my $p = OpenOffice::OODoc::Element->new('text:p');
 	if ($text)
 		{
 		$self->SUPER::setText($p, $text);
@@ -2808,5 +2745,126 @@ sub	setStyle
 	return	$self->textStyle(@_);
 	}
 
+#-----------------------------------------------------------------------------
+package	OpenOffice::OODoc::Element;
+#-----------------------------------------------------------------------------
+# text element type detection (add-in for OpenOffice::OODoc::Element)
+
+sub	isOrderedList
+	{
+	my $element	= shift;
+	return $element->hasTagName('text:ordered-list');
+	}
+
+sub	isUnorderedList
+	{
+	my $element	= shift;
+	return $element->hasTagName('text:unordered-list');
+	}
+
+sub	isItemList
+	{
+	my $element	= shift;
+	my $name	= $element->getName;
+	return ($name =~ /^text:.*list$/) ? 1 : undef;
+	}
+
+sub	isListItem
+	{
+	my $element	= shift;
+	return $element->hasTagName('text:list-item');
+	}
+
+sub	isParagraph
+	{
+	my $element	= shift;
+	return $element->hasTagName('text:p');
+	}
+
+sub	isHeader
+	{
+	my $element	= shift;
+	return $element->hasTagName('text:h');
+	}
+
+sub	headerLevel
+	{
+	my $element	= shift;
+	return $element->getAttribute($self->{'level_attr'});
+	}
+
+sub	isTable
+	{
+	my $element	= shift;
+	return $element->hasTagName('table:table');
+	}
+
+sub	isTableRow
+	{
+	my $element	= shift;
+	return $element->hasTagName('text:table-row');
+	}
+
+sub	isTableColumn
+	{
+	my $element	= shift;
+	return $element->hasTagName('table:table-column');
+	}
+
+sub	isTableCell
+	{
+	my $element	= shift;
+	return $element->hasTagName('table:table-cell');
+	}
+
+sub	isCovered
+	{
+	my $element	= shift;
+	my $name	= $element->getName;
+	return ($name && ($name =~ /covered/)) ? 1 : undef;
+	}
+	
+sub	isSpan
+	{
+	my $element	= shift;
+	return $element->hasTagName('text:span');
+	}
+
+sub	isHyperlink
+	{
+	my $element	= shift;
+	return $element->hasTagName('text:a');
+	}
+
+sub	isFootnoteCitation
+	{
+	my $element	= shift;
+	return $element->hasTagName('text:footnote-citation');
+	}
+
+sub	isFootnoteBody
+	{
+	my $element	= shift;
+	return $element->hasTagName('text:footnote-body');
+	}
+
+sub	isSequenceDeclarations
+	{
+	my $element	= shift;
+	return $element->hasTagName('text:sequence-decls');
+	}
+
+sub	isBibliographyMark
+	{
+	my $element	= shift;
+	return $element->hasTagName('text:bibliography-mark');
+	}
+
+sub	isDrawPage
+	{
+	my $element	= shift;
+	return $element->hasTagName('draw:page');
+	}
+	
 #-----------------------------------------------------------------------------
 1;

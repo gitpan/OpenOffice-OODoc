@@ -1,3 +1,10 @@
+2.012	2005-10-22
+	- Added OpenOffice::OODoc::Element package
+	- XML::Twig 3.22 required
+	- Text.pm: Added tableName(), getCellParagraphs(), setHyperlink(),
+	selectHyperlinkElement(), selectHyperlinkElements() and fixed
+	a bug in removeSpan() 
+	- Doc update
 2.011	2005-09-21
 	- Fixed an issue related to style copying from one doc to another one
 	and improved the style importation feature in createStyle (Styles.pm)

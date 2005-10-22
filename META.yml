@@ -1,7 +1,7 @@
 # http://module-build.sourceforge.net/META-spec.html
 #XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
 name:         OpenOffice-OODoc
-version:      2.011
+version:      2.012
 version_from: OODoc.pm
 installdirs:  site
 requires:
@@ -9,7 +9,7 @@ requires:
     File::Find:                    1.01
     File::Temp:                    0.12
     Time::Local:                   1.07
-    XML::Twig:                     3.15
+    XML::Twig:                     3.22
 
 distribution_type: module
 generated_by: ExtUtils::MakeMaker version 6.17

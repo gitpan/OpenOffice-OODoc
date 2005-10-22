@@ -119,18 +119,18 @@ to the "[nn]" note citations included in the other documents.
         would be "£155.12".
 
         [24] To access a header of a particular level, you need to use
-        selectElementByAttribute and select the 'text:level' attribute (see
-        OODoc::XPath).
+        selectElementByAttribute and select the level attribute (see
+        OODoc::XPath). The name of the level attribute is "text:level" in
+	OOo documents and "text:outline-level" in OpenDocuments.
 
-        [25] See note 41.
+        [25] (Removed)
 
         [26] Footnotes are physically inserted into the text at the place
         where they are called, just after the link element indicating the
         footnote's number. Its display at the foot of the page or elsewhere
         is a trick of the graphical interface.
 
-        [27] These methods are implemented as XML::Twig package extensions
-        even though they are physically defined in the OODoc/Text.pm module.
+        [27] (Removed)
 
         [28] A call to $element->getName returns the element's XML name
         including its namespace prefix e.g. 'text:p' for a paragraph or
