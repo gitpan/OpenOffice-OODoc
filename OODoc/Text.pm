@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.213 2005-10-22 JMG$
+#	$Id : Text.pm 2.214 2005-10-31 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -14,7 +14,7 @@ package OpenOffice::OODoc::Text;
 use	5.006_001;
 use	OpenOffice::OODoc::XPath	2.207;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.213;
+our	$VERSION	= 2.214;
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -1568,6 +1568,37 @@ sub	getRow
 	}
 
 #-----------------------------------------------------------------------------
+# get a header row in a table
+
+sub	getTableHeaderRow
+	{
+	my $self	= shift;
+	my $p1		= shift;
+	if (ref $p1)
+		{
+		if ($p1->isTableRow)
+		    {
+		    if ($p1->parent->hasTagName('table:table-header-rows'))
+		    	{ return $p1;	}
+		    else
+		    	{ return undef;	}
+		    }
+		}
+	my $table	= $self->getTable($p1)
+		or return undef;
+	my $header	= $table->first_child('table:table-header-rows')
+		or return undef;
+	my $line	= shift || 0;
+	return $header->child($line, 'table:table-row');
+	}
+
+sub	getHeaderRow
+	{
+	my $self	= shift;
+	return $self->getTableHeaderRow(@_);
+	}
+
+#-----------------------------------------------------------------------------
 # get all the rows in a table
 
 sub	getTableRows
@@ -2139,7 +2170,7 @@ sub	getTable
 		{
 		return $table->isTable ? $table : undef ;
 		}
-	if ($table =~ /^\d*$/)
+	if (($table =~ /^\d*$/) || ($table =~ /^[\d+-]\d+$/))
 		{
 		$t = $self->getElement('//table:table', $table);
 		}

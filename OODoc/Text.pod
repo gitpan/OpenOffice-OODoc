@@ -607,11 +607,16 @@ presentation which is one of the foundations of the OpenDocument format.
 	(which can be retrieved in advance using getTable). If it's a number
 	or a name, getTable() is automatically called by getCell() in order
 	to convert it in a 'table' object. However, if the first argument is
-	a row object (previously obtained via getRow()), the second one is
-	processed as the column number. Before using several cells in the
-	same row, it's a good idea to get the row object and then to use it
-	in every cell selection, in order to minimize the coordinates
-	calculation.
+	a row object (previously obtained via getRow() or getHeaderRow()),
+	the second one is processed as the column number. Before using several
+	cells in the same row, it's a good idea to get the row object and then
+	to use it in every cell selection, in order to minimize the
+	coordinates calculation.
+	
+	In tables including one or more header rows, the best way to get a
+	header cell is to use a header row (previously obtained using
+	getHeaderRow()) as the first argument. If the first argument is a
+	table, getCell() looks in the table body only.
 
 	Alternatively, the user can provide the cell coordinates in a single
 	alphanumeric argument, beginning with one or two letters and ending
@@ -777,6 +782,10 @@ presentation which is one of the foundations of the OpenDocument format.
 	then a level 1 header, the call getHeader(3) returns the last level 1
 	header.
 
+=head3	getHeaderRow(table [, row_number])
+
+	See getTableHeaderRow().
+	
 =head3	getHeaderList()
 
         Returns a list of header elements (i.e. elements called 'text:h' in
@@ -877,12 +886,15 @@ presentation which is one of the foundations of the OpenDocument format.
         string in which the paragraphs are separated by a line-feed
         character ("\n").
 
-=head3	getRow(table, row)
+=head3	getRow(table, row_num)
 
         Returns the element reference which corresponds to a row in a table.
         The first argument is either the table's sequential number in the
         document, logical name or element reference. The second argument is
         the row number in the table. Synonym: getTableRow.
+	
+	This methods ignores the table header (if any). It can retrieve a
+	row in the table body only. See getTableHeaderRow().
 
 =head3	getRowCells(table, row)
 =head3	getRowCells(row)
@@ -948,6 +960,19 @@ presentation which is one of the foundations of the OpenDocument format.
 =head3	getTableColumn(table, column)
 
         See getColumn.
+
+=head3	getTableHeaderRow(table [, row_num])
+
+	Returns the element reference which corresponds to a row in a table
+	header, or undef if the given table has no header row.
+	
+	The arguments are processes in the same way as with getRow(), but
+	the second argument is optional; it's required only if the table
+	has more than one header row (the 1st header row is returned by
+	default).
+	
+	The returned elements can be used with subsequent cell access methods
+	in order to process header cells (see getCell()).
 
 =head3	getTableList()
 

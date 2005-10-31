@@ -1,3 +1,5 @@
+2.014	2005-10-31
+	- Text.pm: Bug fix in getTable(). Added getTableHeaderRow().
 2.013	2005-10-22
 	- Code cleaning in Image.pm
 	- Text.pm: Added hyperlinkURL()
