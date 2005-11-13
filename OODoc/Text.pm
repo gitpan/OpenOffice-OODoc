@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.214 2005-10-31 JMG$
+#	$Id : Text.pm 2.215 2005-11-13 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -14,7 +14,7 @@ package OpenOffice::OODoc::Text;
 use	5.006_001;
 use	OpenOffice::OODoc::XPath	2.207;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.214;
+our	$VERSION	= 2.215;
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -2439,6 +2439,58 @@ sub	tableStyle
 	}
 
 #-----------------------------------------------------------------------------
+# replicates a column in a normalized table
+
+sub	insertTableColumn
+	{
+	my $self	= shift;
+	
+	my $table	= $self->getTable(shift) or return undef;
+	my ($height, $width) = $self->getTableSize($table);
+	my $col_num	= shift;
+	my %options	=
+		(
+		position	=> 'before',
+		@_
+		);
+	unless ($col_num < $width)
+		{
+		warn	"[" . __PACKAGE__ . "::replicateTableColumn] "	.
+			"Column number out of range\n";
+		return undef;
+		}
+	$self->_expand_columns($table, $width);
+	my $column	= ($table->children('table:table-column'))[$col_num];
+	my $new_cell	= undef;
+	if ($column)
+		{
+		my $new_column = $column->copy;
+		$new_column->paste($options{position}, $column);
+		}
+	my @rows = ();
+	my $header = $table->first_child('table:table-header-rows');
+	@rows = $header->children('table:table-row') if $header;
+	push @rows, $self->getTableRows($table);
+	foreach my $row (@rows)
+		{
+		my $cell =
+		  (
+		  $row->selectChildElements('table:(covered-|)table-cell')
+		  )[$col_num]
+		  or next;
+		$new_cell = $cell->copy;
+		$new_cell->paste($options{'position'}, $cell);
+		}
+	return $column || $new_cell;
+	}
+	
+sub	insertColumn
+	{
+	my $self	= shift;
+	return $self->insertTableColumn(@_);
+	}
+
+#-----------------------------------------------------------------------------
 # replicates a row in a table
 
 sub	replicateTableRow
@@ -2852,7 +2904,7 @@ sub	isTable
 sub	isTableRow
 	{
 	my $element	= shift;
-	return $element->hasTagName('text:table-row');
+	return $element->hasTagName('table:table-row');
 	}
 
 sub	isTableColumn

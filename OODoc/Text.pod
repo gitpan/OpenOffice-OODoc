@@ -1122,6 +1122,18 @@ presentation which is one of the foundations of the OpenDocument format.
 	the local character set of the document (see the 'local_encoding'
 	property).
 
+=head3	insertColumn(table, col_num [, options])
+
+	Inserts a new column in an existing table at a given position.
+	
+	The second argument must be the number of an existing column.
+	Caution: this argument must be a column number, and not a column
+	element.
+	
+	The new column is created as a copy of the column a the given
+	position. It's inserted before or after the existing one, according
+	to an optional "position" parameter (default 'before').
+	
 =head3	insertDrawPage(page/pos [, options])
 
 	In a presentation or drawing document, inserts a new page before
@@ -1212,11 +1224,15 @@ presentation which is one of the foundations of the OpenDocument format.
         options are the same as for appendTable with the additional option
         'position' as in insertParagraph.
 
+=head3	insertTableColumn(table, col_num [, options])
+
+	See InsertColumn().
+	
 =head3	insertTableRow(table, row [, options])
 
 =head3	insertTableRow(row_element [, options])
 
-        See insertRow.
+        See insertRow().
 
 =head3	insertText(path, position, element_name, options)
 
