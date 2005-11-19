@@ -1,3 +1,5 @@
+2.016	2005-11-19
+	- File.pm: improvement/fix allowing multiple save() calls
 2.015	2005-11-13
 	- Text.pm: bug fix in isTableRow() (#15739)
 	- Text.pm: Added insertTableColumn()

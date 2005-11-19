@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : File.pm 2.110 2005-08-24 JMG$
+#	$Id : File.pm 2.111 2005-11-19 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -12,8 +12,8 @@
 
 package	OpenOffice::OODoc::File;
 use	5.006_001;
-our	$VERSION	= 2.110;
-use	Archive::Zip	1.06	qw ( :DEFAULT :CONSTANTS :ERROR_CODES );
+our	$VERSION	= 2.111;
+use	Archive::Zip	1.16	qw ( :DEFAULT :CONSTANTS :ERROR_CODES );
 use	File::Temp;
 
 #-----------------------------------------------------------------------------
@@ -110,16 +110,7 @@ sub	store_member
 		}
 	elsif	($opt{'file'})
 		{
-		if (-d $opt{'file'})
-			{
-			$m = $zipfile->addDirectory
-				($opt{'file'}, $opt{'member'});
-			}
-		else
-			{
-			$m = $zipfile->addFile
-				($opt{'file'}, $opt{'member'});
-			}
+		$m = $zipfile->addFileOrDirectory($opt{'file'}, $opt{'member'});
 		}
 	else
 		{
@@ -427,7 +418,7 @@ sub	new
 				"File $sourcefile unavailable\n";
 			return undef;
 			}
-		Archive::Zip::setErrorHandler ( \&ZipError );
+#		Archive::Zip::setErrorHandler ( \&ZipError );
 		$self->{'archive'} = Archive::Zip->new;
 		if ($self->{'archive'}->read($self->{'source_file'}) != AZ_OK)
 			{
@@ -618,7 +609,7 @@ sub	addNewMember
 	{
 	my $self			= shift;
 	my ($archive, $member, $data)	= @_;
-
+	
 	unless ($archive && $member && $data)
 		{
 		warn	"[" . __PACKAGE__ .
@@ -743,16 +734,21 @@ sub	save
 		
 				# target archive operation -------------------
 
+	$self->{'archive'}->writeToFileNamed($outfile);
 	my $archive	= Archive::Zip->new;
+	my $status	= $archive->read($outfile);
+	unless ($status == AZ_OK)
+		{
+		warn "[" . __PACKAGE__ . "::save] Archive write error\n";
+		return undef;
+		}
+	
 	foreach my $oldmember (@{$self->{'members'}})
 		{
 		my $k	= $replacedmembertable{$oldmember};
-		unless ($k)			# (unchanged member)
+		if ($k)				# (replaced member)
 			{
-			$self->copyMember($archive, $oldmember);
-			}
-		else				# (replaced member)
-			{
+			$archive->removeMember($oldmember);
 			$self->addNewMember
 				($archive, $oldmember, $newmembers{$k});
 			}
@@ -774,7 +770,7 @@ sub	save
 			)
 		}
 
-	my $status = $archive->writeToFileNamed($outfile);
+	$status = $archive->overwrite();
 
 				# post write control & cleanup ---------------
 	if ($status == AZ_OK)

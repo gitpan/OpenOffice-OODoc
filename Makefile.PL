@@ -1,5 +1,5 @@
 #------------------------------------------------------
-# OpenOffice::OODoc packaging & installation 2005-10-15
+# OpenOffice::OODoc packaging & installation 2005-11-19
 #------------------------------------------------------
 
 use 5.008;
@@ -133,7 +133,7 @@ WriteMakefile
     	'PREREQ_PM'	=>
     		{
 		'XML::Twig'		=> '3.22',
-		'Archive::Zip'		=> '1.06',
+		'Archive::Zip'		=> '1.16',
 		'File::Temp'		=> '0.12',
 		'File::Find'		=> '1.01',
 		'Time::Local'		=> '1.07'
