@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.215 2005-11-13 JMG$
+#	$Id : Text.pm 2.216 2005-11-26 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -12,9 +12,9 @@
 
 package OpenOffice::OODoc::Text;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	2.207;
+use	OpenOffice::OODoc::XPath	2.208;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.215;
+our	$VERSION	= 2.216;
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -135,19 +135,13 @@ sub	getText
 
 	if	($element->isItemList)
 		{
-		my $item_count = 0;
-		foreach my $item ($self->getItemElementList($element))
-			{
-			$text .= $line_break if $item_count > 0;
-			$text .= ($self->getText($item) || "");
-			$item_count++;
-			}
-		$text .= $line_break;
+		return $self->getItemListText($element);
 		}
 	elsif	(
 		$element->isListItem		||
 		$element->isFootnoteBody	||
-		$element->isTableCell
+		$element->isTableCell		||
+		$element->isSection
 		)
 		{
 		my @paragraphs = $element->children('text:p');
@@ -370,7 +364,8 @@ sub	getTextElementList
 	return $self->selectChildElementsByName
 			(
 			$self->{'body'},
-			't(ext:(h|p|.*list|table.*)|able:.*)'
+			't(ext:(h|p|.*list|table.*)|able:.*)',
+			@_
 			);
 	}
 
@@ -381,7 +376,7 @@ sub	getParagraphList
 	{
 	my $self	= shift;
 
-	return $self->getElementList('//text:p');
+	return $self->getElementList('//text:p', @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -400,8 +395,19 @@ sub	getParagraphTextList
 sub	getHeaderList
 	{
 	my $self	= shift;
-
-	return $self->getElementList('//text:h');
+	my %opt		= @_;
+	my $path	= undef;
+	
+	unless ($opt{'level'})
+		{
+		$path	= 	'//text:h';
+		}
+	else
+		{
+		$path	=	'//text:h[@' . $self->{'level_attr'}	.
+				'="' . $opt{'level'} . '"]';	       		
+		}
+	return $self->getElementList($path, $opt{'context'});
 	}
 
 #-----------------------------------------------------------------------------
@@ -410,8 +416,27 @@ sub	getHeaderList
 sub	getHeaderTextList
 	{
 	my $self	= shift;
-
-	return $self->getTextList('//text:h', @_);
+	my @nodes	= $self->getHeaderList(@_);
+	if (wantarray)
+		{
+		my @list = ();
+		foreach my $node (@nodes)
+			{
+			push @list, $self->getText($node);
+			}
+		return @list;
+		}
+	else
+		{
+		my $text = "";
+		my $separator = $self->{'line_separator'} || '';
+		foreach my $node (@nodes)
+			{
+			$text .= $self->getText($node);
+			$text .= $separator;
+			}
+		return $text;
+		}
 	}
 
 #-----------------------------------------------------------------------------
@@ -422,7 +447,7 @@ sub	getSpanList
 	{
 	my $self	= shift;
 
-	return $self->getElementList('//text:span');
+	return $self->getElementList('//text:span', @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -547,7 +572,7 @@ sub	selectHyperlinkElements
 	my $self	= shift;
 	my $url		= shift;
 	return $self->selectElementsByAttribute
-		('//text:a', 'xlink:href', $url);
+		('//text:a', 'xlink:href', $url, @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -557,7 +582,7 @@ sub	selectHyperlinkElement
 	my $self	= shift;
 	my $url		= shift;
 	return $self->selectElementByAttribute
-		('//text:a', 'xlink:href', $url);
+		('//text:a', 'xlink:href', $url, @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -641,12 +666,15 @@ sub	getBibliographyElements
 
 	unless ($id)
 		{
-		return $self->getElementList('//text:bibliography-mark');
+		return $self->getElementList('//text:bibliography-mark', @_);
 		}
 	else
 		{
 		return $self->selectElementsByAttribute
-			('//text:bibliography-mark', 'text:identifier', $id);
+			(
+			'//text:bibliography-mark', 'text:identifier',
+			$id, @_
+			);
 		}
 	}
 
@@ -662,7 +690,10 @@ sub	bibliographyEntryContent
 	unless (ref $id)
 		{
 		$e = $self->getNodeByXPath
-		      ("//text:bibliography-mark[\@text:identifier=\"$id\"]");
+		      (
+		      "//text:bibliography-mark[\@text:identifier=\"$id\"]",
+		      $desc{'context'}
+		      );
 		}
 	else
 		{
@@ -763,7 +794,7 @@ sub	removeBookmark
 sub	getFootnoteList
 	{
 	my $self	= shift;
-	return $self->getElementList('//text:footnote-body');
+	return $self->getElementList('//text:footnote-body', @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -772,7 +803,7 @@ sub	getFootnoteList
 sub	getFootnoteCitationList
 	{
 	my $self	= shift;
-	return $self->getElementList('//text:footnote-citation');
+	return $self->getElementList('//text:footnote-citation', @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -781,7 +812,7 @@ sub	getFootnoteCitationList
 sub	getTableList
 	{
 	my $self	= shift;
-	return $self->getElementList('//table:table');
+	return $self->getElementList('//table:table', @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -797,15 +828,15 @@ sub	getHeader
 	unless ($opt{'level'})
 		{
 		$header = $self->getElement
-				('//text:h', $pos);
+				('//text:h', $pos, $opt{'context'});
 		}
 	else
 		{
 		my $path	=	'//text:h[@'		.
 					$self->{'level_attr'}	.
 					'="' . $opt{'level'} . '"]';	       	
-		$header = $self->getElement($path, $pos);
-		#	("//text:h[\@text:outline-level=\"$level\"]", $pos); 
+		$header = $self->getElement
+			($path, $pos, $opt{'context'});
 		}
 	return undef unless $header;
 	}
@@ -853,6 +884,131 @@ sub	setLevel
 	}
 
 #-----------------------------------------------------------------------------
+
+sub	getSection
+	{
+	my $self	= shift;
+	my $name	= shift;
+	return undef unless defined $name;
+
+	if (ref $name)
+		{
+		return ($name->isSection) ? $name : undef;
+		}
+	my $context	= shift;
+	if (($name =~ /^\d*$/) || ($name =~ /^[\d+-]\d+$/))
+		{
+		return $self->getElement('//text:section', $name, $context);
+		}
+
+	return $self->getNodeByXPath
+			(
+			"//text:section[\@text:name=\"$name\"]"
+			);
+	}
+
+#-----------------------------------------------------------------------------
+
+sub	sectionStyle
+	{
+	my $self	= shift;
+	my $section	= $self->getSection(shift) or return undef;
+	my $new_style	= shift;
+	return $new_style ?
+		$self->setAttribute($section, 'text:style-name', $new_style) :
+		$self->getAttribute($section, 'text:style-name');
+	}
+	
+#-----------------------------------------------------------------------------
+
+sub	renameSection
+	{
+	my $self	= shift;
+	my $section	= $self->getSection(shift) or return undef;
+	my $newname	= shift or return undef;
+
+	if ($self->getSection($newname))
+		{
+		warn	"[" . __PACKAGE__ . "::renameSection] " .
+			"Section name $newname already in use\n";
+		return undef;
+		}
+	return $self->setAttribute($section, 'text:name' => $newname);	
+	}
+
+#-----------------------------------------------------------------------------
+
+sub	appendSection
+	{
+	my $self	= shift;
+	my $name	= shift;
+	my %opt		=
+			(
+			'attachment'	=> $self->{'body'},
+			'style'		=> $name,
+			@_
+			);
+
+	if ($self->getSection($name, $self->{'xpath'}))
+		{
+		warn	"[" . __PACKAGE__ . "::appendSection] "	.
+			"Section $name exists\n";
+		return	undef;
+		}
+
+	my $section = $self->appendElement
+			(
+			$opt{'attachment'}, 'text:section',
+			attribute =>
+			    {
+			    'text:name'		=> $name,
+			    'text:style-name'	=> $opt{'style'}
+			    }
+			)
+			or return undef;
+
+	return $section;
+	}
+	
+#-----------------------------------------------------------------------------
+
+sub	insertSection
+	{
+	my $self	= shift;
+	my $path	= shift;
+	my $pos		= ref $path ? undef : shift;
+	my $name	= shift;
+	my %opt		=
+			(
+			'style'	=> $name,
+			@_
+			);
+	my $posnode	= $self->getElement($path, $pos, $opt{'context'})
+				or return undef;
+
+	if ($self->getSection($name, $self->{'xpath'}))
+		{
+		warn	"[" . __PACKAGE__ . "::insertSection] "	.
+			"Section $name exists\n";
+		return	undef;
+		}
+
+	my $section = $self->insertElement
+			(
+			$posnode, 'text:section',
+			attribute =>
+			    {
+			    'text:name'		=> $name,
+			    'text:style-name'	=> $opt{'style'}
+			    },
+			%opt
+			)
+			or return undef;
+
+	return $section;
+	}
+
+#-----------------------------------------------------------------------------
 # get the content depending on a giveh header element
 
 sub	getChapter
@@ -887,13 +1043,16 @@ sub	getParagraph
 	}
 
 #-----------------------------------------------------------------------------
-# same as getParagraph() but only between the 1st level paragraphs
+# same as getParagraph() but only among the 1st level paragraphs
+# and only in text documents
 
 sub	getTopParagraph
 	{
 	my $self	= shift;
-
-	return $self->getElement('//office:body/office:text/text:p', @_);
+	my $path = $self->{'opendocument'} ?
+		'//office:body/office:text/text:p'	:
+		'//office:body/text:p';
+	return $self->getElement($path, @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -904,7 +1063,7 @@ sub	selectParagraphsByStyle
 	my $self	= shift;
 
 	return $self->selectElementsByAttribute
-		('//text:p', 'text:style-name', shift);
+		('//text:p', 'text:style-name', @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -915,7 +1074,7 @@ sub	selectParagraphByStyle
 	my $self	= shift;
 
 	return $self->selectElementByAttribute
-		('//text:p', 'text:style-name', shift);
+		('//text:p', 'text:style-name', @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -1081,15 +1240,59 @@ sub	getList
 	my $pos		= shift;
 	if (ref $pos)
 		{
-		return $pos->isList ? $pos : undef;
+		return $pos->isItemList ? $pos : undef;
 		}
-	return $self->getElement('//text:list', $pos);
+	return $self->getElement('//text:list', $pos, @_);
 	}
 
 sub	getItemList
 	{
 	my $self	= shift;
 	return $self->getList(@_);
+	}
+
+#-----------------------------------------------------------------------------
+# return the text content of an item list (in array or string)
+
+sub	getItemListText
+	{
+	my $self	= shift;
+	my $list	= $self->getItemList(@_) or return undef;
+	my @items	= $list->children('text:list-item');
+	if (wantarray)
+		{
+		my @result = ();
+		foreach my $item (@items)
+			{
+			push @result, $self->getItemText($item);
+			}
+		return @result;
+		}
+	else
+		{
+		my $tagname	= $list->getName;
+		my $line_break	=
+			$self->{'line_separator'} || '';
+		my $item_begin	=
+			$self->{'delimiters'}{'text:p'}{'begin'} || '';
+		my $item_end	=
+			$self->{'delimiters'}{'text:p'}{'end'} || '';	
+		my $result	=
+			$self->{'delimiters'}{$tagname}{'begin'} || '';
+		my $end_list	=
+			$self->{'delimiters'}{$tagname}{'end'} || '';
+		my $count = 0;
+		foreach my $item (@items)
+			{
+			$result .= $line_break if $count > 0;
+			$result .= $item_begin;
+			$result .= $self->getItemText($item);
+			$result .= $item_end;
+			$count++;
+			}
+		$result .= $end_list;
+		return $result;
+		}
 	}
 
 #-----------------------------------------------------------------------------
@@ -1103,7 +1306,7 @@ sub	getOrderedList
 		{
 		return $pos->isOrderedList ? $pos : undef;
 		}
-	return $self->getElement('//text:ordered-list', $pos);
+	return $self->getElement('//text:ordered-list', $pos, @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -1117,7 +1320,7 @@ sub	getUnorderedList
 		{
 		return $pos->isUnorderedList ? $pos : undef;
 		}
-	return $self->getElement('//text:unordered-list', $pos);
+	return $self->getElement('//text:unordered-list', $pos, @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -1469,7 +1672,7 @@ sub	_expand_table
 sub	getTableSize
 	{
 	my $self	= shift;
-	my $table	= $self->getTable(shift)	or return undef;
+	my $table	= $self->getTable(@_)	or return undef;
 	my $lines	= $table->children_count('table:table-row');
 	my $last_row	= $self->getTableRow($table, -1) or return undef;
 	my $columns	=
@@ -1486,8 +1689,8 @@ sub	getTableColumn
 	my $self	= shift;
 	my $p1		= shift;
 	return $p1	if (ref $p1 && $p1->isTableColumn);
-	my $table	= $self->getTable($p1)	or return undef;
 	my $col		= shift || 0;
+	my $table	= $self->getTable($p1, @_)	or return undef;
 
 	return $table->child($col, 'table:table-column');
 	}
@@ -1555,8 +1758,8 @@ sub	getTableRow
 	my $self	= shift;
 	my $p1		= shift;
 	return $p1	if (ref $p1 && $p1->isTableRow);
-	my $table	= $self->getTable($p1)	or return undef;
 	my $line	= shift || 0;
+	my $table	= $self->getTable($p1, @_)	or return undef;
 
 	return $table->child($line, 'table:table-row');
 	}
@@ -1584,11 +1787,11 @@ sub	getTableHeaderRow
 		    	{ return undef;	}
 		    }
 		}
-	my $table	= $self->getTable($p1)
+	my $line	= shift || 0;
+	my $table	= $self->getTable($p1, @_)
 		or return undef;
 	my $header	= $table->first_child('table:table-header-rows')
 		or return undef;
-	my $line	= shift || 0;
 	return $header->child($line, 'table:table-row');
 	}
 
@@ -1604,7 +1807,7 @@ sub	getHeaderRow
 sub	getTableRows
 	{
 	my $self	= shift;
-	my $table	= $self->getTable(shift)	or return undef;
+	my $table	= $self->getTable(@_)	or return undef;
 
 	return $table->children('table:table-row');
 	}
@@ -1652,13 +1855,17 @@ sub	getTableCell
 
 	if	(! ref $p1 || ($p1->isTable))
 		{
-		$table	= $self->getTable($p1)	or return undef;
 		@_ = OpenOffice::OODoc::Text::_coord_conversion(@_);
 		my $r	= shift || 0;
+		my $c	= shift || 0;
+		unless (ref $p1)
+			{
+			my $context = shift;
+			$table	= $self->getTable($p1, $context)
+				or return undef;
+			}
 		$row	= $table->child($r, 'table:table-row')
 				or return undef;
-		my $c	= shift || 0;
-
 		$cell = $row->selectChildElement
 				(
 				'table:(covered-|)table-cell',
@@ -1719,7 +1926,7 @@ sub	getCellValue
 	if 	((! (ref $p1)) || $p1->isTable)
 		{
 		@_ = OpenOffice::OODoc::Text::_coord_conversion(@_);
-		$cell = $self->getTableCell($p1, shift, shift);
+		$cell = $self->getTableCell($p1, @_);
 		}
 	elsif	($p1->isTableCell)
 		{
@@ -2164,6 +2371,22 @@ sub	getTable
 	{
 	my $self	= shift;
 	my $table	= shift;
+	my $length	= shift;
+	my $width	= shift;
+	my $context	= shift;
+	
+	if (ref $length)
+		{
+		$context	= $length;
+		$length		= undef;
+		$width		= undef;
+		}
+	elsif (ref $width)
+		{
+		$context	= $width;
+		$width		= undef;
+		$length		= undef;
+		}
 
 	return undef	unless defined $table;
 	if (ref $table)
@@ -2172,14 +2395,15 @@ sub	getTable
 		}
 	if (($table =~ /^\d*$/) || ($table =~ /^[\d+-]\d+$/))
 		{
-		$t = $self->getElement('//table:table', $table);
+		$t = $self->getElement('//table:table', $table, $context);
 		}
 	else
 		{
 		$t = $self->getNodeByXPath
-				("//table:table[\@table:name=\"$table\"]");
+				(
+				"//table:table[\@table:name=\"$table\"]"
+				);
 		}
-	my ($length, $width) = @_;
 	if	(
 		$length		||
 			(
@@ -2200,17 +2424,23 @@ sub	normalizeSheet
 	{
 	my $self	= shift;
 	my $table	= shift;
+	my $length	= shift;
+	my $width	= shift;
+	my $context	= shift;
 	unless (ref $table)
 		{
 		if ($table =~ /^\d*$/)
 			{
 			$table = $self->getElement
-						('//table:table', $table);
+				('//table:table', $table, $context);
 			}
 		else
 			{
 			$table = $self->getNodeByXPath
-				("//table:table[\@table:name=\"$table\"]");
+				(
+				"//table:table[\@table:name=\"$table\"]",
+				$context
+				);
 			}
 		}
 
@@ -2220,7 +2450,7 @@ sub	normalizeSheet
 			"Missing sheet\n";
 		return undef;
 		}
-	return $self->_expand_table($table, @_);
+	return $self->_expand_table($table, $length, $width, @_);
 	}
 
 sub	normalizeSheets
@@ -2232,7 +2462,7 @@ sub	normalizeSheets
 	my $count	= 0;
 	foreach my $sheet (@sheets)
 		{
-		$self->normalizeSheet($sheet, $length, $width);
+		$self->normalizeSheet($sheet, $length, $width, @_);
 		$count++;
 		}
 	return $count;
@@ -2333,7 +2563,7 @@ sub	appendTable
 			@_
 			);
 
-	if ($self->getTable($name))
+	if ($self->getTable($name, $self->{'xpath'}))
 		{
 		warn	"[" . __PACKAGE__ . "::appendTable] "	.
 			"Table $name exists\n";
@@ -2363,7 +2593,6 @@ sub	insertTable
 	my $self	= shift;
 	my $path	= shift;
 	my $pos		= ref $path ? undef : shift;
-	my $posnode	= $self->getElement($path, pos) or return undef;
 	my $name	= shift;
 	my $rows	= shift || $self->{'max_rows'} || 1;
 	my $cols	= shift || $self->{'max_cols'} || 1;
@@ -2372,8 +2601,10 @@ sub	insertTable
 			'table-style'	=> $name,
 			@_
 			);
+	my $posnode	= $self->getElement($path, $pos, $opt{'context'})
+				or return undef;
 
-	if ($self->getTable($name))
+	if ($self->getTable($name, $self->{'xpath'}))
 		{
 		warn	"[" . __PACKAGE__ . "::insertTable] "	.
 			"Table $name exists\n";
@@ -2405,7 +2636,7 @@ sub	renameTable
 	my $table	= $self->getTable(shift) or return undef;
 	my $newname	= shift;
 
-	if ($self->getTable($newname))
+	if ($self->getTable($newname, $self->{'xpath'}))
 		{
 		warn	"[" . __PACKAGE__ . "::renameTable] " .
 			"Table name $newname already in use\n";
@@ -2421,8 +2652,12 @@ sub	tableName
 	my $self	= shift;
 	my $table	= $self->getTable(shift) or return undef;
 	my $newname	= shift;
-	$self->renameTable($table, $newname) if $newname;
-	return $self->getAttribute($table, 'table:name');
+	if (ref $newname)
+		{
+		unshift @_, $newname; $newname = undef;
+		}
+	$self->renameTable($table, $newname, @_) if $newname;
+	return $self->getAttribute($table, 'table:name', @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -2432,10 +2667,16 @@ sub	tableStyle
 	my $self	= shift;
 	my $table	= $self->getTable(shift) or return undef;
 	my $newstyle	= shift;
+	if (ref $newstyle)
+		{
+		unshift @_, $newstyle; $newstyle = undef;
+		}
 
 	return defined $newstyle ?
-		$self->setAttribute($table, 'table:style-name' => $newstyle) :
-		$self->getAttribute($table, 'table:style-name');
+		$self->setAttribute
+			($table, 'table:style-name' => $newstyle, @_) :
+		$self->getAttribute
+			($table, 'table:style-name', @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -2444,8 +2685,7 @@ sub	tableStyle
 sub	insertTableColumn
 	{
 	my $self	= shift;
-	
-	my $table	= $self->getTable(shift) or return undef;
+	my $table	= shift;
 	my ($height, $width) = $self->getTableSize($table);
 	my $col_num	= shift;
 	my %options	=
@@ -2453,6 +2693,8 @@ sub	insertTableColumn
 		position	=> 'before',
 		@_
 		);
+	$table	= $self->getTable($table, $options{'context'})
+				or return undef;
 	unless ($col_num < $width)
 		{
 		warn	"[" . __PACKAGE__ . "::replicateTableColumn] "	.
@@ -2499,22 +2741,27 @@ sub	replicateTableRow
 	my $p1		= shift;
 	my $table	= undef;
 	my $row		= undef;
+	my $line	= undef;
+	
 	if (ref $p1 && $p1->isTableRow)
 		{
 		$row	= $p1;
 		}
 	else
 		{
-		$table		= $self->getTable($p1) or return undef;
-		my $line	= shift;
-		$row 	= ($table->children('table:table-row'))[$line]
-			or return undef;
+		$line	= shift;
 		}
 	my %options	=
 		(
 		position	=> 'after',
 		@_
 		);
+	if (defined $line)
+		{
+		$row	= $self->getTableRow($p1, $line, $options{'context'})
+			or return undef;
+		}
+
 	return $self->replicateElement($row, $row, %options);
 	}
 
@@ -2532,12 +2779,14 @@ sub	insertTableRow
 	my $self	= shift;
 	my $p1		= shift;
 	my $row		= undef;
+	my $line	= undef;
 	if (ref $p1)
 		{
 		if  	($p1->isTableRow)
 			{ $row = $p1; }
 		else
 			{
+			$line = shift;
 			$row = $self->getTableRow($p1, shift);
 			}
 		}
@@ -2626,6 +2875,52 @@ sub	userFieldValue
 	return $self->getAttribute($field, $value_att);
 	}
 
+#-----------------------------------------------------------------------------
+# get a variable element (contributed by Andrew Layton)
+
+sub	getVariableElement
+	{
+	my $self	= shift;
+	my $name	= shift;
+
+	unless ($name) {
+		warn	"[" . __PACKAGE__ . "::getVariableElement] " .
+			"Missing name\n";
+		return undef;
+		}
+
+	if (ref $name) {
+		my $n = $name->getName;
+		return ($n eq 'text:variable-set') ? $name : undef;
+	}
+
+	return 
+	$self->getNodeByXPath("//text:variable-set[\@text:name=\"$name\"]");
+	}
+
+#-----------------------------------------------------------------------------
+# get/set the content of a variable element (contributed by Andrew Layton)
+
+sub	variableValue
+	{
+	my $self	= shift;
+	my $variable	= $self->getVariableElement(shift) or return undef;
+	my $value	= shift;
+
+	my $prefix	= $self->{'opendocument'} ? 'office' : 'text';
+	my $value_type	= $variable->att($prefix . ':value-type');
+	my $value_att	= $value_type eq 'string' ?
+			$prefix .':string-value' : $prefix . ':value';
+
+	if (defined $value)
+		{
+		$self->setAttribute($variable, $value_att, $value);
+		$self->setText($variable, $value);
+		}
+
+	return $self->getAttribute($variable, $value_att);
+	}
+	
 #-----------------------------------------------------------------------------
 # append an element to the document body
 
@@ -2966,6 +3261,12 @@ sub	isDrawPage
 	{
 	my $element	= shift;
 	return $element->hasTagName('draw:page');
+	}
+
+sub	isSection
+	{
+	my $element	= shift;
+	return $element->hasTagName('text:section');
 	}
 	
 #-----------------------------------------------------------------------------

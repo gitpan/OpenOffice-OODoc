@@ -1,5 +1,12 @@
+2.017	2005-11-27
+	- XPath.pm: Added context change features
+	- Text.pm: Bug fix in getList(). Added getItemListText() and changed
+	getText() for item lists. Improved getHeaderTextList, improved level
+	selection in every getHeaderXXX method. Added section-focused methods.
+	Added variable-focused methods.
 2.016	2005-11-19
 	- File.pm: improvement/fix allowing multiple save() calls
+	- Archive::Zip 1.16 required
 2.015	2005-11-13
 	- Text.pm: bug fix in isTableRow() (#15739)
 	- Text.pm: Added insertTableColumn()

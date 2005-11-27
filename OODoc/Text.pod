@@ -20,7 +20,7 @@ such as spreadsheets or presentations as well as text documents.
 
 The OpenOffice::OODoc::Text class is a specialist derivative of
 OpenOffice::OODoc::XPath for XML elements which describe the text content
-of OpenOffice.org documents. Here, "text content" means containers that can
+of OOo/ODF documents. Here, "text content" means containers that can
 host text content (i.e. tables, lists...) as well as flat text.
 
 Knowing that the "styles.xml" member of an OpenOffice.org file can contain
@@ -278,6 +278,18 @@ presentation which is one of the foundations of the OpenDocument format.
         ordinary Perl table) and create a table of appropriate size in
         advance using insertTable or appendTable.
 
+=head3	appendSection(name [, options])
+
+	Creates a new section with the given name, and appends it by default
+	to the end of the document body. If the "attachment" option is
+	provided, with an existing element as its value, the new section is
+	appended in the context of this element. For example, if the value
+	of "attachment" is an existing section, the new section is appended
+	as the last sub-section of the existing one.
+	
+	The other possible option is "style". It allows the application to
+	explicitly select a style for the new section.
+
 =head3	appendTable(name, rows, columns [, options])
 
         Creates a new table with the given name, number of rows and number
@@ -306,7 +318,7 @@ presentation which is one of the foundations of the OpenDocument format.
 
         The second option is the cells' default data type. The main types
         available are string, float, currency, date, percentage. Caution: to
-        be properly treated as having a numeric format in OpenOffice.org, a
+        be properly treated as having a numeric format in OOo/ODF, a
         cell needs more than to be just marked 'numeric'. If the cell really
         needs to be treated properly as a number, you must also give it a
         cell style which itself refers to a number style. The cell-style
@@ -445,7 +457,7 @@ presentation which is one of the foundations of the OpenDocument format.
         If a formula is given as the last argument, it is put into the cell,
         overwriting any existing formula. No check of the syntax is carried
         out on the inserted formula. It is up to the application to insert a
-        formula which conforms to OpenOffice.org syntax. Example:
+        formula which conforms to OOo/ODF syntax. Example:
 
             $doc->cellFormula(1,3,2, "sum <C2:C5>");
 
@@ -595,7 +607,7 @@ presentation which is one of the foundations of the OpenDocument format.
         Returns the element which represents the given cell. Possible
         arguments are respectively: the table number or its reference in the
         document, row number and column number. Each table cell contained in
-        the body of an OpenOffice.org document can be referenced in this
+        the body of an OOo/ODF document can be referenced in this
         manner, as if it belonged to a single 3D table irrespective of the
         rest of the document [22] .
 
@@ -782,19 +794,18 @@ presentation which is one of the foundations of the OpenDocument format.
 	then a level 1 header, the call getHeader(3) returns the last level 1
 	header.
 
+=head3	getHeaderList([level => value])
+
+        Returns a list of header elements (i.e. elements called 'text:h' in
+        the document body).
+	
+	If the "level" option is provided, the list is restricted to the
+	headers having the given level.
+
 =head3	getHeaderRow(table [, row_number])
 
 	See getTableHeaderRow().
 	
-=head3	getHeaderList()
-
-        Returns a list of header elements (i.e. elements called 'text:h' in
-        the document body).
-
-        This list actually contains the information necessary to create a
-        contents list of an OpenOffice.org document, from within a document
-        management application.
-
 =head3	getHeaderText(n)
 
         Returns the text of the nth+1 header element. Elements are counted
@@ -903,6 +914,21 @@ presentation which is one of the foundations of the OpenDocument format.
 	given table row. The row can be provided either by table ID and row
 	number or by direct row object.
 
+=head3	getSection(name/number)
+
+        If the first argument is a number, returns the nth+1 section in a
+	document (section numbers are zero-based; if the argument is negative,
+	the sections are counted from the end). 
+
+        The second form allows you to select a section by its logical name (as
+        it would appear to the end user when editing the section's
+        properties). This name is obviously easier to use than a number.
+        Moreover, this type of selection means the application will still
+        work even if a section changes position within a document.
+	
+	The returned object is a "handle" that can be used for subsequent
+	element creations or retrievals in the selected section.
+	
 =head3	getSpanList()
 
         Returns a list of elements which correspond to texts which "stand
@@ -1105,6 +1131,12 @@ presentation which is one of the foundations of the OpenDocument format.
 	Returns the element (if defined) representing a user-defined field,
 	and corresponding to the given name. See also userFieldValue().
 
+=head3	getVariableElement(name)
+
+	Returns the user-defined variable identified by the given name.
+	
+	[Contribution by Andrew Layton]
+
 =head3	hyperlinkURL(hyperlink [, url])
 
 	Get/set the URL of an hyperlink element. The first argument may be
@@ -1213,6 +1245,16 @@ presentation which is one of the foundations of the OpenDocument format.
         'position => after' option. By default, the new row is an exact copy
         of the referenced row, but you can assign particular attributes to
         it in the same manner as the insertElement method of OODoc::XPath.
+
+=head3	insertSection(path, position, name [, options])
+
+=head3	insertSection(element, name [, options])
+
+	Creates a new section and inserts it immediately before or after
+	an existing element (paragraph, header, table). The referenced element
+        can be indicated as in insertParagraph. The possible option is
+	presently "style"; its value, if provided, is the style of the
+	new section.
 
 =head3	insertTable(path, position, name, rows, columns [, options])
 
@@ -1392,12 +1434,26 @@ presentation which is one of the foundations of the OpenDocument format.
 
         See also setSpan().
 
+=head3	renameSection(section, newname)
+
+	Renames an existing section using the second argument.
+
+=head3	renameTable(table, newname)
+
+	Renames an existing table using the second argument.
+
 =head3	rowStyle(row_element [, style])
 
 =head3	rowStyle(table, row [, style])
 
         Reads or modifies a table row's style, in the same way as
         columnStyle does for columns.
+
+=head3	sectionStyle(section, [newstylename])
+
+	Without argument, returns the current style of a given section.
+	
+	If an argument is provided, it becomes the new style of the section.
 
 =head3	selectDrawPageByName(name)
 
@@ -1766,6 +1822,14 @@ presentation which is one of the foundations of the OpenDocument format.
 	displayed one. The user field is displayed according to a data style
 	by OpenOffice.org. For example, 'Tuesday, March 1, 2005' is a possible
 	displayed value for 38412.
+	
+=head3	variableValue(name/element [, newvalue])
+
+	Returns the current value of the given user-defined variable or, if
+	a new value is provided as the second argument, updates the variable
+	accordingly.
+
+	[Contribution by Andrew Layton]
 
 =head2	OpenOffice::OODoc::Element methods
 
@@ -1776,7 +1840,8 @@ presentation which is one of the foundations of the OpenDocument format.
 =head3	isXXX() methods
 
         A set of "isXXX" methods, returning true or false, allow the
-	to check the type of a given element.
+	to check the type of a given element. Caution, this methods belong
+	to the elements, not to the document.
 
         Example:
 
@@ -1803,6 +1868,8 @@ presentation which is one of the foundations of the OpenDocument format.
             isOrderedList		ordered list (OOo 1.x only)
 
             isParagraph			paragraph
+	    
+	    isSection			section
 
             isSequenceDeclarations	set of sequence declarations
 	    

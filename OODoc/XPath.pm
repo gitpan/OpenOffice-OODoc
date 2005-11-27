@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 2.207 2005-10-22 JMG$
+#	$Id : XPath.pm 2.208 2005-11-26 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -12,7 +12,7 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 2.207;
+our	$VERSION	= 2.208;
 use	XML::Twig	3.22;
 use	Encode;
 
@@ -378,6 +378,7 @@ sub	new
 		return undef;
 		}
 	$self->{'twig'} = $twig;
+	$self->{'context'} = $self->{'xpath'};
 	bless $self, $class;
 	$self->{'opendocument'} = $self->isOpenDocument;
 	if ($self->{'opendocument'})
@@ -397,6 +398,7 @@ sub	DESTROY
 	{
 	my $self	= shift;
 	delete $self->{'file'};
+	delete $self->{'context'};
 	delete $self->{'xpath'};
 	delete $self->{'xml'};
 	delete $self->{'body'};
@@ -586,6 +588,23 @@ sub	getRootElement
 	}
 		
 #------------------------------------------------------------------------------
+# get/set/reset the current search context
+
+sub	currentContext
+	{
+	my $self	= shift;
+	my $new_context	= shift;
+	$self->{'context'} = $new_context if (ref $new_context);
+	return $self->{'context'};
+	}
+
+sub	resetCurrentContext
+	{
+	$self		= shift;
+	return $self->currentContext($self->{'xpath'});
+	}
+
+#------------------------------------------------------------------------------
 # returns the content class (text, spreadsheet, presentation, drawing)
 
 sub	contentClass
@@ -639,16 +658,17 @@ sub	getBody
 	{
 	my $self	= shift;
 
-	return $self->{'body'} if $self->{'body'};
+	return $self->{'body'} if ref $self->{'body'};
 
 	if ($self->{'body_path'})
 		{
-		return $self->getElement($self->{'body_path'}, 0);
+		$self->{'body'} =$self->getElement($self->{'body_path'}, 0);
+		return $self->{'body'};
 		}
 	my $office_body = $self->getElement('//office:body', 0);
 	if ($office_body)
 		{
-		return $self->{'opendocument'} ?
+		$self->{'body'} = $self->{'opendocument'} ?
 		    $office_body->selectChildElement
 			('office:(text|spreadsheet|presentation|drawing)')
 			:
@@ -656,11 +676,12 @@ sub	getBody
 		}
 	else
 		{
-		return	$self->getRootElement->selectChildElement
+		$self->{'body'} = $self->getRootElement->selectChildElement
 				(
 				'office:(body|meta|master-styles|settings)'
 				);
 		}
+	return $self->{'body'};
 	}
 
 #------------------------------------------------------------------------------
@@ -723,10 +744,10 @@ sub	getElement
 		return	$path->isElementNode ? $path : undef;
 		}
 	my $pos		= shift || 0;
+	my $context	= shift || $self->{'context'};
 	if (defined $pos && (($pos =~ /^\d*$/) || ($pos =~ /^[\d+-]\d+$/)))
 		{
-		my $context	= shift;
-		$context	= $self->{'xpath'} unless ref $context;
+		$path =~ s/^\/\//\.\// unless $context eq $self->{'xpath'};
 		my $node	= $context->get_xpath($path, $pos);
 
 		return	$node && $node->isElementNode ? $node : undef;
@@ -764,9 +785,6 @@ sub	selectChildElementByName
 	return undef			unless $element;
 	return $element->selectChildElement(@_);
 	}
-
-#------------------------------------------------------------------------------
-# get the first child belonging to a given element with an exact given name
 
 sub	getChildElementByName
 	{
@@ -931,9 +949,9 @@ sub	getText
 sub	getElementList
 	{
 	my $self	= shift;
-	my $path	= shift;
+	my $path	= shift;		
 	my $context	= shift;
-	
+
 	if ($context)
 		{
 		$path	= "./"	unless $path;
@@ -941,9 +959,9 @@ sub	getElementList
 	else
 		{
 		$path	= "/"	unless $path;
-		$context = $self->{'xpath'};
+		$context = $self->{'context'};
 		}
-
+	$path =~ s/^\/\//\.\// if $context ne $self->{'xpath'};
 	return $context->findnodes($path);
 	}
 
@@ -959,7 +977,7 @@ sub	selectNodesByXPath
 	if (ref $p1)	{ $context = $p1; $path = $p2; }
 	else		{ $path = $p1; $context = $p2; }
 
-	$context = $self->{'xpath'} unless ref $context;
+	$context = $self->{'context'} unless ref $context;
 	return $context->get_xpath($path);
 	}
 
@@ -974,7 +992,7 @@ sub	selectNodeByXPath
 	my $context	= undef;
 	if (ref $p1)	{ $context = $p1; $path = $p2; }
 	else		{ $path = $p1; $context = $p2; }
-	$context = $self->{'xpath'} unless ref $context;
+	$context = $self->{'context'} unless ref $context;
 	return $context->get_xpath($path, 0);
 	}
 
@@ -996,14 +1014,8 @@ sub	getXPathValue
 	if (ref $p1)	{ $context = $p1; $path = $p2; }
 	else		{ $path = $p1; $context = $p2; }
 	
-	if (ref $context)
-		{
-		$path =~ s/^\/*//;
-		}
-	else
-		{
-		$context = $self->{'xpath'};
-		}
+	$context = $self->{'context'} unless $context;
+	$path =~ s/^\/*// if $context ne $self->{'xpath'};
 	return $self->outputTextConversion($context->findvalue($path, @_));
 	}
 
@@ -1180,7 +1192,9 @@ sub	findElementList
 
 	my @result	= ();
 
-	foreach my $n ($self->{'xpath'}->findnodes($path))
+	my $context = $self->{'context'};
+	$path =~ s/^\/\//\.\// unless $context eq $self->{'xpath'};
+	foreach my $n ($context->findnodes($path))
 		{
 		push @result,
 		    [ $self->findDescendants($n, $pattern, $replace, @_) ];
@@ -1318,10 +1332,13 @@ sub	getTextList
 	my $self	= shift;
 	my $path	= shift;
 	my $pattern	= shift;
-
+	my $context	= shift;
+	
 	return undef unless $path;
-
-	my @nodelist = $self->{'xpath'}->findnodes($path);
+	
+	$context = $self->{'context'} unless $context;
+	$path =~ s/^\/\//\.\// unless $context eq $self->{'xpath'};
+	my @nodelist = $context->findnodes($path);
 	my @text = ();
 
 	foreach my $n (@nodelist)
@@ -1345,7 +1362,7 @@ sub	getAttributes
 	return undef	unless $path;
 	$pos	= 0	unless $pos;
 
-	my $node	= $self->getElement($path, $pos);
+	my $node	= $self->getElement($path, $pos, @_);
 	return undef	unless $path;
 
 	my %attributes	= ();
@@ -1372,7 +1389,7 @@ sub	getAttribute
 	return undef	unless $path;
 	$pos	= 0	unless $pos;
 
-	my $node	= $self->getElement($path, $pos);
+	my $node	= $self->getElement($path, $pos, @_);
 	return	$self->outputTextConversion($node->att($name));
 	}
 
@@ -1386,8 +1403,7 @@ sub	setAttributes
 	my $pos		= (ref $path) ? undef : shift;
 	my %attr	= @_;
 
-	my $node	= $self->getElement($path, $pos);
-
+	my $node	= $self->getElement($path, $pos, $attr{'context'});
 	return undef	unless $node;
 
 	foreach my $k (keys %attr)
@@ -1417,11 +1433,13 @@ sub	setAttribute
 	my $self	= shift;
 	my $path	= shift;
 	my $pos		= (ref $path) ? undef : shift;
-	my $node	= $self->getElement($path, $pos) or return undef;
+
 	my $attribute	= shift or return undef;
 	my $value	= shift;
+	my $node	= $self->getElement($path, $pos, @_)
+		or return undef;
 
-	if (defined $value && ($value gt ' '))
+	if (defined $value)
 		{
 		$node->set_att
 			(
@@ -1447,7 +1465,7 @@ sub	removeAttribute
 	my $pos		= (ref $path) ? undef : shift;
 	my $name	= shift;
 
-	my $node	= $self->getElement($path, $pos);
+	my $node	= $self->getElement($path, $pos, @_);
 
 	return undef	unless $node;
 	return $node->del_att($a);
@@ -1569,7 +1587,8 @@ sub	replaceElement
 
 	my $result	= undef;
 
-	my $old_element	= $self->getElement($path, $pos);
+	my $old_element	= $self->getElement
+			($path, $pos, $options{'context'});
 	unless ($old_element)
 		{
 		warn	"[" . __PACKAGE__ . "::replaceElement] " .
@@ -1626,7 +1645,8 @@ sub	appendElement
 		$self->setText($element, $opt{'text'})	if $opt{'text'};
 		}
 	return undef	unless $element;
-	my $parent	= $self->getElement($path, $pos);
+	my $parent	= $self->getElement
+			($path, $pos, $opt{'context'});
 	unless ($parent)
 		{
 		warn	"[" . __PACKAGE__ .
@@ -1665,7 +1685,7 @@ sub	insertElement
 		}
 	return undef	unless $element;
 	
-	my $posnode	= $self->getElement($path, $pos);
+	my $posnode	= $self->getElement($path, $pos, $opt{'context'});
 	unless ($posnode)
 		{
 		warn "[" . __PACKAGE__ . "::insertElement] Unknown position\n";
