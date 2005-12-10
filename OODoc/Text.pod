@@ -196,7 +196,7 @@ presentation which is one of the foundations of the OpenDocument format.
             'style'		=> <paragraph style>
 
         An 'attribute' option is also available under the same conditions as
-        for the appendHeader method (see above) [19] .
+        for the appendHeader method (see above).
 
         If the 'text' option is empty, calling this method is the equivalent
         of adding a line feed.
@@ -312,9 +312,10 @@ presentation which is one of the foundations of the OpenDocument format.
             'cell-style'	=> default cell style
             'text-style'	=> default cell text style
 
-        The first option is the name of a table style [20]  which defines
+        The first option is the name of a table style which defines
         certain global properties for the table (width, background colour,
-        etc.).
+        etc.). See the OpenOffice::OODoc::Styles manual for information about
+	styles.
 
         The second option is the cells' default data type. The main types
         available are string, float, currency, date, percentage. Caution: to
@@ -368,11 +369,14 @@ presentation which is one of the foundations of the OpenDocument format.
 
         Remember that:
 
-            $doc->appendText('text:p', text => 'My text'); [21]
+            $doc->appendText('text:p', text => 'My text');
 
         is the same as:
 
             $doc->appendParagraph(text => 'My text');
+	
+	('text:p' refers to a paragraph element, just as 'text:h' refers
+        to a header element.)
 
 =head3	bibliographyEntryContent(id [, key1 => value1, key2 => value2, ...])
 
@@ -538,6 +542,21 @@ presentation which is one of the foundations of the OpenDocument format.
 
         Caution: columns are numbered beginning at 0.
 
+=head3	copyRowToHeader(table, rownum)
+
+=head3	copyRowToHeader(row)
+
+	This method creates appends a copy of a given table row to the header
+	of the table. It may be called repeatedly, allowing multi-row header
+	creation.
+	
+	A table header is a row, or a sequence of rows, that is displayed at
+	the top of a table and repeated at the top of every page if the table
+	is spanned across more than one page.
+	
+	The given row remains in place unchanged; it's used as a template for
+	the new header row. 
+
 =head3	defaultOutputTerminator([chars])
 
 	Get or set the default terminator character for text export.
@@ -558,6 +577,23 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	Deletes the given bookmark (if defined).
 
+=head3	deleteColumn(table, col_num)
+
+=head3	deleteColumn(col_elt)
+
+	Deletes a given column in a given table.
+	
+	Caution: Before using this method, the application should ensure that
+	the whole area from the beginning of the table to the last cell of the
+	column to be deleted is "normalized". See normalizeSheet() for details
+	about table normalization.
+	
+=head3	deleteRow(table, row_num)
+
+=head3	deleteRow(row_elt)
+
+	Deletes a given row in a table.	
+
 =head3	drawPageId(page [, new_id])
 
 	Returns the internal identifier of a presentation page, and changes
@@ -574,6 +610,14 @@ presentation which is one of the foundations of the OpenDocument format.
 	second argument is provided. Example:
 	
 		$doc->drawPageName("oldname", "newname");
+
+=head3	deleteTableColumn(table, col_num)
+
+	See deleteColumn().
+
+=head3	deleteTableRow(table, row_num)
+
+	See deleteRow().
 
 =head3	getBibliographyElements([id])
 
@@ -609,7 +653,7 @@ presentation which is one of the foundations of the OpenDocument format.
         document, row number and column number. Each table cell contained in
         the body of an OOo/ODF document can be referenced in this
         manner, as if it belonged to a single 3D table irrespective of the
-        rest of the document [22] .
+        rest of the document.
 
 	If the cell is defined in the spreadsheet but covered (because of a
 	cell merge), the return value is undef.
@@ -742,6 +786,10 @@ presentation which is one of the foundations of the OpenDocument format.
         table. The first argument is either the table's sequential number in
         the document, logical name or element reference. The second argument
         is the column's number in the table. Synonym: getTableColumn.
+	
+	Caution: The application should ensure that the area including the
+	needed column is "normalized". See normalizeSheet() for details about
+	table normalization.
 
 =head3	getDrawPage(pos/name)
 
@@ -790,7 +838,7 @@ presentation which is one of the foundations of the OpenDocument format.
 
         Caution: without the "level" option, this method counts sequentially
 	through all headers along a single plane, irrespective of their
-	level[24]. E.g. if you have a level 1 header then two level 2 headers
+	level. E.g. if you have a level 1 header then two level 2 headers
 	then a level 1 header, the call getHeader(3) returns the last level 1
 	header.
 
@@ -978,8 +1026,11 @@ presentation which is one of the foundations of the OpenDocument format.
 	the same effect as an explicit call of normalizeSheet() with the same
 	arguments.
 
-	In the text documents, the tables are used without any preprocessing
-	and the paragraph above doesn't apply.
+	In the text documents, the tables may be used without preprocessing
+	and the paragraph above doesn't apply, as long as the application
+	doesn't to get other objects than rows and cells. However, the table
+	normalization is needed before any column-oriented operation (i.e.
+	getColumn(), insertColumn() or deleteColumn()).
 
         The returned value is a table element and not a table's content.
 
@@ -1065,7 +1116,12 @@ presentation which is one of the foundations of the OpenDocument format.
         footnote citations (in text body) are placed between square
         brackets.
 
-        '{NOTE:' and '}' for the content of footnotes [26] .
+        '{NOTE:' and '}' for the content of footnotes.
+	
+	(Footnotes are physically inserted into the text at the place
+        where they are called, just after the link element indicating the
+        footnote's number. Its display at the foot of the page or elsewhere
+        is a trick of the graphical interface.)
 
         An application can change these delimiters, add more for other types
         of elements (e.g. paragraphs, headers, tables cells, etc.), or
@@ -1165,6 +1221,12 @@ presentation which is one of the foundations of the OpenDocument format.
 	The new column is created as a copy of the column a the given
 	position. It's inserted before or after the existing one, according
 	to an optional "position" parameter (default 'before').
+	
+	Caution: before using insertColumn() against a spreadsheet, the
+	application should ensure that the whole rectangular area from the top
+	left cell ("A1") to the last used cell of the column at the target
+	position is "normalized" (see normalizeSheet() for details about the
+	table normalization).
 	
 =head3	insertDrawPage(page/pos [, options])
 
@@ -1268,7 +1330,7 @@ presentation which is one of the foundations of the OpenDocument format.
 
 =head3	insertTableColumn(table, col_num [, options])
 
-	See InsertColumn().
+	See insertColumn().
 	
 =head3	insertTableRow(table, row [, options])
 
@@ -1303,11 +1365,15 @@ presentation which is one of the foundations of the OpenDocument format.
 	getTable(); the getTable() method, when executed with the length
 	and width optional arguments, executes the same job.
 
-	This method is not needed for tables included in OpenOffice.org
-	Writer (sxw) documents, because these tables are "normalized" (i.e.
-	each component is mapped to an exclusive XML element). But in Calc
-	(sxc) documents, the XML mapping of rows, columns and cells is
-	"denormalized" in order to save memory: several table components
+	This method is not always needed for tables included in OpenOffice.org
+	Writer (sxw/odt) documents, because their storage is "normalized"
+	(i.e. each component is mapped to an exclusive XML element), with the
+	exception of the column objects. So, normalizeSheet() is required with
+	these tables when the application needs to use a column-focused method
+	such as getColumn(), insertColumn() or deleteColumn().
+	
+	In Calc (sxc/ods) documents, the XML mapping of the whole content
+	is "denormalized" in order to save memory: several table components
 	can be mapped to a single XML element, so the XML address of each one
 	can't be simply calculated from its logical coordinates (sheet, row,
 	column). In order to allow the spreadsheets components to be addressed
@@ -1342,10 +1408,10 @@ presentation which is one of the foundations of the OpenDocument format.
 	table, it's generally possible to directly copy it from a spreadsheet
 	document to a text document. Example:
 
-		$doc1 = ooDocument(file => "spreadsheet.sxc");
-		$doc2 = ooDocument(file => "text.sxw");
+		$doc1 = ooDocument(file => "spreadsheet.ods");
+		$doc2 = ooDocument(file => "text.odt");
 		$sheet = $doc1->normalizeSheet("Sheet1", 6, 8);
-		$doc2->appendBodyElement($sheet);
+		$doc2->appendBodyElement($sheet->copy);
 	
 	In this last example, a new table, that is a copy of the A1:H7 area
 	of the "Sheet1" sheet of a Calc document, is attached at the end of
@@ -1354,7 +1420,7 @@ presentation which is one of the foundations of the OpenDocument format.
 	The transformed sheets, of course, are readable by OOo Calc.
 	They simply take some more disk space when the processed spreadsheet
 	is saved. If the document is later read then written by OOo Calc,
-	the storage is optimized, so the effects of normalizeSheet()
+	the storage is optimized again, so the effects of normalizeSheet()
 	disappear.
 
 	normalizeSheet() can be used safely against Writer document tables,
@@ -1364,7 +1430,11 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	An explicit call to this method can be replaced by getTable() with the
 	additional length and width parameters. 
-	
+
+=head3	normalizeTable(table [, rows [, columns]])
+
+	See normalizeSheet().
+
 =head3	outputDelimitersOn()
 
 =head3	outputDelimitersOff()
@@ -1498,7 +1568,7 @@ presentation which is one of the foundations of the OpenDocument format.
         The third form, where the 'action' argument is a program function
         reference, launches the given function each time the filter string
         is matched. If defined, the value returned by the function is used
-        as the replacement value [29] . If the function returns a null value
+        as the replacement value. If the function returns a null value
         (undef) then no replacement is made. If it returns an empty string,
         the retrieved text is deleted. The called function receives the rest
         of the arguments, in this order:
@@ -1560,14 +1630,9 @@ presentation which is one of the foundations of the OpenDocument format.
         unless it is entirely within the same sub-element and all its
         characters have the same style. For example, if you were searching
         for the string "OpenOffice" using selectElementsByContent, the
-        following paragraph would not be selected:
-
-        This document was created using OpenOffice.org 1.0.1
-
-        In this example, the word "OpenOffice" is there but it is divided by
-        a style change which the logic of selectElementsByContent treats as
-        belonging to two separate sub-elements. [30]  (This is not the same
-        logic applied by the search function of an office application.)
+        string, if present, can't be found if, say, "Open" and "Office" are
+	not represented with the same font, the same color and/or the same
+	font size.
 
         Note: This method can be used with a "non-filtering" regular
         expression (".*") for unconditional movement through all text
@@ -1785,7 +1850,10 @@ presentation which is one of the foundations of the OpenDocument format.
         Note: this method allows you to attribute a non-existent style to a
         paragraph or header. Such a style can be created later (e.g. using
         createStyle) or not at all. The actual existence of the style is
-        only relevant to the needs of the application [31] .
+        only relevant to the needs of the application. Obviously,
+	opening a document which contains references to non-existent styles
+	in OpenOffice.org will give unpredictable results as to the viewing
+	of the given paragraphs or headers.
 
 =head3	updateCell(table, row, column, value [, text])
 
@@ -1886,8 +1954,11 @@ presentation which is one of the foundations of the OpenDocument format.
 =head3	Other element methods
     
         For a neater and more direct access to element types, see the
-        getName method of XML::Twig::Elt [28]. Remember that all the
-	features of XML::Twig::Elt are available for any text container.
+        getName method of XML::Twig::Elt. A call to $element->getName
+	returns the element's XML name including its namespace prefix
+	e.g. 'text:p' for a paragraph or 'table:table-row' for a table
+	row. Remember that all the features of XML::Twig::Elt are
+	available for any text container.
 
 =head2	Properties
 
@@ -1945,11 +2016,6 @@ presentation which is one of the foundations of the OpenDocument format.
 	However, this automatic (but costly) transformation has a drawback:
 	it uses the same 'max_rows' and 'max_cols' values for every targeted
 	sheet, whatever the really needed managed area for each one.
-
-=head1	NOTES
-
-See OpenOffice::OODoc::Notes(3) for the footnote citations ([n])
-included in this page.
 
 =head1	AUTHOR/COPYRIGHT
 

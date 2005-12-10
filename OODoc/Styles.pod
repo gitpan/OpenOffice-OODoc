@@ -279,7 +279,7 @@ at least a blank of each required style.
         in dark blue size 14 bold italics on a yellow background. This is
         done using a style called "Colour" (reusable later for other
         paragraphs) based on the "Standard" style. You will note that the
-        colour codes are in RGB hexadecimal preceded by a '#' [35].
+        colour codes are in RGB hexadecimal preceded by a '#'.
 	We could replace '#000080' with rgb2oo('navy blue') if we used the
 	standard rgb.txt colour table from the Xorg distribution (see
 	rgb2oo() below). A large part of these layout properties come from
@@ -1240,11 +1240,6 @@ at least a blank of each required style.
 	others. The user can populate it from an external RGB file, through
 	the ooLoadColorMap() function previously described, and/or through
 	program instructions like the example above.
-
-=head1	NOTES
-
-See OpenOffice::OODoc::Notes(3) for the footnote citations ([n])
-included in this page.
 
 =head1	AUTHOR/COPYRIGHT
 

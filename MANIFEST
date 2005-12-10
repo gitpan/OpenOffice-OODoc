@@ -22,7 +22,6 @@ OODoc/Intro.pod
 OODoc/Manifest.pm
 OODoc/Manifest.pod
 OODoc/Meta.pod
-OODoc/Notes.pod
 OODoc/Styles.pod
 OODoc/Text.pod
 OODoc/XPath.pod

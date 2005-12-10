@@ -13,8 +13,8 @@ Just before reading this intro, it's a good idea to have a look at the
 short (and commented) examples provided in the distribution.
 
 There is an alternative intro for french-reading users. It's available in
-PDF (http://jean.marie.gouarne.online.fr/doc/oodoc_guide.pdf) or SXW
-format (http://jean.marie.gouarne.online.fr/doc/oodoc_guide.sxw).
+PDF (http://jean.marie.gouarne.online.fr/doc/oodoc_guide.pdf) or ODT
+(http://jean.marie.gouarne.online.fr/doc/oodoc_guide.odt).
 
 =head1	Overview
 
@@ -908,4 +908,3 @@ The OpenOffice::OODoc man pages (not including this introduction) are
 extracted from this reference manual.
 
 =cut
-

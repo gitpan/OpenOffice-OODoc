@@ -1,3 +1,9 @@
+2.018	2005-12-10
+	- XPath.pm: small fix; added getLocalPosition() as an Element method.
+	- Text.pm: Added copyRowToHeader(), deleteTableColumn(); code cleaning
+	in insertTableColumn(); improved normalizeSheet();
+	bug fixes in insertRow(), getItemListText().
+	- Doc cleaning and update; removed Notes.pod.
 2.017	2005-11-27
 	- XPath.pm: Added context change features
 	- Text.pm: Bug fix in getList(). Added getItemListText() and changed

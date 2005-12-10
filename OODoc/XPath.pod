@@ -42,7 +42,11 @@ as an argument, there are two ways of proceeding:
 - reference the element directly (obtained previously)
 
 - or give an XPath expression and a position, being a string and an
-integer respectively [2]
+integer respectively; for example, the pair ('/office:body/text:p', 12)
+or ('//text:p', 12) represent, in an OpenOffice.org document, the
+thirteenth occurrence of the 'text:p' element or the 13th paragraph
+of text (XPath occurrences are numbered table elements in Perl,
+starting from 0).
 
 The second way requires the knowledge of an appropriate XPath
 expression (according the OOo/OpenDocument XML format specification).
@@ -87,7 +91,14 @@ Several methods allow you to place copies of or references to
 elements (from other documents or from other positions in the same
 document) in any position in the current document. This offers
 powerful manoeuvrability but only if these placements conform with
-the destination position's context [3] .
+the destination position's context.
+
+For example, you can easily copy a paragraph from one document
+to another but only if you knowingly modify the paragraph's style
+attribute if that style is not already defined in the destination
+document. You can also copy the style but only if you are sure that
+this style is not already defined by another unknown style in the
+destination document (and so on).
 
 For advanced users familiar with the XML::Twig API, it might be
 interesting to know that all the objects called "elements" in the
@@ -109,7 +120,7 @@ features of OODoc::Meta and OODoc::Document are described here.
 
 =head2	Methods
 
-=head3	Constructor : OpenOffice::OODoc::XPath->new(<parameters>); [4] 
+=head3	Constructor : OpenOffice::OODoc::XPath->new(<parameters>);
 
         Short Form: ooXPath(<parameters>)
 
@@ -302,7 +313,9 @@ features of OODoc::Meta and OODoc::Document are described here.
             	);
 
         adds a paragraph containing the phrase "New text" to the end of the
-        body of the document [6] .
+        document body. (Remember that in the case of an OpenOffice.org text
+	file (Writer), it would be better to use the appendParagraph method of
+	OpenOffice::OODoc::Text as this requires fewer parameters.
 
         If the 'text' option is omitted, an empty element is created (in the
         above example it would be an empty paragraph or line feed).
@@ -328,7 +341,8 @@ features of OODoc::Meta and OODoc::Document are described here.
             	);
 
         creates a new paragraph style called 'P1' in the list of "automatic
-        styles" [7] .
+        styles" ("automatic styles" are styles which are not explicitly
+	indicated in the styles list as it appears to the end user).
 
         This method lets you add any kind of element into a document, even
         exotic ones. With the most common OpenOffice.org objects (e.g.
@@ -346,16 +360,23 @@ features of OODoc::Meta and OODoc::Document are described here.
 
         The 'name' argument can also be replaced by an XML string. This
         string must correspond to the correct XML description of a UTF-8
-        encoded [8]  OpenOffice.org element. For example, it could be a
+        encoded OpenOffice.org element. For example, it could be a
         string which had been previously exported using the exportXMLElement
         method of OODoc::XPath, or extracted from an OpenOffice.org file by
-        some other application [9] .
+        some other application. If for any reason you absolutely have to
+	use a non-UTF8 XML string which contains 8-bit characters (accented
+	letters, etc.), you can always convert the string using the
+	encode_text method before passing it to appendElement. Of course,
+	the problem will not arise if you are absolutely sure that the string
+	only contains ASCII (7 bit) characters. XML syntax is checked, but it
+	is up to the user to verify that the element import conforms to
+	OpenDocument XML grammar.
 
         The following piece of code produces the same result as the first
         example:
 
-            $xml =	'<text:p text:style-name="Standard">'	.
-            	'New text'				.
+            $xml = '<text:p text:style-name="Standard">' .
+            	'New text' .
             	'</text:p>';
             $content->appendElement
             	(
@@ -458,6 +479,27 @@ features of OODoc::Meta and OODoc::Document are described here.
         of creating an element, inserting it in a document's XML tree and
         giving it attributes (see appendElement and insertElement).
 
+=head3	currentContext([context])
+
+	Accessor allowing the application to change the context for some
+	search methods.
+	
+	Knowing that the default context is the root of the document. By
+	setting the current context to a lower level object, the application
+	can restrain the search to the children of this object.
+	
+	In the example below, the getElement() method retrieves a paragraph
+	by order number in a previously selected section, and not in the whole
+	document.
+	
+		my $section = $doc->getElement("//text:section", $s_number);
+		$doc->currentContext($section);
+		my $paragraph = $doc->getElement('//text:p", $p_number);
+		
+	Without argument, simply returns the previous current context.
+	
+	See also resetCurrentContext().
+
 =head3	decode_text(utf8_string)
 
         Caution: this method is a non-exported class method. It must be used
@@ -467,13 +509,16 @@ features of OODoc::Meta and OODoc::Document are described here.
 
         and not from an OODoc::XPath instance.
 
-        Decodes a UTF8 [10]  string and returns an 8 bit character [11]
-        translation of it out of the user's character set, as defined by the
-        following variable:
+        Decodes a UTF-8 string and returns an 8 bit character translation
+	of it out of the user's character set, as defined by the following
+	variable:
 
             $OpenOffice::OODoc::XPath::LOCAL_CHARSET
 
-        for which the default value is 'ISO-8859-1' [12] .
+        for which the default value is 'ISO-8859-1'. See the Perl/Encode
+	manual for the list of supported character sets.
+	
+	OpenDocument uses UTF-8 XML encoding.
 
         Explicit calls to this method should be rare. It is used internally
         by methods which return text extracted from document content (e.g.
@@ -605,7 +650,7 @@ features of OODoc::Meta and OODoc::Document are described here.
         string or a function reference. (See replaceText method below.)
 
         Filtering and possible replacement only affects an element's content
-        and not its attributes [13] .
+        and not its attributes.
 
         This method is mostly for internal use. We recommend using other
         methods for the selective extraction of elements.
@@ -858,7 +903,7 @@ features of OODoc::Meta and OODoc::Document are described here.
         use replicateElement to insert separate copies of an element.
 
         In the same conditions as in appendElement, the 'name' argument can
-        be replaced by an XML string which describes the element [14] .
+        be replaced by an XML string which describes the element.
 
         Note: to add an element to the end of a document, it would obviously
         be better to use appendElement.
@@ -1044,7 +1089,9 @@ features of OODoc::Meta and OODoc::Document are described here.
         either pairs position=>'after' or position=>'before' are specified
         in the list of options. In this case, the insertion is made at the
         same hierarchical level as the positional element according to the
-        same logic as for insertElement [15] .
+        same logic as for insertElement. However, contrary to insertElement,
+	a copy of the given element is indeed created, not just a reference
+	to it.
 
         If the 'position' argument is given as 'end', then the new element
         is added at the last child position of the root element.
@@ -1086,6 +1133,10 @@ features of OODoc::Meta and OODoc::Document are described here.
 	document structure, to be later attached), the XML::Twig::Elt copy()
 	method should be preferred.
 
+=head3	resetCurrentContext()
+
+	Resets the search context to its default value, which is the root of
+	the document. See currentContext().
 
 =head3	save([filename])
 
@@ -1356,8 +1407,13 @@ features of OODoc::Meta and OODoc::Document are described here.
 
 =head3	appendTextChild(text)
 
-	Append a text node (PCDATA) as the last child of the calling
+	Appends a text node (PCDATA) as the last child of the calling
 	element.
+
+=head3	getLocalPosition()
+
+	Returns	the position of the current element in the list of all
+	the elements with the same type belonging to the same parent.
 
 =head3	replicateNode(count, position)
 
@@ -1463,11 +1519,6 @@ features of OODoc::Meta and OODoc::Document are described here.
 	undef, the document format is OpenOffice.org version 1. This property
 	should not be changed (as long as OpenOffice::OODoc can't change the
 	format of an existing document).
-
-=head1	NOTES
-
-See OpenOffice::OODoc::Notes(3) for the footnote citations ([n])
-included in this page.
 
 =head1	AUTHOR/COPYRIGHT
 

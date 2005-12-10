@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 2.208 2005-11-26 JMG$
+#	$Id : XPath.pm 2.209 2005-12-09 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -12,7 +12,7 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 2.208;
+our	$VERSION	= 2.209;
 use	XML::Twig	3.22;
 use	Encode;
 
@@ -1746,6 +1746,14 @@ sub	hasTagName
 	return ($name && ($name eq $value)) ? 1 : undef;
 	}
 
+sub	getLocalPosition
+	{
+	my $node	= shift;
+	my $tag		= $node->getName or return undef;
+	my $xpos	= $node->pos($tag);
+	return defined $xpos ? $xpos - 1 : undef;
+	}
+
 sub	setName
 	{
 	my $node	= shift;
@@ -1790,7 +1798,7 @@ sub	selectChildElement
 	my $name = $fc->name if $fc;
 	while ($fc)
 		{
-		if ($name && ($name =~ $filter))
+		if ($name && ($name =~ /$filter/))
 			{
 			return $fc if ($count >= $pos);
 			$count++;

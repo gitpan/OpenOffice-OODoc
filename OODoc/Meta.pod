@@ -190,7 +190,16 @@ of OpenOffice.org documents.
             	('meta:table-count' => '4', 'status' => 'OK');
 
         This example forces the number of tables to 4 (whatever the reality)
-        and adds an arbitrary attribute 'status' with value 'OK' [18] .
+        and adds an arbitrary attribute 'status' with value 'OK'.
+	
+	Note : Such forced attributes do not upset the function of
+        OpenOffice.org which ignores them. They could therefore be useful in
+        programs which handle documents out of reach of the end user.
+        However, if such a document is then edited or updated by
+        OpenOffice.org or StarOffice (using currently released versions),
+        these "foreign" attributes will be lost and the software will
+        replace what it considers to be the "real" values to those
+        attributes it manages.
 
 =head3	subject()
 
@@ -267,11 +276,6 @@ of OpenOffice.org documents.
 	date and now.
 
 	Note: This function requires the Time::Local Perl module.
-
-=head1	NOTES
-
-See OpenOffice::OODoc::Notes(3) for the footnote citations ([n])
-included in this page.
 
 =head1	AUTHOR/COPYRIGHT
 

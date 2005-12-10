@@ -50,7 +50,7 @@ documents. But it can't process the images themselves.
 
 =head2	Methods
 
-=head3	Constructor : OpenOffice::OODoc::Image->new(<parameters>) [32] 
+=head3	Constructor : OpenOffice::OODoc::Image->new(<parameters>) 
 
 	Short Form: ooImage(<parameters>)
 
@@ -101,7 +101,9 @@ documents. But it can't process the images themselves.
         a graphic style. The presence of a style is not obligatory when
         calling createImageElement (and this is not checked), but the image
         should preferably be actually linked to an existing style before
-        displaying or printing the document [33] .
+        displaying or printing the document. See OpenOffice::OODoc::Styles
+	for style creation or, better, OpenOffice::OODoc::Document for image
+	styles.
 
         	attachment	=> linked text element
 
@@ -252,12 +254,16 @@ documents. But it can't process the images themselves.
         the exported file (.jpg, .gif, .png, etc.). You can easily find out
         which extension using the imageLink accessor.
 
-        Without the second argument, the filename of the destination file
-        and its path are identical to the OpenOffice.org archive's internal
-        path. In reality, this means that the export file is created in a
-        directory called "Picture/" (created automatically as needed) under
-        the current directory and its name is a long series of hexadecimal
-        characters.
+        Without the second argument, the image file is created in the
+	current directory, and its name is the name of the image in the
+	document, with an extension depending on the format (.jpg, .png,
+	etc), according to the information stored in the document (but
+	the format is not checked). Be careful, the export fails unless 
+	such a construct provides a valid file name for the operating system.
+	If the image is unnamed in the document, exportImage() tries to
+	build a path/name which replicates the internal path/name of the
+	image in the archive and to use it under the current directory
+	(this path normally begins with "Pictures/").
 
         Caution: this method only exports what is exportable i.e. internal
         images (physically contained in the file). It has no effect if used
@@ -269,9 +275,10 @@ documents. But it can't process the images themselves.
 
         By default, and with no parameters, each internal image is exported
         to a file whose access path is the same as it would be if using
-        exportImage (i.e. identical to the internal access path). This
-        behaviour can be changed by parameters passed in hash form
-        (parameter => value). Possible parameters are as follows:
+        exportImage. This behaviour can be changed by parameters passed
+	in hash form (parameter => value).
+	
+	Possible parameters are as follows:
 
         	selection	=> filtering of image names (regex)
         	filter		=> filtering of image names (regex)
@@ -295,8 +302,8 @@ documents. But it can't process the images themselves.
         automatically be added to the basic filename to identify each file.
         The "suffix" or "extension" parameters allow the application to
         force a common extension for each file instead of leaving the
-        extension as it existed in the OpenOffice.org archive (which
-        normally identifies the physical image type).
+        extension as it existed in the archive (which normally identifies the
+	physical image type).
 
         By default, the sequential numbers given to filenames (between basic
         name and extension) are reset to zero each time exportImages is
@@ -332,7 +339,9 @@ documents. But it can't process the images themselves.
         simply returned without modification if it is indeed an image or
         undef if not.
 
-        Caution: images do not always have names [34] .
+        Caution: images do not always have names. OpenOffice.org Writer gives
+	default names to images (e.g. Image1, Image2, ...) if the user does
+	not deliberately name them. This is not the case in Impress.
 
 =head3	getInternalImagePath(image)
 
@@ -551,11 +560,6 @@ documents. But it can't process the images themselves.
         hash expected by the createStyle method. By default, it is
         automatically used by the createImageStyle method of the Document
         module.
-
-=head1	NOTES
-
-See OpenOffice::OODoc::Notes(3) for the footnote citations ([n])
-included in this page.
 
 =head1	AUTHOR/COPYRIGHT
 

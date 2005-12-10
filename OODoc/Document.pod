@@ -208,11 +208,6 @@ which combine layout and content processing.
         Replaces the object's style if a style name is given as the second
         argument.
 
-=head1	NOTES
-
-See OpenOffice::OODoc::Notes(3) for the footnote citations ([n])
-included in this page.
-
 =head1	AUTHOR/COPYRIGHT
 
 Copyright 2004-2005 by Genicorp, S.A. (http://www.genicorp.com)

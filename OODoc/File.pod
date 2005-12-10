@@ -253,7 +253,11 @@ not necessarily in OpenOffice.org format.
         producing OpenOffice.org XML.
 
         The filename argument is optional. If it is omitted, the source file
-        supplied by the new call is used [1] .
+        previously supplied by the constructor call is used. In fact in this
+	case a more complex (but hidden) operation is carried out: firstly
+	it writes to a temporary file and if no error occurs, the source file
+	is deleted and its name given to the temporary file. OODoc::File never
+	writes directly to the source file.
 
         Even though the life of an OODoc::File object does not necessarily
         end with a save, it is recommended that you avoid repeated
@@ -330,11 +334,6 @@ not necessarily in OpenOffice.org format.
         normally designed to be used internally by OODoc::File. Unless you
         are just finding out exactly what they do, it is dangerous to modify
         them. Applications do not normally need to access them.
-
-=head1	NOTES
-
-See OpenOffice::OODoc::Notes(3) for the footnote citations ([n])
-included in this page.
 
 =head1	AUTHOR/COPYRIGHT
 

@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.216 2005-11-26 JMG$
+#	$Id : Text.pm 2.217 2005-12-10 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -12,9 +12,9 @@
 
 package OpenOffice::OODoc::Text;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	2.208;
+use	OpenOffice::OODoc::XPath	2.209;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.216;
+our	$VERSION	= 2.217;
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -1286,7 +1286,7 @@ sub	getItemListText
 			{
 			$result .= $line_break if $count > 0;
 			$result .= $item_begin;
-			$result .= $self->getItemText($item);
+			$result .= ($self->getItemText($item) || "");
 			$result .= $item_end;
 			$count++;
 			}
@@ -1617,8 +1617,11 @@ sub	_expand_table
 	return undef unless ($table && ref $table);
 
 	$self->_expand_columns($table, $width);
-
-	my @rows	= $table->children('table:table-row');
+	
+	my @rows	= ();
+	my $header = $table->first_child('table:table-header-rows');
+	@rows = $header->children('table:table-row') if $header;
+	push @rows, $table->children('table:table-row');
 
 	my $row		= undef;
 	my $last_row	= undef;
@@ -1771,6 +1774,16 @@ sub	getRow
 	}
 
 #-----------------------------------------------------------------------------
+# get a table header container
+
+sub	getTableHeader
+	{
+	my $self	= shift;
+	my $table	= $self->getTable(@_) or return undef;
+	return $table->first_child('table:table-header-rows');
+	}
+
+#-----------------------------------------------------------------------------
 # get a header row in a table
 
 sub	getTableHeaderRow
@@ -1799,6 +1812,32 @@ sub	getHeaderRow
 	{
 	my $self	= shift;
 	return $self->getTableHeaderRow(@_);
+	}
+
+#-----------------------------------------------------------------------------
+# insert a table header container
+
+sub	copyRowToHeader
+	{
+	my $self	= shift;
+	my $row		= $self->getTableRow(@_) or return undef;
+	my $table	= $row->parent;		
+	my $header =	$table->first_child('table:table-header-rows');
+	unless ($header)
+		{
+		my $first_row = $self->getTableRow($table, 0);
+		unless ($first_row)
+			{
+			warn	"[" . __PACKAGE__ . "::createTableHeader] " .
+				"Not allowed with an empty table\n";
+			return undef;
+			}
+		$header = $self->createElement('table:table-header-rows');
+		$header->paste_before($first_row);
+		}
+	my $header_row = $row->copy;
+	$header_row->paste_last_child($header);
+	return $header_row;
 	}
 
 #-----------------------------------------------------------------------------
@@ -2453,6 +2492,12 @@ sub	normalizeSheet
 	return $self->_expand_table($table, $length, $width, @_);
 	}
 
+sub	normalizeTable
+	{
+	my $self	= shift;
+	return $self->normalizeSheet(@_);
+	}
+
 sub	normalizeSheets
 	{
 	my $self	= shift;
@@ -2466,6 +2511,12 @@ sub	normalizeSheets
 		$count++;
 		}
 	return $count;
+	}
+
+sub	normalizeTables
+	{
+	my $self	= shift;
+	return $self->normalizeSheets(@_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -2686,7 +2737,6 @@ sub	insertTableColumn
 	{
 	my $self	= shift;
 	my $table	= shift;
-	my ($height, $width) = $self->getTableSize($table);
 	my $col_num	= shift;
 	my %options	=
 		(
@@ -2695,6 +2745,7 @@ sub	insertTableColumn
 		);
 	$table	= $self->getTable($table, $options{'context'})
 				or return undef;
+	my ($height, $width) = $self->getTableSize($table);
 	unless ($col_num < $width)
 		{
 		warn	"[" . __PACKAGE__ . "::replicateTableColumn] "	.
@@ -2702,7 +2753,7 @@ sub	insertTableColumn
 		return undef;
 		}
 	$self->_expand_columns($table, $width);
-	my $column	= ($table->children('table:table-column'))[$col_num];
+	my $column	= $table->child($col_num, 'table:table-column');
 	my $new_cell	= undef;
 	if ($column)
 		{
@@ -2715,11 +2766,9 @@ sub	insertTableColumn
 	push @rows, $self->getTableRows($table);
 	foreach my $row (@rows)
 		{
-		my $cell =
-		  (
-		  $row->selectChildElements('table:(covered-|)table-cell')
-		  )[$col_num]
-		  or next;
+		my $cell = $row->selectChildElement
+		  		('table:(covered-|)table-cell', $col_num)
+		  	or next;
 		$new_cell = $cell->copy;
 		$new_cell->paste($options{'position'}, $cell);
 		}
@@ -2730,6 +2779,61 @@ sub	insertColumn
 	{
 	my $self	= shift;
 	return $self->insertTableColumn(@_);
+	}
+
+#-----------------------------------------------------------------------------
+# delete a column in a table
+
+sub	deleteTableColumn
+	{
+	my $self	= shift;
+	my $p1		= shift;
+	my $col_num	= shift;
+	my $table	= undef;
+	if (ref $p1 && $p1->isTableColumn)
+		{
+		$table = $p1->parent;
+		$col_num = $p1->getLocalPosition;
+		}
+	else
+		{
+		$table = $p1;
+		}
+	$table = $self->getTable($table);
+	unless ($table)
+		{
+		warn	"[" . __PACKAGE__ . "::deleteTableColumn] " .
+			"Unknown table\n";
+		return undef;
+		}
+	my ($height, $width) = $self->getTableSize($table);
+	unless (defined $col_num)
+		{
+		warn	"[" . __PACKAGE__ . "::deleteTableColumn] "	.
+			"Missing column position\n";
+		return undef;
+		}
+	$self->_expand_columns($table, $width);
+	my $column = $table->child($col_num, 'table:table-column');
+	$column->delete if $column;
+	my @rows = ();
+	my $header = $table->first_child('table:table-header-rows');
+	@rows = $header->children('table:table-row') if $header;
+	push @rows, $self->getTableRows($table);
+	foreach my $row (@rows)
+		{
+		my $cell = $row->selectChildElement
+		  		('table:(covered-|)table-cell', $col_num)
+		 	or next;
+		$cell->delete;
+		}
+	return 1;
+	}
+
+sub	deleteColumn
+	{
+	my $self	= shift;
+	return $self->deleteTableColumn(@_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -2787,7 +2891,7 @@ sub	insertTableRow
 		else
 			{
 			$line = shift;
-			$row = $self->getTableRow($p1, shift);
+			$row = $self->getTableRow($p1, $line);
 			}
 		}
 	else
@@ -2824,6 +2928,22 @@ sub	appendRow
 	{
 	my $self	= shift;
 	return $self->appendTableRow(@_);
+	}
+
+#-----------------------------------------------------------------------------
+# delete a given table row
+
+sub	deleteTableRow
+	{
+	my $self	= shift;
+	my $row		= $self->getTableRow(@_) or return undef;
+	return $doc->removeElement($row);
+	}
+
+sub	deleteRow
+	{
+	my $self	= shift;
+	return $self->deleteTableRow(@_);
 	}
 
 #-----------------------------------------------------------------------------
