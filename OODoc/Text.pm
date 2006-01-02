@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.217 2005-12-10 JMG$
+#	$Id : Text.pm 2.218 2006-01-02 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -14,7 +14,7 @@ package OpenOffice::OODoc::Text;
 use	5.006_001;
 use	OpenOffice::OODoc::XPath	2.209;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.217;
+our	$VERSION	= 2.218;
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -1897,7 +1897,11 @@ sub	getTableCell
 		@_ = OpenOffice::OODoc::Text::_coord_conversion(@_);
 		my $r	= shift || 0;
 		my $c	= shift || 0;
-		unless (ref $p1)
+		if (ref $p1)
+			{
+			$table = $p1;
+			}
+		else
 			{
 			my $context = shift;
 			$table	= $self->getTable($p1, $context)

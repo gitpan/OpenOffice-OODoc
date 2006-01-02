@@ -1,3 +1,5 @@
+2.019	2006-01-02
+	- Text.pm: bug fix in getTable() (#16864)
 2.018	2005-12-10
 	- XPath.pm: small fix; added getLocalPosition() as an Element method.
 	- Text.pm: Added copyRowToHeader(), deleteTableColumn(); code cleaning
