@@ -1,9 +1,9 @@
-OpenOffice::OODoc installation (Sep 2005)
+OpenOffice::OODoc installation (Jan 2006)
 
 SYSTEM REQUIREMENTS
 
 	Perl		>= 5.8.0
-	Archive::Zip	>= 1.16
+	Archive::Zip	>= 1.14
 	XML::Twig	>= 3.22
 	Time::Local	>= 1.07
 	File::Temp	>= 0.12
@@ -41,7 +41,7 @@ INSTALLATION
 	directory is ".", i.e. the current directory of each application);
 	- the preferred file format, to be used when you create a new
 	document from scratch (answer "1" for OpenOffice.org, "2" for OASIS
-	Open Document, default is "1").
+	Open Document, default is "2").
 
 	The interactivity can be avoided by the --noprompt option.
 	The parameters can be provided at the command line with (respectively)
@@ -63,7 +63,7 @@ INSTALLATION
 	
 	A variable $OpenOffice::OODoc::INSTALLATION_DATE is available for the
 	applications; it contains the installation date in ISO-8601 format.
-	If the customization has been skipped (due the --noconfig option),
+	If the customization has been skipped (due to the --noconfig option),
 	this variable contains the packaging date of the distribution.
 
 	If the installation is successful, the test procedure generates an

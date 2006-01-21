@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.218 2006-01-02 JMG$
+#	$Id : Text.pm 2.219 2006-01-21 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -12,9 +12,9 @@
 
 package OpenOffice::OODoc::Text;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	2.209;
+use	OpenOffice::OODoc::XPath	2.211;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.218;
+our	$VERSION	= 2.219;
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -946,6 +946,7 @@ sub	appendSection
 			(
 			'attachment'	=> $self->{'body'},
 			'style'		=> $name,
+			'protected'	=> 'false',
 			@_
 			);
 
@@ -956,20 +957,62 @@ sub	appendSection
 		return	undef;
 		}
 
+	my $link	= undef;
+	if ($opt{"link"})
+		{
+		$link	= $opt{'link'}; delete $opt{'link'}
+		}
+
 	my $section = $self->appendElement
 			(
 			$opt{'attachment'}, 'text:section',
 			attribute =>
 			    {
-			    'text:name'		=> $name,
-			    'text:style-name'	=> $opt{'style'}
-			    }
+			    'text:name'			=> $name,
+			    'text:style-name'		=> $opt{'style'}
+			    },
+			%opt
 			)
 			or return undef;
 
+	$self->insertSubdocument
+		($section, $link, $opt{'filter'}) if $link;
+	$section->set_att('text:protected', $opt{'protected'})
+			if $opt{'protected'};
+	$section->set_att('text:protection-key', $opt{'key'})
+			if $opt{'key'};
+	
 	return $section;
 	}
+
+#-----------------------------------------------------------------------------
+
+sub	lockSection
+	{
+	my $self	= shift;
+	my $section	= $self->getSection(shift)	or return undef;
+	$section->set_att('text:protected', 'true');
+	my $key		= shift;
+	$section->set_att('text:protection-key', $key) if $key;
+	}
+
+sub	unlockSection
+	{
+	my $self	= shift;
+	my $section	= $self->getSection(shift)	or return undef;
+	$section->del_att('text:protected');
+	my $key		= $section->att('text:protection-key');
+	$section->del_att('text:protection-key');
+	return $key;
+	}
 	
+sub	sectionProtectionKey
+	{
+	my $self	= shift;
+	my $section	= $self->getSection(shift)	or return undef;
+	return $section->att('text:protection-key');
+	}
+
 #-----------------------------------------------------------------------------
 
 sub	insertSection
@@ -980,7 +1023,8 @@ sub	insertSection
 	my $name	= shift;
 	my %opt		=
 			(
-			'style'	=> $name,
+			'style'		=> $name,
+			'protected'	=> 'false',
 			@_
 			);
 	my $posnode	= $self->getElement($path, $pos, $opt{'context'})
@@ -993,19 +1037,66 @@ sub	insertSection
 		return	undef;
 		}
 
+	my $link	= undef;
+	if ($opt{"link"})
+		{
+		$link	= $opt{'link'}; delete $opt{'link'}
+		}
+
 	my $section = $self->insertElement
 			(
 			$posnode, 'text:section',
 			attribute =>
 			    {
-			    'text:name'		=> $name,
-			    'text:style-name'	=> $opt{'style'}
+			    'text:name'			=> $name,
+			    'text:style-name'		=> $opt{'style'}
 			    },
 			%opt
 			)
 			or return undef;
 
+	$self->insertSubdocument
+		($section, $link, $opt{'filter'}) if $link;
+	$section->set_att('text:protected', $opt{'protected'})
+			if $opt{'protected'};
+	$section->set_att('text:protection-key', $opt{'key'})
+			if $opt{'key'};
+			
 	return $section;
+	}
+
+#-----------------------------------------------------------------------------
+# link a section to a subdocument
+
+our	$section_source_tag	= "text:section-source";
+
+sub	insertSubdocument
+	{
+	my $self	= shift;
+	my $section_id	= shift;
+	my $url		= shift;
+	my %attr	= ();
+	
+	my $section	= $self->getSection($section_id);
+	unless ($section)
+		{
+		warn	"[" . __PACKAGE__ . "::insertSubdocument] "	.
+			"Non existing target section\n";
+		return undef;		
+		}
+	my $doclink	=
+		$section->first_child($section_source_tag)
+				||
+		$self->appendElement($section, $section_source_tag);
+
+	if ($attr{'filter'})
+		{
+		$attr{'text:filter-name'} = $attr{'filter'};
+		delete $attr{'filter'};
+		}
+	$self->setAttributes($doclink, "xlink:href" => $url, %attr);
+
+	return $doclink;
 	}
 
 #-----------------------------------------------------------------------------

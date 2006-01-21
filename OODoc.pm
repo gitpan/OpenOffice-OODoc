@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : OODoc.pm 2.018 2006-01-02 JMG$
+#	$Id : OODoc.pm 2.021 2006-01-21 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
@@ -10,7 +10,7 @@
 #
 #-----------------------------------------------------------------------------
 
-use OpenOffice::OODoc::File		2.111;
+use OpenOffice::OODoc::File		2.112;
 use OpenOffice::OODoc::Meta		2.007;
 use OpenOffice::OODoc::Document		2.021;
 use OpenOffice::OODoc::Manifest		2.003;
@@ -19,7 +19,7 @@ use OpenOffice::OODoc::Manifest		2.003;
 
 package	OpenOffice::OODoc;
 use 5.008_000;
-our $VERSION				= 2.019;
+our $VERSION				= 2.021;
 
 require Exporter;
 our @ISA    = qw(Exporter);
@@ -55,7 +55,7 @@ sub	ooReadConfig
 			"Syntax error in configuration file $filename\n";
 		return undef;
 		}
-	my $root = ($config->findnodes('//OpenOffice-OODoc'))[0];
+	my $root = $config->get_xpath('//OpenOffice-OODoc', 0);
 	unless ($root && $root->isElementNode)
 		{
 		return undef;

@@ -1,9 +1,9 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : File.pm 2.111 2005-11-19 JMG$
+#	$Id : File.pm 2.112 2006-01-18 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
-#	Copyright 2004 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2006 by Genicorp, S.A. (www.genicorp.com)
 #	Licensing conditions:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
@@ -12,14 +12,14 @@
 
 package	OpenOffice::OODoc::File;
 use	5.006_001;
-our	$VERSION	= 2.111;
-use	Archive::Zip	1.16	qw ( :DEFAULT :CONSTANTS :ERROR_CODES );
+our	$VERSION	= 2.112;
+use	Archive::Zip	1.14	qw ( :DEFAULT :CONSTANTS :ERROR_CODES );
 use	File::Temp;
 
 #-----------------------------------------------------------------------------
 # some defaults
 
-our	$DEFAULT_OFFICE_FORMAT		= 1;	# OpenOffice.org 1 format
+our	$DEFAULT_OFFICE_FORMAT		= 2;	# OpenDocument format
 our	$DEFAULT_COMPRESSION_METHOD	= COMPRESSION_DEFLATED;
 our	$DEFAULT_COMPRESSION_LEVEL	= COMPRESSION_LEVEL_BEST_COMPRESSION;
 our	$DEFAULT_EXPORT_PATH		= './';

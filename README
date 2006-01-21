@@ -1,13 +1,13 @@
 ------------------------------------------------------------------------
 
-OpenOffice::OODoc - Open Office Document Connector
+OpenOffice::OODoc - The Open OpenDocument Connector
 (http://search.cpan.org/dist/OpenOffice-OODoc)
 
 -------------------------------------------------------------------------
 
 For a introductory description of the purposes and capabilities of
 OpenOffice::OODoc, please read the OpenOffice::OODoc::Intro manual
-page. This page in contained in the OODoc/Intro.pod file in the CPAN
+page. This page in contained in the OODoc/Intro.pod file of the CPAN
 distribution. Alternatively, it can be read on line using the following
 link:
 
@@ -20,7 +20,7 @@ format (http://jean.marie.gouarne.online.fr/doc/oodoc_guide.odt).
 See INSTALL for system requirements and installation instructions.
 
 The present version supports both the OpenOffice.org 1.0 document format
-and the OASIS Open Document Format (ODF).
+and the OASIS OpenDocument Format (ODF).
 
 -------------------------------------------------------------------------
 

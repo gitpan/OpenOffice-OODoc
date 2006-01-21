@@ -1,13 +1,13 @@
 =head1	NAME
 
-OpenOffice::OODoc - A library for Open Document processing
+OpenOffice::OODoc - The Perl Open OpenDocument Connector
 
 =head1	SYNOPSIS
 
 	use OpenOffice::OODoc;
 
 			# get global access to the content of an OOo file
-	my $document = ooDocument(file => "MyFile.sxw");
+	my $document = ooDocument(file => "MyFile.odt");
 			# select a text element containing a given string
 	my $place = $document->selectElementByContent("my search string");
 			# insert a new text element before the selected one
@@ -44,36 +44,32 @@ OpenOffice::OODoc - A library for Open Document processing
 
 =head1	DESCRIPTION
 
-This toolbox allows direct read/write operations on documents, without
+This toolbox is an extensible Perl interface allowing direct read/write
+operations on OpenOffice.org or OASIS OpenDocument files. It works without
 using OpenOffice.org or any OpenDocument-compatible desktop software. It
 provides a high-level, document-oriented language, and isolates the programmer
-from the details of the XML dialect and file format. It supports both the
-OpenOffice.org 1.0 format and the OASIS OpenDocument format. It works with the
-different document classes (text, spreadsheet, presentation, and drawing). It
-can retrieve or update styles and images as well as text content.
+from the details of the XML dialect and file format. It can process different
+document classes (texts, spreadsheets, presentations, and drawings). It can
+retrieve or update styles and images, global document properties (i.e.
+metadata such as title, author, subject, etc), as well as text content.
 
-A typical application generally begins with one or more ooDocument() calls,
-each one instantiating a logical document handler. This handler is an object
-bringing various access methods, and allowing easy read and update operations on
-a lot of content and presentation elements.
-
-If the application needs to work with meta-data (i.e. document properties), it
-must use ooMeta() instead of ooDocument(). Then it can process such data as
-title, subject, author, description and keywords. And to get access to the
-'manifest' of the OOo/OpenDocument file (i.e. the member which describes the
-content of the archive), the application must use ooManifest(); but this last
-access is generally not required.
+OpenOffice::OODoc is object-oriented. A typical application generally
+instantiates one or more document "connectors", each one bringing a lot of
+access methods allowing easy read, update, delete, copy, import, and export
+operations on a large set of content and presentation elements.
 
 OpenOffice::OODoc is primarily designed in order to retrieve and/or update data
-in existing documents, but is can generate new documents from scratch (or, more
+in existing documents, but it can generate new documents from scratch (or, more
 exactly, from templates included in the distribution, knowing that the advanced
 developers can use custom templates as well).
 
 See the OpenOffice::OODoc::Intro manual page to have a look at the main
-features. The reference manual is provided in several separate chapters as
-described below.
+features.
 
 =head1	HOW TO USE THE DOCUMENTATION
+
+The reference manual is provided in several separate chapters as
+described below.
 
 The OpenOffice::OODoc documentation, as the API itself, is distributed
 amongst several manual pages on a thematic and technical basis. The present
@@ -213,12 +209,15 @@ separate "member".
 
 	Shortcut for OpenOffice::OODoc::Document->new().
 
-	This function returns a Document object, instantiated on the basis of
+	This function is the most general document constructor. It creates 
+	and returns a new Document object. It can be instantiated on the basis of
 	an existing OpenOffice.org file, or using XML, OpenOffice-compliant
-	data previously loaded in memory. The Document class provides methods
-	allowing a lot of read/update operations in the text content, the
-	graphics, and the presentation. So ooDocument() is the recommended
-	first call to get access to a document for further processing.
+	data previously loaded in memory. With an appropriate "create"
+	parameter, it can be used in order to create a new document from scratch
+	as well. The Document class provides methods allowing a lot of read/update
+	operations in the text content, the graphics, and the presentation.
+	So ooDocument() is the recommended first call to get access to a document
+	for further processing.
 
 	See the OpenOffice::OODoc::Document manual page for detailed syntax.
 
@@ -299,7 +298,7 @@ separate "member".
 	This function returns an XPath object, that brings all the low level
 	XML navigation, retrieve, read and write methods of the API. The XPath
 	class (in the OpenOffice::OODoc context) is an OpenOffice-aware
-	wrapper for the general XML::XPath API. Unless you are a very advanced
+	wrapper for the general XML::Twig API. Unless you are a very advanced
 	user and you have a particular hack in mind, you should never need to
 	explicitly create an XPath object. But you must know that every method
 	or property of this class is inherited by the Text, Image, Styles,
@@ -319,15 +318,18 @@ separate "member".
 
 	<?xml version="1.0" encoding="UTF-8"?>
 	<config>
-		<OpenOffice-OODoc>
+	    <OpenOffice-OODoc>
 		<XPath-LOCAL_CHARSET>my_charset</XPath-LOCAL_CHARSET>
 		<Styles-COLORMAP>my_colormap_file</Styles-COLORMAP>
 		<File-WORKING_DIRECTORY>my_path</File-WORKING_DIRECTORY>
-		<File-DEFAULT_OFFICE_FORMAT>1</File-DEFAULT_OFFICE_FORMAT>
+		<File-DEFAULT_OFFICE_FORMAT>2</File-DEFAULT_OFFICE_FORMAT>
 		<INSTALLATION_DATE>my_oo_date</INSTALLATION_DATE>
-		</OpenOffice-OODoc>
+	    </OpenOffice-OODoc>
 	</config>
 
+	In the example above, "my_oo_date" should be replaced by a regular
+	ISO-8601 date (YYYY-MM-DDThh:mm:ss).
+	
 	Elements out of the <OpenOffice-OODoc> element are ignored.
 	Any element included in <OpenOffice-OODoc> sets or update a variable
 	with the same name and the given value in the space of the
@@ -404,9 +406,9 @@ separate "member".
 	of a previously created File object. So, consider the following
 	code sequence:
 
-		my $doc0 = ooDocument(file => 'doc0.sxw');
+		my $doc0 = ooDocument(file => 'doc0.odt');
 		ooWorkingDirectory('C:\TMP');
-		my $doc1 = ooDocument(file => 'doc1.sxw');
+		my $doc1 = ooDocument(file => 'doc1.odt');
 
 	In this example, all the write operations related to the $doc0
 	document will use the default working directory, while the ones
@@ -423,7 +425,7 @@ separate "member".
 
 =head1	AUTHOR/COPYRIGHT
 
-Copyright 2005 by Genicorp, S.A. (http://www.genicorp.com)
+Copyright 2006 by Genicorp, S.A. (http://www.genicorp.com)
 
 Initial developer: Jean-Marie Gouarne (http://jean.marie.gouarne.online.fr)
 

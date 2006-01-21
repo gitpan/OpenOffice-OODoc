@@ -1,5 +1,5 @@
 #------------------------------------------------------
-# OpenOffice::OODoc packaging & installation 2005-11-19
+# OpenOffice::OODoc packaging & installation 2006-01-18
 #------------------------------------------------------
 
 use 5.008;
@@ -16,7 +16,7 @@ GetOptions
 	'encoding=s'	=> \(my $encoding = 'iso-8859-1'),
 	'colormap=s'	=> \(my $colormap = ''),
 	'workdir=s'	=> \(my $workdir = '.'),
-	'format=s'	=> \(my $format = 1)
+	'format=s'	=> \(my $format = 2)
 	);
 
 #------------------------------------------------------
@@ -87,7 +87,7 @@ if ($config)
 		unless ($format eq "1" or $format eq "2")
 			{
 			warn "\tWARNING: Unknown format $format\n";
-			$format = 1;
+			$format = 2;
 			}
 		$encoding = '' unless $encoding gt ' ';
 		$colormap = '' unless $colormap gt ' ';
@@ -128,12 +128,12 @@ WriteMakefile
 	(
     	'NAME'		=> 'OpenOffice::OODoc',
 	'VERSION_FROM'	=> 'OODoc.pm',
-	'ABSTRACT'	=> 'A library for OpenDocument processing',
+	'ABSTRACT_FROM'	=> 'OODoc.pod',
     	'AUTHOR'	=> 'Jean-Marie Gouarné <jmgdoc@cpan.org>',
     	'PREREQ_PM'	=>
     		{
 		'XML::Twig'		=> '3.22',
-		'Archive::Zip'		=> '1.16',
+		'Archive::Zip'		=> '1.14',
 		'File::Temp'		=> '0.12',
 		'File::Find'		=> '1.01',
 		'Time::Local'		=> '1.07'

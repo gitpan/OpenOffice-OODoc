@@ -1,6 +1,6 @@
 =head1	NAME
 
-OpenOffice::OODoc::Intro - Introduction to Open Office Document Connector
+OpenOffice::OODoc::Intro - Introduction to the Open OpenDocument Connector
 
 =head1	DESCRIPTION
 
@@ -18,7 +18,7 @@ PDF (http://jean.marie.gouarne.online.fr/doc/oodoc_guide.pdf) or ODT
 
 =head1	Overview
 
-The main goal of the Perl Open Office Document Connector (OODoc) is to allow
+The main goal of the Open OpenDocument Connector (OODoc) is to allow
 quick application development in 2 areas:
 
 - replacement of old-style, proprietary, client-based macros for intensive
@@ -32,7 +32,7 @@ programmer from low level XML navigation, UTF8 encoding and compressed file
 management details. For example:
 
 	use OpenOffice::OODoc;
-	my $document = ooDocument(file => 'filename.sxw');
+	my $document = ooDocument(file => 'filename.odt');
 	$document->appendParagraph
 			(
 			text	=> 'Some new text',
@@ -57,6 +57,7 @@ operations with document elements such as:
 
 - ordinary text objects (paragraphs, headers, item lists);
 - tables and cells;
+- sections;
 - images;
 - styles;
 - page layout;
@@ -86,7 +87,7 @@ be generated. So, in our first example, the constructor could be:
 
 	my $document = ooDocument
 			(
-			file		=> 'filename.sxw',
+			file		=> 'filename.odt',
 			create		=> 'text'
 			);
 
@@ -132,7 +133,7 @@ For an example, if you want to get access to the content of any OO file
 	use OpenOffice::OODoc;
 	my $doc = ooXPath
 			(
-			file	=> 'foo.sxw',
+			file	=> 'foo.odt',
 			member	=> 'content'
 			);
 
@@ -218,8 +219,13 @@ following classes:
 
 	OpenOffice::OODoc::Text for the textual content of any document;
 	OpenOffice::OODoc::Image to deal with the graphic objects;
+	OpenOffice::OODoc::Styles for page/style definitions;
 	OpenOffice::OODoc::Meta for the metadata (meta.xml);
-	OpenOffice::OODoc::Styles for page/style definitions. 
+
+The 3 first ones are generally not expressly used by the applications; they
+are internally used by the top level OpenOffice::OODoc::Document class. So
+one can see them as "chapters" of the functional description of the Document
+objects.
 
 The OpenOffice::OODoc::Text class brings some methods table processing
 methods (table creation, direct access to individual cells). These methods,
@@ -364,11 +370,11 @@ with a few lines.
 
 You can avoid the heavy object oriented notation such as:
 
-	my $meta = OpenOffice::OODoc::Meta->new(file => "xxx.sxc");
+	my $meta = OpenOffice::OODoc::Meta->new(file => "xxx.ods");
 
 and use the shortcuts like:
 
-	my $meta = ooMeta(file => "xxx.sxc");
+	my $meta = ooMeta(file => "xxx.ods");
 
 The first thing you have to do with a document is to create an object
 focused on the member you want to work with, and "feed" it with regular
@@ -381,7 +387,7 @@ We need metadata access, so we use OODoc::Meta
 
 	use OpenOffice::OODoc;
 
-	my $doc = ooMeta(file => 'myfile.sxw');
+	my $doc = ooMeta(file => 'myfile.odt');
 	my $title = $doc->title;
 	if ($title)	{ print "The title is $title"; }
 	else		{ print "There is no title"; }
@@ -473,7 +479,7 @@ handle.
 
 If you prefer to keep the original file unchanged, you can issue a
 
-	$doc->save('my_other_file.sxw');
+	$doc->save('my_other_file.odt');
 
 that produces the same thing as 'File/SaveAs' in your favorite office
 software: if called with an argument, 'save' creates a new file
@@ -579,12 +585,13 @@ tables and graphics.
 To get an individual list item, you must point to it from a previously
 obtained list element:
 
-	my $item_list = $doc->getOrderedList(2);
+	my $item_list = $doc->getList(2);
 	my $item = $doc->getListItem(4);
 
-Here, $item contains the 5th item of the 3rd ordered (i.e. numbered)
-list of the document (the content of the item could then be exported by
-a generic method such as getText),
+Here, $item contains the 5th item of the 3rd list of the document. The
+content of the item could then be exported by a generic method such as
+getText(), or processed using another method. 
+
 
 =head2	Playing with tables and spreadsheets
 
@@ -664,10 +671,35 @@ The table-related methods can be used with spreadsheets (i.e. OOo Calc
 documents) as well as with tables included in text documents. However,
 before addressing cells in a spreadsheet document, a program must "declare"
 the size of the used area in each target sheet (this requirement is due to
-performance considerations, for Calc documents only). 
+performance considerations, for Calc documents only).
 
-And, as with OODoc::Meta, don't forget to issue a 'save' call if you
-want to make your changes persistent.
+=head2	Sections and subdocuments
+
+For sophisticated document structures, paragraphs and other text containers
+may be included in sections. The API allows the applications to easily
+create or retrieve sections, whith the getSection(), appendSection(),
+and insertSection() methods. A given section may be either populated
+with a local content or provided with an external link (file path or
+URL) in order to include a subdocument. In addition, using lockSection()
+and unlockSection(), the programs can control the end-user write protection
+of any section.
+
+The following example (working with OOo 2.0) appends to a master document a
+new, write-protected section including a new document which can be reached
+through an internet link:
+
+	my $url = "http://jean.marie.gouarne.online.fr/doc/oodoc_guide.odt";
+	$doc->appendSection
+		(
+		"My Doc",
+		link		=> "http://the.library.com/mydoc.sxw",
+		protected	=> "true"
+		);
+
+And, if an unfortunate end-user is barred from updating a section by a lost
+password, the programmer can help with a single line such as:
+
+	$doc->unlockSection($section_name);
 
 =head2	Manipulating user defined variables, bibliographic entries, bookmarks
 

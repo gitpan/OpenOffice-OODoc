@@ -1,3 +1,10 @@
+2.021	2006-01-21
+	- Text.pm: added section lock/unlock and sub-document link features
+	- Documentation cleaning & update
+	- Archive::Zip requirement downgraded to 1.14
+	- Makefile.PL cleaning
+	- The default file format is now OpenDocument (File.pm & Makefile.PL)
+	- Cosmetic changes in XPath.pm
 2.019	2006-01-02
 	- Text.pm: bug fix in getTable() (#16864)
 2.018	2005-12-10

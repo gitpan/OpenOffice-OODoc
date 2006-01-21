@@ -5,7 +5,7 @@ OpenOffice::OODoc::Document - Top level component for content and layout process
 =head1	SYNOPSIS
 
 	# get an OOo file handler
-	my $oofile = ooFile("myfile.sxw");
+	my $oofile = ooFile("myfile.odt");
 	# connect a content-focused document interface
 	my $content = ooDocument
 			(
@@ -210,7 +210,7 @@ which combine layout and content processing.
 
 =head1	AUTHOR/COPYRIGHT
 
-Copyright 2004-2005 by Genicorp, S.A. (http://www.genicorp.com)
+Copyright 2004-2006 by Genicorp, S.A. (http://www.genicorp.com)
 
 Initial developer: Jean-Marie Gouarne (http://jean.marie.gouarne.online.fr)
 

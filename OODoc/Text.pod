@@ -46,7 +46,7 @@ presentation which is one of the foundations of the OpenDocument format.
         The XML member loaded by default is 'content.xml'. The most common
         creation method is like this:
 
-            my $doc = ooText(file => 'my_file.sxw');
+            my $doc = ooText(file => 'my_file.odt');
 	    
 	This constructor should generally not be called directly, because it's
 	inherited by ooDocument().
@@ -75,7 +75,7 @@ presentation which is one of the foundations of the OpenDocument format.
             	);
             my $doc = ooText
             		(
-            		file		=> 'filename.sxw',
+            		file		=> 'filename.odt',
             		paragraph_style	=> 'My Paragraphs',
             		header_style	=> 'My Headers',
             		delimiters	=> { %delim }
@@ -287,8 +287,34 @@ presentation which is one of the foundations of the OpenDocument format.
 	of "attachment" is an existing section, the new section is appended
 	as the last sub-section of the existing one.
 	
-	The other possible option is "style". It allows the application to
-	explicitly select a style for the new section.
+	A section may be used either to hold a local content or to insert
+	a subdocument which can be reached through an external link.
+	
+	In order to insert a subdocument link instead of an ordinary section,
+	the application must provide a "link" option whose value is either a
+	local file path or an URL.
+	Example:
+	
+	    $doc->appendSection
+		(
+		"Article",
+		link => "http://mycompany.com/doc/article.odt"
+		);
+	
+	Other possible options:
+	
+	    'style'	allows the application to explicitly select a style
+	    		for the new section
+	    'protected'	write-protects the section when the document is
+	    		edited through OpenOffice.org; "true" or "false",
+			default "false"
+	    'key'	in combination with "protected" => "true", write-
+	    		protects the section by password (the value of
+			"key" is not the real password, but an encrypted
+			password, so the end-user will never remove the
+			protection by simply typing the key as it is
+			written in the program); see lockSection(),
+			unlockSection() and sectionProtectionKey()
 
 =head3	appendTable(name, rows, columns [, options])
 
@@ -1011,7 +1037,16 @@ presentation which is one of the foundations of the OpenDocument format.
         it would appear to the end user when editing the table's
         properties). This name is obviously easier to use than a number.
         Moreover, this type of selection means the application will still
-        work even if a table changes position within a document.
+        work even if a table changes position within a document. But the
+	retrieval by name works with two restrictions:
+	
+	- if a table name is made of digits only, or if if represents a
+	numeric expression, it's automatically regarded as a table number;
+	
+	- getTable() can't retrieve a table by name if the name contains
+	one or more "$", "{" or "}" characters (these characters are allowed
+	in the table names in OpenOffice.org Writer documents, but not allowed
+	in OpenOffice.org spreadsheets).
 
 	The returned object is a "handle" that can be used for subsequent
 	accesses to its components (rows, cells).
@@ -1314,10 +1349,14 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	Creates a new section and inserts it immediately before or after
 	an existing element (paragraph, header, table). The referenced element
-        can be indicated as in insertParagraph. The possible option is
-	presently "style"; its value, if provided, is the style of the
-	new section.
-
+        can be indicated as in insertParagraph.
+	
+	There is a "position" option which works in the same way as with
+	insertParagraph() or insertRow().
+	
+	For other options, see appendSection(). For example, insertSection()
+	may be used in order to insert a subdocument in a master document.
+	
 =head3	insertTable(path, position, name, rows, columns [, options])
 
 =head3	insertTable(element, name, rows, columns [, options])
@@ -1354,6 +1393,17 @@ presentation which is one of the foundations of the OpenDocument format.
         option are 'before' and 'after'. By default, the element is inserted
         before the given element.
 
+=head3	lockSection(section [, key])
+
+	Installs a write protection on the given section.
+	
+	Il an second argument is provided, it's stored as an encrypted
+	key which is associated to the write protection.
+	
+	Such a write protection works only when the document is edited through
+	an OpenOffice.org-compatible desktop software. It doesn't prevent the
+	programs using OpenOffice::OODoc from deleting or updating the
+	protected sections.
 
 =head3	normalizeSheet(sheet [, rows [, columns]])
 
@@ -1519,6 +1569,18 @@ presentation which is one of the foundations of the OpenDocument format.
         Reads or modifies a table row's style, in the same way as
         columnStyle does for columns.
 
+=head3	sectionProtectionKey(section)
+
+	Returns the encrypted key which is associated to the given section,
+	if the section is write-protected by key.
+	
+	This method can't provide the real key (as it should be typed by
+	the end-user to unlock the section), but the returned value may be
+	reused in order to protect more than one section with the same
+	password.
+	
+	See also unlockSection().
+	
 =head3	sectionStyle(section, [newstylename])
 
 	Without argument, returns the current style of a given section.
@@ -1855,6 +1917,20 @@ presentation which is one of the foundations of the OpenDocument format.
 	in OpenOffice.org will give unpredictable results as to the viewing
 	of the given paragraphs or headers.
 
+=head3	unlockSection(section)
+
+	Removes the write protection (if any) of the given section. If the
+	section was key-protected, the key is removed and provides the return
+	value of the method.
+	
+	Example:
+	
+		my $key = $doc->unlockSection("Section1");
+		$doc->lockSection("Section2", $key);
+		
+	The two lines above remove the protection of "Section1" and protect
+	"Section2" with the password which previously protected "Section1".
+	
 =head3	updateCell(table, row, column, value [, text])
 
 =head3	updateCell(element, value [, text])

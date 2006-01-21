@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 2.209 2005-12-09 JMG$
+#	$Id : XPath.pm 2.211 2006-01-21 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -12,7 +12,7 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 2.209;
+our	$VERSION	= 2.211;
 use	XML::Twig	3.22;
 use	Encode;
 
@@ -1418,7 +1418,7 @@ sub	setAttributes
 		    }
 		else
 		    {
-		    $node->del_att($a);
+		    $node->del_att($a) if $node->att($a);
 		    }
 		}
 
@@ -1449,7 +1449,7 @@ sub	setAttribute
 		}
 	else
 		{
-		$node->del_att($attribute);
+		$node->del_att($attribute) if $node->att($attribute);
 		}
 	
 	return $value; 
@@ -1468,7 +1468,7 @@ sub	removeAttribute
 	my $node	= $self->getElement($path, $pos, @_);
 
 	return undef	unless $node;
-	return $node->del_att($a);
+	return $node->del_att($a) if $node->att($a);
 	}
 
 #------------------------------------------------------------------------------
