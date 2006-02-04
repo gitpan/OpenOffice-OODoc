@@ -1,3 +1,12 @@
+2.022	2006-02-04
+	- Text.pm: added some improvements and fixed an issue in setSpan()
+	- Text.pm: added an improved version of extendText()
+	- Text.pm: fixed bugs in deleteTable() and defaultOutputTerminator()
+	(thanks to <jsandeo[at]evolucy.com>)
+	- Text.pm: added getSectionList(), sectionName()
+	- XPath.pm: fixed an issue in setText() and extendText()
+	- XPath.pm: added appendTabStop(), appendLineBreak(), appendSpaces()
+	- Text.pod: Doc error fixes and updates
 2.021	2006-01-21
 	- Text.pm: added section lock/unlock and sub-document link features
 	- Documentation cleaning & update

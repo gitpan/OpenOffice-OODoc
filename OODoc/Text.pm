@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.219 2006-01-21 JMG$
+#	$Id : Text.pm 2.220 2006-02-04 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -12,9 +12,9 @@
 
 package OpenOffice::OODoc::Text;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	2.211;
+use	OpenOffice::OODoc::XPath	2.212;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.219;
+our	$VERSION	= 2.220;
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -189,7 +189,7 @@ sub	defaultOutputTerminator
 	my $delimiter	= shift;
 	$self->{'delimiters'}{'default'}{'end'} = $delimiter
 		if defined $delimiter;
-	return $doc->{'delimiters'}{'default'}{'end'};
+	return $self->{'delimiters'}{'default'}{'end'};
 	}
 
 #-----------------------------------------------------------------------------
@@ -461,7 +461,7 @@ sub	getSpanTextList
 	}
 
 #-----------------------------------------------------------------------------
-# set a span style within a text element
+# set a span style within a text node
 
 sub	setSpanInNode
 	{
@@ -473,6 +473,16 @@ sub	setSpanInNode
 
 	my $tagname	= 'text:span';
 	my $attname	= 'text:style-name';
+	if (ref $style)
+		{
+		$style = $self->getAttribute($style, 'style:name');
+		unless ($style)
+			{
+			warn	"[" . __PACKAGE__ . "::setSpanInNode] "	.
+				"Bad text style\n";
+			return undef;
+			}
+		}
 	my $attvalue	= $style;
 	if ($link)
 		{
@@ -481,6 +491,8 @@ sub	setSpanInNode
 		$attvalue	= $link;
 		}
 	
+	my $recurse	=
+		(($expression =~ /^\^/) || ($expression =~ /\$$/)) ? 0 : 1;
 	my $span	= undef;
 	my $text = OpenOffice::OODoc::XPath::decode_text($n->getValue || "");
 	if ($text && ($text =~ /(.*)($expression)(.*)/))
@@ -488,7 +500,6 @@ sub	setSpanInNode
 		my $before	= $1;
 		my $selection	= $2;
 		my $after	= $3;
-		my $again	= $4;
 	
 		$span = $self->createElement($tagname, $selection);
 		$span->paste_before($n);
@@ -498,7 +509,8 @@ sub	setSpanInNode
 			{
 			my $bn = $self->createTextNode($before);
 			$bn->paste_before($span);
-			$self->setSpanInNode($bn, $expression, $style);
+			$self->setSpanInNode($bn, $expression, $style, $link)
+				if $recurse;
 			}
 		if ($after)
 			{
@@ -509,8 +521,44 @@ sub	setSpanInNode
 	return $span;
 	}
 
-#-----------------------------------------------------------------------------
+# set a span in the first child node of an element
 	
+sub	setSpanInFirstChild
+	{
+	my $self	= shift;
+	my $element	= shift;
+	my $node	= $element->first_child;
+	while ($node)
+		{
+		return $self->setSpanInNode($node, @_)
+					if $node->isTextNode;
+		return $self->setSpanInFirstChild($node, @_)
+					if $node->isElementNode;
+		$node = $node->next_sibling;
+		}
+	return undef;	
+	}
+
+# set a span in the last child node of an element
+
+sub	setSpanInLastChild
+	{
+	my $self	= shift;
+	my $element	= shift;
+	my $node	= $element->last_child;
+	while ($node)
+		{
+		return $self->setSpanInNode($node, @_)
+					if $node->isTextNode;
+		return $self->setSpanInLastChild($node, @_)
+					if $node->isElementNode;
+		$node = $node->previous_sibling;
+		}
+	return undef;
+	}
+
+# main set span method
+
 sub	setSpan
 	{
 	my $self	= shift;
@@ -542,6 +590,18 @@ sub	setSpan
 		}
 	my $expression	= shift		or return undef;
 	my $style	= shift	|| $self->{'paragraph_style'};
+
+	if ($expression =~ /^\^/)
+		{
+		return $self->setSpanInFirstChild
+			($element, $expression, $style, @_);
+		}
+	elsif ($expression =~ /\$$/)
+		{
+		return $self->setSpanInLastChild
+			($element, $expression, $style, @_);
+		}
+
 	my @nodes	= $element->getChildNodes;
 	NODE_LOOP : foreach my $n (@nodes)
 		{
@@ -553,6 +613,35 @@ sub	setSpan
 		next unless ($n->isTextNode);
 		$self->setSpanInNode($n, $expression, $style, @_) if $n;
 		}
+	}
+
+#-----------------------------------------------------------------------------
+
+sub	extendText
+	{
+	my $self	= shift;
+	my $path	= shift;
+	my $pos		= (ref $path) ? undef : shift;
+	my $element = $self->getElement($path, $pos) or return undef;
+	my $text	= shift	or return undef;
+	my $style	= shift;
+
+	if (ref $text)
+		{
+		my $tagname = $text->getName;
+		if (($tagname eq 'text:p') || ($tagname eq 'text:h'))
+			{ 
+			$text = $self->getText($text);
+			}
+		}
+	
+	if ($style)
+		{
+		$text = $self->createElement('text:span', $text)
+					unless ref $text;
+		$self->textStyle($text, $style);
+		}
+	return $self->SUPER::extendText($element, $text);
 	}
 
 #-----------------------------------------------------------------------------
@@ -909,6 +998,20 @@ sub	getSection
 
 #-----------------------------------------------------------------------------
 
+sub	getSectionList
+	{
+	my $self	= shift;
+	return $self->getElementList('//text:section', @_);
+	}
+	
+sub	getSections
+	{
+	my $self	= shift;
+	return $self->getSectionList(@_);
+	}
+
+#-----------------------------------------------------------------------------
+
 sub	sectionStyle
 	{
 	my $self	= shift;
@@ -934,6 +1037,18 @@ sub	renameSection
 		return undef;
 		}
 	return $self->setAttribute($section, 'text:name' => $newname);	
+	}
+
+#-----------------------------------------------------------------------------
+
+sub	sectionName
+	{
+	my $self	= shift;
+	my $section	= $self->getSection(shift) or return undef;
+	my $newname	= shift;
+	return $newname ?
+		$self->renameSection($section, $newname)	:
+		$self->getAttribute($section, 'text:name');
 	}
 
 #-----------------------------------------------------------------------------
@@ -3032,7 +3147,7 @@ sub	deleteTableRow
 	{
 	my $self	= shift;
 	my $row		= $self->getTableRow(@_) or return undef;
-	return $doc->removeElement($row);
+	return $self->removeElement($row);
 	}
 
 sub	deleteRow
@@ -3324,6 +3439,17 @@ sub	textStyle
 	my $element	= $self->getElement($path, $pos) or return undef;
 	my $newstyle	= shift;
 
+	if (ref $newstyle)
+		{
+		$newstyle = $self->getAttribute($newstyle, 'style:name');
+		unless ($newstyle)
+			{
+			warn	"[" . __PACKAGE__ . "::textStyle] "	.
+				"Bad text style\n";
+			return undef;
+			}
+		}
+	
 	if ($element->isListItem)
 		{
 		return defined $newstyle ?

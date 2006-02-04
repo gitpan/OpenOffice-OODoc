@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 2.211 2006-01-21 JMG$
+#	$Id : XPath.pm 2.212 2006-02-04 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -12,7 +12,7 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 2.211;
+our	$VERSION	= 2.212;
 use	XML::Twig	3.22;
 use	Encode;
 
@@ -271,10 +271,19 @@ sub	new
 		    $OpenOffice::OODoc::XPath::XMLNAMES{$m};
 		}
 					# create the XML::Twig
-	if ($self->{'readable_XML'} && ($self->{'readable_XML'} eq 'on'))
-		{
-		$self->{'readable_XML'} = 'indented';
-		}
+	if 	(
+		$self->{'readable_XML'} &&
+		    (
+		    	($self->{'readable_XML'} eq '1')
+				||
+			($self->{'readable_XML'} eq 'true')
+				||
+			($self->{'readable_XML'} eq 'on')
+		    )
+		)
+			{
+			$self->{'readable_XML'} = 'indented';
+			}
 	$self->{'element'} = $OpenOffice::OODoc::XPath::XMLNAMES{'content'}
 				unless $self->{'element'};
 	if ($self->{'element'})
@@ -805,6 +814,40 @@ sub	createSpaces
 	}
 
 #------------------------------------------------------------------------------
+
+sub	appendLineBreak
+	{
+	my $self	= shift;
+	my $element	= shift;
+	
+	return $element->appendChild('text:line-break');
+	}
+
+#------------------------------------------------------------------------------
+
+sub	appendSpaces
+	{
+	my $self	= shift;
+	my $element	= shift;
+	my $length	= shift;
+	
+	my $spaces	= $self->createSpaces($length) or return undef;
+	$spaces->paste_last_child($element);
+	}
+	
+#------------------------------------------------------------------------------
+
+sub	appendTabStop
+	{
+	my $self	= shift;
+	my $element	= shift;
+	
+	my $tabtag = $self->{'opendocument'} ? 'text:tab' : 'text:tab-stop';
+	
+	return $element->appendChild($tabtag);
+	}
+
+#------------------------------------------------------------------------------
 # replaces any previous content of an existing element by a given text
 
 sub	setText
@@ -820,6 +863,7 @@ sub	setText
 					($path, $pos);
 	return undef	unless $element;
 
+	my $tabtag = $self->{'opendocument'} ? 'text:tab' : 'text:tab-stop';
 	$element->set_text("");
 	my @lines	= split "\n", $text;
 	while (@lines)
@@ -831,7 +875,7 @@ sub	setText
 			my $column	= 
 				$self->inputTextConversion(shift @columns);
 			$element->appendTextChild($column);
-			$element->appendChild('text:tab-stop') if (@columns);
+			$element->appendChild($tabtag) if (@columns);
 			}
 		$element->appendChild('text:line-break') if (@lines);
 		}
@@ -860,6 +904,7 @@ sub	extendText
 		return $text;
 		}
 
+	my $tabtag = $self->{'opendocument'} ? 'text:tab' : 'text:tab-stop';
 	my @lines	= split "\n", $text;
 	while (@lines)
 		{
@@ -870,7 +915,7 @@ sub	extendText
 			my $column	=
 				$self->inputTextConversion(shift @columns);
 			$element->appendTextChild($column);
-			$element->appendChild('text:tab-stop') if (@columns);
+			$element->appendChild($tabtag) if (@columns);
 			}
 		$element->appendChild('text:line-break') if (@lines);
 		}

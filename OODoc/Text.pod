@@ -225,8 +225,7 @@ presentation which is one of the foundations of the OpenDocument format.
 	
 	Note: The repeated spaces are not properly processed, so any sequence
 	of spaces (whatever its length) in the 'text' string is replaced by a
-	single space in the target document. See setText() and extendText() in
-	OpenOffice::OODoc::XPath.
+	single space in the target document. See setText() and extendText().
 
 =head3	appendRow(table [, options])
 
@@ -645,6 +644,20 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	See deleteRow().
 
+=head3	extendText(element, text [, style])
+
+	Appends 'text' to the given 'element', with an optional style.
+	
+	This method is an improvement of the general extendText() method 
+	which is documented in the OpenOffice::OODoc::XPath manual page.
+
+	If the 'style' argument is provided, the new text is appended with
+	a special style, so it's presented in the document as a 'styled span'
+	(see setSpan() for details about text 'spans').
+	
+	If 'text' is a paragraph or header element, it's content is extracted
+	and appended as flat text. 
+	
 =head3	getBibliographyElements([id])
 
 	Returns the list of the bibliographic entry elements contained in the
@@ -789,9 +802,9 @@ presentation which is one of the foundations of the OpenDocument format.
 
 =head3	getChapter(header_no [, options])
 
-	This method returns the list of the elements depending on a given
-	header element. The argument and the options are the same as with
-	getHeader().
+	This method returns the list of the elements depending (from the
+	end-user's point of view) on a given heading element. The argument
+	and the options are the same as with getHeader().
 
 	Example:
 
@@ -805,6 +818,12 @@ presentation which is one of the foundations of the OpenDocument format.
 	The code above selects and prints all the text elements below the
 	third level 3 header of the document (not including the content of
 	the header itself.
+	
+	Caution, this method returns a list of elements and not an element.
+	Chapters, unlike sections, are not defined in OpenDocument. So,
+	getChapter() should be used as a possible workaround in order to
+	isolate a logical set of content elements which is not packaged in
+	a section.
 
 =head3	getColumn(table, column)
 
@@ -885,13 +904,9 @@ presentation which is one of the foundations of the OpenDocument format.
         Returns the text of the nth+1 header element. Elements are counted
         in the same way as for getHeader.
 
-=head3	getHeaderTextList([filter])
+=head3	getHeaderTextList()
 
         Returns a list of document header texts.
-
-        An optional filter argument can be passed (literal or regular
-        expression). In this case, only headers whose content matches the
-        filter are returned.
 
         In a list context, the result is returned in the form of a list of
         character strings. In a scalar context, the result is a single
@@ -1003,11 +1018,14 @@ presentation which is one of the foundations of the OpenDocument format.
 	The returned object is a "handle" that can be used for subsequent
 	element creations or retrievals in the selected section.
 	
-=head3	getSpanList()
+=head3	getSpanList([context])
 
-        Returns a list of elements which correspond to texts which "stand
-        out" from the document i.e. which have been given a style which
-        makes them stand out from the rest of the paragraph containing them.
+        Returns a list of elements, in the given context, which correspond
+	to texts which "stand out" from the regular flat text, i.e. which have
+	been given a style which makes them stand out from the rest of the
+	paragraph containing them. The context may be a paragraph, a section,
+	or any other text container. The context argument is optional; the
+	default context is the whole document.
 
         For example, a word in italics or in font size 12 in a paragraph of
         mostly standard characters in font size 10 is a 'span' element and
@@ -1397,8 +1415,9 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	Installs a write protection on the given section.
 	
-	Il an second argument is provided, it's stored as an encrypted
-	key which is associated to the write protection.
+	Il a second argument is provided, it's stored as an encrypted key
+	which is associated to the write protection. Caution, it's not the
+	key as it should be typed by the OOo end-user.
 	
 	Such a write protection works only when the document is edited through
 	an OpenOffice.org-compatible desktop software. It doesn't prevent the
@@ -1800,41 +1819,36 @@ presentation which is one of the foundations of the OpenDocument format.
         a search to child elements of a particular element (e.g. headers,
         footers, unordered lists, etc.).
 
-        'expression' is the character string to be highlighted, and 'style'
-        is obviously the style describing the presentation characteristics
-        to give to it. See OODoc::Styles for how to construct styles from
-        code.
+        'expression' represents the span filter; every substring contained
+	in the target element and matching it becomes a 'span'. This filter
+	is processed, up to some extent, as a regex, but there is no full
+	perl regex support here; for example, the regex parentheses are not
+	supported.
+	
+	'style' is obviously the style describing the presentation
+	characteristics to give to it. See OODoc::Styles for how to construct
+	styles by program or to replicate existing styles.
 
         As a highlighted string can be quite long or not all known in
         advance, you can represent it with a regular expression. Taking the
         following paragraph as an example:
 	
-	"OpenOffice.org is my favourite word processor"
-
-            my @list = $doc->selectElementsByContent("OpenOffice");
-            foreach my $para (@list)
-            	{
-            	$doc->setSpan($para, "Open.*Writer", "Style1");
-            	$doc->setSpan($para, "word.*ssor", "Style2");
-            	}
-
-        This sequence selects all text elements (or, more simply,
-        paragraphs) which contain "OpenOffice". In each of them, the style
-        "Style1" is given to the string beginning with "Open" and ending
-        with "Writer" (if found) and the style "Style2" is given to the
-        string beginning with "word" and ending with "ssor". Defined
-        elsewhere, Style1 and Style2 would correspond to the required
-        presentation characteristics. "Style1" and "Style2" must be defined
-	as text styles (not paragraph styles); these styles can be present
-	in the source document or created (before or later) by the program
-	(see createStyle() in OpenOffice::OODoc::Styles).
+	"OpenOffice.org includes Writer, Calc, Draw and Impress"
 	
-	It's possible, in a single setSpan() call, to give the same style
-	to more than one text area in a text container. To do so, you just
-	need to provide several text strings, separated by pipes ("|"), as
-	the search expression. Example:
+	Assuming this text is contained in a $p element, the following
+	instruction gives the "Highlight" style to the "OpenOffice.org",
+	"Writer", "Calc", "Draw", and "Impress" substrings:
 	
-		$doc->setSpan($para, "OpenOffice|Writer", "MyStyle");
+		$doc->setSpan
+		    (
+		    $p, 
+		    'OpenOffice\.org|Writer|Draw|Calc|Impress',
+		    "Highlight"
+		    );
+		    	
+	The style referred to by setSpan() may be an existing style as well
+	as a style to be defined by the program (see createStyle() in
+	OpenOffice::OODoc::Styles).
 
         Caution: the current version of this method can neither recognise
         nor handle a string located partly in a "span" and partly outside
@@ -1901,7 +1915,8 @@ presentation which is one of the foundations of the OpenDocument format.
 =head3	textStyle(element [, style])
 
         Reads a text element's style or, if a 'style' argument is given,
-        changes it.
+        changes it. The text element may be a section, paragraph, a header,
+	or a span included in a paragraph or a header.
 
         The element can be indicated by the pair [path, position] or by
         reference.

@@ -283,9 +283,9 @@ features of OODoc::Meta and OODoc::Document are described here.
 	as flat XML.
 
 	An optional 'readable_XML' can be passed. If this option is provided
-	and set to 'on', the resulting XML will be smartly indented (and, of
-	course, more space-consuming). This feature is intended for debugging
-	purposes and should not be used in production.
+	and set to 'on' or 'true', the resulting XML will be smartly indented
+	(and, of course, more space-consuming). This feature is intended for
+	debugging purposes and should not be used in production.
 
 	The 'local_encoding' option can be set with the appropriate value
 	when a particular character set (and not the default one) must be
@@ -386,6 +386,29 @@ features of OODoc::Meta and OODoc::Document are described here.
         Using this method, after one or more element creations by direct
         importation of XML strings, it might be useful to call the
         reorganize method (but not absolutely necessary).
+	
+=head3	appendLineBreak(element)
+
+	Appends a line break to a text element. This method allows the user
+	to create a single text element (ex: a paragraph) including one or
+	more breaks, instead of separate elements.
+	
+	The example below appends a new text in a new line to the end of
+	an existing paragraph:
+	
+	    my $p = $doc->getElement('//text:p', 5);
+	    $doc->appendLineBreak($p);
+	    $doc->extendText($p, 'A new line in the same paragraph');
+	    
+=head3	appendSpaces(element, length)
+
+	Appends a sequence of multiple spaces to a text element, knowing that
+	a string containing repeated spaces shouldn't be stored as is in a
+	document (see setText() for details about repeated spaces).
+	
+=head3	appendTabStop(element)
+
+	Appends a tab stop ("\t") to a text element.
 
 =head3	cloneContent(oodoc_xpath_object)
 
