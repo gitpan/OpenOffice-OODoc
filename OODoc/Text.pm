@@ -1,10 +1,10 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.220 2006-02-04 JMG$
+#	$Id : Text.pm 2.221 2006-02-09 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
-#	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
-#	Licensing conditions:
+#	Copyright 2006 by Genicorp, S.A. (www.genicorp.com)
+#	License:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
 #
@@ -14,7 +14,7 @@ package OpenOffice::OODoc::Text;
 use	5.006_001;
 use	OpenOffice::OODoc::XPath	2.212;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.220;
+our	$VERSION	= 2.221;
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -1119,6 +1119,15 @@ sub	unlockSection
 	my $key		= $section->att('text:protection-key');
 	$section->del_att('text:protection-key');
 	return $key;
+	}
+
+sub	unlockSections
+	{
+	my $self	= shift;
+	foreach my $section ($self->getSectionList(@_))
+		{
+		$self->unlockSection($section);
+		}
 	}
 	
 sub	sectionProtectionKey

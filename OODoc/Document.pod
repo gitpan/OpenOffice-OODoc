@@ -9,13 +9,13 @@ OpenOffice::OODoc::Document - Top level component for content and layout process
 	# connect a content-focused document interface
 	my $content = ooDocument
 			(
-			archive => $oofile,
+			file => $oofile,
 			member => 'content'
 			);
 	# connect a style-focused document interface
 	my $styles = ooDocument
 			(
-			archive => $oofile,
+			file => $oofile,
 			member => 'styles'
 			);
 	# process any content and style element
@@ -40,8 +40,9 @@ OpenOffice::OODoc::Document - Top level component for content and layout process
 
 =head1	DESCRIPTION
 
-This module defines the top level Document class, allowing any kind
-of content and presentation processing.
+This module defines the top level Document class, which is a connector
+allowing any kind of content and presentation processing. It inherits
+from OODoc::XPath, OODoc::Text, OODoc::Styles and OODoc::Image.
 
 The most usual instruction to get access to any member of a document, with
 the exception if the metadata (meta.xml) should be something like:
@@ -57,11 +58,11 @@ OODoc::XPath (which should not be called directly by applications).
 
 For example
 
-	my $styles = ooDocument(file => "source.sxw", member => "styles");
+	my $styles = ooDocument(file => "source.odt", member => "styles");
 
 is generally better than
 
-	my styles = ooStyles(file => "source.sxw");
+	my styles = ooStyles(file => "source.odt");
 
 While OODoc::Document inherits all the methods and properties of these
 classes, its detailed documentation in essentially provided in
@@ -85,9 +86,12 @@ which combine layout and content processing.
 
         Short Form: ooDocument(<parameters>)
 	
-        See OpenOffice::OODoc::XPath->new.
+        See OpenOffice::OODoc::XPath->new (or ooXPath)
 	
-        Options are the same as for the OODoc::XPath constructor (and for its
+	Returns an OpenDocument connector, available for subsequent
+	access to any element of a well-formed document.
+	
+        Options are the same as for the ooXPath constructor (and for its
 	Text, Styles and Image derivatives). If no "member" parameter is
 	given, the member selected by default is "content".
 

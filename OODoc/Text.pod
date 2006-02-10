@@ -16,12 +16,15 @@ that these features are technically supported by the OpenOffice::OODoc::Text
 component of the API).
 
 These features are text-oriented, but can be used against any class document,
-such as spreadsheets or presentations as well as text documents.
+such as spreadsheets or presentations as well as text documents. So, the
+'Text' word doesn't mean that the features described in the present manual
+chapter are dedicated to OpenOffice.org Writer documents only. In the other
+hand, a few methods can't apply to any document class.
 
 The OpenOffice::OODoc::Text class is a specialist derivative of
 OpenOffice::OODoc::XPath for XML elements which describe the text content
 of OOo/ODF documents. Here, "text content" means containers that can
-host text content (i.e. tables, lists...) as well as flat text.
+host text containers (i.e. tables, lists...) as well as flat text.
 
 Knowing that the "styles.xml" member of an OpenOffice.org file can contain
 text (because some style definitions, such as page headers or footers, can
@@ -43,7 +46,10 @@ presentation which is one of the foundations of the OpenDocument format.
 
         See OpenOffice::OODoc::XPath->new
 
-        The XML member loaded by default is 'content.xml'. The most common
+        Returns an OODoc::XPath OpenDocument connector with additional
+	features mainly focused on text containers.
+	
+	The XML member loaded by default is 'content.xml'. The most common
         creation method is like this:
 
             my $doc = ooText(file => 'my_file.odt');
@@ -1945,6 +1951,10 @@ presentation which is one of the foundations of the OpenDocument format.
 		
 	The two lines above remove the protection of "Section1" and protect
 	"Section2" with the password which previously protected "Section1".
+	
+=head3	unlockSections()
+
+	Removes the write protection of every section in the document.
 	
 =head3	updateCell(table, row, column, value [, text])
 

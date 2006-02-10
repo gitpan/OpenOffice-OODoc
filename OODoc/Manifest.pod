@@ -6,7 +6,7 @@ OpenOffice::OODoc::Manifest - Access to document file descriptor
 
 The OpenOffice::OODoc::manifest class is a specialist derivative of
 OpenOffice::OODoc::XPath allowing access to the content descriptor
-of an OpenOffice.org file.
+of an OpenDocument or OpenOffice.org file.
 
 For ordinary content processing applications, it's not absolutely
 necessary to control the manifest. Member imports or deletions

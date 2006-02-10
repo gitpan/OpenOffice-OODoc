@@ -3,7 +3,7 @@
 #	$Id : XPath.pm 2.212 2006-02-04 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
-#	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2006 by Genicorp, S.A. (www.genicorp.com)
 #	License:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1

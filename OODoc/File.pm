@@ -1,10 +1,10 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : File.pm 2.112 2006-01-18 JMG$
+#	$Id : File.pm 2.112 2006-02-10 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2006 by Genicorp, S.A. (www.genicorp.com)
-#	Licensing conditions:
+#	License:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
 #

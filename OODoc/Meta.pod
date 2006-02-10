@@ -1,12 +1,12 @@
 =head1	NAME
 
-OpenOffice::OODoc::Meta - Access to document properties (metadata)
+OpenOffice::OODoc::Meta - Access to document metadata
 
 =head1	DESCRIPTION
 
 The OpenOffice::OODoc::Meta class is a specialist derivative of
 OpenOffice::OODoc::XPath for XML members which describe the metadata
-of OpenOffice.org documents.
+of OpenDocument (ODF) and OpenOffice.org documents.
 
 =head2	Methods
 
@@ -14,17 +14,19 @@ of OpenOffice.org documents.
 
         Short Form: ooMeta(<parameters>)
 
-        See OpenOffice::OODoc::XPath->new
+        See OpenOffice::OODoc::XPath->new (or ooXPath)
 
-        The XML member loaded by default is 'meta.xml'.
+        Returns an OpenDocument connector allowing subsequent access to
+	the metadata of a well-formed, ODF-compliant document.
+	
+	The XML member loaded by default is 'meta.xml'.
 
         Example:
 
-            $my meta	= OpenOffice::OODoc::Meta->new
-            	(file => 'document.sxw');
+            $my meta	= ooMeta(file => 'document.odt');
 
         returns a new object which represents the metadata of the
-        OpenOffice.org "document.sxw".
+        OpenOffice.org "document.odt".
 
 =head3	addKeyword(text)
 
@@ -33,7 +35,7 @@ of OpenOffice.org documents.
 
         Example:
 
-            $meta->addKeyword("GED");
+            $meta->addKeyword("document management");
             $meta->addKeyword("office");
             $meta->addKeyword("tech watch");
 
@@ -50,9 +52,9 @@ of OpenOffice.org documents.
 	with the ooTimelocal() function.
 
 	With argument, inserts the given string (without checking) as the
-        creation date. The argument, if any, must comply with the OOo
+        creation date. The argument, if any, must comply with the ODF
 	(ISO-8601) date format. The ooLocaltime() function can be used in
-	order to convert a regular Perl time() value in OOo format.
+	order to convert a regular Perl time() value in ODF.
 
 	The OpenOffice.org desktop software never changes this value, but
 	this method allows the user to read or write it.

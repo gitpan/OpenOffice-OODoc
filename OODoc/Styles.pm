@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Styles.pm 2.015 2005-10-10 JMG$
+#	$Id : Styles.pm 2.016 2006-02-08 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -12,9 +12,9 @@
 
 package OpenOffice::OODoc::Styles;
 use	5.006_001;
-our	$VERSION	= 2.015;
+our	$VERSION	= 2.016;
 
-use	OpenOffice::OODoc::XPath	2.206;
+use	OpenOffice::OODoc::XPath	2.212;
 use	File::Basename;
 require	Exporter;
 our	@ISA		= qw ( Exporter OpenOffice::OODoc::XPath );
@@ -631,7 +631,7 @@ sub	styleName
 	else
 		{
 		my %opt = @_;
-		$style->getStyleElement($p1, %opt) or return undef;
+		$style = $self->getStyleElement($p1, %opt) or return undef;
 		$newname = $opt{'newname'};
 		}
 	$self->setAttribute($style, 'style:name', $newname) if $newname;

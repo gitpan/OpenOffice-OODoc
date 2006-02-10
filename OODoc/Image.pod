@@ -60,9 +60,9 @@ documents. But it can't process the images themselves.
         => 'styles' is required if you want to work with page background
         images. Example:
 
-        	my $doc = OpenOffice::OODoc::Image->new
+        	my $doc = ooImage
         		(
-        		file	=> 'my_presentation.sxi',
+        		file	=> 'my_presentation.odp',
         		member	=> 'styles.xml'
         		);
 

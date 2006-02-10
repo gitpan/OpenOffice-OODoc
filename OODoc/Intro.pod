@@ -755,7 +755,7 @@ objects with the same OODoc::File "server".
 
 	use OpenOffice::OODoc;
 
-	my $archive	= ooFile('myfile.sxw');
+	my $archive	= ooFile('myfile.odt');
 	my $content	= ooDocument(archive => $archive);
 	my $meta	= ooMeta(archive => $archive);
 	# process content and metadata
@@ -768,6 +768,12 @@ to the OODoc::File is sufficient to do the physical file update, because
 this object "knows" the list of the OODoc::XPath objects connected to it,
 and "asks" to each of them the XML content it's responsible of (the other
 XML members of the file remain unchanged).
+
+In the example above, if the user writes 'file' instead of 'archive', the
+API automatically detects the real type of the $archive value (i.e. an
+OODoc::File object) and adapts its behaviour accordingly. So, one can use
+the 'file' option either if the parameter is really a file path/name or if
+it's a reference to a previously instantiated ODF archive.
 
 However, the explicit use of OODoc::File is not mandatory. The example above
 could be written in a different way:
@@ -782,10 +788,11 @@ could be written in a different way:
 This last sequence sounds strange because the 'file' option of ooMeta()
 is an OODoc::Document (i.e. an OODoc::XPath object) and not a file. But
 OpenOffice::OODoc encourages your laziness: if the value type of the
-'file' option is OODoc::XPath (and not scalar), it knows you want share
-a file interface already used. So you get the same result as in the
-previous example, but the common OODoc::File object is not visible. The
-final save() could be issued from anyone of the document objects.
+'file' option is OODoc::XPath (and neither a file path nor an OODoc::File
+object), it knows you want share a file interface already used. So you get
+the same result as in the previous example, but the common OODoc::File object
+is not visible. The final save() could be issued from anyone of the document
+objects.
 
 There is an example of simultaneous access to content and metadata in the
 script 'set_title' (where some text content is used to generate a piece

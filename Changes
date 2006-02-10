@@ -1,3 +1,7 @@
+2.023	2006-02-10
+	- Styles.pm: Bug fix in styleName() (#17543)
+	- Text.pm: added unlockSections()
+	- Doc update
 2.022	2006-02-04
 	- Text.pm: added some improvements and fixed an issue in setSpan()
 	- Text.pm: added an improved version of extendText()

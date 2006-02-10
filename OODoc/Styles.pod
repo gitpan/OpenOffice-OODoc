@@ -129,7 +129,10 @@ at least a blank of each required style.
 
         See OpenOffice::OODoc::XPath->new.
 
-        The member loaded by default is "styles.xml" which gives access to
+        Returns an OODoc::XPath OpenDocument connector with additional
+	style-aware features.
+	
+	The member loaded by default is "styles.xml" which gives access to
         named or automatic styles associated with the page layout. The
         "content.xml" member should be forced if the application is to work
         with styles associated with the document body (automatic styles

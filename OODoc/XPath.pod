@@ -7,10 +7,17 @@ OpenOffice::OODoc::XPath - Low-level XML navigation in the documents
 This module is a low-level class which uses OODoc::File (without
 inheriting anything from it) along with the classes defined in the
 XML::Twig module. It's a common basis for the other, more user-
-friendly, document-oriented modules.
+friendly, document-oriented modules. It uses XPath expressions in
+order to retrieve any document element (but it doesn't provide a
+full implementation of the XPath standard). In addition, while the
+most part of the provided methods are OpenDocument-aware, this module
+could be used against any other kind of XML documents, simply because
+it benefits from all the features of XML::Twig. Such a possibility
+may prove useful for applications that simultaneously process OpenDocument
+and non-OpenDocument XML files.
 
 The OpenOffice::OODoc::XPath class should not be explicitly used in the
-applications, because all its features are available in more user-oriented
+applications, because all its features are available in more user-friendly
 classes such as OODoc::Text, OODoc::Styles, OODoc::Image, OODoc::Document
 and OODoc::Meta. The present manual page is provided to describe the
 common methods and properties that are available with all these classes.
@@ -18,9 +25,9 @@ common methods and properties that are available with all these classes.
 This chapter can be skipped by programmers who are only interested
 in document types handled by the specialist classes which follow.
 Understanding these classes is easier and using them requires less
-Perl and XML expertise. However, calling OODoc::XPath remains a good
-rescue option as it allows all kinds of operations on all types of
-XML members contained in any OpenOffice.org document.
+Perl and XML expertise. However, calling OODoc::XPath methods remains
+a good rescue option as it allows all kinds of operations on all types
+of XML elements contained in any OpenDocument.
 
 This class is the common foundation of OODoc::Meta, OODoc::Text,
 OODoc::Styles and OODoc::Image. It contains the lowest layer of
@@ -42,7 +49,7 @@ as an argument, there are two ways of proceeding:
 - reference the element directly (obtained previously)
 
 - or give an XPath expression and a position, being a string and an
-integer respectively; for example, the pair ('/office:body/text:p', 12)
+integer respectively; for example, the pair ('//office:body/text:p', 12)
 or ('//text:p', 12) represent, in an OpenOffice.org document, the
 thirteenth occurrence of the 'text:p' element or the 13th paragraph
 of text (XPath occurrences are numbered table elements in Perl,
@@ -124,25 +131,35 @@ features of OODoc::Meta and OODoc::Document are described here.
 
         Short Form: ooXPath(<parameters>)
 
-        Returns a new instance of XPath, containing a well-formed XML
-        document given directly or indirectly as a parameter.
+	Returns a new OpenDocument connector, i.e. an interface which
+	can be used for subsequent operations on a well-formed document.
 
+	The document is loaded and parsed according to various options.
+	The most used option is 'file'; it simply allows the application
+	to process an OpenDocument file selected by its path/name in the
+	file system.
+	
 	Example:
 
 		my $doc = ooXPath
 				(
-				file	=> "myfile.sxc",
+				file	=> "myfile.ods",
 				member	=> "content"
 				);
 		# ... lot of processing ...
 		$doc->save;
 
-        Returns a new document object. In the example above, the object
-	is loaded from a regular OOo file, that is the most current
+        Returns a new document connector. In the example above, the object
+	is loaded from a regular OpenDocument file, that is the most current
 	option, but there are other possibilities. It's possible to use
 	flat XML (available as a string in memory, or loaded from a file).
 	In addition, this constructor is able to create a new document
 	from scratch.
+	
+	Because every feature of OODoc::XPath is inherited by OODoc::Document
+	and OODoc::Meta (see the corresponding manual pages), ooXPath() is
+	generally not explicitly invoked in a real application. Its silently
+	used through ooDocument() or ooMeta().
 
         Parameters are named (hash key => value). The constructor must get
         at least one parameter giving a means of obtaining the XML document
@@ -699,6 +716,12 @@ features of OODoc::Meta and OODoc::Document are described here.
         Returns a list of the element's attributes in the form of a hash
         whose keys are the attributes' XML names.
 
+=head3	getBody()
+
+	Returns the root of the document body. The document body is the
+	main container of all the displayable content not including page
+	headers, page footers, and page backgrounds.
+
 =head3	getElement(path, position)
 
         Returns an element's reference from an XPath path and a position (or
@@ -766,6 +789,12 @@ features of OODoc::Meta and OODoc::Document are described here.
         familiar with XPath syntax (not documented here) as well as
         OpenOffice.org document structure. See also selectNodesByXPath.
 
+=head3	getRoot()
+
+	Returns the absolute root element of the document. The root element
+	contains any other visible or non visible object, including the
+	document body (see getBody) and style definitions.
+	
 =head3	getText(path, position)
 
 =head3	getText(element)
@@ -1096,38 +1125,35 @@ features of OODoc::Meta and OODoc::Document are described here.
         text displayed will always be the same string. However, if it
         happens to be a regular expression, it is in effect the text
         retrieved which will be displayed.
-
+	
         Generally speaking, if the replacement value is a function
         reference, the called function receives the remainder of the
         arguments which follow it, in this order:
 
-=head3	replicateElement(element, position [, options])
+=head3	replicateElement(original_element, position_object [, options]])
 
-        Makes a copy of the given element and inserts it into the current
-        document according to 'position' and, where indicated, according to
-        a hash of options.
+        Makes a copy of the first given element and inserts it into the
+	current document at a position which depends on the second argument
+	and an optional parameter.
 
-        If 'position' is another existing element then the new element is
-        inserted after the children of the existing element, except where
-        either pairs position=>'after' or position=>'before' are specified
-        in the list of options. In this case, the insertion is made at the
-        same hierarchical level as the positional element according to the
-        same logic as for insertElement. However, contrary to insertElement,
-	a copy of the given element is indeed created, not just a reference
-	to it.
+	If the second argument is an existing object in the document, then
+	the copy is inserted according to an optional 'position' parameter:
+	
+	- if no 'position' option is provided, then the copy is appended
+	as the las child of the position object;
+	
+	- if 'postion' => 'before' or 'after', then the copy is inserted at
+	the same hierachical level as the position object, according to the
+	same logic as for insertElement().
+		
+	If the second argument is not an object, but simply 'end', then the
+	new element is appended as the very last child of the physical root
+	of the document. See getRoot(). This option should generally be
+	avoided.
 
-        If the 'position' argument is given as 'end', then the new element
-        is added at the last child position of the root element.
-
-        If the 'position' argument is given as 'body', then the new element
-        is added at the end of the list of child elements of the element
-        which corresponds to the getBody value (requires an OODoc::XPath
-        type object, by default 'office:body').
-
-        If the 'position' argument is an existing element, then the new
-        element is inserted immediately before the given element by default.
-        If the pair position=>'after' are in the options list, the element
-        is inserted immediately after, as with insertElement.
+        If the second argument is given as 'body', then the new element
+        is appended at the end of the document body (see getBody), as it was
+	created through appendElement().
 
         Example:
 
@@ -1145,16 +1171,20 @@ features of OODoc::Meta and OODoc::Document are described here.
         of $doc_target which copies exactly the style of the same name in
         $doc_source. Obviously, the section of code dealing with the search
         for the element to copy and its position is the most laborious.
+	(In a real application, thanks to OODoc::Styles, a more user-friendly
+	coding would be allowed for style replication.)
 
-        This method physically creates a new element which is an exact copy
-        of the given element, but which is physically separate from it.
+        This method creates a new element which is an exact copy of the given
+	element, but which is physically separate from it.
 
         This method is slower than simply modifying an existing element or
         inserting an element reference.
 
-	Note: If the user needs only a "free" copy of the element (out of the
+	If the user needs only a "free" copy of the element (out of the
 	document structure, to be later attached), the XML::Twig::Elt copy()
-	method should be preferred.
+	method should be preferred:
+	
+	    my $new_element = $old_element->copy;
 
 =head3	resetCurrentContext()
 
@@ -1517,6 +1547,7 @@ features of OODoc::Meta and OODoc::Document are described here.
             'xml'		=> <XML string>
             'element'		=> <name of loaded XML element>
 	    'xpath'		=> <XML::Twig object>
+	    'twig_options'	=> <XML::Twig options as a hash reference>
 	    'opendocument'	=> <true if OASIS Open Document>
 
         However, the 'xml' variable is cleared almost immediately after a
@@ -1536,6 +1567,11 @@ features of OODoc::Meta and OODoc::Document are described here.
         functionality of the XML::Twig API, bearing in mind that all
         operations using this interface will have a direct effect on the
         content of the $doc object.
+	
+	'twig_options' allows the user to provide a hash reference of
+	additional options to XML::Twig. These options can modify the way the
+	document is parsed during the execution of ooXPath. For special
+	applications only (see the XML::Twig reference manual).
 
 	The 'opendocument' property, if true, means that the document is
 	declared as an OASIS Open Document. If this property is false or
