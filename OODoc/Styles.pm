@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Styles.pm 2.016 2006-02-08 JMG$
+#	$Id : Styles.pm 2.017 2006-02-13 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -12,7 +12,7 @@
 
 package OpenOffice::OODoc::Styles;
 use	5.006_001;
-our	$VERSION	= 2.016;
+our	$VERSION	= 2.017;
 
 use	OpenOffice::OODoc::XPath	2.212;
 use	File::Basename;
@@ -962,6 +962,8 @@ sub	updateStyle
 				if $opt{'family'};
 	$opt{'references'}{'style:class'}	= $opt{'class'}
 				if $opt{'class'};
+	$opt{'references'}{'styles:display-name'} = $opt{'display-name'}
+				if $opt{'display-name'};
 	if ($opt{'next'})
 		{
 		$opt{'references'}{'style:next-style-name'} =

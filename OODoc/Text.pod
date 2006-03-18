@@ -4,22 +4,34 @@ OpenOffice::OODoc::Text - The text processing submodule of OpenOffice::OODoc
 
 =head1	DESCRIPTION
 
-This man chapter describes the text-oriented methods of OpenOffice::OODoc,
+This manual chapter describes the text-oriented methods of OpenOffice::OODoc,
 implemented by the OpenOffice::OODoc::Text class, and inherited by the
 OpenOffice::OODoc::Document class.
 
-This class should not be explictly used in an ordinary application, because
-all its features are available in the OpenOffice::OODoc::Document class, in
-combination with other features. Practically, the present manual is provided
-to describe the text-oriented features of OpenOffice::OODoc::Document (knowing
-that these features are technically supported by the OpenOffice::OODoc::Text
-component of the API).
+These methods are not essentially dedicated to string processing; they are
+more precisely focused on text containers. A text container is a document
+element which can (and must) be used in order to support a text and
+integrate it at the right place and according to the right presentation rules.
+The OpenDocument specification defines a lot of such containers, and the
+present API supports many of them, such as paragraphs, headers, tables (or
+spreadsheets), lists, sections, and draw pages. Some of these containers can
+host other containers: for example, a table contains rows, a row contains
+cells, a section can contain almost everything including other sections, etc.
 
 These features are text-oriented, but can be used against any class document,
 such as spreadsheets or presentations as well as text documents. So, the
 'Text' word doesn't mean that the features described in the present manual
 chapter are dedicated to OpenOffice.org Writer documents only. In the other
-hand, a few methods can't apply to any document class.
+hand, a few methods can't apply to any document class (ex: creating or
+retrieving draw pages makes sense with presentation and drawing documents
+only).
+
+This class should not be explictly used in an ordinary application, because
+all its features are available through the OpenOffice::OODoc::Document class,
+in combination with other features. Practically, the present manual is
+provided to describe the text-oriented features of OpenOffice::OODoc::Document
+(knowing that these features are technically supported by the
+OpenOffice::OODoc::Text component of the API).
 
 The OpenOffice::OODoc::Text class is a specialist derivative of
 OpenOffice::OODoc::XPath for XML elements which describe the text content
@@ -31,7 +43,7 @@ text (because some style definitions, such as page headers or footers, can
 contain text), the presently described features can be used against this
 member as well as the "content.xml" member.
 
-This module Should be used in combination with OpenOffice::OODoc::Styles,
+This module should be used in combination with OpenOffice::OODoc::Styles,
 via the OpenOffice::OODoc::Document class, if the application has to handle
 detailed presentation parameters of text elements. This is because such
 parameters are held in styles elements and not in the text elements
@@ -172,7 +184,6 @@ presentation which is one of the foundations of the OpenDocument format.
         If the 'style' option is absent, the element is inserted according
         to the following rule:
 
-
 =head3	appendItemList([type => list_type, [style => style [, options]]])
 
         Creates a new (empty) list and appends it to the end of the
@@ -181,7 +192,8 @@ presentation which is one of the foundations of the OpenDocument format.
 	In OpenOffice.org 1 documents, an unordered list is the default,
         and if the 'type' option is given with the value 'ordered', then an
 	ordered list is created. In Open Documents, the 'type' option is
-	ignored because there are generic lists only.
+	ignored because there are generic lists only (a list is ordered or
+	"bulleted" according to a style, and not natively).
 
         The 'style' options controls the list's style (as opposed to each
         item's style). If absent, the list takes the default paragraph style
@@ -198,7 +210,6 @@ presentation which is one of the foundations of the OpenDocument format.
         Options:
 
             'text'		=> <paragraph text>
-
             'style'		=> <paragraph style>
 
         An 'attribute' option is also available under the same conditions as
@@ -539,13 +550,15 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	With "value" (and, optionnally, "text"): see updateCell().
 
-
 =head3	cellValueType(table, row, column [, type])
 
 =head3	cellValueType(cell [, type])
 
 	Get/set the data type of a table cell.
 
+	Possible value types are 'string', 'float', 'percentage', 'currency',
+	'date', 'time', 'boolean'.
+	
 	Note: If an application must convert a 'string' cell to a numeric
 	one and fill it with a numeric value, cellValueType() must be called
 	*before* cellValue(). Ex:
@@ -577,8 +590,8 @@ presentation which is one of the foundations of the OpenDocument format.
 
 =head3	copyRowToHeader(row)
 
-	This method creates appends a copy of a given table row to the header
-	of the table. It may be called repeatedly, allowing multi-row header
+	This method appends a copy of a given table row to the header of the
+	table. It may be called repeatedly, allowing multi-row header
 	creation.
 	
 	A table header is a row, or a sequence of rows, that is displayed at
@@ -794,17 +807,19 @@ presentation which is one of the foundations of the OpenDocument format.
         (e.g. as returned by a previous getCell call).
 
         This method behaves in two different ways depending on the cell
-        type:
-
-            - returns the cell's text if the cell is set to literal (after
-            any UTF8 decoding. See OODoc::XPath).
+        type. The displayable text of the cell is regarded as the cell value
+	if the cell type is 'string'. If the cell type is one of the possible
+	numeric types ('float', 'currency', 'date'), the returned value is the
+	internal, numeric value.
 
         This difference in handling is designed to allow programs to use
         returned numeric values directly in calculations.
 
-        Note: To get information about a cell other than its value (numeric,
-        etc.), the best way is first to get its element reference with
-        getCell and then use it with getAttribute.
+	See also cellValueType().
+	
+        Note: To get information about a cell other than its value or value
+	type (numeric, etc.), the best way is first to get its element
+	reference with getCell() and then use it with getAttribute.
 
 =head3	getChapter(header_no [, options])
 
@@ -1003,6 +1018,7 @@ presentation which is one of the foundations of the OpenDocument format.
 	row in the table body only. See getTableHeaderRow().
 
 =head3	getRowCells(table, row)
+
 =head3	getRowCells(row)
 	
 	Returns the list of the uncovered cell elements corresponding to a
@@ -2004,13 +2020,16 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	While all the methods above belong to the document object, some
 	additional methods are defined for individual text containers. These
-	methods belong to the OpenOffice::OODoc::Element class.
+	methods belong to the OpenOffice::OODoc::Element class. The most
+	general of them are described in the OpenOffice::OODoc::XPath manual.
+	Some of them (listed below) are simple read-only accessors allowing
+	the user to check the type of any element.
 	
 =head3	isXXX() methods
 
-        A set of "isXXX" methods, returning true or false, allow the
-	to check the type of a given element. Caution, this methods belong
-	to the elements, not to the document.
+        A set of "isXXX" methods, returning true or false, allow to check
+	the type of a given element. Caution, this methods belong to the
+	elements, not to the document.
 
         Example:
 
@@ -2120,7 +2139,7 @@ presentation which is one of the foundations of the OpenDocument format.
 
 =head1	AUTHOR/COPYRIGHT
 
-Copyright 2004-2005 by Genicorp, S.A. (http://www.genicorp.com)
+Copyright 2004-2006 by Genicorp, S.A. (http://www.genicorp.com)
 
 Initial developer: Jean-Marie Gouarne (http://jean.marie.gouarne.online.fr)
 

@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.221 2006-02-09 JMG$
+#	$Id : Text.pm 2.222 2006-03-17 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2006 by Genicorp, S.A. (www.genicorp.com)
@@ -12,9 +12,9 @@
 
 package OpenOffice::OODoc::Text;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	2.212;
+use	OpenOffice::OODoc::XPath	2.214;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.221;
+our	$VERSION	= 2.222;
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -2165,6 +2165,15 @@ sub	getRowCells
 
 #-----------------------------------------------------------------------------
 
+sub	getCellParagraph
+	{
+	my $self	= shift;
+	my $cell	= $self->getTableCell(@_)	or return undef;
+	return $cell->first_child('text:p');
+	}
+
+#-----------------------------------------------------------------------------
+
 sub	getCellParagraphs
 	{
 	my $self	= shift;
@@ -3280,7 +3289,7 @@ sub	createParagraph
 	my $style	= shift;
 
 	my $p = OpenOffice::OODoc::Element->new('text:p');
-	if ($text)
+	if (defined $text)
 		{
 		$self->SUPER::setText($p, $text);
 		}

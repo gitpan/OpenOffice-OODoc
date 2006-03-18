@@ -307,6 +307,10 @@ features of OODoc::Meta and OODoc::Document are described here.
 	The 'local_encoding' option can be set with the appropriate value
 	when a particular character set (and not the default one) must be
 	used for a document.
+	
+	A 'read_only' can be provided and set to 'true' in order to prevent
+	the current member from being written back to the physical ODF file
+	when the save() method is called.
 
         Other optional parameters can also be passed to the constructor (see
         Properties below).
@@ -847,8 +851,8 @@ features of OODoc::Meta and OODoc::Document are described here.
 
         Without argument, returns a document's entire XML content.
 
-	Exports the entire XML content to a flat file, if a file handle is
-	provided.
+	Exports the entire XML content of the current member to a flat file,
+	if a file handle is provided.
 
 	Note: the exported data are UTF8-encoded.
 
@@ -1049,25 +1053,6 @@ features of OODoc::Meta and OODoc::Document are described here.
         reference and returns "true". Returns undef if the element does not
         exist.
 
-=head3	reorganize
-
-        Technical method for maintaining the structure of the current
-        document, for use only in exceptional circumstances where the
-        application's operations risk destabilising the internal addressing
-        of elements. This will primarily happen when inserting new XML
-        elements in the form of XML strings after the document has been
-        loaded i.e. when the XML parser is again launched to include an
-        "addition" to an already parsed document.
-
-        Being costly in runtime, this method must not be called immediately
-        after each XML import or other address destabilising operation. A
-        single reorganize after each series of destabilising operations is
-        enough and even then perhaps only before you need to access an
-        element by [path, position]. Address destabilising operations are
-        not an issue if all elements are selected by reference, attribute or
-        content filter. Moreover it is absolutely unnecessary to call
-        reorganize just before calling a save.
-
 =head3	replaceElement(path, position, replacement [, options])
 
 =head3	replaceElement(old_element, new_element [, options])
@@ -1236,6 +1221,12 @@ features of OODoc::Meta and OODoc::Document are described here.
 	in such a situation, the save() method can be issued from anyone
 	of the objects sharing the file interface (i.e. $content->save
 	could be replaced by $styles->save or $meta->save).
+	
+	However, any XML member (content, styles, meta, ...) whose
+	'read_only' property is set to "true" is not saved. In the example
+	above, if, say, the $meta object is created (through ooXPath())
+	with a "read_only" option set to "true", only $content and $styles
+	are really saved by the last instruction.
 
 	Note: OpenOffice::OODoc::XPath doesn't really know anything about
 	the physical archive file; here save() is only a stub method and
@@ -1246,6 +1237,8 @@ features of OODoc::Meta and OODoc::Document are described here.
 	compressed file (used through an OODoc::File object), it's saved
 	as "flat XML" to the given file. In such a situation, if the file name
 	is not provided, the source XML file (if any) is used as the target.
+	If the file is "flat XML", OODoc::XPath really effects the physical
+	output, without using any OODoc::File connector.
 
 	Note: if you need to save a document as flat XML while it's associated
 	with an OpenOffice.org file, you should use exportXMLContent() with an
@@ -1325,20 +1318,13 @@ features of OODoc::Meta and OODoc::Document are described here.
         descriptors contain the word "landscape" and displays the name of
         each selected image:
 
-        sub	printMessage
-
+            sub	printMessage
         	{
-
         	my $doc		= shift;
-
         	my $element	= shift;
-
         	my $image = $element->parentNode;
-
         	print "Name: " . $image->find('@draw:name') . "\n";
-
         	}
-
             my @list = $doc->selectElements
             	(
             	'//draw:image/svg:desc',
@@ -1442,10 +1428,11 @@ features of OODoc::Meta and OODoc::Document are described here.
 =head2	Element methods
 
 	Every document element is an OpenOffice::OODoc::Element object,
-	and OpenOffice::OODoc::Element inherits all the features of
-	XML::Twig::Elt, including the very powerful copy, cut, paste,
-	move and replace methods. These methods are described in the
-	XML::Twig documentation.
+	and OpenOffice::OODoc::Element inherits all the rich features of
+	XML::Twig::Elt, including the very powerful copy(), cut(), paste(),
+	move() and replace() methods (look at the XML::Twig documentation
+	for details). Some additional methods, provided in the ::Element
+	package, are described below.
 	
 	(Remember these methods belong to the element and not to the
 	document !)
@@ -1530,7 +1517,7 @@ features of OODoc::Meta and OODoc::Document are described here.
 	be changed according to the real user's needs (warning: there is no
 	kind of automatic adaptation to the user's locales, so the application
 	must explicitly load the right value in this variable); it should be
-	done using the localEncoding() accessor (see the OpenOffice::OODoc(3)
+	done using the ooLocalEncoding() accessor (see the OpenOffice::OODoc
 	man page and, for the list of supported character sets, the Encode
 	module's documentation).
 
@@ -1581,7 +1568,7 @@ features of OODoc::Meta and OODoc::Document are described here.
 
 =head1	AUTHOR/COPYRIGHT
 
-Copyright 2004-2005 by Genicorp, S.A. (http://www.genicorp.com)
+Copyright 2004-2006 by Genicorp, S.A. (http://www.genicorp.com)
 
 Initial developer: Jean-Marie Gouarne (http://jean.marie.gouarne.online.fr)
 

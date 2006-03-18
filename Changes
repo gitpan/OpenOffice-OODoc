@@ -1,7 +1,17 @@
+2.024	2006-03-17
+	- Text.pm: Zero or blank string allowed in createParagraph()
+	- Text.pm: Added getCellParagraph()
+	- Bug fix in XPath.pm in order to allow setText() with a zero value
+	- Bug fix in XPath.pm in order to allow element creation with an
+	initial zero or blank value
+	- Bug fix in File.pm (raw_delete(), save()); added read_only flag
+	- Bug fixes in removeAttribute() and setAttributes()
+	(thanks to Paul Tyers)
+	- Documentation cleaning
 2.023	2006-02-10
 	- Styles.pm: Bug fix in styleName() (#17543)
 	- Text.pm: added unlockSections()
-	- Doc update
+	- Documentation update
 2.022	2006-02-04
 	- Text.pm: added some improvements and fixed an issue in setSpan()
 	- Text.pm: added an improved version of extendText()

@@ -159,7 +159,11 @@ not necessarily in OpenOffice.org format.
 
         This method can be used to remove any XML or non-XML member. It can
         be combined with raw_import() in order to effect a raw replacement
-        of content without interpretation.
+        of content without interpretation. Caution: this method should not
+	be used for an XML member (content, style, meta, etc.) which is
+	currently "active" (i.e. linked to an active OODoc::XPath instance),
+	unless the member has been loaded as "read only" (search in the
+	OpenOffice::OODoc::XPath for the "read_only" option).
 
         Note: calls to this method only prepare the deletion, which is
         actually carried out by the save() method if it occurs before the
@@ -167,8 +171,6 @@ not necessarily in OpenOffice.org format.
         different from the source filename, the source file remains
         unchanged and the deleted member is simply not transferred to the
         target file.
-
-        This method should not generally be called in an "ordinary" program.
 
 =head3	raw_export(member [, destination])
 
@@ -265,10 +267,13 @@ not necessarily in OpenOffice.org format.
         situation has not been tested). Normally it is preferable to call a
         save once and for all at the end of a series of updates.
 
-        Only a call to OODoc::File's save method saves content and
+        Only a call to OODoc::File's save() method saves content, metadate and
         presentation changes made by other OODoc components to the
         OpenOffice.org file, including raw imports of external data
-        (raw_import). No file is created or modified before this method is
+        (raw_import). However, the XML members currently associated with
+	"read only" OODoc::XPath objects are not changed in the file.
+	
+	No file is created or modified before this method is
         called, with the exception of external files created by raw_export.
         Nevertheless File's save can be called automatically and silently by
         an OODoc::XPath object but only where it has been called as a

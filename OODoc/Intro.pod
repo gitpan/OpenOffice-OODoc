@@ -207,7 +207,10 @@ learn the XML path of any kind of document element (paragraph, header,
 item list, style, ...).
 
 So there is a third, more user-friendly layer, that should be the only one
-visible for most of the applications.
+visible for most of the applications. The programmer should know the
+features provided by the first layer (i.e. the XPath object) but should not
+explicitly instantiate XPath objects, knowing that all these features are
+inherited by more user-friendly objects.
 
 The third layer is designed as a set of application-oriented
 classes, inherited from OpenOffice::OODoc::XPath. In this layer, the basic
@@ -227,32 +230,28 @@ are internally used by the top level OpenOffice::OODoc::Document class. So
 one can see them as "chapters" of the functional description of the Document
 objects.
 
-The OpenOffice::OODoc::Text class brings some methods table processing
-methods (table creation, direct access to individual cells). These methods,
-(under some conditions) can be used with spreadsheets (OpenOffice.org Calc
+The OpenOffice::OODoc::Text class brings some table processing methods
+(table creation, direct access to individual cells). These methods, (under
+some conditions) can be used with spreadsheets (OpenOffice.org Calc
 documents) as well as with tables included in text documents.
 
 To illustrate the differences between the layers, with OODoc::Text (if
-you know your document is really an OpenOffice.org Writer one), you get
-the same paragraph as in the previous example with:
+you know your document is really an OpenOffice.org Writer one), the
+two following instructions are equivalent:
 
+	print $doc->getText('//text:p', 2);
 	print $doc->getParagraphText(2);	
 
 The difference looks tiny, but in fact OODoc::Text contains much more
 sophisticated text-aware methods that avoid a lot of coding and probably
-a lot of XML path errors. For example, the following code puts the content
-of an ordinary Perl list (@mydata) in an OpenOffice document as an ordinary
-numbered item list:
+a lot of errors. For example, the following code puts the content of an
+ordinary perl list (@mydata) in an OpenOffice document as an ordinary
+item list:
 
-	my $list = $doc->appendItemList
-				(
-				type	=> 'ordered',
-				style	=> 'Text body'
-				);
+	my $list = $doc->appendItemList();
 	$doc->setText($list, @mydata);
 
-The first instruction creates an empty list at the end of the document body
-(here an ordered one with a given style, but these parameters are optional).
+The first instruction creates an empty list at the end of the document body.
 The second one populates the new list with the content of an application-
 provided table. The setText method automatically modify its behaviour
 according to the functional type of its first argument (with is not the same
@@ -263,21 +262,25 @@ The same layer provides some global processing methods such as:
 	my $result = $doc->selectTextContent($filter, \&myFunction);
 
 that produces a double effect:
+
 1) it scans the whole document body and extracts the content of every text
 element matching a given filter expression (that is an exact string or a
 conventional Perl regular expression);
+
 2) it triggers automatically an application-provided function each time a
 matching content is found; the called function can execute any on-the-fly
 search/replace/delete operation on the current content and get data from
 any external database or communication channel; the return value
 of the function automatically replaces the matching string.
-So such a method can be use in sophisticated conditional fusion-
+
+So such a method can be used in sophisticated conditional fusion-
 transformation scripts.
+
 But you can use the same method to get a flat ASCII export of the whole
 document, without other processing, if you provide neither filter nor
 action:
 
-	print $doc->selectTextContent;
+	print $doc->getTextContent;
 
 Of course, OODoc can process presentation and not only content.
 Example:
@@ -498,11 +501,14 @@ OpenOffice::OODoc::Text, it's not fully dedicated to OOo-Writer documents.
 It can deal with the text content of Impress documents, as well as the
 sheets and cells of a Calc document.
 
-Our program begin with something like that:
+Our program begins with something like that:
 
 	use OpenOffice::OODoc;
+	my $doc = ooDocument(file => 'myfile.sxw');
 
-	my $doc = ooText(file => 'myfile.sxw');
+The second line produces an OpenOffice::OODoc::Document object, which
+inherits from ::Text, ::Image and ::Styles. However, in the present example,
+we'll use its ::Text features only.
 
 To give a very high level abstract, we can say that OODoc::Text provides
 2 kinds of read access methods:
@@ -604,13 +610,14 @@ For example:
 
 	my $value = $doc->getCellValue(0, 12, 0);
 
-returns the value of the 1st cell of the 13th row of the 1st table in the
-document. Note the 'cell value' is simply the text content if the cell
-type is string; but if the cell type is any numeric type, getCellValue
-returns the content of the value attribute and ignores the text. The first
-argument (the table) can be either the table number (zero-based, according
-to its sequential position in the document) or the logical table name (as
-it's get or set by the end-user with OOo Writer or Calc).
+This code example returns the value of the 1st cell of the 13th row of
+the 1st table in the document. Note the 'cell value' is simply the text
+content if the cell type is string; but if the cell type is any numeric
+type, getCellValuereturns the content of the value attribute and ignores
+the text. The first argument (the table) can be either the table number
+(zero-based, according to its sequential position in the document) or the
+logical table name (as it's get or set by the end-user with OOo Writer
+or Calc).
 
 A cell can be selected in a table using either it's numeric (row, column)
 coordinates or a "spreadsheet-like" alphanumeric notation. So, the example

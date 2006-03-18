@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 2.212 2006-02-04 JMG$
+#	$Id : XPath.pm 2.214 2006-03-18 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2006 by Genicorp, S.A. (www.genicorp.com)
@@ -12,7 +12,7 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 2.212;
+our	$VERSION	= 2.214;
 use	XML::Twig	3.22;
 use	Encode;
 
@@ -446,6 +446,9 @@ sub	save
 	my $archive	= $self->{'archive'};
 	unless ($archive)
 		{
+		my $ro = $self->{'read_only'};
+		return undef if $ro &&
+			(($ro eq '1') || ($ro eq 'on') || ($ro eq 'true'));
 		if ($filename)
 			{
 			open my $fh, ">:utf8", $filename;
@@ -863,6 +866,10 @@ sub	setText
 					($path, $pos);
 	return undef	unless $element;
 
+	unless ($text)
+		{
+		$element->set_text($text); return $text;
+		}
 	my $tabtag = $self->{'opendocument'} ? 'text:tab' : 'text:tab-stop';
 	$element->set_text("");
 	my @lines	= split "\n", $text;
@@ -1463,7 +1470,7 @@ sub	setAttributes
 		    }
 		else
 		    {
-		    $node->del_att($a) if $node->att($a);
+		    $node->del_att($k) if $node->att($k);
 		    }
 		}
 
@@ -1513,7 +1520,7 @@ sub	removeAttribute
 	my $node	= $self->getElement($path, $pos, @_);
 
 	return undef	unless $node;
-	return $node->del_att($a) if $node->att($a);
+	return $node->del_att($name) if $node->att($name);
 	}
 
 #------------------------------------------------------------------------------
@@ -1589,7 +1596,7 @@ sub	createElement
 		return undef;
 		}
 
-	$self->setText($element, $text)		if ($text);
+	$self->setText($element, $text)		if defined $text;
 
 	return $element;
 	}
@@ -1958,7 +1965,8 @@ sub	setNodeValue
 sub	appendTextChild
 	{
 	my $node	= shift;
-	my $text	= shift or return undef;
+	my $text	= shift;
+	return undef unless defined $text;
 	my $text_node	= OpenOffice::OODoc::Element->new('#PCDATA' => $text);
 	return $text_node->paste(last_child => $node);
 	}

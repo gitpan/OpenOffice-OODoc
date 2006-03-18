@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : File.pm 2.112 2006-02-10 JMG$
+#	$Id : File.pm 2.113 2006-03-15 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2006 by Genicorp, S.A. (www.genicorp.com)
@@ -12,7 +12,7 @@
 
 package	OpenOffice::OODoc::File;
 use	5.006_001;
-our	$VERSION	= 2.112;
+our	$VERSION	= 2.113;
 use	Archive::Zip	1.14	qw ( :DEFAULT :CONSTANTS :ERROR_CODES );
 use	File::Temp;
 
@@ -61,14 +61,6 @@ sub	get_template_manifest
 	@_archive_members = ();
 	File::Find::find(\&_fill_manifest, $path);
 	return @_archive_members;
-	}
-
-#-----------------------------------------------------------------------------
-# error handler for low-level zipfile errors (to be customized if needed)
-
-sub	ZipError
-	{
-	warn "[" . __PACKAGE__ . "] Zip Alert\n";
 	}
 
 #-----------------------------------------------------------------------------
@@ -378,6 +370,7 @@ sub	new
 				 $OpenOffice::OODoc::File::TEMPLATE_PATH,
 		'temporary_files'	=> [],
 		'raw_members'		=> [],
+		'to_be_deleted'		=> [],
 		@_
 		};
 
@@ -418,7 +411,6 @@ sub	new
 				"File $sourcefile unavailable\n";
 			return undef;
 			}
-#		Archive::Zip::setErrorHandler ( \&ZipError );
 		$self->{'archive'} = Archive::Zip->new;
 		if ($self->{'archive'}->read($self->{'source_file'}) != AZ_OK)
 			{
@@ -530,7 +522,8 @@ sub	raw_import
 sub	raw_delete
 	{
 	my $self	= shift;
-	my $member	= shift;
+	my $member	= $self->CtrlMemberName(shift)
+		or return undef;
 
 	my $mbcount	= scalar @{$self->{'members'}};
 	for (my $i = 0 ; $i < $mbcount ; $i++)
@@ -538,6 +531,7 @@ sub	raw_delete
 		if ($self->{'members'}[$i] eq $member)
 			{
 			splice(@{$self->{'members'}}, $i, 1);
+			push @{$self->{'to_be_deleted'}}, $member;
 			return 1;
 			}
 		}
@@ -679,6 +673,9 @@ sub	save
 	my %newmembers		= ();
 	foreach my $nm (@{$self->{'linked'}})
 		{
+		my $ro = $nm->{'read_only'};
+		next if $ro &&
+			(($ro eq '1') || ($ro eq 'on') || ($ro eq 'true'));
 		$newmembers{$nm->{'member'}} = $nm->getXMLContent;
 		}
 
@@ -768,6 +765,11 @@ sub	save
 			file		=> $raw_member->{'file'},
 			compress	=> 1
 			)
+		}
+		
+	foreach my $member_to_be_deleted (@{$self->{'to_be_deleted'}})
+		{
+		$archive->removeMember($member_to_be_deleted);
 		}
 
 	$status = $archive->overwrite();

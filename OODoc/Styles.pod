@@ -23,17 +23,25 @@ OpenOffice::OODoc::Styles component of the API).
 
 Remember that named styles are those that the end user can see and
 edit using the Stylist tool in OpenOffice.org. Such styles usually
-have meaningful names and are stored in the styles.xml member.
+have meaningful names and are stored in the styles.xml member. But an
+OpenDocument-compliant style may own two names, so-called 'name' and
+'display-name'. The 'display-name' is the name as it's displayed by the
+office software, while the 'name' is the main identifier. Both are
+displayable character strings, but they often differ. So, such a method
+as getStyleElement("style name") uses the 'name' attribute to retrieve
+a style descriptor (unless you change this behaviour through the
+'retrieve_by' document property).
 
 Care should be taken particularly with predefined base styles in
 OpenOffice.org. These styles are described in styles.xml just like
 named styles, but they appear to the end user with localised names
-(in their local language). For example, in the French version of
-OpenOffice.org, the "Text body" style appears as "Corps de texte",
-but it is still shown internally as "Text body", and it is by this
-internal name that applications must refer to it. However, this is
-not a problem for user-defined styles as the internal name is
-exactly the same as the display name.
+(in their local language), so the really displayed style name is neither
+the 'name' nor the 'display-name' stored attributes. For example, in the
+French distribution of OpenOffice.org, the "Text body" style appears as
+"Corps de texte", while its "display-name" is "Text body" and its "name"
+is "Text_20_body". However, this is not a problem for user-defined styles
+as the stored display-name is exactly the same as the effective display
+name.
 
 There are also numerous "automatic" styles in a document which are
 created implicitly by the office application each time a particular
@@ -1227,6 +1235,11 @@ at least a blank of each required style.
 
 =head2	Properties
 
+	The 'retrieve_by' option, set to 'display-name', can be provided
+	in order to select the style elements by their display name instead
+	of their primary name (names and display names are introduced in the
+	beginning of this manual chapter).
+
 	The %COLORMAP hash, defined as a class variable, contains a name
 	to RGB translation table. When loaded, it allows the rgb2oo() function
 	to use symbolic names in place of RGB values.
@@ -1246,7 +1259,7 @@ at least a blank of each required style.
 
 =head1	AUTHOR/COPYRIGHT
 
-Copyright 2004-2005 by Genicorp, S.A. (http://www.genicorp.com)
+Copyright 2004-2006 by Genicorp, S.A. (http://www.genicorp.com)
 
 Initial developer: Jean-Marie Gouarne (http://jean.marie.gouarne.online.fr)
 
