@@ -1,6 +1,6 @@
-#-----------------------------------------------------------------------------
+#----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.222 2006-03-17 JMG$
+#	$Id : Text.pm 2.223 2006-05-05 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2006 by Genicorp, S.A. (www.genicorp.com)
@@ -12,9 +12,9 @@
 
 package OpenOffice::OODoc::Text;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	2.214;
+use	OpenOffice::OODoc::XPath	2.215;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.222;
+our	$VERSION	= 2.223;
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -44,7 +44,17 @@ our	%DEFAULT_DELIMITERS	=
 		begin	=>	'[',
 		end	=>	']'
 		},
+	'text:note-citation'		=>
+		{
+		begin	=>	'[',
+		end	=>	']'
+		},
 	'text:footnote-body'		=>
+		{
+		begin	=>	'{NOTE: ',
+		end	=>	'}'
+		},
+	'text:note-body'		=>
 		{
 		begin	=>	'{NOTE: ',
 		end	=>	'}'
@@ -76,9 +86,9 @@ sub	new
 	my %options	=
 		(
 		member		=> 'content',	# default XML member
-		level_attr	=> 'text:level', # level attribute for headers
+		level_attr	=> 'text:level', # heading level attribute
 		paragraph_style	=> 'Standard',	# default paragraph style
-		header_style	=> 'Heading 1',	# default header style
+		heading_style	=> 'Heading 1',	# default header style
 		use_delimiters	=> 'on',	# use text output delimiters
 		field_separator	=> ';',		# table cell separator
 		line_separator	=> "\n",	# text line break
@@ -88,6 +98,8 @@ sub	new
 			{ %OpenOffice::OODoc::Text::DEFAULT_DELIMITERS },
 		@_
 		);
+	$options{heading_style} = $options{header_style}
+		if $options{header_style};
 
 	my $object	= $class->SUPER::new(%options);
 
@@ -132,19 +144,27 @@ sub	getText
 		}
 
 	$text	= $begin_text;
-
-	if	($element->isItemList)
+	
+	if	($element->isParagraph)
+		{
+		my $t = $self->SUPER::getText($element);
+		$text .= $t if defined $t;
+		}
+	elsif	($element->isItemList)
 		{
 		return $self->getItemListText($element);
 		}
 	elsif	(
 		$element->isListItem		||
-		$element->isFootnoteBody	||
+		$element->isNoteBody		||
 		$element->isTableCell		||
-		$element->isSection
+		$element->isSection		||
+		$element->isTextBox
 		)
 		{
-		my @paragraphs = $element->children('text:p');
+		$element = $element->first_child('draw:text-box')
+			if ($element->hasTag('draw:frame'));
+		my @paragraphs = $element->selectChildElements('text:(p|h)');
 		while (@paragraphs)
 			{
 			my $p = shift @paragraphs;
@@ -152,6 +172,12 @@ sub	getText
 			$text .= $t if defined $t;
 			$text .= $line_break if @paragraphs;
 			}
+		}
+	elsif	($element->isNote)
+		{
+		my $b = $element->selectChildElement
+				('text:(|foot|end)note-body');
+		return $self->getText($b);
 		}
 	elsif	($element->isTable)
 		{
@@ -224,6 +250,30 @@ sub	setText
 		{
 		return $self->updateCell($element, @_);
 		}
+	elsif	(
+		$element->isNoteBody		||
+		$element->isTableCell		||
+		$element->isSection
+		)
+		{
+		$element->cut_children;
+		return $self->appendParagraph
+			(
+			attachment	=> $element,
+			text		=> shift,
+			@_
+			);
+		}
+	elsif	($element->isTextBox)
+		{
+		return $self->setTextBoxContent($element, shift);
+		}
+	elsif	($element->isNote)
+		{
+		my $b = $element->selectChildElement
+				('text:(|foot|end)note-body');
+		return $self->setText($b, @_);
+		}
 	else
 		{
 		return $self->SUPER::setText($element, @_);
@@ -241,7 +291,17 @@ sub	getTextContent
 	}
 
 #-----------------------------------------------------------------------------
-# selects headers, paragraph & list item elements matching a given pattern
+# get/set the text:id attribute of a given element
+
+sub	textId
+	{
+	my $self	= shift;
+	my $element	= shift		or return undef;
+	return $element->textId(@_);
+	}
+
+#-----------------------------------------------------------------------------
+# selects headings, paragraph & list item elements matching a given pattern
 # returns a list of elements
 # if $action is defined, it's treated as a reference to a callback procedure
 # to be executed for each node matching the pattern, with the node as arg.
@@ -251,8 +311,12 @@ sub	selectElementsByContent
 	my $self	= shift;
 	my $pattern	= shift;
 	
+	my $context = $self->{'context'}->isa('OpenOffice::OODoc::Element') ?
+			$self->{'context'} : $self->{'body'};
+
+	
 	my @elements	= ();
-	foreach my $element ($self->{'body'}->getChildNodes)
+	foreach my $element ($context->getChildNodes)
 		{
 		next if
 			(
@@ -287,6 +351,15 @@ sub	replaceAll		# deprecated
 	}
 
 #-----------------------------------------------------------------------------
+
+sub	selectElementByTextId
+	{
+	my $self	= shift;
+	my $id		= shift		or return undef;
+	return $self->getNodeByXPath("//*[\@text:id=\"$id\"]");
+	}
+
+#-----------------------------------------------------------------------------
 # select the 1st element matching a given pattern
 
 sub	selectElementByContent
@@ -294,7 +367,10 @@ sub	selectElementByContent
 	my $self	= shift;
 	my $pattern	= shift;
 	
-	foreach my $element ($self->{'body'}->getChildNodes)
+	my $context = $self->{'context'}->isa('OpenOffice::OODoc::Element') ?
+			$self->{'context'} : $self->{'body'};
+	
+	foreach my $element ($context->getChildNodes)
 		{
 		next if
 			(
@@ -327,7 +403,11 @@ sub	selectTextContent
 
 	my $line_break	= $self->{'line_separator'} || '';
 	my @lines	= ();
-	foreach my $element ($self->{'body'}->getChildNodes)
+	
+	my $context = $self->{'context'}->isa('OpenOffice::OODoc::Element') ?
+			$self->{'context'} : $self->{'body'};
+
+	foreach my $element ($context->getChildNodes)
 		{
 		next if
 			(
@@ -361,9 +441,13 @@ sub	findTextContent
 sub	getTextElementList
 	{
 	my $self	= shift;
+	
+	my $context = $self->{'context'}->isa('OpenOffice::OODoc::Element') ?
+			$self->{'context'} : $self->{'body'};
+
 	return $self->selectChildElementsByName
 			(
-			$self->{'body'},
+			$context,
 			't(ext:(h|p|.*list|table.*)|able:.*)',
 			@_
 			);
@@ -375,8 +459,7 @@ sub	getTextElementList
 sub	getParagraphList
 	{
 	my $self	= shift;
-
-	return $self->getElementList('//text:p', @_);
+	return $self->getDescendants('text:p', @_)
 	}
 
 #-----------------------------------------------------------------------------
@@ -390,9 +473,9 @@ sub	getParagraphTextList
 	}
 
 #-----------------------------------------------------------------------------
-# get the list of header elements
+# get the list of heading elements
 
-sub	getHeaderList
+sub	getHeadingList
 	{
 	my $self	= shift;
 	my %opt		= @_;
@@ -400,7 +483,7 @@ sub	getHeaderList
 	
 	unless ($opt{'level'})
 		{
-		$path	= 	'//text:h';
+		return $self->getDescendants('text:h', $opt{'context'});
 		}
 	else
 		{
@@ -410,13 +493,19 @@ sub	getHeaderList
 	return $self->getElementList($path, $opt{'context'});
 	}
 
-#-----------------------------------------------------------------------------
-# get the headers as a list of strings
-
-sub	getHeaderTextList
+sub	getHeaderList
 	{
 	my $self	= shift;
-	my @nodes	= $self->getHeaderList(@_);
+	return $self->getHeadingList(@_);
+	}
+	
+#-----------------------------------------------------------------------------
+# get the headings as a list of strings
+
+sub	getHeadingTextList
+	{
+	my $self	= shift;
+	my @nodes	= $self->getHeadingList(@_);
 	if (wantarray)
 		{
 		my @list = ();
@@ -439,6 +528,12 @@ sub	getHeaderTextList
 		}
 	}
 
+sub	getHeaderTextList
+	{
+	my $self	= shift;
+	return $self->getHeadingTextList(@_);
+	}
+
 #-----------------------------------------------------------------------------
 # get the list of span elements (i.e. text elements distinguished from their
 # containing paragraph by any kind of attribute such as font, color, etc)
@@ -446,8 +541,7 @@ sub	getHeaderTextList
 sub	getSpanList
 	{
 	my $self	= shift;
-
-	return $self->getElementList('//text:span', @_);
+	return $self->getDescendants('text:span', @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -629,7 +723,7 @@ sub	extendText
 	if (ref $text)
 		{
 		my $tagname = $text->getName;
-		if (($tagname eq 'text:p') || ($tagname eq 'text:h'))
+		if ($tagname =~ /^text:(p|h)$/)
 			{ 
 			$text = $self->getText($text);
 			}
@@ -641,7 +735,7 @@ sub	extendText
 					unless ref $text;
 		$self->textStyle($text, $style);
 		}
-	return $self->SUPER::extendText($element, $text);
+	return $self->SUPER::extendText($element, $text, @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -717,7 +811,7 @@ sub	removeSpan
 			{
 			$last_text_node	= $n;
 			}
-		elsif	($n->isElementNode && $n->hasTagName($tagname))
+		elsif	($n->isElementNode && $n->hasTag($tagname))
 			{
 			my $t = $n->string_value;
 			if ($last_text_node)
@@ -748,14 +842,14 @@ sub	removeHyperlink
 #-----------------------------------------------------------------------------
 # get all the bibliographic entries
 
-sub	getBibliographyElements
+sub	getBibliographyMarks
 	{
 	my $self	= shift;
 	my $id		= shift;
 
 	unless ($id)
 		{
-		return $self->getElementList('//text:bibliography-mark', @_);
+		return $self->getDescendants('text:bibliography-mark');
 		}
 	else
 		{
@@ -765,6 +859,12 @@ sub	getBibliographyElements
 			$id, @_
 			);
 		}
+	}
+	
+sub	getBibliographyElements
+	{
+	my $self	= shift;
+	return $self->getBibliographyMarks(@_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -810,6 +910,35 @@ sub	bibliographyEntryContent
 	return %desc;
 	}
 
+sub	bibliographyElementContent
+	{
+	my $self	= shift;
+	return $self->bibliographyEntryContent(@_);
+	}
+	
+#-----------------------------------------------------------------------------
+# inserts a new bibliography entry within a text element
+
+sub	setBibliographyMark
+	{
+	my $self	= shift;
+	my $path	= shift;
+	my $pos		= ref $path ? undef : shift;
+	my $element	= $self->getElement($path, $pos);
+	my $offset	= shift;
+	my %opt		= @_;
+	my $bib	= $self->createElement('text:bibliography-mark');
+	$bib->paste_within($element, $offset);
+	$self->bibliographyEntryContent($bib, @_);
+	return $bib;
+	}
+	
+sub	setBibliographyElement
+	{
+	my $self	= shift;
+	return $self->setBibliographyMark(@_);
+	}
+
 #-----------------------------------------------------------------------------
 # get a bookmark
 
@@ -841,7 +970,7 @@ sub	selectElementByBookmark
 #-----------------------------------------------------------------------------
 # set a bookmark at the beginning of an element
 
-sub	bookmarkElement
+sub	setBookmark
 	{
 	my $self	= shift;
 	my $path	= shift;
@@ -851,7 +980,7 @@ sub	bookmarkElement
 	my $offset	= shift || 0;
 	unless ($name)
 		{
-		warn	"[" . __PACKAGE__ . "::bookmarkElement] "	.
+		warn	"[" . __PACKAGE__ . "::setBookmark] "	.
 			"Missing bookmark name\n";
 		return undef;
 		}
@@ -859,6 +988,12 @@ sub	bookmarkElement
 						('text:bookmark', @_);
 	$self->setAttribute($bookmark, 'text:name', $name);
 	return $bookmark->paste_within($element, $offset);
+	}
+	
+sub	bookmarkElement
+	{
+	my $self	= shift;
+	return $self->setBookmark(@_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -883,7 +1018,11 @@ sub	removeBookmark
 sub	getFootnoteList
 	{
 	my $self	= shift;
-	return $self->getElementList('//text:footnote-body', @_);
+	
+	my $xpath = $self->{'opendocument'}	?
+	    '//text:note[@text:note-class="footnote"]/text:note-body' :
+	    '//text:footnote-body';
+	return $self->getElementList($xpath, @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -892,7 +1031,167 @@ sub	getFootnoteList
 sub	getFootnoteCitationList
 	{
 	my $self	= shift;
-	return $self->getElementList('//text:footnote-citation', @_);
+	
+	my $xpath = $self->{'opendocument'}	?
+	    '//text:note[@text:note-class="footnote"]/text:note-citation' :
+	    '//text:footnote-citation';
+	return $self->getElementList($xpath, @_);
+	}
+
+#-----------------------------------------------------------------------------
+# get the endnote bodies in the document
+
+sub	getEndnoteList
+	{
+	my $self	= shift;
+	
+	my $xpath = $self->{'opendocument'}	?
+	    '//text:note[@text:note-class="endnote"]/text:note-body' :
+	    '//text:endnote-body';
+	return $self->getElementList($xpath, @_);
+	}
+
+#-----------------------------------------------------------------------------
+# get the endnote citations in the document
+
+sub	getEndnoteCitationList
+	{
+	my $self	= shift;
+	
+	my $xpath = $self->{'opendocument'}	?
+	    '//text:note[@text:note-class="endnote"]/text:note-citation' :
+	    '//text:endnote-citation';
+	return $self->getElementList($xpath, @_);
+	}
+
+#-----------------------------------------------------------------------------
+# get the note citations in the document (ODF only)
+
+sub	getNoteCitationList
+	{
+	my $self	= shift;
+	return $self->getDescendants('text:note-citation', @_);
+	}
+
+#-----------------------------------------------------------------------------
+
+sub	getNoteElementList
+	{
+	my $self	= shift;
+	my $class	= shift;
+	
+	unless ($class)
+		{
+		if ($self->{'opendocument'})
+			{
+			return $self->getElementList('//text:note');
+			}
+		else
+			{
+			return	(
+				$self->getElementList('//text:footnote'),
+				$self->getElementList('//text:endnote')
+				);
+			}
+		}
+	elsif (($class eq 'footnote') or ($class eq 'endnote'))
+		{
+		if ($self->{'opendocument'})
+			{
+			return $self->getElementList
+			    ("//text:note\[\@text:note-class=\"$class\"\]");
+			}
+		else
+			{
+			return $self->getElementList("//text:$class");
+			}
+		}
+	else
+		{
+		warn	"[" . __PACKAGE__ . "::getNoteElementList] " .
+			"Unknown note class $class\n";
+		return undef;
+		}
+	}
+	
+#-----------------------------------------------------------------------------
+# retrieve a note element using its identifier (ODF only)
+
+sub	getNoteElement
+	{
+	my $self	= shift;
+	my $p1		= shift;
+	if (ref $p1)
+		{
+		return $p1->isNote ? $p1 : undef;
+		}
+	else
+		{
+		unshift @_, $p1;
+		}
+	my %opt		= @_;
+
+	my $xpath	= undef;
+	my $id		= $opt{id};
+	my $class	= $opt{class};
+	my $citation	= $opt{citation};
+	
+	if ($id)
+		{
+		unless ($self->{'opendocument'})
+			{
+			return	$self->getElement
+				    ("//text:$class\[\@text:id=\"$id\"\]")
+				    if $class;
+			return 	$self->getElement
+				    ("//text:footnote\[\@text:id=\"$id\"\]")
+					||
+				$self->getElement
+				    ("//text:endnote\[\@text:id=\"$id\"\]");
+			}
+		else
+			{
+			my $xpath = $class ?
+			    "//text:note\[\@text:note-class=\"$class\"" .
+			    " and \@text:id=\"$id\"\]"			:
+			    "//text:note\[\@text:id=\"$id\"\]";
+			return $self->getElement($xpath);
+			}
+		}
+	elsif ($class && defined $citation)
+		{
+		my @list = $self->getNoteElementList($class);
+		my $tagname = $self->{'opendocument'} ?
+			"text:note-citation" : "text:$class-citation";
+		foreach my $elt (@list)
+			{
+			next unless $elt;
+			my $text = $self->getFlatText
+					($elt->first_child($tagname));
+			return $elt if $text eq $citation;
+			}
+		return undef;
+		}
+	else
+		{
+		warn	"[" . __PACKAGE__ . "::getNoteElement] " .
+			"Requires (Id) OR (class AND citation)\n";
+		return undef;
+		}
+	}
+	
+#-----------------------------------------------------------------------------
+
+sub	getNoteClass
+	{
+	my $self	= shift;
+	my $element	= shift	or return undef;
+	unless (ref $element)
+		{
+		unshift @_, $element;
+		$element = $self->getNoteElement(@_) or return undef;
+		}
+	return $element->getNoteClass;
 	}
 
 #-----------------------------------------------------------------------------
@@ -905,18 +1204,18 @@ sub	getTableList
 	}
 
 #-----------------------------------------------------------------------------
-# get a header element selected by number
+# get a heading element selected by number
 
-sub	getHeader
+sub	getHeading
 	{
 	my $self	= shift;
 	my $pos		= shift;
 	my %opt		= (@_);
-	my $header	= undef;
+	my $heading	= undef;
 
 	unless ($opt{'level'})
 		{
-		$header = $self->getElement
+		$heading = $self->getElement
 				('//text:h', $pos, $opt{'context'});
 		}
 	else
@@ -924,30 +1223,48 @@ sub	getHeader
 		my $path	=	'//text:h[@'		.
 					$self->{'level_attr'}	.
 					'="' . $opt{'level'} . '"]';	       	
-		$header = $self->getElement
+		$heading = $self->getElement
 			($path, $pos, $opt{'context'});
 		}
-	return undef unless $header;
+	return undef unless $heading;
 	}
 
+sub	getHeader
+	{
+	my $self	= shift;
+	return $self->getHeading(@_);
+	}
+	
 #-----------------------------------------------------------------------------
-# get the text of a header element
+# get the text of a heading element
+
+sub	getHeadingContent
+	{
+	my $self	= shift;
+	return $self->getText('//text:h', @_);
+	}
 
 sub	getHeaderContent
 	{
 	my $self	= shift;
-	return $self->getText('//text:h', @_);
+	return $self->getHeadingContent(@_);
 	}
-
-sub	getHeaderText
+	
+sub	getHeadingText
 	{
 	my $self	= shift;
 	return $self->getText('//text:h', @_);
 	}
+	
+sub	getHeaderText
+	{
+	my $self	= shift;
+	return $self->getHeadingText(@_);
+	}
 
 #-----------------------------------------------------------------------------
 # get the level attribute (if defined) of an element
-# the level must be defined for header elements
+# the level must be defined for heading elements
 
 sub	getLevel
 	{
@@ -957,6 +1274,12 @@ sub	getLevel
 
 	my $element	= $self->getElement($path, $pos, @_);
 	return $element->getAttribute($self->{'level_attr'}) || "";
+	}
+	
+sub	getOutlineLevel
+	{
+	my $self	= shift;
+	return $self->getLevel(@_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -1001,9 +1324,9 @@ sub	getSection
 sub	getSectionList
 	{
 	my $self	= shift;
-	return $self->getElementList('//text:section', @_);
+	return $self->getDescendants('text:section', @_);
 	}
-	
+
 sub	getSections
 	{
 	my $self	= shift;
@@ -1224,18 +1547,18 @@ sub	insertSubdocument
 	}
 
 #-----------------------------------------------------------------------------
-# get the content depending on a giveh header element
+# get the content depending on a given heading element
 
 sub	getChapter
 	{
 	my $self	= shift;
 	my $h		= shift || 0;
-	my $header	= ref $h ? $h : $self->getHeader($h, @_);
-	return undef unless $header;
+	my $heading	= ref $h ? $h : $self->getHeading($h, @_);
+	return undef unless $heading;
 	my @list	= ();
-	my $level	= $self->getLevel($header) or return @list;
+	my $level	= $self->getLevel($heading) or return @list;
 
-	my $next_element	= $header->next_sibling;
+	my $next_element	= $heading->next_sibling;
 	while ($next_element)
 		{
 		my $l = $self->getLevel($next_element);
@@ -1338,6 +1661,14 @@ sub	getDrawPage
 		}
 	}
 
+#-----------------------------------------------------------------------------
+
+sub	getDrawPages
+	{
+	my $self	= shift;
+	return $self->getDescendants('draw:page', @_);
+	}
+	
 #-----------------------------------------------------------------------------
 # create a draw page (to be inserted later)
 
@@ -1447,6 +1778,202 @@ sub	drawMasterPage
 	}
 
 #-----------------------------------------------------------------------------
+
+sub	createTextBoxElement
+	{
+	my $self	= shift;
+	my %opt		= @_;
+	my $frame	= undef;
+	my $text_box	= undef;
+	if ($self->{'opendocument'})
+		{
+		$frame = $self->createFrame(tag => 'draw:frame', %opt);
+		$text_box = $self->appendElement($frame, 'draw:text-box'); 
+		}
+	else
+		{
+		$text_box = $self->createFrame(tag => 'draw:text-box', %opt);
+		$frame = $text_box;
+		}
+	if ($opt{'content'})
+		{
+		if (ref $opt{'content'})
+			{
+			$opt{'content'}->paste_last_child($text_box);
+			}
+		else
+			{
+			$self->appendParagraph
+				(
+				attachment	=> $text_box,
+				text		=> $opt{'content'}
+				);
+			}
+		}
+	return wantarray ? ($frame, $text_box) : $text_box;
+	}
+	
+sub	createTextBox
+	{
+	my $self	= shift;
+	return $self->createTextBoxElement(@_);
+	}
+	
+#-----------------------------------------------------------------------------
+
+sub	getTextBoxElement
+	{
+	my $self	= shift;
+	my $tb		= shift;
+	return undef unless defined $tb;
+	
+	if (ref $tb)
+		{
+		my $name = $tb->getName;
+		if ($name eq 'draw:frame')
+			{
+			return $tb->first_child('draw:text-box') ?
+					$tb : undef;
+			}
+		elsif ($name eq 'draw:text-box')
+			{
+			return $tb unless $self->{'opendocument'};
+			my $frame = $tb->parent;
+			return $frame->isFrame ? $frame : undef;
+			}
+		else
+			{
+			return undef;
+			}
+		}
+	else
+		{
+		if ($tb =~ /^[\-0-9]*$/)
+			{
+			my $e = $self->getElement('//draw:text-box', $tb, @_);
+			return $self->{'opendocument'} ?
+				$e->parent() : $e;
+			}
+		else
+			{
+			return $self->selectTextBoxElementByName($tb, @_);
+			}
+		}
+	}
+	
+sub	getTextBox
+	{
+	my $self	= shift;
+	return $self->getTextBoxElement(@_);
+	}
+	
+#-----------------------------------------------------------------------------
+
+sub	setTextBoxContent
+	{
+	my $self	= shift;
+	my $frame = $self->getTextBoxElement(shift) or return undef;
+	
+	if ($frame->isFrame)
+		{		
+		$frame = $frame->first_child('draw:text-box')
+			or return undef;
+		}
+		
+	$frame->cut_children;
+	my $content	= shift;
+	if (ref $content)
+		{
+		$content->paste_last_child($frame);
+		return $content;
+		}
+	else
+		{
+		return $self->appendParagraph
+			(
+			attachment	=> $frame,
+			text		=> $content
+			);
+		}
+	}
+	
+#-----------------------------------------------------------------------------
+# text box attributes accessors
+
+sub	textBoxCoordinates
+	{
+	my $self	= shift;
+	my $tb		= $self->getTextBoxElement(shift) or return undef;
+	my $coord	= shift;
+	return (defined $coord) ?
+		$self->setObjectCoordinates($tb, $coord)	:
+		$self->getObjectCoordinates($tb);
+	}
+	
+sub	textBoxSize
+	{
+	my $self	= shift;
+	my $tb		= $self->getTextBoxElement(shift) or return undef;
+	my $size	= shift;
+	return (defined $size) ?
+		$self->setObjectSize($tb, $size)	:
+		$self->getObjectSize($tb);
+	}
+	
+sub	textBoxDescription
+	{
+	my $self	= shift;
+	my $tb		= $self->getTextBoxElement(shift) or return undef;
+	my $description	= shift;
+	return (defined $description) ?
+		$self->setObjectDescription($tb, $description)	:
+		$self->getObjectDescription($tb);
+	}
+	
+sub	textBoxName
+	{
+	my $self	= shift;
+	my $tb		= $self->getTextBoxElement(shift) or return undef;
+	return $self->objectName($tb, shift);
+	}
+	
+#-----------------------------------------------------------------------------
+
+sub	selectTextBoxElementByName
+	{
+	my $self	= shift;
+	my $tag = $self->{'opendocument'} ? 'draw:frame' : 'draw:text-box';
+	my $frame = $self->getFrameElement(shift, $tag);
+	if ($self->{'opendocument'})
+		{
+		return undef unless ($frame->first_child('draw:text-box'));
+		}
+	return $frame;
+	}
+	
+#-----------------------------------------------------------------------------
+
+sub	getTextElements
+	{
+	my $self	= shift;
+	my $context	= shift;
+	my @tblist = $self->getDescendants('draw:text-box', $context);
+	return @tblist unless $self->{'opendocumpent'};
+	my @frlist = ();
+	foreach my $tb (@tblist)
+		{
+		push @frlist, $tb->parent;
+		}
+	return @frlist;
+	}
+	
+sub	getTextBoxElementList
+	{
+	my $self	= shift;
+	return $self->getTextBoxElementList(@_);
+	}
+
+#-----------------------------------------------------------------------------
 # get list element
 
 sub	getList
@@ -1549,6 +2076,15 @@ sub	getItemElementList
 	}
 
 #-----------------------------------------------------------------------------
+
+sub	getListItem
+	{
+	my $self	= shift;
+	my $list	= $self->getItemList(shift) or return undef;
+	return $list->child(shift, 'text:list-item');
+	}
+
+#-----------------------------------------------------------------------------
 # get item element text
 
 sub	getItemText
@@ -1557,9 +2093,8 @@ sub	getItemText
 	my $item	= shift;
 
 	return	undef	unless $item;
-	my $para	=
-		$self->selectChildElementByName($item, 'text:p');
-	return	$self->getText($para);
+	my $para = $item->selectChildElement('text:(p|h)');
+	return $para ? $self->getText($para) : undef;
 	}
 
 #-----------------------------------------------------------------------------
@@ -1571,10 +2106,11 @@ sub	setItemText
 	my $item	= shift;
 	return	undef	unless $item;
 	my $text	= shift;
-	$text	= ''	unless (defined $text);
+	return undef unless (defined $text);
 
-	my $para	=
-		$self->selectChildElementByName($item, 'text:p');
+	my $para =	$item->selectChildElement('text:(p|h)')
+				||
+			$self->appendElement($item, 'text:p');
 	return	$self->setText($para, $text);
 	}
 
@@ -1587,8 +2123,7 @@ sub	getItemStyle
 	my $item	= shift;
 	return	undef	unless $item;
 
-	my $para	=
-		$self->selectChildElementByName($item, 'text:p');
+	my $para	= $item->selectChildElement('text:(p|h)');
 	return	$self->textStyle($para);
 	}
 
@@ -1602,52 +2137,65 @@ sub	setItemStyle
 	return	undef	unless $item;
 	my $style	= shift;
 
-	my $para	=
-		$self->selectChildElementByName($item, 'text:p');
+	my $para	= $item->selectChildElement('text:(p|h)');
 	return	$self->textStyle($para, $style);
 	}
 
 #-----------------------------------------------------------------------------
 # append a new item in a list
 
-sub	appendItem
+sub	appendListItem
 	{
 	my $self	= shift;
 	my $list	= shift;
 	return	undef	unless $list;
-	my %opt		= @_;
+	my %opt		=
+			(
+			type	=> 'text:p',
+			@_
+			);
 	
-	my $text	= $opt{'text'};
+	my $type	= $opt{'type'};
+		
+	my $item	= $self->appendElement($list, 'text:list-item');
+	return $item unless $type;
+	
+	my $text	= $opt{'text'};	
 	my $style	= $opt{'style'};
 	$style	= $opt{'attribute'}{'text:style-name'}	unless $style;
 	
 	unless ($style)
 		{
-		my $first_item	=
-			$self->selectChildElementByName
-				($list, 'text:list-item');
+		my $first_item	= $list->selectChildElement('text:list-item');
 		if ($first_item)
 			{
-			my $p	=
-				$self->selectChildElementByName
-					($first_item, 'text:p');
+			my $p	= $first_item->selectChildElement
+					('text:(p|h)');
 			$style	= $self->textStyle($p)	if ($p);
 			}
 		}
 
-	$style	= $self->{'paragraph_style'}	unless $style;
-	my $item	= $self->appendElement($list, 'text:list-item');
+	if	($type eq 'paragraph')	{ $type = 'text:p'; }
+	elsif	($type eq 'heading')	{ $type = 'text:h'; }
+
 	my $para	= $self->appendElement
 					(
-					$item, 'text:p',
+					$item, $type,
 					text => $text
 					);
+	$style	= $self->{'paragraph_style'}	unless $style;
 	$opt{'attribute'}{'text:style-name'} = $style;
 	$self->setAttributes($para, %{$opt{'attribute'}});
 
 	return $item;
 	}
 
+sub	appendItem
+	{
+	my $self	= shift;
+	return $self->appendListItem(@_);
+	}
+	
 #-----------------------------------------------------------------------------
 # append a new item list
 
@@ -1659,6 +2207,8 @@ sub	appendItemList
 	$opt{'attribute'}{'text:style-name'} = $opt{'style'} if $opt{'style'};
 	$opt{'attribute'}{'text:style-name'} = $self->{'paragraph_style'}
 		unless $opt{'attribute'}{'text:style-name'};
+	$opt{'attribute'}{'text:continue-numbering'} =
+		$opt{'continue-numbering'} if $opt{'continue-numbering'};
 
 	if ($self->{'opendocument'})
 		{
@@ -1670,7 +2220,8 @@ sub	appendItemList
 			{ $name = 'text:ordered-list' ; }
 		}
 
-	return $self->appendElement($self->{'body'}, $name, %opt);
+	my $attachment = $opt{'attachment'} || $self->{'body'};
+	return $self->appendElement($attachment, $name, %opt);
 	}
 
 #-----------------------------------------------------------------------------
@@ -1688,6 +2239,8 @@ sub	insertItemList
 	$opt{'attribute'}{'text:style-name'} = $opt{'style'} if $opt{'style'};
 	$opt{'attribute'}{'text:style-name'} = $self->{'paragraph_style'}
 		unless $opt{'attribute'}{'text:style-name'};
+	$opt{'attribute'}{'text:continue-numbering'} =
+		$opt{'continue-numbering'} if $opt{'continue-numbering'};
 
 	if ($self->{'opendocument'})
 		{
@@ -2009,7 +2562,7 @@ sub	getTableHeaderRow
 		{
 		if ($p1->isTableRow)
 		    {
-		    if ($p1->parent->hasTagName('table:table-header-rows'))
+		    if ($p1->parent->hasTag('table:table-header-rows'))
 		    	{ return $p1;	}
 		    else
 		    	{ return undef;	}
@@ -3306,6 +3859,20 @@ sub	createParagraph
 	}
 
 #-----------------------------------------------------------------------------
+# inserts a flat text string within a given text element
+
+sub	insertString
+	{
+	my $self	= shift;
+	my $path	= shift;
+	my $pos		= ref $path ? undef : shift;
+	my $element	= $self->getElement($path, $pos) or return undef;
+	my $text	= shift;
+	my $offset	= shift;
+	return $element->insertTextChild($text, $offset);
+	}	
+
+#-----------------------------------------------------------------------------
 # add a new or existing text at the end of the document
 
 sub	appendText
@@ -3367,14 +3934,14 @@ sub	appendParagraph
 	}
 
 #-----------------------------------------------------------------------------
-# add a new header at the end of the document
+# add a new heading at the end of the document
 
-sub	appendHeader
+sub	appendHeading
 	{
 	my $self	= shift;
 	my %opt		=
 			(
-			style	=> $self->{'header_style'},
+			style	=> $self->{'heading_style'},
 			level	=> '1',
 			@_
 			);
@@ -3384,6 +3951,12 @@ sub	appendHeader
 	return $self->appendText('text:h',%opt);
 	}
 
+sub	appendHeader
+	{
+	my $self	= shift;
+	return $self->appendHeading(@_);
+	}
+	
 #-----------------------------------------------------------------------------
 # insert a new paragraph at a given position
 
@@ -3404,16 +3977,16 @@ sub	insertParagraph
 	}
 
 #-----------------------------------------------------------------------------
-# insert a new header at a given position
+# insert a new heading at a given position
 
-sub	insertHeader
+sub	insertHeading
 	{
 	my $self	= shift;
 	my $path	= shift;
 	my $pos		= (ref $path) ? undef : shift;
 	my %opt		=
 			(
-			style	=> $self->{'header_style'},
+			style	=> $self->{'heading_style'},
 			level	=> '1',
 			@_
 			);
@@ -3423,6 +3996,12 @@ sub	insertHeader
 	return (ref $path) ?
 		$self->insertText($path, 'text:h', %opt)		:
 		$self->insertText($path, $pos, 'text:h', %opt);
+	}
+
+sub	insertHeader
+	{
+	my $self	= shift;
+	return $self->insertHeading(@_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -3437,14 +4016,20 @@ sub	removeParagraph
 	}
 
 #-----------------------------------------------------------------------------
-# remove the header element at a given position
+# remove the heading element at a given position
 
-sub	removeHeader
+sub	removeHeading
 	{
 	my $self	= shift;
 	my $pos		= shift;
 	return $self->removeElement($pos)	if (ref $pos);
 	return $self->removeElement('//text:h', $pos);
+	}
+	
+sub	removeHeader
+	{
+	my $self	= shift;
+	return $self->removeHeading(@_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -3509,13 +4094,13 @@ package	OpenOffice::OODoc::Element;
 sub	isOrderedList
 	{
 	my $element	= shift;
-	return $element->hasTagName('text:ordered-list');
+	return $element->hasTag('text:ordered-list');
 	}
 
 sub	isUnorderedList
 	{
 	my $element	= shift;
-	return $element->hasTagName('text:unordered-list');
+	return $element->hasTag('text:unordered-list');
 	}
 
 sub	isItemList
@@ -3528,22 +4113,34 @@ sub	isItemList
 sub	isListItem
 	{
 	my $element	= shift;
-	return $element->hasTagName('text:list-item');
+	return $element->hasTag('text:list-item');
 	}
 
 sub	isParagraph
 	{
 	my $element	= shift;
-	return $element->hasTagName('text:p');
+	return $element->hasTag('text:p');
 	}
 
-sub	isHeader
+sub	isHeader	# DEPRECATED
 	{
 	my $element	= shift;
-	return $element->hasTagName('text:h');
+	return $element->hasTag('text:h');
+	}
+	
+sub	isHeading
+	{
+	my $element	= shift;
+	return $element->hasTag('text:h');
 	}
 
-sub	headerLevel
+sub	headerLevel	# DEPRECATED
+	{
+	my $element	= shift;
+	return $element->getAttribute($self->{'level_attr'});
+	}
+
+sub	headingLevel
 	{
 	my $element	= shift;
 	return $element->getAttribute($self->{'level_attr'});
@@ -3552,25 +4149,25 @@ sub	headerLevel
 sub	isTable
 	{
 	my $element	= shift;
-	return $element->hasTagName('table:table');
+	return $element->hasTag('table:table');
 	}
 
 sub	isTableRow
 	{
 	my $element	= shift;
-	return $element->hasTagName('table:table-row');
+	return $element->hasTag('table:table-row');
 	}
 
 sub	isTableColumn
 	{
 	my $element	= shift;
-	return $element->hasTagName('table:table-column');
+	return $element->hasTag('table:table-column');
 	}
 
 sub	isTableCell
 	{
 	my $element	= shift;
-	return $element->hasTagName('table:table-cell');
+	return $element->hasTag('table:table-cell');
 	}
 
 sub	isCovered
@@ -3583,50 +4180,159 @@ sub	isCovered
 sub	isSpan
 	{
 	my $element	= shift;
-	return $element->hasTagName('text:span');
+	return $element->hasTag('text:span');
 	}
 
 sub	isHyperlink
 	{
 	my $element	= shift;
-	return $element->hasTagName('text:a');
+	return $element->hasTag('text:a');
+	}
+	
+sub	checkNoteClass
+	{
+	my ($element, $class)	= @_;
+	my $name	= $element->getName;
+	return 1 if $name eq "text:$class";
+	return undef unless $name eq 'text:note';
+	my $elt_class = $element->att('text:note-class');
+	return ($elt_class && ($elt_class eq $class)); 
 	}
 
+sub	getNoteClass
+	{
+	my $element	= shift;
+	return undef unless $element->isNote;
+	my $class = $element->att('text:note-class');
+	return $class if $class;
+	my $tagname = $element->getName;
+	$tagname =~ /^text:(endnote|footnote)$/;
+	return $1;
+	}
+	
+sub	isEndnote
+	{
+	my $element	= shift;
+	return $element->checkNoteClass('endnote');
+	}
+	
+sub	isFootnote
+	{
+	my $element	= shift;
+	return $element->checkNoteClass('footnote');
+	}
+	
+sub	checkNoteBodyClass
+	{
+	my ($element, $class) = @_;
+	my $name	= $element->getName;
+	return	($name eq "text:$class-body")	?
+		1 : $element->parent->checkNoteClass($class);
+	}
+
+sub	checkNoteCitationClass
+	{
+	my ($element, $class) = @_;
+	my $name = $element->getName;
+	return	($name eq "text:$class-citation")	?
+		1 : $element->parent->checkNoteClass($class);
+	}
+	
 sub	isFootnoteCitation
 	{
 	my $element	= shift;
-	return $element->hasTagName('text:footnote-citation');
+	return $element->checkNoteCitationClass('footnote');
 	}
 
+sub	isEndnoteCitation
+	{
+	my $element	= shift;
+	return $element->checkNoteCitationClass('endnote');
+	}
+	
+sub	isEndnoteBody
+	{
+	my $element	= shift;
+	return $element->checkNoteBodyClass('endnote');
+	}
+	
 sub	isFootnoteBody
 	{
 	my $element	= shift;
-	return $element->hasTagName('text:footnote-body');
+	return $element->checkNoteBodyClass('footnote');
 	}
 
+sub	isNoteBody
+	{
+	my $element	= shift;
+	my $tag		= $element->name;
+	return $tag =~ /^text:(|foot|end)note-body$/;
+	}
+	
+sub	isNoteCitation
+	{
+	my $element	= shift;
+	my $tag		= $element->name;
+	return $tag =~ /^text:(|foot|end)note-citation$/;
+	}
+	
+sub	isNote
+	{
+	my $element	= shift;
+	my $tag		= $element->name;
+	return $tag =~ /^text:(|foot|end)note$/;
+	}
+	
 sub	isSequenceDeclarations
 	{
 	my $element	= shift;
-	return $element->hasTagName('text:sequence-decls');
+	return $element->hasTag('text:sequence-decls');
 	}
 
 sub	isBibliographyMark
 	{
 	my $element	= shift;
-	return $element->hasTagName('text:bibliography-mark');
+	return $element->hasTag('text:bibliography-mark');
 	}
 
 sub	isDrawPage
 	{
 	my $element	= shift;
-	return $element->hasTagName('draw:page');
+	return $element->hasTag('draw:page');
 	}
 
 sub	isSection
 	{
 	my $element	= shift;
-	return $element->hasTagName('text:section');
+	return $element->hasTag('text:section');
 	}
-	
+
+sub	isTextBox
+	{
+	my $element	= shift;
+	my $name	= $element->getName	or return undef;
+	if ($name eq 'draw:frame')
+		{
+		my $child = $element->first_child('draw:text-box');
+		return $child ? 1 : undef;
+		}
+	else
+		{
+		return ($name eq 'draw:text-box') ? 1 : undef;
+		}
+	}
+
+sub	textId
+	{
+	my $element	= shift;
+	my $id		= shift;
+	my $id_attr	= 'text:id';
+	if (defined $id)
+		{
+		$element->set_att($id_attr => $id);
+		}
+	return $element->att($id_attr);
+	}
+			
 #-----------------------------------------------------------------------------
 1;

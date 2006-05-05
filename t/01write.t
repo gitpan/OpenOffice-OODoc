@@ -5,8 +5,8 @@
 use Test;
 BEGIN	{ plan tests => 20 }
 
-use OpenOffice::OODoc	2.024;
-ok($OpenOffice::OODoc::VERSION >= 2.024);
+use OpenOffice::OODoc	2.025;
+ok($OpenOffice::OODoc::VERSION >= 2.025);
 
 #-----------------------------------------------------------------------------
 
@@ -47,7 +47,7 @@ my $doc	= ooDocument
 		(
 		archive		=> $archive,
 		member		=> 'content',
-		readable_XML	=> 'on'
+		readable_XML	=> 'true'
 		)
 	or die "# Unable to find a regular OpenOffice.org content\n";
 ok($doc); # Document open and parsed
@@ -56,7 +56,7 @@ my $styles = ooDocument
 		(
 		archive		=> $archive,
 		member		=> 'styles',
-		readable_XML	=> 'on'
+		readable_XML	=> 'true'
 		)
 	or die "# Unable to get the styles\n";
 ok($styles); # Styles open and parsed
@@ -82,7 +82,7 @@ ok	(
 	);
 # Appending a level 1 header
 ok	(
-	$doc->appendHeader( text => "Congratulations !", level => "1" )
+	$doc->appendHeading( text => "Congratulations !", level => "1" )
 	);
 # Creating a coloured paragraph style (blue foreground, yellow background)
 ok	(
@@ -116,7 +116,7 @@ ok	(
 	);
 # Appending another level 1 header
 ok	(
-	$doc->appendHeader( text => "Your environment :", level => "1" )
+	$doc->appendHeading( text => "Your environment :", level => "1" )
 	);
 # Appending an item list with 5 elements
 $doc->setText
@@ -136,7 +136,7 @@ ok($count == 5);
 
 # Appending another level 1 header
 ok	(
-	$doc->appendHeader( text => "Your OpenOffice::OODoc choices :", level => "1" )
+	$doc->appendHeading( text => "Your OpenOffice::OODoc choices :", level => "1" )
 	);
 # Appending an item list with the installation parameters
 my $office_format = $OpenOffice::OODoc::File::DEFAULT_OFFICE_FORMAT == 2 ?

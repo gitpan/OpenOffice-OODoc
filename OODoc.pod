@@ -53,8 +53,8 @@ document classes (texts, spreadsheets, presentations, and drawings).
 It can retrieve or update styles and images, document metadata, as well as
 text content.
 
-OpenOffice::OODoc is primarily designed in order to retrieve and/or update data
-in existing documents, but it can generate new documents from scratch.
+OpenOffice::OODoc is designed for data retrieval and update in existing
+documents, as well as full document generation.
 
 See the OpenOffice::OODoc::Intro manual page to have a look at the main
 features.
@@ -68,7 +68,7 @@ The OpenOffice::OODoc documentation, as the API itself, is distributed
 amongst several manual pages on a thematic and technical basis. The present
 page is not the most important one.
 
-Each manual page correspond to a Perl module, with the exception of
+Each manual page corresponds to a Perl module, with the exception of
 OpenOffice::OODoc::Intro. It's strongly recommended to have a look at
 the Intro, and to read the examples, before any other manual chapter, in
 order to get a quick and practical knowledge of the big picture.
@@ -413,15 +413,6 @@ separate "member".
 	In this example, all the write operations related to the $doc0
 	document will use the default working directory, while the ones
 	related to $doc1 will use "C:\TMP".
-
-=head3	$XML_PARSER
-
-	$XML_PARSER is a reserved variable in the space of the
-	main program. It contains a reusable XML Parser
-	(XML::XPath::XMLParser object), automatically created.
-	Advanced, XPath-aware applications may reuse this parser
-	(see the documentation of the XML::XPath Perl module) but
-	they must *NOT* set the variable.
 
 =head1	AUTHOR/COPYRIGHT
 

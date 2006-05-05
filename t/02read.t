@@ -5,8 +5,8 @@
 use Test;
 BEGIN	{ plan tests => 9 }
 
-use OpenOffice::OODoc	2.024;
-ok($OpenOffice::OODoc::VERSION >= 2.024);
+use OpenOffice::OODoc	2.025;
+ok($OpenOffice::OODoc::VERSION >= 2.025);
 
 #-----------------------------------------------------------------------------
 

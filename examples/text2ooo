@@ -3,7 +3,7 @@
 
 =head1	NAME
 
-text2ooo - Text to OpenOffice.org (SXW) conversion
+text2ooo - Text to OpenDocument conversion
 
 =head1	SYNOPSIS
 
@@ -11,8 +11,9 @@ cat sourcefile.txt | text2oo targetfile.sxw
 
 =head1	DESCRIPTION
 
-This filter creates an OpenOffice.org Writer (SXW) file and fills it
-with the text coming through its standard entry. The target file is
+This filter creates an OpenDocument (ODF) or OpenOffice.org (SXW) file
+(according to the default installation configuration) and fills it
+with the text coming through the standard entry. The target file is
 created, and any existing file with the same name is replaced.
 To avoid this behaviour and append the text to an existing OOo file,
 just remove the create => 'text' option in the script.

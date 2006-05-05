@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 2.214 2006-03-18 JMG$
+#	$Id : XPath.pm 2.215 2006-05-05 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2006 by Genicorp, S.A. (www.genicorp.com)
@@ -12,7 +12,7 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 2.214;
+our	$VERSION	= 2.215;
 use	XML::Twig	3.22;
 use	Encode;
 
@@ -47,6 +47,98 @@ sub	OpenOffice::OODoc::XPath::encode_text
 	return Encode::decode($LOCAL_CHARSET, shift);
 	}
 
+#------------------------------------------------------------------------------
+# object coordinates, size, description control
+
+sub	setObjectCoordinates
+	{
+	my $self	= shift;
+	my $element	= shift	or return undef;
+	my ($x, $y)	= @_;
+	if ($x && ($x =~ /,/))	# X and Y are concatenated in a single string
+		{
+		$x =~ s/\s*//g;			# remove the spaces
+		$x =~ s/,(.*)//; $y = $1;	# split on the comma
+		}
+	$x = '0cm' unless $x; $y = '0cm' unless $y;
+	$x .= 'cm' unless $x =~ /[a-zA-Z]$/;
+	$y .= 'cm' unless $y =~ /[a-zA-Z]$/;
+	$self->setAttributes($element, 'svg:x' => $x, 'svg:y' => $y);
+	return wantarray ? ($x, $y) : ($x . ',' . $y);
+	}
+
+sub	getObjectCoordinates
+	{
+	my $self	= shift;
+	my $element	= shift	or return undef;
+	my $x		= $element->getAttribute('svg:x');
+	my $y		= $element->getAttribute('svg:y');
+	return undef unless defined $x and defined $y;
+	return wantarray ? ($x, $y) : ($x . ',' . $y);
+	}
+		
+sub	setObjectSize
+	{
+	my $self	= shift;
+	my $element	= shift	or return undef;
+	my ($w, $h)	= @_;
+	if ($w && ($w =~ /,/))	# W and H are concatenated in a single string
+		{
+		$w =~ s/\s*//g;			# remove the spaces
+		$w =~ s/,(.*)//; $h = $1;	# split on the comma
+		}
+	$w = '0cm' unless $w; $h = '0cm' unless $h;
+	$w .= 'cm' unless $w =~ /[a-zA-Z]$/;
+	$h .= 'cm' unless $h =~ /[a-zA-Z]$/;
+	$self->setAttributes($element, 'svg:width' => $w, 'svg:height' => $h);
+	return wantarray ? ($w, $h) : ($w . ',' . $h);
+	}
+	
+sub	getObjectSize
+	{
+	my $self	= shift;
+	my $element	= shift	or return undef;
+	my $w		= $element->getAttribute('svg:width');
+	my $h		= $element->getAttribute('svg:height');
+	return wantarray ? ($w, $h) : ($w . ',' . $h);
+	}
+	
+sub	setObjectDescription
+	{
+	my $self	= shift;
+	my $element	= shift or return undef;
+	my $text	= shift;
+	my $desc	= $element->first_child('svg:desc');
+	unless ($desc)
+		{
+		$self->appendElement($element, 'svg:desc', text => $text)
+			if (defined $text);
+		}
+	else
+		{
+		if (defined $text)	{ $self->setText($desc, $text, @_);	}
+		else			{ $self->removeElement($desc, @_);	}
+		}
+	return $desc;
+	}
+	
+sub	getObjectDescription
+	{
+	my $self	= shift;
+	my $element	= shift or return undef;
+	return $self->getXPathValue($element, 'svg:desc');
+	}
+
+sub	objectName
+	{
+	my $self	= shift;
+	my $element	= shift or return undef;
+	my $name	= shift;
+	return (defined $name) ?
+		$self->setAttribute($element, 'draw:name' => $name)	:
+		$self->getAttribute($element, 'draw:name'); 
+	}
+	
 #------------------------------------------------------------------------------
 # basic element creation
 
@@ -727,9 +819,7 @@ sub	exportXMLElement
 	my $path	= shift;
 	my $element	=
 		(ref $path) ? $path : $self->getElement($path, shift);
-
-	my $text	= $element->sprint(@_);
-	return $text;
+	return $element->sprint(@_);
 	}
 
 #------------------------------------------------------------------------------
@@ -810,12 +900,30 @@ sub	createSpaces
 	{
 	my $self	= shift;
 	my $length	= shift	or return undef;
-	
-	my $element = $self->createElement('text:s');
-	$element->set_att('text:c' => $length);
-	return $element;
+	return OpenOffice::OODoc::Element->new
+			('text:s' => { 'text:c' => $length } );
 	}
 
+sub	blankSpaces
+	{
+	my $self	= shift;
+	my $length	= shift;
+	return OpenOffice::OODoc::Element->new
+			('text:s' => { 'text:c' => $length } );
+	}
+	
+sub	tabStop
+	{
+	my $self	= shift;
+	my $tag = $self->{'opendocument'} ? 'text:tab' : 'text:tab-stop';
+	return OpenOffice::OODoc::Element->new($tag);
+	}
+	
+sub	lineBreak
+	{
+	return OpenOffice::OODoc::Element->new('text:line-break');
+	}
+	
 #------------------------------------------------------------------------------
 
 sub	appendLineBreak
@@ -851,7 +959,174 @@ sub	appendTabStop
 	}
 
 #------------------------------------------------------------------------------
+
+sub	createFrameElement
+	{
+	my $self	= shift;
+	my %opt		= @_;
+	my %attr	= ();
+	
+	$attr{'draw:name'} = $opt{'name'}; delete $opt{'name'};
+		
+	my $content_class = $self->contentClass;
+		
+	$attr{'draw:style-name'} = $opt{'style'}; delete $opt{'style'};
+	if ($opt{'page'})
+		{
+		my $pg = $opt{'page'};
+		if (ref $pg)
+			{
+			$opt{'attachment'} = $pg unless $opt{'attachment'};
+			}
+		elsif ($content_class eq 'text')
+			{
+			$opt{'attachment'} = $self->{'body'};
+			$attr{'text:anchor-type'} = 'page';
+			$attr{'text:anchor-page-number'} = $pg;
+			}
+		elsif 	(
+				($content_class eq 'presentation')
+					or
+				($content_class eq 'drawing')
+			)
+			{
+			$opt{'attachment'} = $self->getNodeByXPath
+					("//draw:page[\@draw:name=\"$pg\"]");
+			}
+		}
+	delete $opt{'page'};
+
+	my $tag = $opt{'tag'} || 'draw:frame'; delete $opt{'tag'};
+	
+	my $frame = OpenOffice::OODoc::XPath::new_element($tag);
+
+	if ($opt{'position'})
+		{
+		$self->setObjectCoordinates($frame, $opt{'position'});
+		delete $opt{'position'};
+		}
+	if ($opt{'size'})
+		{
+		$self->setObjectSize($frame, $opt{'size'});
+		delete $opt{'size'};
+		}
+	if ($opt{'description'})
+		{
+		$self->setObjectDescription($frame, $opt{'description'});
+		delete $opt{'description'};
+		}
+	if ($opt{'attachment'})
+		{
+		$frame->paste_first_child($opt{'attachment'});
+		delete $opt{'attachment'};
+		}
+		
+	foreach my $k (keys %opt)
+		{
+		$attr{$k} = $opt{$k} if ($k =~ /:/);
+		}
+	$self->setAttributes($frame, %attr);
+		
+	return $frame;
+	}
+	
+sub	createFrame
+	{
+	my $self	= shift;
+	return $self->createFrameElement(@_);
+	}
+	
+#-----------------------------------------------------------------------------
+# select an individual frame element by name
+
+sub	selectFrameElementByName
+	{
+	my $self	= shift;
+	my $text	= shift;
+	my $tag		= shift || 'draw:frame';
+	return $self->selectNodeByXPath
+			("//$tag\[\@draw:name=\"$text\"\]", @_);
+	}
+
+#-----------------------------------------------------------------------------
+# gets frame element (name or ref, with type checking)
+
+sub	getFrameElement
+	{
+	my $self	= shift;
+	my $frame	= shift;
+	return undef unless defined $frame;
+	my $tag		= shift || 'draw:frame';
+	
+	my $element	= undef;
+	if (ref $frame)
+		{
+		$element = $frame;
+		}
+	else
+		{
+		if ($frame =~ /^[\-0-9]*$/)
+			{
+			return $self->getElement("//$tag", $frame, @_);
+			}
+		else
+			{
+			return $self->selectFrameElementByName
+				($frame, $tag, @_);
+			}
+		}	
+	}
+	
+sub	getFrame
+	{
+	my $self	= shift;
+	return $self->getFrameElement(@_);
+	}
+
+#------------------------------------------------------------------------------
+
+sub	getFrameList
+	{
+	my $self	= shift;
+	return $self->getDescendants('draw:frame', shift);
+	}
+	
+#------------------------------------------------------------------------------
+
+sub	frameStyle
+	{
+	my $self	= shift;
+	my $frame	= $self->getFrameElement(shift) or return undef;
+	my $style	= shift;
+	my $attr	= 'draw:style-name';
+	return (defined $style) ?
+		$self->setAttribute($frame, $attr => shift)	:
+		$self->getAttribute($frame, $attr);
+	}
+	
+#------------------------------------------------------------------------------
 # replaces any previous content of an existing element by a given text
+# without processing other than encoding
+
+sub	setFlatText
+	{
+	my $self	= shift;
+	my $path	= shift;
+	my $pos		= (ref $path) ? undef : shift;
+	my $text	= shift;
+
+	return undef	unless defined $text;
+	my $element 	= $self->OpenOffice::OODoc::XPath::getElement
+					($path, $pos)
+				or return undef;
+	my $t		= $self->inputTextConversion($text);
+	$element->set_text($t)	if defined $t;
+	return $text;
+	}
+
+#------------------------------------------------------------------------------
+# replaces any previous content of an existing element by a given text
+# processing tab stops and line breaks
 
 sub	setText
 	{
@@ -863,8 +1138,8 @@ sub	setText
 	return undef	unless defined $text;
 	
 	my $element 	= $self->OpenOffice::OODoc::XPath::getElement
-					($path, $pos);
-	return undef	unless $element;
+					($path, $pos)
+					or return undef;
 
 	unless ($text)
 		{
@@ -904,15 +1179,28 @@ sub	extendText
 	
 	my $element 	= $self->getElement($path, $pos);
 	return undef	unless $element;
-	
+
+	my $offset	= shift;
+		
 	if (ref $text)
 		{
-		$text->paste_last_child($element) if $text->isElementNode;
+		if ($text->isElementNode)
+			{
+			unless (defined $offset)
+				{
+				$text->paste_last_child($element);
+				}
+			else
+				{
+				$text->paste_within($element, $offset);
+				}
+			}
 		return $text;
 		}
 
 	my $tabtag = $self->{'opendocument'} ? 'text:tab' : 'text:tab-stop';
 	my @lines	= split "\n", $text;
+	my $ref_node	= undef;
 	while (@lines)
 		{
 		my $line	= shift @lines;
@@ -921,13 +1209,54 @@ sub	extendText
 			{
 			my $column	=
 				$self->inputTextConversion(shift @columns);
-			$element->appendTextChild($column);
-			$element->appendChild($tabtag) if (@columns);
+			unless ($ref_node)
+				{
+				$ref_node = $element->insertTextChild
+						($column, $offset);
+				$ref_node = $ref_node->insertNewNode
+						($tabtag, 'after')			
+					if (@columns);
+				}
+			else
+				{
+				my $tn = $self->createTextNode($column);
+				$ref_node = $ref_node->insertNewNode
+						($tn, 'after');
+				$ref_node = $ref_node->insertNewNode
+						($tabtag, 'after')			
+					if (@columns);
+				}
 			}
-		$element->appendChild('text:line-break') if (@lines);
+		if (@lines)
+			{
+			if ($ref_node)
+				{
+				$ref_node->insertNewNode
+						('text:line-break', 'after');
+				}
+			else
+				{
+			 	$element->insertNewNode
+						(
+						'text:line-break',
+						'within',
+						$offset
+						);
+				}
+			}
 		}
 
 	return $text;
+	}
+
+#------------------------------------------------------------------------------
+# converts the content of an element to flat text
+
+sub	flatten
+	{
+	my $self	= shift;
+	my $element	= shift || $self->{'context'};
+	return $element->flatten;
 	}
 
 #------------------------------------------------------------------------------
@@ -956,6 +1285,16 @@ sub	replaceText
 	}
 
 #------------------------------------------------------------------------------
+# gets decoded text without other processing
+
+sub	getFlatText
+	{
+	my $self	= shift;
+	my $element	= $self->getElement(@_)	or return undef;
+	return $self->outputTextConversion($element->text);
+	}
+
+#------------------------------------------------------------------------------
 # gets text in element by path (sub-element texts are concatenated)
 
 sub	getText	
@@ -966,7 +1305,8 @@ sub	getText
 	my $text	= '';
 	
 	my $name	= $element->getName;
-	if	($name eq 'text:tab-stop')	{ return "\t"; }
+
+	if	($name =~ /^text:tab(|-stop)$/)	{ return "\t"; }
 	if	($name eq 'text:line-break')	{ return "\n"; }
 	if	($name eq 'text:s')
 		{
@@ -988,7 +1328,7 @@ sub	getText
 			}
 		else
 			{
-			my $t = ($node->getValue() || '');
+			my $t = ($node->text() || '');
 			$text .= $self->outputTextConversion($t);
 			}
 		}
@@ -1015,6 +1355,16 @@ sub	getElementList
 		}
 	$path =~ s/^\/\//\.\// if $context ne $self->{'xpath'};
 	return $context->findnodes($path);
+	}
+
+#------------------------------------------------------------------------------
+
+sub	getDescendants
+	{
+	my $self	= shift;
+	my $tag		= shift;
+	my $context	= shift || $self->{'context'};
+	return $context->descendants($tag, @_);
 	}
 
 #------------------------------------------------------------------------------
@@ -1346,7 +1696,7 @@ sub	selectNodeByContent
 	my $replace	= shift;
 
 	return $node	unless $pattern;
-	my $l	= $node->getNodeValue;
+	my $l	= $node->text;
 
 	return undef	unless $l;
 
@@ -1371,7 +1721,7 @@ sub	selectNodeByContent
 				return undef;
 				}
 			}
-		$node->setNodeValue($l);
+		$node->set_text($l);
 		return $node;
 		}
 	}
@@ -1743,10 +2093,28 @@ sub	insertElement
 		warn "[" . __PACKAGE__ . "::insertElement] Unknown position\n";
 		return undef;
 		}
-
-	if (($opt{'position'}) && ($opt{'position'} eq 'after'))
+ 
+	if ($opt{'position'})
 		{
-		$element->paste_after($posnode);
+		if ($opt{'position'} eq 'after')
+			{
+			$element->paste_after($posnode);
+			}
+		elsif ($opt{'position'} eq 'before')
+			{
+			$element->paste_before($posnode);
+			}
+		elsif ($opt{'position'} eq 'within')
+			{
+			my $offset = $opt{'offset'} || 0;
+			$element->paste_within($posnode, $offset);
+			}
+		else
+			{
+			warn	"[" . __PACKAGE__ . "::insertElement] "	.
+				"Invalid $opt{'position'} option\n";
+			return undef;
+			}
 		}
 	else
 		{
@@ -1785,12 +2153,28 @@ sub	cutElement
 	}
 
 #------------------------------------------------------------------------------
+# splits a text element at a given offset
+
+sub	splitElement
+	{
+	my $self	= shift;
+	my $path	= shift;
+	my $old_element	=
+		(ref $path) ? $path : $self->getElement($path, shift);
+	my $offset	= shift;
+	
+	my $new_element = $old_element->split_at($offset);
+	$new_element->set_atts($old_element->atts);
+	return wantarray ? ($old_element, $new_element) : $new_element;
+	}
+
+#------------------------------------------------------------------------------
 # some extensions for XML Twig elements
 package	OpenOffice::OODoc::Element;
 our @ISA	= qw ( XML::Twig::Elt );
 #------------------------------------------------------------------------------
 
-sub	hasTagName
+sub	hasTag
 	{
 	my $node	= shift;
 	my $name	= $node->getName;
@@ -1798,6 +2182,12 @@ sub	hasTagName
 	return ($name && ($name eq $value)) ? 1 : undef;
 	}
 
+sub	isFrame
+	{
+	my $node	= shift;
+	return $node->hasTag('draw:frame');
+	}
+	
 sub	getLocalPosition
 	{
 	my $node	= shift;
@@ -1921,6 +2311,26 @@ sub	appendChild
 		}
 	return $child->paste_last_child($node);
 	}
+	
+sub	insertNewNode
+	{
+	my $node	= shift;
+	my $newnode	= shift or return undef;
+	my $position	= shift;	# 'before', 'after', 'within', ...
+	my $offset	= shift;
+	unless (ref $newnode)
+		{
+		$newnode = OpenOffice::OODoc::XPath::new_element($newnode, @_);
+		}
+	if (defined $offset)
+		{
+		return $newnode->paste($position => $node, $offset);
+		}
+	else
+		{
+		return $newnode->paste($position => $node);
+		}
+	}
 
 sub	removeChildNodes
 	{
@@ -1962,13 +2372,30 @@ sub	setNodeValue
 	return $node->set_text(@_);
 	}
 
+sub	flatten
+	{
+	my $node	= shift;
+	return $node->set_text($node->text);
+	}
+	
 sub	appendTextChild
 	{
 	my $node	= shift;
 	my $text	= shift;
 	return undef unless defined $text;
 	my $text_node	= OpenOffice::OODoc::Element->new('#PCDATA' => $text);
-	return $text_node->paste(last_child => $node);
+	return $text_node->paste_last_child($node);
+	}
+
+sub	insertTextChild
+	{
+	my $node	= shift;
+	my $text	= shift;
+	return undef unless defined $text;
+	my $offset	= shift;
+	return $node->appendTextChild($text) unless defined $offset;
+	my $text_node	= OpenOffice::OODoc::Element->new('#PCDATA' => $text);
+	return $text_node->paste_within($node, $offset);
 	}
 
 sub	getAttribute

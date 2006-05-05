@@ -91,9 +91,14 @@ which combine layout and content processing.
 	Returns an OpenDocument connector, available for subsequent
 	access to any element of a well-formed document.
 	
-        Options are the same as for the ooXPath constructor (and for its
-	Text, Styles and Image derivatives). If no "member" parameter is
-	given, the member selected by default is "content".
+	Knowing that the Document class is a derivative of the Text, Styles,
+	Image, and XPath classes, ooDocument() implicitly executes the
+	corresponding constructors. So all the options of these constuctors
+	are available.
+	
+        If no "member" parameter is given, the member selected by default is
+	"content" (see OODoc::XPath). The most generally used members are
+	"content" and "styles".
 
 =head3	createImageStyle(name [, options])
 

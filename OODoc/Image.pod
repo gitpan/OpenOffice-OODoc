@@ -66,6 +66,11 @@ documents. But it can't process the images themselves.
         		member	=> 'styles.xml'
         		);
 
+	Real applications should not expressly use this constructor,
+	knowing that the compound OpenOffice::OODoc::Document (whose
+	usual constructor is ooDocument) inherits all the features
+	of OpenOffice::OODoc::Image.
+			
 =head3	createImageElement(name [, options])
 
         Creates an element which represents an image and inserts it into the
@@ -105,12 +110,19 @@ documents. But it can't process the images themselves.
 	for style creation or, better, OpenOffice::OODoc::Document for image
 	styles.
 
-        	attachment	=> linked text element
+        	attachment	=> anchor element
 
-        indicates if the image is linked to a text element (generally a
+        indicates if the image is attached to a text element (for ex. a
         paragraph), and which one. This parameter must be an existing
         element reference (obtained, for example, using getElement or
         selectElementxxx). It is useless if the image is linked to a page.
+	The OASIS OpenDocument specification doesn't provide the list of
+	possible attachments for an image, and OpenOffice.org make some
+	differences in this area between the different document classes.
+	For example, OOo Writer doesn't display images which are directly
+	attached to table cells, while OOo Calc does (in text documents,
+	an image which appears in a table cell is attached to a paragraph,
+	possibly empty, belonging to the cell; see the example below).
 
         	page		=> anchor page
 
@@ -138,14 +150,21 @@ documents. But it can't process the images themselves.
 	given here in the form of a string "x,y", and the default unit is
 	centimeters. You can choose millimeters instead by attaching the
 	usual abbreviation, such as "12.5cm, 35mm" which is the same as
-	"125mm, 3.5cm" or "12.5,3.5", etc..
+	"125mm, 3.5cm" or "12.5,3.5", etc. The point ("pt") unit is allowed
+	as well.
 
         	size		=> size
 
         The image's size (width, height) is given here in the same syntax as
         for position. Caution: if no size is given, you must not assume that
         the image will be spontaneously displayed in the document in a
-        convenient size.
+        convenient size. Remember that the "original" size of the image is
+	not automatically selected by default; the application must provide
+	a display size. If an image is to be displayed according to its
+	original size which is not known in advance, you can get it using,
+	for example, the imgsize() function of Image::Size (this function
+	returns the size in points, so the "pt" unit must be expressly
+	selected unless you convert the size in centimeters).
 
         	description	=> label
 
@@ -159,13 +178,25 @@ documents. But it can't process the images themselves.
         content which can be inserted into an OpenOffice.org file (internal
         link) or a reference to an external file or even the URL of an image
         accessible using a communication protocol supported by the
-        OpenOffice.org suite. Remember that, according to OpenOffice.org
-        specifications, physical images are "referenced", and not "loaded"
-        into XML elements. The reverse of course would not only be against
-        "good practice" but would result in outrageously large documents. If
-        the target link is unavailable when the document is displayed, an
-        error message is displayed in place of the image. (See imageLink
+        OpenOffice.org suite.
+	
+	Remember that, with OpenOffice.org, physical images are "referenced",
+	and not "loaded" into XML elements. The reverse of course would not
+	only be against "good practice" but would result in outrageously
+	large documents. According to the OpenDocument specification, the
+	conforming applications could embed base-64-encoded graphics in the
+	XML elements, but this option is not used when you insert an image
+	in a document through the OOo GUI.
+	
+	If the target link is unavailable when the document is displayed,
+	an error message is displayed in place of the image. (See imageLink
         about links.) This parameter is useless if import is given.
+	
+	Relative paths in the local filesystem are allowed, but should be
+	used with care, due to differences between operating systems... and
+	between editing applications (for example, in a Unix environment,
+	OOo 2.x requires "../image.jpg" while OOo 1.x allows "image.jpg" for
+	a link to an image file in the current directory).
 
         	import		=> image file
 
@@ -174,7 +205,13 @@ documents. But it can't process the images themselves.
         image link (which it is useless to give here) points to the image
         imported into the OpenOffice.org file. The import will only be made
         when all the updates are validated by a save(). See importImage
-        about importing images.
+        about importing images. An imported image is *not* embedded in the
+	XML image element; it's always referred to through a link, and stored
+	in a separate, non-XML member of the ODF archive. However, with the
+	"import" option, the appropriate internal link is automatically
+	created and the new member, containing the image, is automatically
+	built later, when the save() method is executed from the current
+	document (provided that the image file is available). 
 
         For those who know the appropriate XML vocabulary, there are other
         parameters you can pass. Parameters other than those described above
@@ -226,6 +263,18 @@ documents. But it can't process the images themselves.
         		style		=> "gr1",
         		import		=> "C:\Images\Landscape.jpg"
         		);
+			
+	The same image element could be inserted in a table cell. To do
+	so, in a spreadsheet document, the "attachment" option could be
+	set with a $doc->getCell($table, $row, $column) value. But the
+	present version of OpenOffice.org doesn't allow direct cell
+	attachments in text documents; the image element must be attached
+	to a paragraph which is in turn attached to the target cell. So
+	a possible approach consists of 1) issuing a setText($cell, "") in
+	order to ensure the target cell contains an empty text paragraph
+	and 2) provide an "attachment" option set to
+	$doc->getCellParagraph($cell) in order to anchor the image to this
+	paragraph.
 
         Remember: creating an image element will only make that image appear
         in the document if 1) the image has a valid link which points to a

@@ -3,11 +3,11 @@
 
 =head1	NAME
 
-text2table - flat text conversion to OpenOffice.org spreadsheet
+text2table - flat text conversion to OpenDocument spreadsheet
 
 =head1	SYNOPSIS
 
-text2table sourcefile.csv mycalc.sxc 32 20
+text2table sourcefile.csv mycalc.ods 32 20
 
 =head1	DESCRIPTION
 

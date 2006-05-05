@@ -19,7 +19,7 @@ manifest. In addition, it allows the users (at their own risks) to
 create or update any kind of special entry or mime type, without
 control. There is no automatic consistency check between the manifest
 and the real content (but this check and others could be easily
-developed with the commbination of this module and the other ones).
+developed with the combination of this module and the other ones).
 
 The manifest (i.e. the "META-INF/manifest.xml") is a special member
 of a regular OpenOffice.org file. It describes the MIME types and the
@@ -39,11 +39,11 @@ full internal paths of the other members.
 
             $my manifest = OpenOffice::OODoc::Manifest>new
             			(
-				file	=> 'document.sxw'
+				file	=> 'document.odt'
 				);
 
         returns a new object which represents the member list of an
-        OpenOffice.org "document.sxw" file.
+        OpenOffice.org "document.odt" file.
 
 =head3	getEntry($entry)
 
@@ -51,7 +51,7 @@ full internal paths of the other members.
 
 	Example:
 
-		my $element = $manifest->getEntryElement("content.xml");
+		my $element = $manifest->getEntry("content.xml");
 
 	Returns the element describing the "content.xml" member of the
 	file, if this element is defined.
@@ -106,7 +106,7 @@ included in this page.
 
 =head1	AUTHOR/COPYRIGHT
 
-Copyright 2004-2005 by Genicorp, S.A. (http://www.genicorp.com)
+Copyright 2004-2006 by Genicorp, S.A. (http://www.genicorp.com)
 
 Initial developer: Jean-Marie Gouarne (http://jean.marie.gouarne.online.fr)
 

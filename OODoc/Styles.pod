@@ -8,13 +8,7 @@ This class is designed to handle styles, whether automatic or named,
 contained in styles.xml or content.xml. It inherits from the common
 OpenOffice::OODoc::XPath class and brings style-focused features.
 
-All the features of OpenOffice::OODoc::Styles are available in the
-OpenOffice::OODoc::Document class (see the corresponding manual page),
-so any object created through ooDocument() allows both style and content
-processing. In other words, it's not necessary to explicitly use ooStyles()
-or OpenOffice::OODoc::Styles().
-
-This class should not be explictly used in an ordinary application, because
+This class should not be explicitly used in an ordinary application, because
 all its features are available in the OpenOffice::OODoc::Document class, in
 combination with other features. Practically, the present manual is provided
 to describe the style processing features of OpenOffice::OODoc::Document
@@ -27,9 +21,16 @@ have meaningful names and are stored in the styles.xml member. But an
 OpenDocument-compliant style may own two names, so-called 'name' and
 'display-name'. The 'display-name' is the name as it's displayed by the
 office software, while the 'name' is the main identifier. Both are
-displayable character strings, but they often differ. So, such a method
-as getStyleElement("style name") uses the 'name' attribute to retrieve
-a style descriptor (unless you change this behaviour through the
+displayable character strings, but they often differ. For a given
+'display-name', the application software is allowed to set any arbitrary
+'name'. For example, with OpenOffice.org 2, the well-known pre-defined
+style whose display name is "Text body" is named "Text_20_body" (the space
+character is replaced by its hexadecimal value between two "_" characters).
+In the other hand, the 'name' and the 'display-name' generally don't differ
+when they contain letters and/or digits only. Remember that the 'name' (and
+not the 'display-name') is the main identifier of a style element. So, such
+a method as getStyleElement("style name") uses the 'name' attribute to
+retrieve a style descriptor (unless you change this behaviour through the
 'retrieve_by' document property).
 
 Care should be taken particularly with predefined base styles in
@@ -72,9 +73,12 @@ Some styles are more complex than others as they describe the page
 layout. These styles can themselves contain text and images. A page
 style can actually be either:
 
-- a header
-- a footer
-- margins
+- a header;
+
+- a footer;
+
+- margins;
+
 - or a background.
 
 Headers and footers can contain text and images which can otherwise
@@ -213,13 +217,13 @@ at least a blank of each required style.
         returns its reference if successful.
 
         The first argument indicates the new style name which must be unique
-        in the document. The call returns undef and produces an error
-        message if the style already exists. Caution: its uniqueness is only
-        checked by one XML member. This means that it is technically
-        possible to create two styles with the same name, one in content.xml
-        and the other in styles.xml.
-
-        Possible options are passed by hash.
+        in the document.
+	
+	If the external name of the style, as it could be made visible for the
+	end-user through an OpenDocument-compliant editing software (such as
+	OpenOffice.org), is not the same as the internal name, it may be set
+	through a 'display-name' option. Without this option, the display name
+	is the same as the internal name.
 
         If the active OODoc::Styles object is associated with a document
         content (content.xml), the new style is always taken to be an
@@ -243,7 +247,7 @@ at least a blank of each required style.
             namespace		=> 'text',
             type		=> 'footnote-configuration'
 
-        The following is the list of options:
+        The other possible options are:
 
             namespace		=> namespace
             type		=> style type
@@ -529,7 +533,7 @@ at least a blank of each required style.
 	the current XML member.
 	
 	For example, if we have an automatic paragraph style "P1", defined in
-	the "content" member and derivated from "Text body", the returned
+	the "content" member and derived from "Text body", the returned
 	ancestor name will be "Text body". However, "Text body" itself could
 	be a derivative of "Standard". But "Text body" is defined in the
 	"styles" member, so its definition (including the name of its parent
@@ -580,7 +584,7 @@ at least a blank of each required style.
 
         Returns the given default style's attributes (if any). Default
         styles are generally "paragraph" and "graphics". See also
-        updateDefaultStyle.
+        updateDefaultStyle().
 
 =head3	getDefaultStyleElement(family)
 
@@ -637,6 +641,14 @@ at least a blank of each required style.
         OpenOffice.org documents this list should be empty in all elements
         except styles.xml.
 
+=head3	getOutlineStyleElement(level)
+
+	Returns the outline style descriptor related to the given outline
+	level. The returned element is available for subsequent get/set
+	operations using getAttributes(), setAttributes(), and so on.
+	
+	See also updateOutlineStyle().
+	
 =head3	getPageLayoutAttributes(page)
 
         Returns the description of a page layout. The argument can be
@@ -718,6 +730,15 @@ at least a blank of each required style.
         name is made in all styles by default. You can, however, limit it
         with the "path" parameter where "path" equals "auto" to search in
         automatic styles or "named" in named styles.
+	
+	Note: Take care of possible differences between the 'display-name'
+	and the real 'name' of any style (see the DESCRIPTION of the present
+	manual chapter). If you decide to select the styles by their visible
+	names, set the 'retrieve_by' property of the document to
+	'display-name'. Example:
+	
+		$doc->{'retrieve_by'} = 'display-name';
+		my $s = $doc->getStyleElement("Text body");
 
 =head3	getStyleList([options])
 
@@ -891,7 +912,7 @@ at least a blank of each required style.
         and "import" options, the "import" option is the one that prevails.
 
         The other options control the import of images as backgrounds. By
-        default, OODoc::Styles installs the image in the centre without
+        default, OODoc::Styles installs the image in the center without
         tiling and with an automatic update-on-load attribute if the image
         is by external link. You can choose other options using the
         OpenOffice.org standard vocabulary.
@@ -926,11 +947,13 @@ at least a blank of each required style.
 
 =head3	styleProperties(style [, options])
 
-        This method is for checking and updating the properties of a style.
+        This method is for checking and updating the formatting properties
+	of a given style.
+	
         It is more limited than updateStyle, but easier to code. The
-        styleProperties method accesses only the style's description and
-        does not touch its references, such as its name, class or family
-        (see getStyleAttributes).
+        styleProperties method accesses only the style's formatting
+	attributes and does not touch its references, such as its name, class
+	or family (see getStyleAttributes).
 
         With no options, the current style's properties are simply returned
         in the form of a hash in which the keys are attributes belonging to
@@ -1013,6 +1036,13 @@ at least a blank of each required style.
 			'style:font-name'	=> 'Times New Roman'
 			);
 	
+	Note: According to the OASIS OpenDocument v1.0 specification,
+	any arbitrary custom attribute could be created in anyone of the
+	style's properties area, and *should* be preserved by conforming
+	applications when editing the document. However, up to now, any
+	custom property is lost as soon as the document is edited through
+	OpenOffice.org.
+			
 	The "area" option is silently ignored with OOo 1 documents.
 		
 =head3	switchPageOrientation(page)
@@ -1023,7 +1053,7 @@ at least a blank of each required style.
 
 	'portrait' and 'landscape' are not style properties. The logic of
 	this method is very simplistic: it makes a swap between the height
-	and the witdh of the page.
+	and the width of the page.
 
 	CAUTION: don't try to give a page number as the argument. This
 	method apply on a page style (i.e. master page) and not on a
@@ -1049,6 +1079,37 @@ at least a blank of each required style.
             	'style:tab-stop-distance'	=> '1.5cm'
             	);
 
+=head3	updateOutlineStyle(level, properties)
+
+=head3	updateOutlineStyle(outline style element, properties)
+
+	Allows any change in the direct attributes of an outline style.
+	
+	The new properties must be provides through a hash, where each key
+	is an OpenDocument-compliant attribute.
+	
+	The following example changes the numbering prefix and suffix, and
+	the numbering format for the level 1 list elements, so their numbering
+	will look like "[A] ", "[B] ", "[C] ", ...
+	
+		$doc->updateOutlineStyle
+			(
+			1,
+			'num-prefix'		=> "[",
+			'num-suffix'		=> "] ",
+			'num-format'		=> "A"
+			);
+		
+	See the OpenDocument specification for the full set of possible
+	attributes. Any attribute provided without namespace prefix (i.e.
+	not including a ':'), such as those in the example above, are
+	automatically prefixed by 'style:'; other attributes must be provided
+	with their prefixes.
+	
+	Caution, some outline presentation characteristics, such as bullet
+	style, are not directly under the control of this element. They depend
+	on children "style:*-properties" elements.
+
 =head3	updatePageLayout(page, options)
 
         Modifies all types of page presentation style characteristics (page
@@ -1071,7 +1132,7 @@ at least a blank of each required style.
         to change the style's name.
 
         This data structure is the same as returned by
-        getMasterPageAttributes. A combination of these two methods allows
+        getMasterPageAttributes(). A combination of these two methods allows
         you to copy the characteristics of one page style to another easily,
         especially when you want to apply the page setup of one document to
         another. When you only want to modify an existing style however, you
@@ -1110,8 +1171,8 @@ at least a blank of each required style.
             	 }
             	);
 
-        Once again, it is better to start with a getMasterPageAttributes of
-        an existing page than to create all your styles from code.
+        Once again, it is better to start with a getMasterPageAttributes()
+        of an existing page than to create all your styles from code.
 
 =head3	updatePageMaster(page, options)
 
@@ -1150,6 +1211,11 @@ at least a blank of each required style.
         getStyleAttributes.
 
 =head2	Exported functions
+
+=head3	odfColor(rgb_color)
+
+	Converts an RGB color code or name into an ODF-compliant color code.
+	See rgb2oo().
 
 =head3	ooLoadColorMap($filename)
 
@@ -1206,7 +1272,7 @@ at least a blank of each required style.
 =head3	rgb2oo("$red,$green,$blue")
 =head3	rgb2oo($colorname)
 
-	Converts an RGB or named colour in OOo-compliant hexadecimal format
+	Converts an RGB or named colour in ODF-compliant hexadecimal format
 	(6 digits after a leading '#'). The 1st form has the same effect as
 	the rgb2hex() function of the Color::Rgb Perl module.
 
@@ -1233,6 +1299,12 @@ at least a blank of each required style.
 	it begins by "#"), rgb2oo() checks it and returns it unchanged if
 	it's a regular RGB value, or undef if not.
 
+=head3	rgbColor(odf_color)
+
+	Converts an ODF-color code into a decimal RGB code or, according
+	to a mapping file, into a plain text conventional color name.
+	See oo2rgb().
+	
 =head2	Properties
 
 	The 'retrieve_by' option, set to 'display-name', can be provided

@@ -4,10 +4,12 @@ OpenOffice::OODoc::Intro - Introduction to the Open OpenDocument Connector
 
 =head1	DESCRIPTION
 
-This introductory notice is intended to allow anybody to evaluate
-some basic features of the OODoc modules. The full reference manual
-is a set of OpenOffice::OODoc::xxx manual pages (where xxx is the
-codename of a particular submodule).
+This introductory notice is intended to allow the user to understand the
+general principles and to learn some basic features of the OODoc module
+without browsing the whole reference manual.
+
+The reference manual is a set of OpenOffice::OODoc::xxx separate documents,
+where xxx is the codename of a particular functional area.
 
 Just before reading this intro, it's a good idea to have a look at the
 short (and commented) examples provided in the distribution.
@@ -28,8 +30,8 @@ and non-interactive document processing;
 and/or document-driven applications.
 
 OODoc provides an abstraction of the document objects and isolates the
-programmer from low level XML navigation, UTF8 encoding and compressed file
-management details. For example:
+programmer from low level XML navigation, UTF8 encoding and file
+compression details. For example:
 
 	use OpenOffice::OODoc;
 	my $document = ooDocument(file => 'filename.odt');
@@ -55,7 +57,7 @@ More generally, OpenOffice::OODoc provides a lot of methods (probably most
 of them are not useful for you) allowing create/search/update/delete
 operations with document elements such as:
 
-- ordinary text objects (paragraphs, headers, item lists);
+- ordinary text containers (paragraphs, headings, item lists);
 - tables and cells;
 - sections;
 - images;
@@ -76,7 +78,8 @@ for
 
 where "Xxx" is generally "Document", for full access to the content, but
 may be another specialized object such as "Manifest", "Styles", "Meta", etc.
-The long "OpenOffice::OODoc::...->new()" syntax can (and should) be avoided.
+The long "OpenOffice::OODoc::...->new()" syntax can (and should) be avoided,
+and replaced by the ooDocument() function.
 
 A document object initialization requires one or more options. The most
 usual option is the file name, as in the first example. By default, this
@@ -93,15 +96,44 @@ be generated. So, in our first example, the constructor could be:
 
 This instruction creates a new file containing a text (i.e. an
 OpenOffice.org Writer) document (and replaces any previously existing file
-with the same name). However, the new file will be really created by the
+with the same name). However, the new file will be actually created by the
 $document->save instruction, not by the object initialization.
+
+When the 'create' option is in use, the newly created document may be
+formatted either in the OASIS OpenDocument format (ODF) or in the primary
+OpenOffice.org 1.0 format. If an additional 'opendocument' is provided and
+set to 'true', then the new document will be ODF-compliant. If the same
+option is present and set to 'false', the old OOo 1.0 format will be selected
+instead. Without the 'opendocument' option, the format will depend on the
+installation default (in the CPAN distribution, the default is set to
+OpenDocument but it can be changed by the user at the install time). In the
+other hand, the provided filename in not used by OODoc in order to
+select the file format, so you are free to create an OpenDocument file with
+an OOo-like ".sxw" extension, and so on. The only one filename suffix that
+is meaningful for OODoc is ".xml" (by default, a file whose name is like
+"*.xml" is processed as flat XML and not as a regular, compressed ODF file).
+
+For existing files, the format (ODF or OOo) is automatically detected
+according to the real content of the file (whatever the filename).
+
+The present version of OpenOffice::OODoc is based on the OpenDocument
+specification, which has been published (May 2005) as an OASIS standard under
+the following title:
+
+"Open Document Format for Office Applications (OpenDocument) v1.0"
+
+
+=head1	Architecture
 
 The OODoc toolbox is organized in 3 logical layers. It's not necessary for
 you to remember the (annoying) details given in the next few paragraphs,
-but there are described only to explain the general organisation of the
-modules. If you have only a few dozens of seconds for reading this document,
-please jump directly at the part II (practical examples) and come back later
-if you want to know more.
+but these details are described only to explain the general organisation of
+the modules. If you have only a few dozens of seconds for reading
+this document, please jump directly at the part III (practical examples)
+and
+come back later if you want to know more.
+
+=head2	OpenDocument file input/output
 
 The first layer consists of the OpenOffice::OODoc::File class (defined in
 the File.pm module). This class is responsible of read/write operations
@@ -111,24 +143,26 @@ OpenOffice-oriented wrapper for the standard Archive::Zip Perl
 module (but it could be extended to encapsulate any other physical
 storage method for the OpenOffice.org documents).
 
+=head2	XML access
+
 The second layer is made of the OpenOffice::OODoc::XPath class (XPath.pm), which
 is an OpenOffice/XML-aware class. This class is generally not directly used by
 the applications; it's mainly a common ancestor for more specialised (and more
 user-friendly) other classes. OpenOffice::OODoc::XPath is an object-oriented
-Perl representation of an XML member of an OpenOffice.org document
+Perl representation of an XML member of an OpenDocument file
 (ex: content.xml, meta.xml, styles.xml, etc.), using the XML::Twig
 Perl API to access individual XML elements. If you want to deal in
 the same time with several XML components of the same document, you
 can/must create several OpenOffice::OODoc::XPath against the document (ex: one
 OpenOffice::OODoc::XPath will be associated with 'meta.xml' to represent the
 metadata, another one will be associated with 'content.xml' to give
-access to the content. OpenOffice::OODoc::XPath accepts and provides only XML strings
-from/to the application; but it's able to connect with an OpenOffice::OODoc::File
-object for file I/O operation, so you can use it without explicit file
-management coding.
+access to the content. OpenOffice::OODoc::XPath accepts and provides only XML
+strings from/to the application; but it's able to connect with an
+OpenOffice::OODoc::File object for file I/O operation, so you can use it without
+explicit file management coding.
 
 For an example, if you want to get access to the content of any OO file
-(say 'foo.sxw'), you have to write something like:
+(say 'foo.odt'), you have to write something like:
 
 	use OpenOffice::OODoc;
 	my $doc = ooXPath
@@ -137,7 +171,7 @@ For an example, if you want to get access to the content of any OO file
 			member	=> 'content'
 			);
 
-then $doc becomes an abstraction of the 'content.xml' (i.e. the text
+then $doc becomes an abstraction of the 'content.xml' (i.e. the content
 and automatic styles) of the 'foo.sxw' file, that can be used to get/set
 any content through simple methods like:
 
@@ -148,7 +182,7 @@ editable text (because '//text:p' is the logical path to any paragraph,
 and the paragraphs are numbered from zero). But don't worry about this
 XPath syntax, that is shown here in order to show the basic logic of the API.
 You don't need to remember the path of such usual objects as paragraphs,
-headers, lists, images, ..., and other well known document components, because
+headings, lists, images, ..., and other well known document components, because
 the 3rd layer (see below) provides easy-to-use, predefined accessors.
 
 You could also put your own text in the same paragraph with:
@@ -165,14 +199,14 @@ have just to do a
 OpenOffice::OODoc::XPath allows some quick element manipulation and exchange,
 and can operate on several documents in the same session. For example:
 
-	my $doc1 = ooXPath(file => 'file1.sxw', member => 'content');
-	my $doc2 = ooXPath(file => 'file2.sxw', member => 'content');
+	my $doc1 = ooXPath(file => 'file1.odt', member => 'content');
+	my $doc2 = ooXPath(file => 'file2.odt', member => 'content');
 	my $paragraph = $doc1->getElement('//text:p', 15);
 	$doc2->insertElement
 		('//text:h', 0, $paragraph, position => 'after');
 
 This sequence takes an arbitrary paragraph (the 16th one) of a document
-and inserts it just after an arbitrary header (the first one) in another
+and inserts it just after an arbitrary heading (the first one) in another
 document. Here, we used an 'insertElement' method to directly transfer
 an existing text element, but the same method (with different arguments)
 can create a new element according to application data, or from a well-
@@ -180,13 +214,13 @@ formed XML string describing any document element in regular OpenOffice
 syntax. Example:
 
 	# a program
-	my $doc = ooXPath(file => 'file1.sxw', member => 'content');
+	my $doc = ooXPath(file => 'file1.odt', member => 'content');
 	open MYFILE, "> transfer.xml";
 	print MYFILE $doc1->exportXMLElement('//text:p', 15);
 	close MYFILE;
 	
 	# another program
-	my $doc2 = ooXPath(file => 'file2.sxw', member => 'content');
+	my $doc2 = ooXPath(file => 'file2.odt', member => 'content');
 	open MYFILE, "< transfer.xml";
 	$doc2->insertElement
 		('//text:h', 0, <MYFILE>, position => 'after');
@@ -203,8 +237,10 @@ language and protocol.
 
 But it's just a beginning, because, in the real world, you have to do
 much more sophisticated processing, and you have not a lot of time to
-learn the XML path of any kind of document element (paragraph, header,
+learn the XML path of any kind of document element (paragraph, heading,
 item list, style, ...).
+
+=head2	Document-oriented API
 
 So there is a third, more user-friendly layer, that should be the only one
 visible for most of the applications. The programmer should know the
@@ -343,8 +379,9 @@ in the same sequence and in any order.
 
 Caution: In order to get a convenient translation between the user's local
 character set and the common OpenOffice.org encoding (utf8), the application
-must indicate the appropriate encoding. The default one is iso-8859-1;
-it can be set with the ooLocalEncoding() function. Example:
+must indicate the appropriate encoding. The default one is iso-8859-1 in the
+CPAN distribution; it can be set using the ooLocalEncoding() function.
+Example:
 
 	use OpenOffice::OODoc;
 	ooLocalEncoding 'iso-8859-15';
@@ -353,6 +390,7 @@ The default encoding can be selected by the user during the installation,
 and changed later by editing a configuration file. In addition, a program
 working with several documents in the same time can select a distinct
 character set for each one.
+
 
 =head1	Some practical uses
 
@@ -402,7 +440,7 @@ the file name, connects to it, and asks it for the 'meta.xml' member of
 the file. All that annoying processing is hidden for the programmer. We
 have just to query for the useful object, the title.
 
-In the same way, we could get (or even change !) the document creation
+In the same way, we could get (or even change) the document creation
 or last modification date registered by the OpenOffice.org software:
 
         my $d1 = $doc->creation_date;
@@ -423,10 +461,10 @@ fields:
 
 This code captures the user defined fields (names and values) in a hash
 table, which then is displayed in a "name->value" form. You could see
-the way to update the user defined fields in the 'set_fields' script.
-The most usual metadata accessors have a symmetrical behaviour. To update
-the title, for example, you have to call the 'title' method with a
-string argument:
+the way to update the user defined fields in the 'set_fields' script,
+provided with the distribution. The most usual metadata accessors have a
+symmetrical behaviour. To update the title, for example, you have to call
+the 'title' method with a string argument:
 
 	$doc->title("New title");
 
@@ -447,7 +485,7 @@ keywords, these ones must be provided as a list:
 	$doc->keywords(@my_keywords);
 
 The program is automatically prevented from introducing redundancy in
-the keywords list (the 'keywords' method deletes duplicates). While
+the keyword list (the 'keywords' method deletes duplicates). While
 'keywords' can only add new keywords, you have to call removeKeyword to
 delete an existing keyword. If you want to destroy the entire list of
 keywords in a single call, you have just to write:
@@ -490,8 +528,7 @@ containing all the changed and unchanged members of the original
 one.
 
 Of course, whatever the way you will use (or not use) the save() method,
-you will never process valuable documents with OpenOffice::OODoc without
-a backup copy...
+you will never process valuable documents without a backup copy...
 
 =head2	Example 2 - Manipulating text
 
@@ -545,7 +582,7 @@ text element, so the application can easily use this method to export the
 text in an alternative (simple) markup language.
 
 To do some intelligent processing in the text, we need to deal with
-individual text objects such as paragraphs, headers, list items or table
+individual text objects such as paragraphs, headings, list items or table
 cells. For example, to export the content of the 5th paragraph (paragraph
 numbering beginning with 0), we could directly get th text with:
 
@@ -562,7 +599,7 @@ the paragraph element, not only its text content:
 Some methods can dynamically adapt to the text element type they have
 to process. For example, the getText method (exporting the text content
 of a given text element), can return the content of many kinds of element
-(paragraphs, headers, table cells, item lists or individuals list items).
+(paragraphs, headings, table cells, item lists or individuals list items).
 In addition, any text content extracted with an high-level OODoc method is
 transcoded in the local character set (UTF8 issues are (we hope) hidden for
 the application). Optionnally, the text output can be instrumented with
@@ -573,30 +610,33 @@ in LaTeX, or in an application-specific markup language).
 In order to facilitate some kinds of massive document processing
 operations, OODoc::Text provides a few high level methods that do
 iterative processing upon whole sets of text elements. One example is
-selectElementsByContent: this method looks for any paragraph, header or
-list item element matching a given pattern (string or regular expression)
-and, each time an element is selected, it executes an application-provided
-callback function. An example of use is provided in the 'search' demo
-script, which selects any text element in a document matching a given
-expression, and appends the selected content as a sequence of paragraphs
-in another document.
+selectElementsByContent: this method looks for any text container matching
+a given pattern (string or regular expression) and, each time an element is
+selected, it executes an application-provided callback function. An example
+of use is provided in the 'search' demo script, which selects any text
+element in a document matching a given expression, and appends the selected
+content as a sequence of paragraphs in another document.
 
-The more usual methods have explicit names, and can be used without
-documentation (or just reading the headers of the french documentation)
-provided that the programmer has a good understanding of the general
-philosophy. Header and paragraph manipulations are quite simple. The
-situation is more complex with other text content such as item lists,
-tables and graphics.
+The more usual methods have explicit names, and can be used without their
+exhaustive documentation, provided that the programmer has a good
+understanding of the general philosophy. Heading and paragraph manipulations
+are quite simple. The situation is more complex with other text content such
+as item lists, tables and graphics.
 
 To get an individual list item, you must point to it from a previously
 obtained list element:
 
 	my $item_list = $doc->getList(2);
-	my $item = $doc->getListItem(4);
+	my $item = $doc->getListItem($item_list, 4);
 
 Here, $item contains the 5th item of the 3rd list of the document. The
 content of the item could then be exported by a generic method such as
-getText(), or processed using another method. 
+getText(), or processed using another method. Note that, if the application
+doesn't need the $item_list object for any other use, it can directly get
+the list item with the same method with a list number (instead of s list
+object) as its first argument:
+
+	my $item = $doc->getListItem(2, 4);
 
 
 =head2	Playing with tables and spreadsheets
@@ -625,12 +665,39 @@ above could be written as
 
 	my $value = $doc->getCellValue(0, "A11");
 
-Knowing that the cell addressing is zero-based, so "A1" corresponds to (0,0).
-This last notation is probably more user-friendly for OOo Calc documents.
-So, if your program knows the name of the table/sheet, you can forget the
-numeric coordinates and write something as:
+Caution, in the classical spreadsheet notation, the column comes first
+while it comes last in the numeric coordinates. In addition, knowing that
+the numeric coordinates are zero-based, "A1" corresponds to (0,0). Finally,
+remember that the alphanumeric coordinates must be provided in a single
+string while numeric coordinates require two arguments.
 
-	my $value = $doc->getCellValue("Sheet4", "B12");
+This alphanumeric notation is probably more user-friendly for OOo Calc
+documents, but it's allowed by OODoc whatever the document class: you can
+use it with tables in text documents as well.
+
+Caution: The direct cell addressing works only when the table XML storage
+is "normalized", i.e. when every table object (row, column or cell) is
+mapped to an exclusive XML element. The application program can easily
+ensure this "normalization" thanks to the normalizeSheet() method, described
+in the OpenOffice::OODoc::Text manual page. However, up to now, the tables
+included in text document through OpenOffice.org Writer are normalized, so
+they are immediately available for direct addressing. In the other hand,
+with OpenOffice.org Calc spreadsheets, several contiguous objects are mapped
+to a single XML element as long as they have the same content, the same type
+and the same presentation. It's not an issue; it's a feature allowed by the
+OpenDocument specification in order to save storage space, knowing that
+typical large spreadsheets contain a lot of empty, or repetitive, cells. As
+a consequence, several cells may be located at the same coordinates. The
+normalizeSheet() method allows the application to define a safe area, sized
+according to its needs, where the direct object addressing works whatever
+the XML storage method in use.
+
+The table-related methods can be used with spreadsheets (i.e. OOo Calc
+documents) as well as with tables included in text documents. However,
+before addressing cells in a spreadsheet document, a program must "declare"
+the size of the used area in each target sheet (this requirement is due to
+performance considerations, for Calc documents only). 
+
 
 You can also change the content of a cell:
 
@@ -648,17 +715,23 @@ date cell). The 3rd and 4th forms do respectively the same things, but
 use a previously obtained cell element in place of 3D coordinates (in
 order to avoid unnecessary low-level XPath recalculation).
 
+For a flat text (non-numeric) cell whose the reference is already available,
+setText() produces the same result as updateCell():
+
+	my $cell = $doc->getCell($table, $row, $col);
+	$doc->setText($cell, "The text in the cell");
+
 Both getCellValue() and updateCell() can be replaced by the cellValue()
 shortcut, that is a read/write accessor to indivudual cells. So:
 
 	my $value = $doc->cellValue("Sheet4", "B12");
 	$doc->cellValue("Sheet1", "P5", $value);
 
-copies a value from on cell to another one in another table.
+copies a value from one cell to another one in another table.
 
-In this intro, the cells are assumed to be text-only cells. Of course, the
-code is more complex with numeric cells, because the program have to get or
-set some additional information, according to its data type.
+In this intro, the cells are assumed to be text-only. Of course, the code
+is more complex with numeric cells, because the program have to get or set
+some additional information, according to its data type.
 
 OODoc::Text allows the program to create a new table, using the appendTable
 or insertTable method. The following example appends a new table with 8 lines
@@ -669,18 +742,13 @@ and 5 columns to the document.
 But this new table is (by default) a pure text table. It's possible to build
 very sophisticated table structures, with an appropriate data type and a
 special presentation for each cell. But, to complete this task, the
-the application must provide a lot of parameters. So, it's recommended to
+application must provide a lot of parameters. So, it's recommended to
 avoid purely programmatic table construction, and to reuse existing table
 structures and styles in template documents previously created with the
 OpenOffice.org software.
 
-The table-related methods can be used with spreadsheets (i.e. OOo Calc
-documents) as well as with tables included in text documents. However,
-before addressing cells in a spreadsheet document, a program must "declare"
-the size of the used area in each target sheet (this requirement is due to
-performance considerations, for Calc documents only).
 
-=head2	Sections and subdocuments
+=head2	Sections, subdocuments and hyperlinks
 
 For sophisticated document structures, paragraphs and other text containers
 may be included in sections. The API allows the applications to easily
@@ -698,8 +766,8 @@ through an internet link:
 	my $url = "http://jean.marie.gouarne.online.fr/doc/oodoc_guide.odt";
 	$doc->appendSection
 		(
-		"My Doc",
-		link		=> "http://the.library.com/mydoc.sxw",
+		"Getting Started",
+		link		=> $url,
 		protected	=> "true"
 		);
 
@@ -707,6 +775,35 @@ And, if an unfortunate end-user is barred from updating a section by a lost
 password, the programmer can help with a single line such as:
 
 	$doc->unlockSection($section_name);
+	
+The sections are not the only places for using hyperlinks. The applications
+can associate hyperlinks to any portion of text. The following example puts
+a remote (http) link on every "OpenDocument" character string in a given
+paragraph:
+
+	$doc->setHyperlink
+		($para, "OpenDocument", "http://www.oasis-open.org");
+		
+The target of an hyperlink may be a bookmark or a heading in the current
+document or in another ODF document. For example, if the target is a bookmark
+included in the same document, the link is the name of the bookmark with a
+leading "#":
+
+	$doc->setHyperlink($para, "a string", "#MyMark");
+	
+When the target is a heading (i.e. a hierarchical title), the link is made of
+the text of the heading, prefixed with "#" and suffixed by "|outline".
+	
+If an hyperlink is aimed at any target belonging to another document (in the
+local filesystem or elsewhere), you have just to concatenate the file path
+and the internal path. The example below puts an hyperlink to a particular
+heading located in a remote document:
+
+	$doc->setHyperlink
+		(
+		$para, "read the conclusion",
+		"http://somewhere.com/somewhat.odt#Conclusion|outline"
+		);
 
 =head2	Manipulating user defined variables, bibliographic entries, bookmarks
 
@@ -746,7 +843,11 @@ We can put a bookmark in a paragraph containing a given string.
 Example:
 
 	my $paragraph	= $doc->selectElementByContent("my search string");
-	$doc->bookmarkElement($paragraph, "MyMark");
+	$doc->setBookmark($paragraph, "MyMark");
+	
+The instruction above puts the mark at the beginning of the paragraph;
+however, if an optional offset argument is provided, setBookmark() could
+put the mark at any position within the text.
 
 A bookmark (created either through OpenOffice::OODoc or through this Perl
 API) can be used to retrieve a text element:
@@ -824,9 +925,19 @@ the string "OpenOffice" and attach an imported image to it.
 		style		=> "graphics2"
 		);
 
+In a spreadsheet document, the same image could be attached to a cell
+instead of a paragraph; to do so, the "attachment" option should be set
+to a cell element, previously obtained using getCell(). With the same syntax,
+in a presentation document, the "attachment" should be a draw page, previously
+selected using getDrawPage(). A "page" option allows the user to anchor an
+image to a page, instead of attaching it to a text container.
+
 In this example, the image is physically imported. But I could replace the
 "import" parameter by a "link" one, in order to use the image as an external
-link (cf. the "link" option when you insert an image in OpenOffice.org).
+link (cf. the "link" option when you insert an image in OpenOffice.org). This
+link could use a local filesystem path as well as a remote access path such
+as "http://...".
+
 My new image needs a style (called "graphics2" in my example) to be presented.
 This style could be an existing one, but my program could create it if
 needed, using an OODoc::Styles method (see below).
@@ -838,6 +949,10 @@ image:
 	$doc->imageSize("Paris landscape", "10cm, 7cm");
 	$doc->imagePosition("Paris landscape", "3cm, 0cm");
 
+The size and position strings indicate the used length unit. Such units as
+"cm", "mm", "in" and "pt" are currently supported by OpenOffice.org (but
+OODoc doesn't check them, so you can use any arbitrary unit).
+		
 The logical name of the image (here "Paris landscape") is the best way to
 retrieve an image object, so it's a mandatory argument with the
 createImageElement method. With OpenOffice.org Writer, each image is created
@@ -849,7 +964,7 @@ can be easily caught by program, it's potentially reusable.
 
 An image can be selected by his description (i.e. the text the end-user
 can edit in the image properties dialog in OpenOffice.org). So, the following
-sequence provides the list of images where the description contains the string
+sequence provides the list of images whose the description contains the string
 "Montmartre":
 
 	my @images = $doc->selectImageElementsByDescription("Montmartre");
@@ -866,7 +981,7 @@ image element.
 
 The OODoc::Styles allows the programmer to get any style definition, to change
 it and, if really needed, to create new styles. In the first part of this
-document, you can see an example of paragaph style creation. Unfortunately,
+document, you can see an example of paragraph style creation. Unfortunately,
 createStyle could drive you to heavy coding efforts, because a very
 sophisticated style definition needs a lot of parameters and requires the
 knowledge of a lot of OpenOffice.org attribute names. So we recommend you to

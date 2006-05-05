@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Styles.pm 2.017 2006-02-13 JMG$
+#	$Id : Styles.pm 2.018 2006-05-05 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -12,13 +12,13 @@
 
 package OpenOffice::OODoc::Styles;
 use	5.006_001;
-our	$VERSION	= 2.017;
+our	$VERSION	= 2.018;
 
-use	OpenOffice::OODoc::XPath	2.212;
+use	OpenOffice::OODoc::XPath	2.215;
 use	File::Basename;
 require	Exporter;
-our	@ISA		= qw ( Exporter OpenOffice::OODoc::XPath );
-our	@EXPORT		= qw ( ooLoadColorMap oo2rgb rgb2oo );
+our	@ISA	= qw ( Exporter OpenOffice::OODoc::XPath );
+our	@EXPORT	= qw ( ooLoadColorMap oo2rgb rgb2oo rgbColor odfColor );
 
 #-----------------------------------------------------------------------------
 
@@ -96,6 +96,8 @@ sub	oo2rgb
 		return $color;
 		}
 	}
+	
+sub	rgbColor { return oo2rgb(@_); }
 
 #-----------------------------------------------------------------------------
 # converting a decimal RGB expression to an hexadecimal OOo color 
@@ -135,6 +137,8 @@ sub	rgb2oo
 	return sprintf("#%02x%02x%02x", $red, $green, $blue);
 	}
 	
+sub	odfColor { return rgb2oo(@_); }
+	
 #-----------------------------------------------------------------------------
 package	OpenOffice::OODoc::Element;
 #-----------------------------------------------------------------------------
@@ -157,6 +161,12 @@ sub	isStyle
 	 	?	1 : undef;
 	}
 
+sub	isOutlineStyle
+	{
+	my $element	= shift;
+	return $element->hasTag('text:outline-level-style');
+	}
+
 sub	isMasterPage
 	{
 	my $element	= shift;
@@ -168,7 +178,7 @@ sub	isMasterPage
 		?	1 : undef;
 		
 	}
-
+	
 #-----------------------------------------------------------------------------
 package OpenOffice::OODoc::Styles;
 #-----------------------------------------------------------------------------
@@ -571,6 +581,42 @@ sub	getStyleElement
 	}
 
 #-----------------------------------------------------------------------------
+
+sub	getOutlineStyleElement
+	{
+	my $self	= shift;
+	my $level	= shift		or return undef;
+	
+	if (ref $level)
+		{
+		return $level->isOutlineStyle ? $level : undef;
+		}
+	
+	my $xpath = "//text:outline-level-style\[\@text:level\=\"$level\"\]";
+	return $self->getNodeByXPath($xpath);
+	}
+
+#-----------------------------------------------------------------------------
+	
+sub	updateOutlineStyle
+	{
+	my $self	= shift;
+	my $style	= $self->getOutlineStyleElement(shift)
+				or return undef;
+	my %attr	= @_;
+	foreach my $k (keys %attr)
+		{
+		unless ($k =~ /:/)
+			{
+			my $v = $attr{$k}; delete $attr{$k};
+			$k = 'style:' . $k;
+			$attr{$k} = $v;
+			}
+		}
+	return $self->setAttributes($style, %attr);
+	}
+
+#-----------------------------------------------------------------------------
 # get the name of the parent style, if any
 
 sub	getParentStyle
@@ -834,8 +880,8 @@ sub	createStyle
 			"Missing style name\n";
 		return	undef;
 		}
-	my %opt		= (check => 'on', @_);
-	if ((lc $check eq 'on') && $self->getStyleElement($name, %opt))
+	my %opt		= (check => 'true', @_);
+	if ((lc $check eq 'true') && $self->getStyleElement($name, %opt))
 		{
 		warn	"[" . __PACKAGE__ . "::createStyle] "	.
 			"Style $name exists\n";
@@ -962,7 +1008,7 @@ sub	updateStyle
 				if $opt{'family'};
 	$opt{'references'}{'style:class'}	= $opt{'class'}
 				if $opt{'class'};
-	$opt{'references'}{'styles:display-name'} = $opt{'display-name'}
+	$opt{'references'}{'style:display-name'} = $opt{'display-name'}
 				if $opt{'display-name'};
 	if ($opt{'next'})
 		{

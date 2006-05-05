@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Image.pm 2.015 2005-10-22 JMG$
+#	$Id : Image.pm 2.016 2006-05-05 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -12,10 +12,10 @@
 
 package	OpenOffice::OODoc::Image;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	2.207;
+use	OpenOffice::OODoc::XPath	2.215;
 use	File::Basename;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.015;
+our	$VERSION	= 2.016;
 
 #-----------------------------------------------------------------------------
 # default attributes for image style
@@ -91,12 +91,9 @@ sub	createImageElement
 		my $target = $opt{'page'} || '';
 		my $page = ref $target ?
 				$target		:
-				$self->selectElementByAttribute
-					(
-					'//draw:page',
-					'draw:name',
-			       		'^' . $target . '$'
-					);
+				$self->getNodeByXPath
+				    ("//draw:page[\@draw:name=\"$target\"]");
+
 		delete $opt{'page'};
 		$path = $page;
 		}
@@ -236,17 +233,6 @@ sub	getImageElementList
 	{
 	my $self	= shift;
 	return $self->getElementList($self->{'image_xpath'}, @_);
-	}
-
-#-----------------------------------------------------------------------------
-# select an individual frame element by name
-
-sub	selectFrameElementByName
-	{
-	my $self	= shift;
-	my $text	= shift;
-	return $self->selectNodeByXPath
-			("//draw:frame\[\@draw:name=\"$text\"\]", @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -431,10 +417,7 @@ sub	getImagePosition
 	my $self	= shift;
 	my $image	= shift;
 	my $element	= $self->getImageElement($image);
-	return undef	unless $element;
-	my $x		= $element->getAttribute('svg:x');
-	my $y		= $element->getAttribute('svg:y');
-	return wantarray ? ($x, $y) : ($x . ',' . $y);
+	return $self->getObjectCoordinates($element, @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -445,18 +428,7 @@ sub	setImagePosition
 	my $self	= shift;
 	my $image	= shift;
 	my $element	= $self->getImageElement($image);
-	return undef	unless $element;
-	my ($x, $y)	= @_;
-	if ($x && ($x =~ /,/))	# X and Y are concatenated in a single string
-		{
-		$x =~ s/\s*//g;			# remove the spaces
-		$x =~ s/,(.*)//; $y = $1;	# split on the comma
-		}
-	$x = '0cm' unless $x; $y = '0cm' unless $y;
-	$x .= 'cm' unless $x =~ /[a-zA-Z]$/;
-	$y .= 'cm' unless $y =~ /[a-zA-Z]$/;
-	$self->setAttributes($element, 'svg:x' => $x, 'svg:y' => $y);
-	return wantarray ? ($x, $y) : ($x . ',' . $y);
+	return $self->setObjectCoordinates($element, @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -482,10 +454,7 @@ sub	getImageSize
 	my $self	= shift;
 	my $image	= shift;
 	my $element	= $self->getImageElement($image);
-	return undef	unless $element;
-	my $w		= $element->getAttribute('svg:width');
-	my $h		= $element->getAttribute('svg:height');
-	return wantarray ? ($w, $h) : ($w . ',' . $h);
+	return $self->getObjectSize($element, @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -496,18 +465,7 @@ sub	setImageSize
 	my $self	= shift;
 	my $image	= shift;
 	my $element	= $self->getImageElement($image);
-	return undef	unless $element;
-	my ($w, $h)	= @_;
-	if ($w && ($w =~ /,/))	# W and H are concatenated in a single string
-		{
-		$w =~ s/\s*//g;			# remove the spaces
-		$w =~ s/,(.*)//; $h = $1;	# split on the comma
-		}
-	$w = '0cm' unless $w; $h = '0cm' unless $h;
-	$w .= 'cm' unless $w =~ /[a-zA-Z]$/;
-	$h .= 'cm' unless $h =~ /[a-zA-Z]$/;
-	$self->setAttributes($element, 'svg:width' => $w, 'svg:height' => $h);
-	return wantarray ? ($w, $h) : ($w . ',' . $h);
+	return $self->setObjectSize($element, @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -551,9 +509,7 @@ sub	getImageDescription
 	my $self	= shift;
 	my $image	= shift;
 	my $element	= $self->getImageElement($image);
-	return $element	?
-		$self->getXPathValue($element, 'svg:desc')	:
-		undef;
+	return $self->getObjectDescription($element);
 	}
 
 #-----------------------------------------------------------------------------
@@ -564,21 +520,7 @@ sub	setImageDescription
 	my $self	= shift;
 	my $image	= shift;
 	my $element	= $self->getImageElement($image);
-	return undef	unless $element;
-	my $text	= shift;
-	my $desc	= $element->first_child('svg:desc');
-	unless ($desc)
-		{
-		$self->appendElement($element, 'svg:desc', text => $text)
-			if (defined $text);
-		}
-	else
-		{
-		if (defined $text)	{ $self->setText($desc, $text, @_);	}
-		else			{ $self->removeElement($desc, @_);	}
-		}
-
-	return $desc;
+	return $self->setObjectDescription($element, @_);
 	}
 
 #-----------------------------------------------------------------------------

@@ -1,3 +1,27 @@
+2.025	2006-05-05
+	- Image.pm: Some updates due to changes in XPath.pm
+	- XPath.pm: Added getFlatText(), setFlatText(), insertTextChild(),
+	getDescendants(), createFrame(), and frame geometry methods
+	- Image.pm: Cosmetic improvement in imagePosition()
+	- Styles.pm: Added rgbColor() and odfColor()
+	- Styles.pm: Added getOutlineStyleElement(), updateOutlineStyle()
+	- Styles.pm: "display-name" bug fix
+	- XPath.pm: Added frame related methods
+	- XPath.pm: Added setFlatText(), splitTextElement(), blankSpaces(),
+	lineBreak(), tabStop()
+	- Meta.pm: Fixed an issue with tab stops and line breaks
+	- Text.pm: Added text-box related methods
+	- Text.pm: Added setBibliographyMark()
+	- Text.pm: More context-sensitive selectXxx() methods
+	- Text.pm: Improved extendText(), allowing insertion within an element
+	- Text.pm: Improved getText(), setText()
+	- Text.pm: Improved list-related features
+	- Text.pm: Added 'within' option in insertElement()
+	- Text.pm: Bug fix and new methods related to footnotes & endnotes
+	- Text.pm: added selectElementByTextId()
+	- Text.pm: "Header" to "Heading" replacement when appropriate
+	- Text.pm: Added setBookmark() as a synonym for bookmarkElement()
+	- Documentation cleaning and update
 2.024	2006-03-17
 	- Text.pm: Zero or blank string allowed in createParagraph()
 	- Text.pm: Added getCellParagraph()
