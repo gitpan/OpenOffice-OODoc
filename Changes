@@ -1,3 +1,11 @@
+2.026	2006-06-11
+	- XPath.pm: added pickUpChildren(), appendElements(), moveElements()
+	- 01read.t: Bug fix in MIME type check
+	- Text.pm: Added makeHeading(), textField(), setTextField(),
+	moveElementsToSection(); Optimized setSpan(); replaced getChapter()
+	by getChapterContent()
+	- Text.pod: createParagraph() now documented
+	- Styles.pm: Bug fix in getDefaultStyle()
 2.025	2006-05-05
 	- Image.pm: Some updates due to changes in XPath.pm
 	- XPath.pm: Added getFlatText(), setFlatText(), insertTextChild(),

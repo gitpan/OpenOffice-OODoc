@@ -34,9 +34,9 @@ provided to describe the text-oriented features of OpenOffice::OODoc::Document
 OpenOffice::OODoc::Text component of the API).
 
 The OpenOffice::OODoc::Text class is a specialist derivative of
-OpenOffice::OODoc::XPath for XML elements. It describes the text content of
-OOo/ODF documents. Here, "text content" means containers that can host text
-containers (i.e. tables, lists...) as well as flat text.
+OpenOffice::OODoc::XPath for XML elements which describe the text content
+of OOo/ODF documents. Here, "text content" means containers that can
+host text containers (i.e. tables, lists...) as well as flat text.
 
 Knowing that the "styles.xml" member of an OpenOffice.org file can contain
 text (because some style definitions, such as page headers or footers, can
@@ -60,15 +60,15 @@ presentation which is one of the foundations of the OpenDocument format.
 
         Returns an OODoc::XPath OpenDocument connector with additional
 	features mainly focused on text containers.
-	
+
 	This constructor is generally not explicitly called, knowing that
 	it's automatically triggered each time a Document object is created.
-	
+
 	The XML member loaded by default is 'content.xml'. The most common
         creation method is like this:
 
             my $doc = ooText(file => 'my_file.odt');
-	    
+
 	This constructor should generally not be called directly, because it's
 	inherited by ooDocument().
 
@@ -118,14 +118,14 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	In a presentation or drawing document, appends a new page at the en
 	of the document.
-	
+
 	Possible options are:
-	
+
 		name		=> page name (unique)
 		id		=> page numeric ID (unique)
 		style		=> page style name
 		master		=> master page name
-	
+
 	Returns the new draw page element if successful, undef if not.
 
 =head3	appendHeading([options])
@@ -159,7 +159,7 @@ presentation which is one of the foundations of the OpenDocument format.
         You can give any XML attribute to the new heading except for style or
         heading level. In this case, the program must construct a hash
         containing pairs of key-values for the attributes you want to create
-        and pass it by reference using the 'attribute' option. Example:
+        and pass it using the 'attribute' option. Example:
 
             my %attr	= ( 'att1' => 'value1', 'att2' => 'value2' );
             $doc->appendHeading
@@ -167,15 +167,12 @@ presentation which is one of the foundations of the OpenDocument format.
             	text	=> 'Attributes are important',
             	level	=> '1',
             	style	=> 'Chapter heading',
-            	attribute => { %attr }
+            	attribute => %attr
             	);
 
         If the 'text' option is empty, the heading is created with an empty
         content.
-	
-	An 'attachment' option is allowed (see eppendParagraph() for details
-	about this option).
-	
+
 	Caution, creating headings with level attributes is not always
 	sufficient to produce the needed result. For example, in order to
 	generate headings with appropriate levels of numbering, each one
@@ -211,7 +208,7 @@ presentation which is one of the foundations of the OpenDocument format.
         Like appendParagraph, this method actually creates a new list
         element. To copy an existing list in the same document or in
         another, use appendElement or replicateElement instead.
-	
+
 =head3	appendListItem(list [, text => text ,style => style ,[other_options]])
 
         Adds a new item to a list (ordered or unordered).
@@ -222,17 +219,17 @@ presentation which is one of the foundations of the OpenDocument format.
 
         If the 'style' option is absent, the element is inserted according
         to the following rule:
-	
+
 	- if the new item is not the first one of the list, it takes the
 	same style as the first item;
-	
+
 	- otherwise, it takes the default paragraph style of the document.
-	
+
 	The new item is created as a paragraph container by default. A
 	'type' option may be provided in order to require another type.
 	Possible values are 'header', 'paragraph' or the XML name of any
 	OpenDocument-compliant text container.
-	
+
 	If the type is provided and set to undef, the new item is created
 	as an empty element, so it could/should receive a content later.
 	An empty item could be used as the attachment point of another
@@ -255,13 +252,13 @@ presentation which is one of the foundations of the OpenDocument format.
 
         If the 'style' option is empty, the style from the 'paragraph_style'
         property of the OODoc::Text instance is used.
-	
+
 	By default, the new paragraph takes place at the end of the document.
 	But it's possible to attach it as the last child of an existing
-	text container (ex: a section or a table cell). To do so, the
-	container must be provided through an 'attachment' option.
-	For example, to append a new paragraph in a table cell, one can write
-	
+	text container (ex: a table cell). To do so, the container must be
+	provided through an 'attachment' option. For example, to append a new
+	paragraph in a table cell, one can write
+
 		my $cell = $doc->getCell("Table1", "B12");
 		$doc->appendParagraph
 			(
@@ -274,7 +271,7 @@ presentation which is one of the foundations of the OpenDocument format.
         getParagraph from the same document or from another document, use
         the appendElement, insertElement or replicateElement methods instead
 	which are inherited from OODoc::XPath.
-	
+
 	Note: The repeated spaces are not properly processed, so any sequence
 	of spaces (whatever its length) in the 'text' string is replaced by a
 	single space in the target document. See setText() and extendText().
@@ -337,23 +334,23 @@ presentation which is one of the foundations of the OpenDocument format.
 	appended in the context of this element. For example, if the value
 	of "attachment" is an existing section, the new section is appended
 	as the last sub-section of the existing one.
-	
+
 	A section may be used either to hold a local content or to insert
 	a subdocument which can be reached through an external link.
-	
+
 	In order to insert a subdocument link instead of an ordinary section,
 	the application must provide a "link" option whose value is either a
 	local file path or an URL.
 	Example:
-	
+
 	    $doc->appendSection
 		(
 		"Article",
 		link => "http://mycompany.com/doc/article.odt"
 		);
-	
+
 	Other possible options:
-	
+
 	    'style'	allows the application to explicitly select a style
 	    		for the new section
 	    'protected'	write-protects the section when the document is
@@ -444,7 +441,7 @@ presentation which is one of the foundations of the OpenDocument format.
 					author	=> 'Genicorp',
 					pages	=> 62
 					);
-	
+
 	This sequence updates the "Author" and "Pages" values of the "GEN99"
 	entry, then returns all the content of the entry in %desc.
 
@@ -470,7 +467,7 @@ presentation which is one of the foundations of the OpenDocument format.
 	you to have a look at the Open Office XML specification and/or the
 	OOo bibliographic project (http://bibliographic.openoffice.org) in
 	order to know the generally accepted properties.
-		
+
 =head3	bookmarkElement(element, name [, offset])
 
 	See setBookmark().
@@ -550,7 +547,7 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	Possible value types are 'string', 'float', 'percentage', 'currency',
 	'date', 'time', 'boolean'.
-	
+
 	Note: If an application must convert a 'string' cell to a numeric
 	one and fill it with a numeric value, cellValueType() must be called
 	*before* cellValue(). Ex:
@@ -585,47 +582,25 @@ presentation which is one of the foundations of the OpenDocument format.
 	This method appends a copy of a given table row to the header of the
 	table. It may be called repeatedly, allowing multi-row header
 	creation.
-	
+
 	A table header is a row, or a sequence of rows, that is displayed at
 	the top of a table and repeated at the top of every page if the table
 	is spanned across more than one page.
-	
+
 	The given row remains in place unchanged; it's used as a template for
-	the new header row. 
+	the new header row.
+	
+=head3	createParagraph([text [, style]])
 
-=head3	createTextBoxElement(options)
+	Creates a free paragraph for later use. Unlike appendParagraph() or
+	insertParagraph(), this method doesn't attach the new paragraph to
+	the document.
+	
+	Without arguments, the paragraph is created empty. The first argument,
+	if any, provides the text content of the paragraph. The second one,
+	if any, is regarded as the style name; the default style is
+	"Standard". 
 
-	Creates a new text box according to the given options.
-	
-	Knowing that a text box is a particular frame, see createFrame() in
-	the OpenOffice::OODoc::XPath manual page for generic options (some
-	of them are mandatory if you need to create a really visible box).
-	
-	An additional 'content' option is allowed for a text box:
-	
-		'content'	=> string or text container
-		
-	The 'content' option is either the litteral content of the text, or
-	the reference of an existing text container (such as a paragraph).
-	Example:
-	
-		my $para = $doc1->getParagraph(4);
-		my $slide = $doc2->getDrawPage("Slide4");
-		$doc2->createTextBox
-			(
-			attachment	=> $slide,
-			size		=> '10cm, 2cm',
-			position	=> '2cm, 3cm',
-			content		=> $para->copy;
-			);
-			
-	This example inserts a text box in a presentation document ($doc2)
-	and fills it with a copy of a paragraph extracted from a text
-	document ($doc1).
-	
-	Note that this method works on text documents as well as presentation
-	or drawing documents.
-	
 =head3	defaultOutputTerminator([chars])
 
 	Get or set the default terminator character for text export.
@@ -645,7 +620,7 @@ presentation which is one of the foundations of the OpenDocument format.
 =head3	deleteBookmark(name)
 
 	Deletes the given bookmark (if defined).
-	
+
 	Works with position bookmarks only.
 
 =head3	deleteColumn(table, col_num)
@@ -653,33 +628,33 @@ presentation which is one of the foundations of the OpenDocument format.
 =head3	deleteColumn(col_elt)
 
 	Deletes a given column in a given table.
-	
+
 	Caution: Before using this method, the application should ensure that
 	the whole area from the beginning of the table to the last cell of the
 	column to be deleted is "normalized". See normalizeSheet() for details
 	about table normalization.
-	
+
 =head3	deleteRow(table, row_num)
 
 =head3	deleteRow(row_elt)
 
-	Deletes a given row in a table.	
+	Deletes a given row in a table.
 
 =head3	drawPageId(page [, new_id])
 
 	Returns the internal identifier of a presentation page, and changes
 	it if a second argument is provided. The page id is a positive
 	integer.
-	
+
 	The first argument must comply to the same rules as with getDrawPage.
-	
+
 =head3	drawPageName(page [, newname])
 
 	Returns the visible name of a presentation or drawing page.
 	The first argument can be a page order number, a page element or the
 	present page name (see getDrawPage). The page is renamed if a
 	second argument is provided. Example:
-	
+
 		$doc->drawPageName("oldname", "newname");
 
 =head3	deleteTableColumn(table, col_num)
@@ -695,8 +670,8 @@ presentation which is one of the foundations of the OpenDocument format.
 	Inserts the text provided as the second argument into the element
 	specified by the first argument. The second argument may be either a
 	flat string or another existing text element.
-	
-	This method is an improvement of the general extendText() method 
+
+	This method is an improvement of the general extendText() method
 	which is documented in the OpenOffice::OODoc::XPath manual page.
 
 	If a third argument is provided and is neither 0 nor an empty string,
@@ -704,14 +679,14 @@ presentation which is one of the foundations of the OpenDocument format.
 	as a "styled span" (see setSpan() for details about text "spans").
 	By default, the text is inserted without any special style (i.e. with
 	the same style as the containing element).
-	
+
 	The new text is, by default, appended to the existing content of the
 	element. However, if a valid numeric value is provided as the fourth
 	argument, the new text is inserted within the existing content, at the
 	given offset. If the offset is negative, it's counted backwards from
 	the end of the string. If it's set to 0, the insertion takes place at
 	the beginning.
-	
+
 		$doc->createStyle
 			(
 			"BlueYellow",
@@ -724,7 +699,7 @@ presentation which is one of the foundations of the OpenDocument format.
 			);
 		my $p = $doc->getParagraph(4);
 		$doc->extendText($p, "New text", "BlueYellow", 5);
-	
+
 	In the example above, "New text" is inserted at the offset 5 within
 	the 5th paragraph, in blue letters on a yellow background.
 
@@ -732,17 +707,17 @@ presentation which is one of the foundations of the OpenDocument format.
 	present. However, in order to pass an offset without setting a style,
 	the application has just to provide a 0 or an empty string as the
 	third argument. Example:
-	
+
 		$doc->extendText($p, "New text", "", 5);
-		
+
 	Every string inserted through this method looks like it had always
 	been a part of the original string when edited using OOo. However,
 	each one remains stored in a separate space, like a "styled text
 	span" (see setSpan()). So, given the following example:
-	
+
 		$doc->setText($para, "Old");
 		$doc->extendText($para, "New");
-		
+
 	After this sequence, the displayable content of $para is "OldNew",
 	but "OldNew" is not retrievable by selectElementsByContent(),
 	setSpan(), or other text-searching methods, because "Old" and "New"
@@ -753,15 +728,15 @@ presentation which is one of the foundations of the OpenDocument format.
 	However, all the internal text span borders may be removed by an
 	explicit call of flatten(). So, a third instruction could be
 	appended to the example:
-	
+
 		$doc->flatten($para);
-		
+
 	After this last instruction, the whole content of $para is stored
 	as a single string, and there is no internal separation between the
 	original content and the extension(s). In the other hand, flatten()
 	removes any previous formatting markup as well. For details about
 	flatten(), see OpenOffice::OODoc::XPath.
-	
+
 =head3	getBibliographyElements([id])
 
 	Returns the list of the bibliographic entry elements contained in the
@@ -773,7 +748,7 @@ presentation which is one of the foundations of the OpenDocument format.
 	Example:
 
 		my @biblio = $doc->getBibliographyElements("^W3C");
-	
+
 	returns the bibliographic entries where the identifier begins with
 	"W3C".
 
@@ -800,7 +775,7 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	If the cell is defined in the spreadsheet but covered (because of a
 	cell merge), the return value is undef.
-	
+
         The first argument can be either the sequential number of the table
         (starting at 0), the logical name of the table, or a 'table' object
 	(which can be retrieved in advance using getTable). If it's a number
@@ -811,7 +786,7 @@ presentation which is one of the foundations of the OpenDocument format.
 	cells in the same row, it's a good idea to get the row object and then
 	to use it in every cell selection, in order to minimize the
 	coordinates calculation.
-	
+
 	In tables including one or more header rows, the best way to get a
 	header cell is to use a header row (previously obtained using
 	getHeaderRow()) as the first argument. If the first argument is a
@@ -823,7 +798,7 @@ presentation which is one of the foundations of the OpenDocument format.
 	spreadsheet. So, for example
 
 		$doc->getCell($table, 'B12');
-	
+
 	is equivalent to
 
 		$doc->getCell($table, 11, 1);
@@ -831,7 +806,7 @@ presentation which is one of the foundations of the OpenDocument format.
 	(Remember that, with the numeric coordinates, the row number is the
 	first argument, while with the alphanumeric, spreadsheet-like ones,
 	the column letter(s) come first.)
-	
+
         Numbers can also be negative, where position -1 is the last. For
         example:
 
@@ -855,7 +830,7 @@ presentation which is one of the foundations of the OpenDocument format.
 	single XML object when they have the same content and the same
 	style, in order to save some storage space. This optimization is
 	systematically used, for example, by OpenOffice.org Calc.
-	
+
 	Addressing cells in spreadsheets is considerably more complex
         than in text document tables. However, the same addressing scheme
 	in allowed in the "Calc" documents than in the "Writer" ones,
@@ -863,9 +838,9 @@ presentation which is one of the foundations of the OpenDocument format.
 	(beginning at the upper-left cell, and ending at a parametrizable
 	position). It's possible to use normalizeSheet() or getTable() in
 	order to make this workspace available.
-	
+
 	See normalizeSheet() for more explanations.
-	
+
 	Remember that the table addressing is zero-based and
 	the row comes before the column in OpenOffice::OODoc, so, for
 	example:
@@ -893,7 +868,7 @@ presentation which is one of the foundations of the OpenDocument format.
 	Returns the list of the paragraph elements contained in a given
 	table cell (knowing that a single cell can contain one or more
 	paragraphs).
-	
+
 =head3	getCellValue(table, row, column)
 
 =head3	getCellValue(cell)
@@ -918,20 +893,21 @@ presentation which is one of the foundations of the OpenDocument format.
         returned numeric values directly in calculations.
 
 	See also cellValueType().
-	
+
         Note: To get information about a cell other than its value or value
 	type (numeric, etc.), the best way is first to get its element
 	reference with getCell() and then use it with getAttribute.
 
-=head3	getChapter(header_no [, options])
+=head3	getChapterContent(heading [, options])
 
 	This method returns the list of the elements depending (from the
-	end-user's point of view) on a given heading element. The argument
-	and the options are the same as with getHeading().
+	end-user's point of view) on a given heading element (not including
+	the heading element itself). The argument and the options are the
+	same as with getHeading().
 
-	Example:
+	Examples:
 
-		my @list = $doc->getChapter(2, level => 3);
+		my @list = $doc->getChapterContent(2, level => 3);
 		foreach my $element (@list)
 			{
 			my $text = $doc->getText($element);
@@ -940,12 +916,23 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	The code above selects and prints all the text elements below the
 	third level 3 heading of the document (not including the content of
-	the header itself.
+	the header itself. The following example creates a new section whose
+	content is made of a heading and the content of the depending chapter
+	(the heading text is used as the section name):
 	
+		my $heading = $doc->getHeading(2, level => 3);
+		my $heading_text = $doc->getFlatText($heading);
+		my $section = $doc->appendSection($heading_text);
+		my @content = $doc->getChapterBodyElements($heading);
+		$doc->moveElementsToSection($section, $heading, @content);
+
+	(See appendSection(), getHeading(), moveElementsToSection() in the
+	present manual chapter, and getFlatText() in OpenOffice::OODoc::XPath)
+		
 	Caution, this method returns a list of elements and not an element.
 	Chapters, unlike sections, are not defined in OpenDocument. So,
-	getChapter() should be used as a possible workaround in order to
-	isolate a logical set of content elements which is not packaged in
+	getChapterContent() should be used as a possible workaround in order
+	to isolate a logical set of content elements which is not packaged in
 	a section.
 
 =head3	getColumn(table, column)
@@ -954,7 +941,7 @@ presentation which is one of the foundations of the OpenDocument format.
         table. The first argument is either the table's sequential number in
         the document, logical name or element reference. The second argument
         is the column's number in the table. Synonym: getTableColumn.
-	
+
 	Caution: The application should ensure that the area including the
 	needed column is "normalized". See normalizeSheet() for details about
 	table normalization.
@@ -962,16 +949,16 @@ presentation which is one of the foundations of the OpenDocument format.
 =head3	getDrawPage(pos/name)
 
 	For presentation and drawing documents.
-	
+
 	Returns the element reference of the given page name or position.
-	
+
 	If the argument contains an integer, the page is selected according to
 	its zero-based position. If the value is negative, the position is
 	counted backwards from the end.
-	
+
 	If the argument is alphanumeric, it's regarded as a page name, and the
 	page is selected accordingly.
-	
+
 	Caution: This method can't retrieve a page by name if the name
 	contains numeric characters only; selectDrawPageByName() should be
 	preferred to do so.
@@ -1011,7 +998,7 @@ presentation which is one of the foundations of the OpenDocument format.
 	Example:
 
 		my $heading = $doc->getHeading(2, level => 3);
-	
+
 	selects the third level 3 heading in the whole document.
 
 	See also getChapter().
@@ -1026,14 +1013,14 @@ presentation which is one of the foundations of the OpenDocument format.
 
         Returns a list of heading elements (i.e. elements called 'text:h' in
         the document body).
-	
+
 	If the "level" option is provided, the list is restricted to the
 	headings having the given level.
 
 =head3	getHeaderRow(table [, row_number])
 
 	See getTableHeaderRow().
-	
+
 =head3	getHeadingText(n)
 
         Returns the text of the nth+1 heading element. Elements are counted
@@ -1075,41 +1062,41 @@ presentation which is one of the foundations of the OpenDocument format.
 =head3	getLevel(element)
 
 	See getOutlineLevel().
-		
+
 =head3	getList(n)
 
 	See getItemList().
-	
+
 =head3	getListItem(list, n)
 
 	Returns the nth+1 item in a given list if found.
-	
+
 	The list (1st argument) may be given either by its order number in
 	the document, or directly as an element reference.
 
 =head3	getNoteCitationList()
-	
+
 	For OpenDocument only (doesn't work on old OpenOffice.org documents).
-	
+
 	Returns the list of all the note citation elements (whatever their
 	note class, i.e. "endnote" or "footnote").
-	
+
 =head3	getNoteClass(note_element)
 
 	Returns the class of the given note element. Possible values are
 	presently "endnote" and "footnote". Returns undef unless the given
 	element is a note.
-	
+
 =head3	getNoteElement(class => $note_class, citation => $note_citation)
 
 	Returns the first note element matching the given class and citation,
 	if any. Returns undef if the target note element doesn't exist.
-	
+
 	The "class" parameter is either "endnote" or "footnote".
 
 	The "citation" parameter is the numeric or literal which refers to
 	the note, as it's visible for the end user.
-	
+
 	Caution: The uniqueness of a note citation in a given note class is
 	not a general rule. The citation is an identifier when it belongs to
 	an ordered sequence (such as 1, 2, 3... or "i", "ii", "iii"...). But
@@ -1123,7 +1110,7 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	Returns the note element matching the given internal note identifier
 	(which is a "text:id" attribute according to the ODF specification).
-	
+
 	This internal identifier is unique, whatever the note class, so the
 	"class" parameter is not needed. However, "class" may be provided as
 	an additional filter; if so, the method will return undef if the
@@ -1132,11 +1119,11 @@ presentation which is one of the foundations of the OpenDocument format.
 =head3	getNoteElementList()
 
 	Returns the list of the endnote and footnote main elements.
-	
+
 =head3	getNoteList()
 
 	Returns the list of the endnote and footnote body elements.
-	
+
 =head3	getOrderedList(n)
 
         Returns the element which represents the nth+1 ordered list in a
@@ -1150,7 +1137,7 @@ presentation which is one of the foundations of the OpenDocument format.
 	Returns the level number of a text element, or undef if the given
 	element don't have a level number. Every heading element should have
 	a level, while ordinary text body elements should not. Example:
-	
+
 		my $level = $doc->getOutlineLevel($element);
 		if ($level)
 			{
@@ -1160,7 +1147,7 @@ presentation which is one of the foundations of the OpenDocument format.
 			{
 			print "Non-heading element\n";
 			}
-	
+
 =head3	getParagraph(n)
 
         Returns the nth+1 paragraph in the document body, or undef if the
@@ -1208,14 +1195,14 @@ presentation which is one of the foundations of the OpenDocument format.
         The first argument is either the table's sequential number in the
         document, logical name or element reference. The second argument is
         the row number in the table. Synonym: getTableRow.
-	
+
 	This methods ignores the table header (if any). It can retrieve a
 	row in the table body only. See getTableHeaderRow().
 
 =head3	getRowCells(table, row)
 
 =head3	getRowCells(row)
-	
+
 	Returns the list of the uncovered cell elements corresponding to a
 	given table row. The row can be provided either by table ID and row
 	number or by direct row object.
@@ -1224,17 +1211,17 @@ presentation which is one of the foundations of the OpenDocument format.
 
         If the first argument is a number, returns the nth+1 section in a
 	document (section numbers are zero-based; if the argument is negative,
-	the sections are counted from the end). 
+	the sections are counted from the end).
 
         The second form allows you to select a section by its logical name (as
         it would appear to the end user when editing the section's
         properties). This name is obviously easier to use than a number.
         Moreover, this type of selection means the application will still
         work even if a section changes position within a document.
-	
+
 	The returned object is a "handle" that can be used for subsequent
 	element creations or retrievals in the selected section.
-	
+
 =head3	getSpanList([context])
 
         Returns a list of elements, in the given context, which correspond
@@ -1264,9 +1251,11 @@ presentation which is one of the foundations of the OpenDocument format.
 
 =head3	getTable(name [, length, width])
 
-        If the first argument is a number, returns the nth+1 table in a
+	Returns the reference of a table, selected by name or number.
+
+	If the first argument is a number, returns the nth+1 table in a
 	document (table numbers are zero-based; if the argument is negative,
-	the tables are counted from the end). 
+	the tables are counted from the end).
 
         The second form allows you to select a table by its logical name (as
         it would appear to the end user when editing the table's
@@ -1274,10 +1263,10 @@ presentation which is one of the foundations of the OpenDocument format.
         Moreover, this type of selection means the application will still
         work even if a table changes position within a document. But the
 	retrieval by name works with two restrictions:
-	
+
 	- if a table name is made of digits only, or if if represents a
 	numeric expression, it's automatically regarded as a table number;
-	
+
 	- getTable() can't retrieve a table by name if the name contains
 	one or more "$", "{" or "}" characters (these characters are allowed
 	in the table names in OpenOffice.org Writer documents, but not allowed
@@ -1286,11 +1275,14 @@ presentation which is one of the foundations of the OpenDocument format.
 	The returned object is a "handle" that can be used for subsequent
 	accesses to its components (rows, cells).
 
-	getTable() can be used to retrieve a sheet in a Calc document as
-	well as a table in a Writer document. However, before using any of
-	the row/column/cell manipulation available methods, a special
-	preprocessing should be done if the target table is a spreadsheet.
-	See normalizeSheet() for more information.
+	The additional size arguments are required with "open" tables, i.e.
+	tables whose size is not really fixed, such as OpenOffice.org Calc
+	spreadsheets. If the length and width arguments are provided, the
+	corresponding area becomes safely addressable. With OpenOffice.org
+	Writer documents, the size declaration is presently not required,
+	because every table has a fixed size and a continuous addressing
+	scheme. See normalizeSheet() for details about the table size
+	declarations.
 
 	A getTable() call with the optional length, width arguments produces
 	the same effect as an explicit call of normalizeSheet() with the same
@@ -1302,8 +1294,6 @@ presentation which is one of the foundations of the OpenDocument format.
 	normalization is needed before any column-oriented operation (i.e.
 	getColumn(), insertColumn() or deleteColumn()).
 
-        The returned value is a table element and not a table's content.
-
 =head3	getTableColumn(table, column)
 
         See getColumn.
@@ -1312,12 +1302,12 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	Returns the element reference which corresponds to a row in a table
 	header, or undef if the given table has no header row.
-	
+
 	The arguments are processes in the same way as with getRow(), but
 	the second argument is optional; it's required only if the table
 	has more than one header row (the 1st header row is returned by
 	default).
-	
+
 	The returned elements can be used with subsequent cell access methods
 	in order to process header cells (see getCell()).
 
@@ -1346,7 +1336,7 @@ presentation which is one of the foundations of the OpenDocument format.
         Example:
 
             my ($rows, $columns) = $doc->getTableSize("Table1");
-	    
+
 	Caution: This method provides meaningful results with well delimited
 	tables whose the XML storage is "normalized". It should not be used
 	with "open" spreadsheets (such as OpenOffice.org Calc documents),
@@ -1383,8 +1373,7 @@ presentation which is one of the foundations of the OpenDocument format.
 =head3	getText(element)
 
         Exports the text contained in the given element according to the
-        means appropriate to that type of element. Works on a large set
-	of text containers in any document class.
+        means appropriate to that type of element.
 
         If the 'use_delimiters' flag is set to 'on' (default), the content
 	of each element (others than ordinary paragraphs, table cell,
@@ -1402,7 +1391,7 @@ presentation which is one of the foundations of the OpenDocument format.
         brackets.
 
         '{NOTE:' and '}' for the content of footnotes.
-	
+
 	(Footnotes are physically inserted into the text at the place
         where they are called, just after the link element indicating the
         footnote's number. Its display at the foot of the page or elsewhere
@@ -1431,31 +1420,8 @@ presentation which is one of the foundations of the OpenDocument format.
 	produced is a concatenation of all the paragraph contents, each
 	separated in the same way as list items.
 
-        If the element is a table, getText() behaves like getTableText().
-	
-	If the element is a text box, getText() extracts its text content.
-	
-=head3	getTextBox(n)
+        If the element is a table, getText behaves like getTableText.
 
-=head3	getTextBoxElement(n)
-
-	Retrieves a text box by order number or by name.
-	
-	If the argument contains digits only, it's regarded as a text box
-	number (relative to the current context, which is the whole document
-	by default).
-	
-	If the argument contains one or more non-digit characters, the method
-	behaves like selectTextBoxElementByName().
-	
-=head3	getTextBoxElements()
-
-	Returns the list of the existing text boxes.
-	
-=head3	getTextBoxes()
-
-	See getTextBoxElements().
-	
 =head3	getTextContent()
 
         Returns the text of a document, as "flat" editable text.
@@ -1498,7 +1464,7 @@ presentation which is one of the foundations of the OpenDocument format.
 =head3	getVariableElement(name)
 
 	Returns the user-defined variable identified by the given name.
-	
+
 	[Contribution by Andrew Layton]
 
 =head3	hyperlinkURL(hyperlink [, url])
@@ -1507,11 +1473,11 @@ presentation which is one of the foundations of the OpenDocument format.
 	a previously retrieved hyperlink element (see selectHyperlinkElement
 	below), or the URL of an existing hyperlink. If a second argument is
 	provided, it replaces the URL of the hyperlink element.
-	
+
 	With only one argument, just returns the existing URL of the link,
 	or undef if the first argument doesn't match an existing hyperlink
 	element.
-	
+
 =head3	inputTextConversion(text)
 
 	Returns the UTF8 conversion of the given text, supposed to be in
@@ -1521,39 +1487,39 @@ presentation which is one of the foundations of the OpenDocument format.
 =head3	insertColumn(table, col_num [, options])
 
 	Inserts a new column in an existing table at a given position.
-	
+
 	The second argument must be the number of an existing column.
 	Caution: this argument must be a column number, and not a column
 	element.
-	
+
 	The new column is created as a copy of the column a the given
 	position. It's inserted before or after the existing one, according
 	to an optional "position" parameter (default 'before').
-	
+
 	Caution: before using insertColumn() against a spreadsheet, the
 	application should ensure that the whole rectangular area from the top
 	left cell ("A1") to the last used cell of the column at the target
 	position is "normalized" (see normalizeSheet() for details about the
 	table normalization).
-	
+
 =head3	insertDrawPage(page/pos [, options])
 
 	In a presentation or drawing document, inserts a new page before
 	or after an existing page.
-	
+
 	Possible options are the same as for appendDrawPage(), with an
 	additional one:
-	
+
 		position	=> 'before' or 'after' (default 'before')
-		
+
 	The new page is inserted before or after the reference page, according
 	to the 'position' option.
-	
+
 	The first argument can be a draw page element reference (recommended)
 	previously returned, for example, by a previous page retrieval or
 	creation method call. Alternatively, it can be a page position or
 	visible name, so it's regarded in the same way as in getDrawPage().
-	
+
 	Returns the new page element, or undef in case of failure.
 
 =head3	insertHeading(path, position, options)
@@ -1623,10 +1589,10 @@ presentation which is one of the foundations of the OpenDocument format.
 	Creates a new section and inserts it immediately before or after
 	an existing element (paragraph, header, table). The referenced element
         can be indicated as in insertParagraph.
-	
+
 	There is a "position" option which works in the same way as with
 	insertParagraph() or insertRow().
-	
+
 	For other options, see appendSection(). For example, insertSection()
 	may be used in order to insert a subdocument in a master document.
 
@@ -1638,7 +1604,7 @@ presentation which is one of the foundations of the OpenDocument format.
 	of element) at the given offset. If the offset is not defined, the
 	text is appended to the end of the element (however, if the offset is
 	provided and set to zero, the string is inserted at the beginning).
-	
+
 =head3	insertTable(path, position, name, rows, columns [, options])
 
 =head3	insertTable(element, name, rows, columns [, options])
@@ -1652,25 +1618,72 @@ presentation which is one of the foundations of the OpenDocument format.
 =head3	insertTableColumn(table, col_num [, options])
 
 	See insertColumn().
-	
+
 =head3	insertTableRow(table, row [, options])
 
 =head3	insertTableRow(row_element [, options])
 
         See insertRow().
-		
+
 =head3	lockSection(section [, key])
 
 	Installs a write protection on the given section.
-	
+
 	If a second argument is provided, it's stored as an encrypted key
 	which is associated to the write protection. Caution, it's not the
 	key as it should be typed by the OOo end-user.
-	
+
 	Such a write protection works only when the document is edited through
 	an OpenOffice.org-compatible desktop software. It doesn't prevent the
 	programs using OpenOffice::OODoc from deleting or updating the
 	protected sections.
+
+=head3	makeHeading([options])
+
+	Creates a new heading element, or marks as a heading an existing
+	element.
+
+	Options:
+
+		element		=> an arbitrary existing element
+
+	If this option is provided, the given element is converted in place
+	to a heading, whatever its original type and position. No element
+	is created.
+
+	Without the 'element' option, a new heading element is created and
+	returned for later use. This element is free; it's not automatically
+	attached somewhere in the document. For direct heading creation and
+	attachment, you should prefer appendHeading() or insertHeading().
+
+		level		=> a numeric, positive integer value
+
+	Sets the hierarchical level of the heading (remember 1 is the top
+	heading level). Caution: no default value.
+
+		style		=> the name of a convenient heading style
+
+	While it's not mandatory, the 'style' option and a properly defined
+	heading style are generally required in order to allow the office
+	software to really process and display the element as a heading with
+	the right hierarchical level. Of course, any previously existing
+	hierarchical style is reusable here.
+
+	The main purpose of this method is to allow quick heading hierarchy
+	creation in a "flat" document. For exemple, an application can select
+	a set of flat paragraphs matching a given condition and convert each
+	one in place to a heading with a given level.
+	
+=head3	moveElementsToSection(section, list)
+
+	Moves a list of elements from any place to a section.
+	
+	The section may be passed by name or by element reference; it must be
+	an existing one (no new section is created).
+	
+	The list is a set of arbitrary elements (including sections). Each one
+	is cut from its previous place and appended to the section in the
+	order of the list, without document consistency check.
 
 =head3	normalizeSheet(sheet, rows, columns)
 
@@ -1683,11 +1696,11 @@ presentation which is one of the foundations of the OpenDocument format.
 	preprocessing is sometimes required, sometimes not. Simply speaking,
 	it's required on present OpenOffice.org Calc spreadsheets, and
 	useless on present OpenOffice.org Text tables.
-	
+
 	It's automatically executed when getTable() is called
 	with size arguments; therefore it's not always explicitly invoked by
 	the applications. However, it's useful to know its purpose.
-	
+
 	The object addressing logic (which, for example, allows a program to
 	directly reach a cell using its coordinates) relies on a continuous,
 	regular mapping between the user's view and the physical XML storage
@@ -1703,18 +1716,18 @@ presentation which is one of the foundations of the OpenDocument format.
 	object whose the XML corresponding element has a repetition attribute
 	would automatically update all the objects mapped to the same element,
 	producing unpredictable and generally wrong results.
-	
+
 	OpenOffice.org Calc systematically uses this storage optimization in
 	spreadsheets, while OpenOffice.org Writer doesn't use it for tables in
 	text documents. In Calc (sxc/ods) documents, the XML mapping of the
 	whole content is "denormalized" in order to save memory: several table
 	components can be mapped to a single XML element, so the XML address
 	of each one can't be simply calculated from its logical coordinates.
-	
+
 	In order to allow the spreadsheet components to be addressed with the
 	same methods as the Writer table components, normalizeSheet()
 	reorganizes the XML mapping of the given sheet.
-	
+
 	Caution: The OpenDocument specification doesn't make any difference
 	about this point between tables included in text documents and tables
 	in spreadsheet-only documents. So any ODF-compliant application
@@ -1723,19 +1736,19 @@ presentation which is one of the foundations of the OpenDocument format.
 	required in the future for other documents than OOo Calc ones.
 
 	This method is not (presently) always needed for tables included
-	in OpenOffice.org Writer (sxw/odt) documents, because their storage is
+	in OpenOffice.org Writer (odt/sxw) documents, because their storage is
 	"normalized" (i.e. each component is mapped to an exclusive XML
 	element), with the exception of the column objects. So,
 	normalizeSheet() is required with these tables when the application
 	needs to use a column-focused method such as getColumn(),
 	insertColumn() or deleteColumn().
-	
+
 	In the other hand, normalizeSheet() is not required to address a sheet
 	which has been created through the OODoc methods (provided that the
 	document has not been edited with OpenOffice.org in the meantime).
 	These methods, i.e. appendTable() and insertTable(), create normalized
 	tables, whatever the document class.
-	
+
 	Because this method is very time and memory consuming, it should never
 	be used to reorganize the largest possible area of a sheet (meaning
 	thousands of rows and hundreds of columns that will probably never be
@@ -1750,13 +1763,13 @@ presentation which is one of the foundations of the OpenDocument format.
 	it's shown in the bottom tab by OOo Calc), the sheet number, or a
 	table object reference, previously returned by getTable(). The return
 	value is the table object (or undef in case of failure).
-	
+
 	Example:
 
 		$doc = ooDocument(file => 'report.sxc');
 		my $sheet = $doc->normalizeSheet('Sheet1', 7, 9);
 		my $result = $doc->cellValue($sheet, 5, 6);
-	
+
 	In the sequence above, a top left area of 7 rows by 8 columns is
 	pre-processed, so the cells from A1 to H6 of this sheet can be
 	reached according to the same addressing scheme as in Writer tables.
@@ -1820,12 +1833,12 @@ presentation which is one of the foundations of the OpenDocument format.
         this method becomes the equivalent of removeElement().
 
 =head3	removeHyperlink(path, position)
-	
+
 =head3	removeHyperlink(element)
-	
+
 	Removes any hyperlink contained in the given element, leaving
 	in place the previously hyperlinked text.
-	
+
 =head3	removeParagraph(position)
 
 =head3	removeParagraph(element)
@@ -1848,7 +1861,7 @@ presentation which is one of the foundations of the OpenDocument format.
 
         "Flattens" a text element, removing all presentation distinctions
         which may mark out some substrings of its content.
-	
+
 	For a more drastic result, see flatten() in OpenOffice::OODoc::XPath.
 
         See also setSpan().
@@ -1872,32 +1885,32 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	Returns the encrypted key which is associated to the given section,
 	if the section is write-protected by key.
-	
+
 	This method can't provide the real key (as it should be typed by
 	the end-user to unlock the section), but the returned value may be
 	reused in order to protect more than one section with the same
 	password.
-	
+
 	See also unlockSection().
-	
+
 =head3	sectionStyle(section, [newstylename])
 
 	Without argument, returns the current style of a given section.
-	
+
 	If an argument is provided, it becomes the new style of the section.
 
 =head3	selectDrawPageByName(name)
 
 	In a presentation or drawing document, returns the page element
 	identified by the given name, or undef if the name is unknown.
-	
+
 	The names to be used correspond to the displayed page names in
 	OpenOffice.org Impress.
 
 =head3	selectElementByBookmark(name)
 
 	Returns the element containing the given bookmark.
-	
+
 	Caution: this method works with position bookmarks only, not with
 	range bookmarks (a range bookmark can be spread over several text
 	elements).
@@ -1911,7 +1924,7 @@ presentation which is one of the foundations of the OpenDocument format.
 	With more than one argument, this method can be used for replacement
 	operations, or user-defined function triggering, in the same
 	conditions as selectElementsByContent().
-	
+
 =head3	selectElementsByContent(filter)
 
 =head3	selectElementsByContent(filter, replacement)
@@ -1922,7 +1935,7 @@ presentation which is one of the foundations of the OpenDocument format.
         headers or ordered/unordered lists whose content matches the search
         criteria contained in 'filter' (which can be an exact string or a
         regular expression).
-	
+
 	This method is context-sensitive (see currentContext() and
 	resetCurrentContext() in OpenOffice::OODoc::XPath for details about
 	the context). Its search space is restrained to the children of the
@@ -1956,9 +1969,9 @@ presentation which is one of the foundations of the OpenDocument format.
         of the arguments, in this order:
 
 	1) all remaining arguments after 'action' ('other_arguments'), if any.
-	
+
 	2) the element containing the retrieved text.
-	
+
 	3) the string actually selected. If the filter is an exact string,
 	it is equal to the filter. If the filter is a regular expression,
 	it matches the "real" text retrieved.
@@ -2032,17 +2045,17 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	Retrieves the first hyperlink element (if any) whose the URL matches
 	the argument. Example:
-	
+
 		my $e = $doc->selectHyperlinkElement("cpan");
-	
+
 	could return an hyperlink element containing "www.cpan.org" as
 	well as "search.cpan.org", etc. The URL filter is processed as
 	a regex.
-	
+
 	Note: In order to get the text container (ex: paragraph) where the
 	hyperlink is located, the application can use the parent() element
 	method. Example:
-	
+
 		 my $e = $doc->selectHyperlinkElement("www.cpan.org");
 		 my $p = $e->parent if $e;
 
@@ -2050,7 +2063,7 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	Returns the list of the hyperlink elements whose the URL matches
 	the argument (and not only the first one).
-	
+
 =head3	selectParagraphByStyle(stylename)
 
         Returns the first paragraph (if any) using the given style.
@@ -2058,14 +2071,6 @@ presentation which is one of the foundations of the OpenDocument format.
 =head3	selectParagraphsByStyle(stylename)
 
         Returns the list of the paragraphs using the given style.
-	
-=head3	selectTextBoxElementByName(name)
-
-	Returns the text box identified by the given name, if any.
-	
-	Note: Unnamed text boxes can't be retrieved using this method.
-	
-	See also getTextBoxElement().
 
 =head3	selectTextContent(filter)
 
@@ -2092,7 +2097,7 @@ presentation which is one of the foundations of the OpenDocument format.
         will result in a "flat" export of the document:
 
             print $doc->selectTextContent('.*');
-	    
+
 =head3	setBibliographyMark(element, offset, identifier => id [, options])
 
 	Creates a new bibliography mark within a given text element at a
@@ -2101,7 +2106,7 @@ presentation which is one of the foundations of the OpenDocument format.
 	options are all the possible attributes of an OpenDocument-compliant
 	bibliography entry, such as author, editor, isbn, title, year, and
 	many others. Example:
-	
+
 		$para = $doc->selectElementByContent("ODF-related book");
 		$doc->setBibliographyMark
 			(
@@ -2112,7 +2117,7 @@ presentation which is one of the foundations of the OpenDocument format.
 			year		=> 2005,
 			isbn		=> "1-4116-6832-4"
 			);
-			
+
 	This sequences puts a bibliography mark at the beginning (position=0)
 	of a previously selected text element. This mark will be displayed by
 	default as "[JDE]" with OpenOffice.org Writer.
@@ -2126,7 +2131,7 @@ presentation which is one of the foundations of the OpenDocument format.
 		my $paragraph = $doc->selectElementByContent
 						("Eragon and Saphira");
 		$doc->setBookmark($paragraph, "The Heroes");
-	
+
 	puts a bookmark identified by "The Heroes" in a paragraph where a
 	given text has been found (of course, the bookmark will remain even
 	if the text of the paragraph is changed later).
@@ -2134,7 +2139,7 @@ presentation which is one of the foundations of the OpenDocument format.
 	By default, the bookmark is put at the beginning of the text. But,
 	thanks to the optional offset, it can be put at any position within
 	the text of the bookmarked element.
-	
+
 	Note: This method puts a position bookmark, and not a range bookmark.
 	The OpenDocument specification allows both range and position
 	bookmarks. However, a range bookmark is not an element; it's a pair
@@ -2142,19 +2147,39 @@ presentation which is one of the foundations of the OpenDocument format.
 
 =head3	setHyperlink(path, position, [context,] expression, url)
 
-=head3	setHyperlink(element, [context,] expression, url)
+=head3	setHyperlink(element, [context,] expression, url [, options])
 
 	Puts an hyperlink on a text area in a given text element.
-	
+
 	Example:
-	
+
 	    $doc->setHyperlink($para, "CPAN", "http://www.cpan.org");
-	
+
 	This method works in the same was as setSpan(), described below,
-	but the text span is hyperlinked, and not presented according
-	a particular style. So, the last argument must be an URL instead
-	of a style.
+	but the text span is hyperlinked, and not only presented according
+	a particular style. So, the third argument must be an URL instead
+	of a style. 
 	
+	A set of hyperlink attributes may be optionally provided as a hash.
+	For example, the application can provide a 'style-name' and a
+	'visited-style-name' options:
+	
+	    $doc->setHyperlink
+	    		(
+			$para, "CPAN", "http://www.cpan.org",
+			'style-name' => "ToBeVisited",
+			'visited-style-name' => "Visited"
+			);
+			
+	'style-name' selects the style which applies to the text of the
+	hyperlink, as long as the URL is not visited, while
+	'visited-style-name' indicates, of course, the style in use if the
+	link location was already visited. These styles must belong to the
+	'text' family. 
+	
+	Other allowed hyperlink attributes are listed in the §5.1.4 of the
+	OASIS OpenDocument 1.0 specification.
+
 	Note: The hyperlink is not always a remote URL, such as in the
 	example above. Internal references ere allowed as well. An
 	internal reference is prefixed by "#". If an internal reference
@@ -2167,9 +2192,10 @@ presentation which is one of the foundations of the OpenDocument format.
 
 =head3	setSpan(element, [context,] expression, style)
 
-        Applies a "span" to part of the content of a text element.
+        Applies a special text style to one or more parts of the content
+	of a text element.
 
-        In OpenOffice.org XML language, a "span" is a substring whose
+        In OpenDocument XML language, a "text span" is a substring whose
         presentation style differs from the style of the text element to
         which it belongs. For example, a given "span" could be in italics
 	while the rest of the paragraph is in normal characters.
@@ -2179,54 +2205,65 @@ presentation which is one of the foundations of the OpenDocument format.
 
         A "span" is therefore a way to use several styles within the same
 	element, bearing in mind that the paragraph's global style can be
-	modified by setStyle.
+	modified by setStyle().
 
 	The properties of a text span can be related to any kind of character
 	string presentation, such as font, font size, font weight, font
-	style, and colors (background and foreground).
+	style, and colors (background and foreground). Whatever these
+	properties, they apply through a style.
 
         The desired text element is normally indicated by [path, position]
-        or reference. The optional argument 'context' which consists of an
-        element reference, allows you (when using [path, position]) to limit
-        a search to child elements of a particular element (e.g. headers,
-        footers, unordered lists, etc.).
+        or reference (recommended). The optional argument 'context' which
+	consists of an element reference, allows you (when using [path,
+	position]) to limit a search to child elements of a particular
+	element (e.g. page header, page footer, item list, section, etc.).
 
-        'expression' represents the span filter; every substring contained
-	in the target element and matching it becomes a 'span'. This filter
-	is processed, up to some extent, as a regex, but there is no full
-	perl regex support here; for example, the regex parentheses are not
-	supported.
-	
+        'expression' represents a filter; every substring contained
+	in the target element and matching the filter is attributed using the
+	given style. This filter is processed, up to some extent, as a regular
+	expression, but there is no full perl regex support here; for example,
+	the regex parentheses are not supported.
+
 	'style' is obviously the style describing the presentation
 	characteristics to give to it. See OODoc::Styles for how to construct
-	styles by program or to replicate existing styles.
+	styles by program or to replicate existing styles. Remember that a
+	style must belong to the 'text' family in order to be used in this
+	context (for example, a paragraph style would not work). 
 
         As a highlighted string can be quite long or not all known in
         advance, you can represent it with a regular expression. Taking the
         following paragraph as an example:
-	
+
 	"OpenOffice.org includes Writer, Calc, Draw and Impress"
-	
+
 	Assuming this text is contained in a $p element, the following
 	instruction gives the "Highlight" style to the "OpenOffice.org",
 	"Writer", "Calc", "Draw", and "Impress" substrings:
-	
-		$doc->setSpan
+
+		$doc->setSpanelement, [context,] expression, style
 		    (
-		    $p, 
+		    $p,
 		    'OpenOffice\.org|Writer|Draw|Calc|Impress',
 		    "Highlight"
 		    );
-		    	
+
 	The style referred to by setSpan() may be an existing style as well
 	as a style to be defined by the program (see createStyle() in
 	OpenOffice::OODoc::Styles).
+	
+	setSpan() works on any kind of text container, whatever its
+	hierarchical level. For example, if the given element is a table,
+	the span style attribution applies to every cell of the table. And
+	the same change can be done in all the displayable content not
+	including page headers, page footers, and page backgrounds through
+	a single setSpan() call, if the given element is the document body
+	itself (see getBody() in OpenOffice::OODoc::XPath).
+	
+        Caution: this method can neither recognise nor handle a string
+	located partly in a "span" and partly outside it. It can, however,
+	create a "span" inside another.
 
-        Caution: the current version of this method can neither recognise
-        nor handle a string located partly in a "span" and partly outside
-        it. It can, however, create a "span" inside another.
-
-        See also removeSpan.
+        See also removeSpan() and setHyperlink().
 
 =head3	setStyle(path, position, style_name)
 
@@ -2256,91 +2293,169 @@ presentation which is one of the foundations of the OpenDocument format.
         adds three items to the list if $element is a list. If $element is,
         for example, a paragraph, then the second argument ("Peter") becomes
         the content of the paragraph and the other arguments are ignored.
-	
+
 	If the element is a note element or a note body, the given text
 	becomes the content of the note body.
-	
+
 	If the element is a section, the whole content of the section is
 	deleted and replaced by a single paragraph containing the given text.
 
         For all other types of $element, setText() behaves normally as defined
         in OODoc::XPath.
-	
+
 	Note: setText(), as any other text input method, can't properly
 	process repeated spaces. So, a sequence of spaces, whatever its
 	length, is replaced by a single space. See setText() and extendText()
 	in OpenOffice::OODoc::XPath.
 	
-=head3	tableName(table [, newname])
+=head3	setTextField(element, [context,] expression, field-type [, options])
+
+	Replaces one or more substrings of a given text element by a variable
+	text field. See textField() in the present manual chapter for some
+	information about text fields.
 	
+	This method works the same way as setSpan() to retrieve the strings
+	to be replaced. However, each matching string becomes invisible and
+	is replaced by the variable field.
+	
+	Optional field attributes are allowed after the field type in the same
+	conditions as for textField().
+	
+	The following example replaces every occurrence of "TIMESTAMP" in a
+	given section by a variable field displaying a time which is 2 hours
+	later than the current time:
+	
+		$section = $doc->getSection("Variables");
+		$doc->setTextField
+			(
+			$section, "TIMESTAMP", 'time',
+			'time-adjust' => 'PT02H'
+			);
+
+=head3	tableName(table [, newname])
+
 	Returns the current name of a given table, or replaces it with a new
 	name given as the second argument. The table can be indicated
         by number, logical name or reference.
-	
+
 	Returns undef unless the given table is defined.
-	
+
 	If the new name is the name of an existing table, the table is not
 	renamed and an error message is produced.
-	
-=head3	textBoxContent(text_box [, new_content])
 
-	Returns the content of a given text box. If a second argument is
-	provided, it's used as the new content.
-	
-	See the 'content' option of createTextBoxElement() for the possible
-	values of the content argument.
-	
-=head3	textBoxCoordinates(text_box [, coordinates])
-
-	Gets the current coordinates of a text box, or changes them if a
-	second argument is provided.
-	
-	See getObjectCoordinates(), setObjectCoordinates() and
-	createFrameElement() in OpenOffice::OODoc::XPath for explanations
-	about coordinates syntax.
-	
-=head3	textBoxDescription(text_box [, new_description])
-
-	Gets the current description of a text box (if this description
-	exists, knowing that it's optional). If a second argument is
-	provided, it's used as the new description.
-	
-=head3	textBoxSize(text_box [, new_size])
-
-	Gets the current size of a text box, or changes it if a second
-	argument is provided.
-	
-	See getObjectSize(), setObjectSize() and createFrameElement() in
-	OpenOffice::OODoc::XPath for explanations about size syntax.
-
-=head3	tableStyle(table [, style])
-
-        Returns the current style of a given table, or replaces it with a
-        new style given as the second argument. The table can be indicated
-        by number, logical name or reference.
-	
 =head3	textId(element [, text_id])
 
 	This accessor gets or sets the "text identifier", an optional
 	attribute of any text container. This attribute is presently used
 	for a few elements by OpenOffice.org (ex: the notes).
-	
+
 	With one argument only, returns the existing identifier of the given
 	element, or undef if the element doesn't own a text identifier.
 	If a second argument is provided, its value replaces any previous
 	value of the identifier, and the text identifier is created if needed.
 	The new value is not checked, so the application should take care of
 	its uniqueness.
-	
+
 	The text identifier can be used as a bookmark, knowing that, unlike a
 	bookmark, this attribute is not visible for the end user.
-	
+
 	See also selectElementByTextId().
-	
+
 	Caution: The text identifiers created or changed by other applications
 	are presently *not* preserved when the document is edited through
 	OpenOffice.org.
+
+=head3	tableStyle(table [, style])
+
+        Returns the current style of a given table, or replaces it with a
+        new style given as the second argument. The table can be indicated
+        by number, logical name or reference.
+
+=head3	textField(type [, options])
+
+	Creates and returns a variable field to be inserted within a text
+	element.
 	
+	Such a field doesn't contain any static text by itself. When
+	included in a text container, it tells the editing/printing software
+	to display dynamic context data, such as date, time, file name,
+	page number, page count, author, etc. Variable text fields are mainly
+	used in page headers or footers, but they are allowed in the page
+	bodies as well. Remember that a text field must be attached as a child
+	element of a text container (paragraph or heading) in order to be
+	displayed. However, the text container itself may be attached to
+	anything anywhere (ex: a page header, a table cell, a list item, etc).
+	
+	The first argument (mandatory) is the field type. Many field types
+	are allowed, so they are not all listed here. For some of them,
+	options are allowed or required.
+	
+	To get the full list of field types, and their possible options,
+	look at the chapter 6 "Text fields" in the OpenDocument 1.0
+	specification. However, a few ones are presented below as examples.
+
+	The field type, as well as each field option, must be provided as it
+	appears in the OpenDocument specification, without the "text:" prefix
+	(this prefix is automatically added). However, the application can
+	force any arbitrary field name and/or field option such as 'xxx:yyy'
+	(any name or option including a ':' is accepted as is).
+	
+	Caution: textField() allows the user to create any kind of field,
+	without OpenDocument compliance check. So it can be used to insert
+	application-specific markup in any place. This feature could prove
+	useful in some situations, but remember that a typo in a field type
+	or option will not be automatically detected. In the other hand, every
+	non-OpenDocument field is silently removed if the document is later
+	edited and saved through OpenOffice.org.
+	
+	Knowing that the created element is not attached to a text container,
+	it must be inserted or appended through another method. For example,
+	the following sequence creates a paragraph displaying "This document
+	contains <page-count> pages and we are in the page <page-number>":
+	
+		$para = $doc->appendParagraph
+			(
+			text => "This document contains ",
+			style => "Standard"
+			);
+		$pg = $doc->textField('page-count');
+		$doc->appendElement($para, $pg);
+		$doc->extendText($para, " pages and we are in the page ");
+		$pg = $doc->textField('page-number');
+		$doc->appendElement($para, $pg);	
+		
+	The 'page-number' field type, introduced above, could be adjusted in
+	order to display the page number of any following or preceding page.
+	To do so, a 'page-adjust' option, set with a positive or negative
+	integer value, should be provided to createField():
+	
+		$pg = $doc->textField
+			('page-number', 'page-adjust' => -2);
+			
+	Note that, if the arithmetic sum of the real page number and the
+	'page-adjust' value doesn't match an existing page, the editing
+	application should display nothing.
+			
+	As another example, a 'chapter' field displays the current chapter
+	number or title. It requires 2 options: 'outline-level', an integer
+	which selects the hierarchical heading level to be regarded as the
+	chapter level, and 'display' which controls the value to display
+	(chapter number, chapter name or both). The following instruction
+	creates a field displaying the number and the name of the current
+	level 1 heading:
+	
+		$chapter_field = $doc->textField
+			(
+			'chapter',
+			'outline-level'	=> 1,
+			'display'	=> 'number-and-name'
+			);
+			
+	Other possible fields display the current date or time (see the
+	setTextField() example about a time field with an optional ajustment),
+	the author's name, the file path or name, and many other variable or
+	fixed values, according to many options.
+
 =head3	textStyle(path, position [, style])
 
 =head3	textStyle(element [, style])
@@ -2368,19 +2483,19 @@ presentation which is one of the foundations of the OpenDocument format.
 	Removes the write protection (if any) of the given section. If the
 	section was key-protected, the key is removed and provides the return
 	value of the method.
-	
+
 	Example:
-	
+
 		my $key = $doc->unlockSection("Section1");
 		$doc->lockSection("Section2", $key);
-		
+
 	The two lines above remove the protection of "Section1" and protect
 	"Section2" with the password which previously protected "Section1".
-	
+
 =head3	unlockSections()
 
 	Removes the write protection of every section in the document.
-	
+
 =head3	updateCell(table, row, column, value [, text])
 
 =head3	updateCell(element, value [, text])
@@ -2416,7 +2531,7 @@ presentation which is one of the foundations of the OpenDocument format.
 	displayed one. The user field is displayed according to a data style
 	by OpenOffice.org. For example, 'Tuesday, March 1, 2005' is a possible
 	displayed value for 38412.
-	
+
 =head3	variableValue(name/element [, newvalue])
 
 	Returns the current value of the given user-defined variable or, if
@@ -2433,7 +2548,7 @@ presentation which is one of the foundations of the OpenDocument format.
 	general of them are described in the OpenOffice::OODoc::XPath manual.
 	Some of them (listed below) are simple read-only accessors allowing
 	the user to check the type of any element.
-	
+
 =head3	isXXX() methods
 
         A set of "isXXX" methods, returning true or false, allow to check
@@ -2443,25 +2558,25 @@ presentation which is one of the foundations of the OpenDocument format.
         Example:
 
             print "This is a list" if $element->isItemList;
-	  
+
         Here is the list of element type indicators:
 
             isBibliographyMark		bibliography mark (in the doc. body)
-	    
+
 	    isCovered			covered (invisible) table cell
-	    
+
 	    isDrawPage			presentation or drawing page
-	    
+
 	    isEndnote			endnote main element
-	    
+
 	    isEndnoteBody		endnote body element
-	    
+
             isEndnoteCitation		endnote citation element
-	    
+
 	    isFootnote			footnote main element
-	    
+
 	    isFootnoteBody		footnote body element
-	    
+
 	    isFootnoteCitation		footnote citation element
 
             isHeading			heading
@@ -2469,31 +2584,31 @@ presentation which is one of the foundations of the OpenDocument format.
             isItemList			list (ordered or unordered)
 
             isListItem			list item
-	    
+
 	    isNote			main note element (end- or footnote)
-	    
+
 	    isNoteBody			note body (in end- or footnote)
 
             isOrderedList		ordered list (OOo only)
 
             isParagraph			paragraph
-	    
+
 	    isSection			section
 
             isSequenceDeclarations	set of sequence declarations
-	    
+
 	    isSpan			span element (see setSpan)
 
             isTable			table
 
             isTableCell			table cell
-	    
+
 	    isTableRow			table row
 
             isUnorderedList		unordered list (OOo only)
 
 =head3	Other element methods
-    
+
         For a neater and more direct access to element types, see the
         getName method of XML::Twig::Elt. A call to $element->getName
 	returns the element's XML name including its namespace prefix

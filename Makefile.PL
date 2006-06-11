@@ -1,5 +1,5 @@
 #------------------------------------------------------
-# OpenOffice::OODoc packaging & installation 2006-01-18
+# OpenOffice::OODoc packaging & installation 2006-06-11
 #------------------------------------------------------
 
 use 5.008;
@@ -60,7 +60,7 @@ if ($config)
 			{
 			warn	"\tWARNING: This directory doesn't exist.\n";
 			}
-		print "- Your preferred file format is [$format] (OOo=1 OD=2).\n";
+		print "- Your preferred file format is [$format] (OOo=1 ODF=2).\n";
 		$answer = lc (prompt("Is that OK (y/n) ?", "y"));
 		$prompt = '' unless $answer ne "y";
 		last unless $prompt;
@@ -81,7 +81,7 @@ if ($config)
 			);
 		$format		= prompt
 			(
-			"What is your preferred format for new documents (OOo=1, OD=2) ?",
+			"What is your preferred format for new documents (OOo=1, ODF=2) ?",
 			$format
 			);
 		unless ($format eq "1" or $format eq "2")

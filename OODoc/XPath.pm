@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 2.215 2006-05-05 JMG$
+#	$Id : XPath.pm 2.215 2006-06-10 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2006 by Genicorp, S.A. (www.genicorp.com)
@@ -12,7 +12,7 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 2.215;
+our	$VERSION	= 2.216;
 use	XML::Twig	3.22;
 use	Encode;
 
@@ -895,35 +895,64 @@ sub	getChildElementByName
 	}
 
 #-----------------------------------------------------------------------------
+# some usual text field constructors
 
-sub	createSpaces
+sub	create_field
 	{
 	my $self	= shift;
-	my $length	= shift	or return undef;
-	return OpenOffice::OODoc::Element->new
-			('text:s' => { 'text:c' => $length } );
+	my $tag		= shift;
+	my %opt		= @_;
+	my $prefix	= $opt{'-prefix'};
+	delete $opt{'-prefix'};
+	
+	if ($prefix)
+		{
+		$tag = "$prefix:$tag" unless $tag =~ /:/; 
+		my %att = ();
+		foreach my $k (keys %opt)
+			{
+			my $a = ($k =~ /:/) ? $k : "$prefix:$k";
+			$att{$a} = $opt{$k};
+			}
+		%opt = %att;
+		}
+	my $element = OpenOffice::OODoc::Element->new($tag);
+	$self->setAttributes($element, %opt);
+	return $element;
+	}
+
+sub	spaces
+	{
+	my $self	= shift;
+	my $length	= shift;
+	return $self->create_field('text:s', 'text:c' => $length, @_);
 	}
 
 sub	blankSpaces
 	{
 	my $self	= shift;
-	my $length	= shift;
-	return OpenOffice::OODoc::Element->new
-			('text:s' => { 'text:c' => $length } );
+	return $self->spaces(@_);
 	}
 	
+sub	createSpaces
+	{
+	my $self	= shift;
+	return $self->spaces(@_);
+	}
+
 sub	tabStop
 	{
 	my $self	= shift;
 	my $tag = $self->{'opendocument'} ? 'text:tab' : 'text:tab-stop';
-	return OpenOffice::OODoc::Element->new($tag);
+	return $self->create_field($tag, @_);
 	}
 	
 sub	lineBreak
 	{
-	return OpenOffice::OODoc::Element->new('text:line-break');
+	my $self	= shift;
+	return $self->create_field('text:line-break', @_);
 	}
-	
+
 #------------------------------------------------------------------------------
 
 sub	appendLineBreak
@@ -2023,7 +2052,7 @@ sub	replaceElement
 	}
 
 #------------------------------------------------------------------------------
-# adds a new or existing child element
+# appends a new or existing child element to any existing element
 
 sub	appendElement
 	{
@@ -2062,9 +2091,37 @@ sub	appendElement
 	}
 
 #------------------------------------------------------------------------------
+# appends a list of children to an existing element
+
+sub	appendElements
+	{
+	my $self	= shift;
+	my $path	= shift;
+	my $pos		= (ref $path) ? undef : shift;
+	my $parent	= $self->getElement($path, $pos) or return undef;
+	my @children	= @_;
+	foreach my $child (@children)
+		{
+		$parent->appendChild($child);
+		}
+	return $parent;
+	}
+
+#------------------------------------------------------------------------------
+# cuts a set of existing elements and pastes them as children of a given one
+
+sub	moveElements
+	{
+	my $self	= shift;
+	my $path	= shift;
+	my $pos		= (ref $path) ? undef : shift;
+	my $parent	= $self->getElement($path, $pos) or return undef;
+	$parent->pickUpChildren(@_);
+	return $parent;
+	}
+
+#------------------------------------------------------------------------------
 # inserts a new element before or after a given node
-# as appendElement, but the new element is a 'brother' (and not a child) of
-# the first given element
 
 sub	insertElement
 	{
@@ -2312,6 +2369,17 @@ sub	appendChild
 	return $child->paste_last_child($node);
 	}
 	
+sub	pickUpChildren
+	{
+	my $parent	= shift;
+	my @children	= @_;
+	foreach my $child (@children)
+		{
+		$child->move(last_child => $parent);
+		}
+	return $parent;
+	}
+
 sub	insertNewNode
 	{
 	my $node	= shift;

@@ -1,9 +1,9 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Styles.pm 2.018 2006-05-05 JMG$
+#	$Id : Styles.pm 2.019 2006-06-08 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
-#	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2006 by Genicorp, S.A. (www.genicorp.com)
 #	License:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
@@ -12,7 +12,7 @@
 
 package OpenOffice::OODoc::Styles;
 use	5.006_001;
-our	$VERSION	= 2.018;
+our	$VERSION	= 2.019;
 
 use	OpenOffice::OODoc::XPath	2.215;
 use	File::Basename;
@@ -750,7 +750,7 @@ sub	styleProperties
 	my $namespace	= $opt{'namespace'};
 	my $type	= $opt{'type'};
 	my $path	= $opt{'path'};
-	my $part_name	= $opt{'area'};
+	my $part_name	= $opt{'-area'} || $opt{'area'};
 	my $element	= $self->getStyleElement
 					(
 					$style,
@@ -762,6 +762,7 @@ sub	styleProperties
 	delete	$opt{'namespace'};
 	delete	$opt{'type'};
 	delete	$opt{'path'};
+	delete	$opt{'-area'};
 	delete	$opt{'area'};
 
 	my $change	= undef;
@@ -843,7 +844,7 @@ sub	getDefaultStyleElement
 	else
 		{
 		return $self->getNodeByXPath
-		    ("style:default-style\[\@style:family=\"$style\"\]", @_);
+		  ("//style:default-style\[\@style:family=\"$style\"\]", @_);
 		}
 	}
 
@@ -880,14 +881,27 @@ sub	createStyle
 			"Missing style name\n";
 		return	undef;
 		}
-	my %opt		= (check => 'true', @_);
-	if ((lc $check eq 'true') && $self->getStyleElement($name, %opt))
+	my %opt = (check => 'true', @_);
+	
+	my $check = lc $opt{'check'} eq 'true'; delete $opt{'check'};
+	my $replace = lc $opt{'replace'} eq 'true'; delete $opt{'replace'};	 
+	if ($check || $replace)
 		{
-		warn	"[" . __PACKAGE__ . "::createStyle] "	.
-			"Style $name exists\n";
-		return	undef;
+		my $old = $self->getStyleElement($name, %opt);
+		if (defined $old)
+			{
+			unless ($replace)
+			    {
+			    warn "[" . __PACKAGE__ . "::createStyle] " .
+				 "Style $name exists\n";
+				return	undef;
+			    }
+			else
+			    {
+			    $self->removeElement($old);
+			    }
+			}
 		}
-	delete $opt{'check'};
 
 	my $element	= undef;
 	my $path	= undef;

@@ -6,17 +6,17 @@ oohighlight - search, replace and highlight text in a document
 
 =head1	SYNOPSIS
 
-oohighlight "myfile.sxw" "search string" -r "replacement" -o "target.sxw"
+oohighlight "source.odt" "search string" -r "replacement" -o "target.odt"
 
-replaces "search string" by "replacement" in the file "myfile.sxw", highlights
+replaces "search string" by "replacement" in the file "source.odt", highlights
 each replacement with a yellow (default) backgound, then writes the resulting
-document as "target.sxw"
+document as "target.odt"
 
-oohighlight "myfile.sxw" "search string" -color "green"
+oohighlight "myfile.odt" "search string" -color "green"
 
 highlights each occurrence of "search string" in "myfile.sxw" with a green
 background color, without changing the text (without "-o" option, the changes
-apply to "myfile.sxw"
+apply to "myfile.odt"
 
 =head1	ARGUMENTS AND OPTIONS
 
@@ -54,14 +54,14 @@ and represented with the "Standard" style.
 
 	-p --property "property=value"
 
-		for OOo advanced users only ! this option can be repeated;
-		each occurrence gives an additional property for the
-		highlight style (font name, size, foreground color, ...)
-		For example, with the combination of -p fo:color=#ff0000
-		and -p fo:font-size=18pt, the highlighted text will be
-		made of 18pt-sized, red characters. In order to master
-		these option, you should have some knowledge of the
-		OpenOffice styling vocabulary
+		This option can be repeated; each occurrence gives an
+		additional property for the highlight style (font name, size,
+		foreground color, ...). For example, with the combination of
+		-p 'fo:color=#ff0000' and -p 'fo:font-size=18pt', the
+		highlighted text will be made of 18pt-sized, red characters.
+		In order to master these options, you should have some
+		knowledge of the Form Objects (FO) vocabulary that is used
+		in the OpenDocument specification.
 	
 	-o --output "filename"
 	-t --target "filename"
@@ -114,7 +114,7 @@ my $doc		= ooDocument
 			file		=> $filename,
 			local_encoding	=> $encoding
 			)
-	or die "File unavailable or non-OOo file\n";
+	or die "File unavailable or non-ODF file\n";
 
 #-----------------------------------------------------------------------------
 # creating the highlight style

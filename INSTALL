@@ -1,4 +1,4 @@
-OpenOffice::OODoc installation (Jan 2006)
+OpenOffice::OODoc installation (June 2006)
 
 SYSTEM REQUIREMENTS
 
@@ -41,7 +41,7 @@ INSTALLATION
 	directory is ".", i.e. the current directory of each application);
 	- the preferred file format, to be used when you create a new
 	document from scratch (answer "1" for OpenOffice.org, "2" for OASIS
-	Open Document, default is "2").
+	OpenDocument Format, default is "2").
 
 	The interactivity can be avoided by the --noprompt option.
 	The parameters can be provided at the command line with (respectively)

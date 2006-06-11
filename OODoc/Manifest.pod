@@ -22,7 +22,7 @@ and the real content (but this check and others could be easily
 developed with the combination of this module and the other ones).
 
 The manifest (i.e. the "META-INF/manifest.xml") is a special member
-of a regular OpenOffice.org file. It describes the MIME types and the
+of a regular OpenDocument file. It describes the MIME types and the
 full internal paths of the other members.
 
 =head2	Methods
@@ -55,13 +55,26 @@ full internal paths of the other members.
 
 	Returns the element describing the "content.xml" member of the
 	file, if this element is defined.
-
+	
 =head3	getMainType()
 
 	Returns the main MIME type of the OpenOffice.org document.
-	For example, this type is 'application/vnd.sun.xml.writer' for
-	a text document, or 'application/vnd.sun.xml.impress' for a 
-	presentation.
+	For example, this type is
+	
+		"application/vnd.oasis.opendocument.text"
+		
+	for an OpenDocument text file or
+	
+		"application/vnd.oasis.opendocument.presentation"
+		
+	for an OpenDocument presentation, or
+	 
+		"application/vnd.sun.xml.writer"
+		
+	for an OpenOffice.org 1.0 text file, etc.
+	
+	See the Appendix C in the OASIS OpenDocument 1.0 specification
+	for a complete list of OpenDocument-compliant MIME types.
 
 =head3	getType($entry)
 
@@ -87,7 +100,7 @@ full internal paths of the other members.
 
 =head3	setMainEntry($type)
 
-	Sets the main MIME type of the OpenOffice.org document.
+	Sets the main MIME type of the document.
 	Risky; not for ordinary use. But nobody prevents you from giving
 	a presentation or spreadsheet MIME type to a Writer document !
 

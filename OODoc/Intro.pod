@@ -775,6 +775,26 @@ And, if an unfortunate end-user is barred from updating a section by a lost
 password, the programmer can help with a single line such as:
 
 	$doc->unlockSection($section_name);
+
+Of course, a section can host any local content instead of an external link.
+
+	my $section = $doc->appendSection("Section 1");
+	$doc->appendParagraph
+		(
+		attachment	=> $section,
+		text		=> "The first paragraph in the section",
+		style		=> "Standard"
+		);
+		
+Here, a section is created and receives a paragraph as its first content.
+
+An existing set of content elements could migrate under a section. The next
+example, more sophisticated, selects the list of all the elements that
+hierarchically depend on the first level 1 title of the document and moves
+these elements to a given section:
+
+	my @content = $doc->getChapterContent(0, level => 1);
+	$doc->moveElementsToSection("Section 1");
 	
 The sections are not the only places for using hyperlinks. The applications
 can associate hyperlinks to any portion of text. The following example puts
@@ -805,7 +825,7 @@ heading located in a remote document:
 		"http://somewhere.com/somewhat.odt#Conclusion|outline"
 		);
 
-=head2	Manipulating user defined variables, bibliographic entries, bookmarks
+=head2	Manipulating variables, bibliographic entries, bookmarks
 
 The OODoc toolbox provides easy read/write accessors to some useful objects
 that can be included in OOo text documents.
@@ -817,6 +837,16 @@ by a given value, the corresponding code could be:
 	$old_value = $doc->userFieldValue("FieldName");
 	$doc->userFieldValue("FieldName", $old_value + $added_value);
 
+Any OpenDocument-compliant variable text field may be inserted in a document
+through the textField() method. The next example appends a paragraph whose
+text content is "This document contains <page-count> pages", knowing that
+the real page count will be dynamically displayed by the office software:
+
+	my $p = $doc->appendParagraph
+		(text => "This document contains ");
+	$doc->appendElement($p, $doc->textField('page-count'));
+	$doc->extendText($p, " pages");
+	
 It's possible to get or set any property of a bibliography entry. An entry
 can be selected by its identifier (as it appears for the end-user). The first
 example below prints the title and the author of the first found occurrence

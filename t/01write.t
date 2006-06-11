@@ -5,8 +5,8 @@
 use Test;
 BEGIN	{ plan tests => 20 }
 
-use OpenOffice::OODoc	2.025;
-ok($OpenOffice::OODoc::VERSION >= 2.025);
+use OpenOffice::OODoc	2.026;
+ok($OpenOffice::OODoc::VERSION >= 2.026);
 
 #-----------------------------------------------------------------------------
 
@@ -80,7 +80,7 @@ ok	(
 ok	(
 	$doc->appendParagraph( text => "File creation date : " . localtime() )
 	);
-# Appending a level 1 header
+# Appending a level 1 heading
 ok	(
 	$doc->appendHeading( text => "Congratulations !", level => "1" )
 	);
@@ -93,8 +93,8 @@ ok	(
 		parent		=> 'Standard',
 		properties	=>
 			{
-			'fo:color'		=> rgb2oo(0,0,128),
-			'fo:background-color'	=> rgb2oo("yellow")
+			'fo:color'		=> odfColor(0,0,128),
+			'fo:background-color'	=> odfColor("yellow")
 			}
 		)
 	);
@@ -105,7 +105,7 @@ if ($doc->isOpenDocument)
 		"Colour",
 		properties	=>
 			{
-			'area'		=> 'text',
+			-area		=> 'text',
 			'fo:color'	=> rgb2oo(0,0,128)
 			}
 		);
@@ -114,7 +114,7 @@ if ($doc->isOpenDocument)
 ok	(
 	$doc->appendParagraph( text => $notice, style => "Colour" )
 	);
-# Appending another level 1 header
+# Appending another level 1 heading
 ok	(
 	$doc->appendHeading( text => "Your environment :", level => "1" )
 	);
@@ -134,13 +134,13 @@ my $list = $doc->isOpenDocument ?
 my $count = scalar $doc->selectElements($list, 'text:list-item');
 ok($count == 5);
 
-# Appending another level 1 header
+# Appending another level 1 heading
 ok	(
 	$doc->appendHeading( text => "Your OpenOffice::OODoc choices :", level => "1" )
 	);
 # Appending an item list with the installation parameters
 my $office_format = $OpenOffice::OODoc::File::DEFAULT_OFFICE_FORMAT == 2 ?
-                "OASIS Open Document" : "OpenOffice.org 1";
+	"OASIS Open Document 1.0 (ISO/IEC 26300)" : "OpenOffice.org 1.0";
 my $color_map	= $OpenOffice::OODoc::Styles::COLORMAP || "<none>";
 $doc->setText
 	(

@@ -12,21 +12,23 @@ oometadoc 0.2 - Document properties management interface
 =head1	DESCRIPTION
 
 Simple graphical user interface allowing the user to get and set the metadata
-of the OpenOffice.org documents (SXW, SXI, SXC, ...) in a given directory.
+of the OpenDocument and OpenOffice.org files (ODT, ODP, ODS, SXW, SXI, SXC,...)
+in a given directory.
 
-The list of the OpenOffice.org files is shown in the main window. Each time
-the user selects a file (by double-clic or OK button), another window appears,
-with some property fields: title, author, subject, description, keywords. The
-flat text content is shown in a read-only field. The user can update any
-property, or insert/delete any keyword. A double-click on a word in the
-text content field appends the word to the keword list. 'OK' saves the changes
-in the file.
+The list of the files is shown in the main window. Each time the user selects
+a file (by double-clic or OK button), another window appears, with some
+property fields: title, author, subject, description, keywords. The flat text
+content is shown in a read-only field. The user can update any property, or
+insert/delete any keyword. A double-click on a word in the text content field
+appends the word to the keword list. 'OK' saves the changes in the file.
 
 =head1	LIMITS
 
 This script is provided as a demo and test tool, with a very basic user
 interface. There is no directory selection dialog box. Some file names with
-blank spaces and/or non-ASCII characters are not properly processed.
+blank spaces and/or non-ASCII characters are not properly processed by the
+graphical user interface (even if the OODoc API does support the same character
+sets as the local Perl installation).
 
 =head1	REQUIREMENTS
 

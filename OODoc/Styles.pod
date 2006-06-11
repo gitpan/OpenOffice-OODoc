@@ -55,7 +55,7 @@ OpenOffice.org. Applications which access automatic styles will not
 want to indicate them using "hard-coded" names. The best way is to
 retrieve each automatic style via an object that is known to use it.
 Using a "hard-coded" name is all right for styles created by a
-program (the createStyle method requires it), but such a name should
+program (the createStyle() method requires it), but such a name should
 only be considered to be stable for the duration of the session. If
 you want a program-created style name to be then respected by
 OpenOffice.org, you must create it as a named style. This is no more
@@ -71,15 +71,8 @@ documents.
 
 Some styles are more complex than others as they describe the page
 layout. These styles can themselves contain text and images. A page
-style can actually be either:
-
-- a header;
-
-- a footer;
-
-- margins;
-
-- or a background.
+style, or a "master page", can actually define a header, a footer, margins,
+and a background.
 
 Headers and footers can contain text and images which can otherwise
 be handled by OODoc::Text and OODoc::Image.
@@ -197,10 +190,10 @@ at least a blank of each required style.
             		next	=> 'Standard'
             		);
 
-        See the OpenOffice.org documentation (or the 'Organizer' tab in the
-        "Format/Page" dialog box) if you want to know what a "Next Style"
-        is. The optional "next" parameter simply gives the name of a "master
-        page", which can be the one you are currently creating.
+        See the OpenDocument specification (or the 'Organizer' tab in the
+        "Format/Page" dialog box of OpenOffice.org) if you want to know what
+	a "Next Style" is. The optional "next" parameter simply gives the name
+	of a "master page", which can be the one you are currently creating.
 
 =head3	createPageLayout(name, options)
 
@@ -217,7 +210,10 @@ at least a blank of each required style.
         returns its reference if successful.
 
         The first argument indicates the new style name which must be unique
-        in the document.
+        in the document. By default, a check is automatically done; the method
+	fails and produces a warning if the style already exists. However,
+	no check is done if a 'check' option is provided and set to 'false'.
+	Avoiding the uniqueness check can improve the 
 	
 	If the external name of the style, as it could be made visible for the
 	end-user through an OpenDocument-compliant editing software (such as
@@ -268,7 +264,8 @@ at least a blank of each required style.
         on the style type) are all attributed by the "properties" attribute
         which itself indicates a hash provided by the application.
 
-        Here is an example of a paragraph style creation:
+        Here is an example of a paragraph style creation in an OOo 1
+	document:
 
             $doc->createStyle
             	(
@@ -295,12 +292,13 @@ at least a blank of each required style.
         done using a style called "Colour" (reusable later for other
         paragraphs) based on the "Standard" style. You will note that the
         colour codes are in RGB hexadecimal preceded by a '#'.
-	We could replace '#000080' with rgb2oo('navy blue') if we used the
+	We could replace '#000080' with odfColor('navy blue') if we used the
 	standard rgb.txt colour table from the Xorg distribution (see
-	rgb2oo() below). A large part of these layout properties come from
-	the FO (Form Object) language, that is a part of the OpenOffice.org
-	XML vocabulary. You should look at the Open Document Format
-	specification for an exhaustive presentation.
+	odfColor() below). A large part of these layout properties come from
+	the FO (Form Object) language, that is a part of the OpenDocument
+	XML vocabulary. You should look at the OpenDocument Format
+	specification for an exhaustive presentation of the supported FO
+	options.
 
 	In this example, "namespace" and "type" are not specified because
 	the default namespace and type are appropriate here. (Rest assured
@@ -358,7 +356,7 @@ at least a blank of each required style.
             	parent	=> 'Standard',
             	properties =>
             		{
-			'area'			=> 'paragraph',
+			'-area'			=> 'paragraph',
 			'fo:margin-left'	=> '2cm',
 			'fo:margin-right'	=> '1.5cm',
 			'fo:text-align'		=> 'justify',
@@ -370,7 +368,7 @@ at least a blank of each required style.
 		"Colour",
 		properties  =>
 			{
-			'area'			=> 'text',
+			'-area'			=> 'text',
             	 	'style:font-name'	=> 'Times',
 			'fo:font-size'		=> '14pt',
             	 	'fo:font-weight'	=> 'bold',
@@ -384,25 +382,30 @@ at least a blank of each required style.
 	for the text content of the paragraph. A paragraph style includes
 	"paragraph properties", such as the margins, the text alignment, the
 	background color, and "text properties", such as any font-focused
-	attribute. The "area" option is not a property; it's only a switch
-	that indicates what is the target property area. Without this option,
-	the default area name is the family name (so, for a paragraph style,
-	the default area for updateStyle() is "paragraph properties". This
-	sophistication sounds strange at first look, but it could prove
-	very useful because, knowing that the new ODF will bring more
+	attribute. The '-area' option is not a style property; it's only a
+	switch that indicates what is the target property area. Without this
+	option, the default area name is the family name (so, for a paragraph
+	style, the default area for updateStyle() is "paragraph properties").
+	This sophistication sounds strange at first look, but it could prove
+	very useful because, knowing that the OpenDocument format brings more
 	features than the old OOo format, the same property name can be
 	used in more than one area, with different effects. For example,
 	we could put a 'fo:background-color' in the 'text' area AND another
-	in the 'paragraph' area; the 'text' background color should apply
+	one in the 'paragraph' area; the 'text' background color should apply
 	to the text-covered areas only, while the 'paragraph' background
 	is a rectangular area, that is not always fully covered by text.
 	
 	The same result could be obtained (more efficiently) with
-	styleProperties instead of updateStyle (see styleProperties).
+	styleProperties() instead of updateStyle (see styleProperties()).
 	
-	The 'area' switch is silently ignored when used with OOo documents,
+	The '-area' switch is silently ignored when used with OOo 1 documents,
 	and sometimes required for ODF, so you can safely use it if you want
-	to write portable code.
+	to write portable code. In addition, up to now, the unknown style
+	attributes are simply ignored by the OpenOffice.org software, and
+	they don't harm. However, if the document is later edited and saved
+	through OpenOffice.org, every unknown attribute is removed. As a
+	consequence, everybody can use proprietary (non-OpenDocument) style
+	attributes for application-specific markup.
 
 	So, while OpenOffice::OODoc supports both OOo 1 and ODF with the
 	same API, the present version can't completely hide the differences
@@ -410,13 +413,13 @@ at least a blank of each required style.
 	differences for the end-user, because it can know the format of
 	the current document (see isOpenDocument in OpenOffice::OODoc::XPath).
 
-        Defining a style entirely from code can be made a lot easier by
-        reusing an already existing style. The simplest way is by
-        inheritance using the "parent" option, but the link to "parent"
-        creates a permanent dependency (any further changes will affect the
-        parent and children). OODoc::Styles offers another possibility: copy
+        Defining a style can be made a lot easier by reusing an already
+	existing style than by creating it programmatically. The simplest way
+	is by inheritance using the "parent" option, but the link to "parent"
+        creates a permanent dependency (any further changes in the parent will
+	affect the children). OODoc::Styles offers another possibility: copy
         the properties of an existing style, without creating a link to a
-        parent using the "prototype" option. This option points to another
+        parent, using the "prototype" option. This option points to another
         style whose properties are then taken up and combined with the new
         properties. New properties prevail over old ones if the new
         properties replace existing attributes in the prototype style, just
@@ -434,8 +437,8 @@ at least a blank of each required style.
             		}
             	);
 
-        This new style called "Bigger" is an exact copy of the "Colour"
-        style, except for the font size.
+        This new style called "Bigger" is an exact copy of the previously
+	defined "Colour" style, except for the font size.
 
 	The given "parent" style is not necessarily defined yet and, if the
 	current document member is "content", it can be the name of a style
@@ -489,8 +492,10 @@ at least a blank of each required style.
 	are derived from named styles found in the 'styles' member and
 	vice-versa.
 
-	WARNING: the "prototype" option can produce unexpected results if
-	the two documents are not in the same format (OOo 1 or OOo 2).
+	WARNING: The "prototype" option can produce unexpected results if
+	the two documents are not in the same format. As a consequence,
+	using an OOo 1 style as the prototype of an OpenDocument one (and
+	vice-versa) should be avoided.
 
         Always be careful of dependencies. There are often dependencies
         between styles (heritage or usage). An application must be wary of
@@ -503,10 +508,15 @@ at least a blank of each required style.
 	When a font name is set (generally through a 'style:font-name'
 	text property) in a new style, take care of the availability of
 	the corresponding font declaration in the document. A font is not
-	rendered if it's not declared. (See importFontDeclaration.)
+	rendered if it's not declared (see importFontDeclaration()).
 	
-        See the OpenOffice.org format documentation for a complete list of
-        possible attributes for each type of style.
+        See the OpenDocument specification (chapter 14, "Styles") for a
+	complete list of possible attributes for each type of style.
+	However, creating sophisticated styles from scratch is *not*
+	recommended; remember the most easy (and the less error-prone) way
+	consists of creating template documents through the OpenOffice.org
+	GUI (or any other ODF-compliant office software) and using them as
+	style libraries.
 
 =head3	exportBackgroundImage(page [, destination])
 
@@ -569,6 +579,12 @@ at least a blank of each required style.
 
             my @styles = $doc->getAutoStyleList
             	(namespace => 'number', type => 'number-style');
+		
+=head3	getAutoStyleRoot()
+
+	Returns the element that contains all the automatic style elements.
+	
+	See also getNamedStyleRoot().
 
 =head3	getBackgroundImageAttributes(page)
 
@@ -633,6 +649,32 @@ at least a blank of each required style.
         element reference instead of a name. In this case, the method's role
         is simply to check if the element is indeed a master page type. If
         so, it returns the argument as is. If not, it returns undef.
+	
+	Look at the DESCRIPTION part of the present manual chapter for a few
+	explanations about master pages (and, of course, feel free to dig in
+	the OpenDocument specification for details).
+	
+	This method should preferently be used on the 'styles' member; it
+	doesn't generally make sense with the 'content' member, knowing that
+	the master pages are generally described as named styles.
+
+=head3	getMasterStyleList([options])
+
+	Returns a list of master styles in the current document. By default,
+	the list contains the master page elements.
+	
+	Other kinds of styles may be retrieved, according to the 'namespace'
+	and/or 'type' options (see getStyleElement()). But the search space
+	is limited to the master styles area, whatever the type and the
+	namespace.
+
+	Like getMasterPageElement(), this method makes more sense on 'styles'
+	members than on 'content' ones.
+	
+=head3	getMasterStyleRoot()
+
+	Like getNamedStyleRoot(), but the returned element contains the
+	master style descriptors instead.	
 
 =head3	getNamedStyleList([options])
 
@@ -640,6 +682,16 @@ at least a blank of each required style.
         same options as for getAutoStyleList. By definition, in
         OpenOffice.org documents this list should be empty in all elements
         except styles.xml.
+	
+=head3	getNamedStyleRoot()
+
+	Returns the root element of the named styles area. In other words,
+	this method retrieves the element that contains all the named style
+	elements, with the exception of the master styles.
+	
+	This element could be, for example, copied from a document to another
+	one in order to use exactly the same named styles (user-defined or
+	provided with the office software) in both.
 
 =head3	getOutlineStyleElement(level)
 
@@ -969,7 +1021,7 @@ at least a blank of each required style.
             $doc->styleProperties
             		(
             		"Colour",
-			area		=> 'text',
+			'-area'		=> 'text',
             		'fo:color'	=> rgb2oo("red"),
             		'fo:font-style'	=> undef
             		);
@@ -990,7 +1042,7 @@ at least a blank of each required style.
         corresponding option giving it a null value.
 
 	If the current document is an OASIS Open Document, an additional
-	"area" option should be provided, because a style's properties may
+	"-area" option should be provided, because a style's properties may
 	be stored in logical parts. For example, in a paragraph style, some
 	properties apply to the paragraph itself, while some other ones apply
 	to its text content (and some text properties can have the same name
@@ -1004,7 +1056,7 @@ at least a blank of each required style.
         	$doc->styleProperties
             		(
             		"Colour",
-			area		=> 'text',
+			'-area'		=> 'text',
             		'fo:color'	=> "#ff0000",
             		'fo:font-style'	=> undef
             		);
@@ -1022,7 +1074,7 @@ at least a blank of each required style.
 			parent		=> 'Standard',
 			properties	=>
 				{
-				area			=> 'paragraph',
+				'-area'			=> 'paragraph',
 				'fo:text-align'		=> 'center',
 				'fo:margin-left'	=> '0.5cm',
 				'fo:margin-right'	=> '0.5cm'
@@ -1030,7 +1082,7 @@ at least a blank of each required style.
 			);
 		$doc->styleProperties
 			(
-			$style, area => 'text',
+			$style, '-area' => 'text',
 			'fo:color'		=> oo2rgb("blue"),
 			'fo:font-weight'	=> 'bold',
 			'style:font-name'	=> 'Times New Roman'
@@ -1043,7 +1095,7 @@ at least a blank of each required style.
 	custom property is lost as soon as the document is edited through
 	OpenOffice.org.
 			
-	The "area" option is silently ignored with OOo 1 documents.
+	The "-area" option is silently ignored with OOo 1 documents.
 		
 =head3	switchPageOrientation(page)
 

@@ -5,8 +5,8 @@
 use Test;
 BEGIN	{ plan tests => 9 }
 
-use OpenOffice::OODoc	2.025;
-ok($OpenOffice::OODoc::VERSION >= 2.025);
+use OpenOffice::OODoc	2.026;
+ok($OpenOffice::OODoc::VERSION >= 2.026);
 
 #-----------------------------------------------------------------------------
 
@@ -58,8 +58,15 @@ else
 	}
 
 # Checking the mime type
-my $mimetype = $manifest->getMainEntry;
-ok($mimetype = "application/vnd.sun.xml.writer");
+my $mimetype = $manifest->getMainType || "";
+if ($OpenOffice::OODoc::File::DEFAULT_OFFICE_FORMAT == 2)
+	{
+	ok($mimetype eq "application/vnd.oasis.opendocument.text");
+	}
+else
+	{
+	ok($mimetype eq "application/vnd.sun.xml.writer");
+	}
 
 # Checking the image element
 ok($doc->getImageElement("Logo"));

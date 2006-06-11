@@ -440,12 +440,7 @@ features of OODoc::Meta and OODoc::Document are described here.
 
 =head3	blankSpaces(length)
 
-	Returns a special element, available for insertion within a text
-	element, representing repeated contiguous blank spaces (knowing
-	that repeated spaces can't be properly displayed by an OpenDocument-
-	compliant application if stored as a flat string). The returned
-	element is free, so it could/should be inserted later within a text
-	element.
+	See spaces().
 
 =head3	cloneContent(oodoc_xpath_object)
 
@@ -497,9 +492,7 @@ features of OODoc::Meta and OODoc::Document are described here.
 
 =head3	createSpaces(length)
 
-	Creates a special element containing repeated spaces. Such an element
-	can be used in order to insert a sequence of more than spaces in a
-	text container. Same as blankSpaces(). See setText() and extendText().
+	See spaces().
 
 =head3	createElement(name, text)
 
@@ -760,7 +753,7 @@ features of OODoc::Meta and OODoc::Document are described here.
 	example, in order to append sequences of repeated spaces:
 	
 		$doc->setText($p, "Begin");
-		$spaces = $doc->createSpaces(6);
+		$spaces = $doc->blankSpaces(6);
 		$doc->extentText($p, $spaces);
 		$doc->extendText($p, "End");
 	
@@ -902,8 +895,8 @@ features of OODoc::Meta and OODoc::Document are described here.
 =head3	getFlatText(element)
 
 	Like getText() below, but without rendering of possible tab stops,
-	line breaks and repeated spaces. The returned text is a just a
-	decoded flat string.
+	line breaks, repeated spaces, or any other markup. The returned text
+	is a just a decoded flat string.
 	
 =head3	getFrameElement(name/number)
 
@@ -1184,6 +1177,17 @@ features of OODoc::Meta and OODoc::Document are described here.
         The full "query language" syntax used in this method is not
         documented here. makeXPath is designed to act more as a base for
         other OpenOffice::OODoc methods than to be used in applications.
+	
+=head3	moveElements(target_element, element_list)
+
+	Moves a list of existing elements to a new attachment.
+	
+	One more elements are cut from their previous place and appended
+	as children of the target element.
+	
+	This method can be used to move elements from one place to another
+	place in the same document, as well as from one document to another
+	one (caution, the elements are moved, not copied).
 
 =head3	raw_import(member, source)
 
@@ -1632,8 +1636,17 @@ features of OODoc::Meta and OODoc::Document are described here.
 	
 		$doc->setText($p, "Begin End");
 	
-	See blankSpaces() and extendText() for a workaround if you
+	See spaces() and extendText() for a workaround if you
 	need to insert repeated spaces.
+	
+=head3	spaces(length)
+
+	Returns a special element, available for insertion within a text
+	element, representing repeated contiguous blank spaces (knowing
+	that repeated spaces can't be properly displayed by an OpenDocument-
+	compliant application if stored as a flat string). The returned
+	element is free, so it could/should be inserted later within a text
+	element. See extendText() for an example of use.
 
 =head3	splitElement(element, offset)
 
