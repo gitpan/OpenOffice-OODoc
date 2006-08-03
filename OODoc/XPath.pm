@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 2.215 2006-06-10 JMG$
+#	$Id : XPath.pm 2.217 2006-08-01 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2006 by Genicorp, S.A. (www.genicorp.com)
@@ -12,9 +12,23 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 2.216;
+our	$VERSION	= 2.217;
 use	XML::Twig	3.22;
 use	Encode;
+
+#------------------------------------------------------------------------------
+
+BEGIN	{
+	*dispose		= *DESTROY;
+	*update			= *save;
+	*getXMLContent		= *exportXMLContent;
+	*getContent		= *exportXMLContent;
+	*getChildElementByName	= *selectChildElementByName;
+	*blankSpaces		= *spaces;
+	*createSpaces		= *spaces;
+	*getFrame		= *getFrameElement;
+	*getNodeByXPath		= *selectNodeByXPath;
+	}
 
 #------------------------------------------------------------------------------
 
@@ -76,7 +90,7 @@ sub	getObjectCoordinates
 	return undef unless defined $x and defined $y;
 	return wantarray ? ($x, $y) : ($x . ',' . $y);
 	}
-		
+
 sub	setObjectSize
 	{
 	my $self	= shift;
@@ -93,7 +107,7 @@ sub	setObjectSize
 	$self->setAttributes($element, 'svg:width' => $w, 'svg:height' => $h);
 	return wantarray ? ($w, $h) : ($w . ',' . $h);
 	}
-	
+
 sub	getObjectSize
 	{
 	my $self	= shift;
@@ -102,7 +116,7 @@ sub	getObjectSize
 	my $h		= $element->getAttribute('svg:height');
 	return wantarray ? ($w, $h) : ($w . ',' . $h);
 	}
-	
+
 sub	setObjectDescription
 	{
 	my $self	= shift;
@@ -121,7 +135,7 @@ sub	setObjectDescription
 		}
 	return $desc;
 	}
-	
+
 sub	getObjectDescription
 	{
 	my $self	= shift;
@@ -136,9 +150,9 @@ sub	objectName
 	my $name	= shift;
 	return (defined $name) ?
 		$self->setAttribute($element, 'draw:name' => $name)	:
-		$self->getAttribute($element, 'draw:name'); 
+		$self->getAttribute($element, 'draw:name');
 	}
-	
+
 #------------------------------------------------------------------------------
 # basic element creation
 
@@ -149,7 +163,7 @@ sub	OpenOffice::OODoc::XPath::new_element
 
 	$name		=~ s/^\s+//;
 	$name		=~ s/\s+$//;
-	
+
 	if ($name =~ /^<.*>$/)	# create element from XML string
 		{
 		return OpenOffice::OODoc::Element->parse($name, @_);
@@ -266,25 +280,19 @@ sub	_search_content
 	my $self	= shift;
 	my $element	= shift or return undef;
 	my $content	= undef;
-	
-	foreach my $child ($element->children)
+
+	foreach my $node ($element->getDescendantTextNodes)
 		{
-		my $text = undef;
-		if ($child->isTextNode)
+		my $text = $self->_find_text($node->text, @_);
+		if (defined $text)
 			{
-			$text = $self->_find_text($child->text, @_);
-			$child->set_text($text) if defined $text;
+			$node->set_text($text);
+			$content .= $text;
 			}
-		else
-			{
-			my $t = $self->_search_content($child, @_);
-			$text .= $t if defined $t;
-			}
-		$content .= $text if defined $text;
 		}
 	return $content;
 	}
-
+	
 #------------------------------------------------------------------------------
 # is this an OASIS Open Document or an OpenOffice 1.x Document ?
 
@@ -298,7 +306,7 @@ sub	isOpenDocument
 
 #------------------------------------------------------------------------------
 # document class check
-	
+
 sub	isContent
 	{
 	my $self	= shift;
@@ -351,14 +359,13 @@ sub	new
 				$OpenOffice::OODoc::XPath::LOCAL_CHARSET,
 		@_
 		};
-
+		
 	my $twig = undef;
 
 	if ($self->{'member'} && ! $self->{'element'})
 		{
 		my $m	= lc $self->{'member'};
-		$m	=~ /(^.*)\..*/;
-		$m	= $1	if $1;
+		if ($m =~ /(^.*)\..*/) { $m = $1; }
 		$self->{'element'} =
 		    $OpenOffice::OODoc::XPath::XMLNAMES{$m};
 		}
@@ -464,7 +471,7 @@ sub	new
 		else
 			{		# load from XML flat file
 			$self->{'xpath'} =
-				$twig->safe_parsefile($self->{'file'});		
+				$twig->safe_parsefile($self->{'file'});
 			}
 		}
 	else
@@ -472,6 +479,7 @@ sub	new
 		warn "[" . __PACKAGE__ . "::new] No XML content\n";
 		return undef;
 		}
+		
 	delete $self->{'xml'};
 	unless ($self->{'xpath'})
 		{
@@ -481,14 +489,18 @@ sub	new
 	$self->{'twig'} = $twig;
 	$self->{'context'} = $self->{'xpath'};
 	bless $self, $class;
+	
 	$self->{'opendocument'} = $self->isOpenDocument;
+	
 	if ($self->{'opendocument'})
 		{
 		$self->{'image_container'}	= 'draw:frame';
 		$self->{'image_xpath'}		= '//draw:frame';
 		$self->{'image_fpath'}		= 'Pictures/';
 		}
+		
 	$self->{'body'} = $self->getBody;
+	
 	return $self;
 	}
 
@@ -511,12 +523,6 @@ sub	DESTROY
 	$self = {};
 	}
 
-sub	dispose
-	{
-	my $self	= shift;
-	$self->DESTROY(@_);
-	}
-
 #------------------------------------------------------------------------------
 # get a reference to the embedded XML parser for share
 
@@ -527,7 +533,7 @@ sub	getXMLParser
 	}
 
 #------------------------------------------------------------------------------
-# make the changes persistent in an OpenOffice.org file 
+# make the changes persistent in an OpenOffice.org file
 
 sub	save
 	{
@@ -566,16 +572,10 @@ sub	save
 		warn "[" . __PACKAGE__ . "::save] No member\n";
 		return undef;
 		}
-	
+
 	my $result = $archive->save($filename);
 
 	return $result;
-	}
-
-sub	update
-	{
-	my $self	= shift;
-	return $self->save(@_);
 	}
 
 #------------------------------------------------------------------------------
@@ -647,18 +647,6 @@ sub	exportXMLContent
 		}
 	}
 
-sub	getXMLContent
-	{
-	my $self	= shift;
-	return $self->exportXMLContent(@_);
-	}
-
-sub	getContent
-	{
-	my $self	= shift;
-	return $self->exportXMLContent(@_);
-	}
-
 #------------------------------------------------------------------------------
 # brute force tree reorganization
 
@@ -690,7 +678,7 @@ sub	getRootElement
 			$root				:
 			$root->first_child($self->{'element'});
 	}
-		
+
 #------------------------------------------------------------------------------
 # get/set/reset the current search context
 
@@ -742,13 +730,13 @@ sub	isMeta
 	my $self	= shift;
 	return ($self->getRootName() eq $XMLNAMES{'meta'}) ? 1 : undef;
 	}
-	
+
 sub	isStyles
 	{
 	my $self	= shift;
 	return ($self->getRootName() eq $XMLNAMES{'styles'}) ? 1 : undef;
 	}
-	
+
 sub	isSettings
 	{
 	my $self	= shift;
@@ -763,13 +751,15 @@ sub	getBody
 	my $self	= shift;
 
 	return $self->{'body'} if ref $self->{'body'};
-
+	
 	if ($self->{'body_path'})
 		{
 		$self->{'body'} =$self->getElement($self->{'body_path'}, 0);
 		return $self->{'body'};
 		}
+
 	my $office_body = $self->getElement('//office:body', 0);
+	
 	if ($office_body)
 		{
 		$self->{'body'} = $self->{'opendocument'} ?
@@ -785,6 +775,7 @@ sub	getBody
 				'office:(body|meta|master-styles|settings)'
 				);
 		}
+		
 	return $self->{'body'};
 	}
 
@@ -801,7 +792,7 @@ sub	cloneContent
 		warn "[" . __PACKAGE__ . "]::cloneContent - No valid source\n";
 		return undef;
 		}
-		
+
 	$self->{'xpath'}	= $source->{'xpath'};
 	$self->{'begin'}	= $source->{'begin'};
 	$self->{'xml'}		= $source->{'xml'};
@@ -849,9 +840,7 @@ sub	getElement
 	my $context	= shift || $self->{'context'};
 	if (defined $pos && (($pos =~ /^\d*$/) || ($pos =~ /^[\d+-]\d+$/)))
 		{
-		$path =~ s/^\/\//\.\// unless $context eq $self->{'xpath'};
-		my $node	= $context->get_xpath($path, $pos);
-
+		my $node = $self->selectNodeByXPath($context, $path, $pos);
 		return	$node && $node->isElementNode ? $node : undef;
 		}
 	else
@@ -888,12 +877,6 @@ sub	selectChildElementByName
 	return $element->selectChildElement(@_);
 	}
 
-sub	getChildElementByName
-	{
-	my $self	= shift;
-	return $self->selectChildElementByName(@_);
-	}
-
 #-----------------------------------------------------------------------------
 # some usual text field constructors
 
@@ -904,10 +887,10 @@ sub	create_field
 	my %opt		= @_;
 	my $prefix	= $opt{'-prefix'};
 	delete $opt{'-prefix'};
-	
+
 	if ($prefix)
 		{
-		$tag = "$prefix:$tag" unless $tag =~ /:/; 
+		$tag = "$prefix:$tag" unless $tag =~ /:/;
 		my %att = ();
 		foreach my $k (keys %opt)
 			{
@@ -928,25 +911,13 @@ sub	spaces
 	return $self->create_field('text:s', 'text:c' => $length, @_);
 	}
 
-sub	blankSpaces
-	{
-	my $self	= shift;
-	return $self->spaces(@_);
-	}
-	
-sub	createSpaces
-	{
-	my $self	= shift;
-	return $self->spaces(@_);
-	}
-
 sub	tabStop
 	{
 	my $self	= shift;
 	my $tag = $self->{'opendocument'} ? 'text:tab' : 'text:tab-stop';
 	return $self->create_field($tag, @_);
 	}
-	
+
 sub	lineBreak
 	{
 	my $self	= shift;
@@ -959,7 +930,7 @@ sub	appendLineBreak
 	{
 	my $self	= shift;
 	my $element	= shift;
-	
+
 	return $element->appendChild('text:line-break');
 	}
 
@@ -970,20 +941,20 @@ sub	appendSpaces
 	my $self	= shift;
 	my $element	= shift;
 	my $length	= shift;
-	
-	my $spaces	= $self->createSpaces($length) or return undef;
+
+	my $spaces	= $self->spaces($length) or return undef;
 	$spaces->paste_last_child($element);
 	}
-	
+
 #------------------------------------------------------------------------------
 
 sub	appendTabStop
 	{
 	my $self	= shift;
 	my $element	= shift;
-	
+
 	my $tabtag = $self->{'opendocument'} ? 'text:tab' : 'text:tab-stop';
-	
+
 	return $element->appendChild($tabtag);
 	}
 
@@ -994,11 +965,11 @@ sub	createFrameElement
 	my $self	= shift;
 	my %opt		= @_;
 	my %attr	= ();
-	
+
 	$attr{'draw:name'} = $opt{'name'}; delete $opt{'name'};
-		
+
 	my $content_class = $self->contentClass;
-		
+
 	$attr{'draw:style-name'} = $opt{'style'}; delete $opt{'style'};
 	if ($opt{'page'})
 		{
@@ -1026,7 +997,7 @@ sub	createFrameElement
 	delete $opt{'page'};
 
 	my $tag = $opt{'tag'} || 'draw:frame'; delete $opt{'tag'};
-	
+
 	my $frame = OpenOffice::OODoc::XPath::new_element($tag);
 
 	if ($opt{'position'})
@@ -1049,22 +1020,22 @@ sub	createFrameElement
 		$frame->paste_first_child($opt{'attachment'});
 		delete $opt{'attachment'};
 		}
-		
+
 	foreach my $k (keys %opt)
 		{
 		$attr{$k} = $opt{$k} if ($k =~ /:/);
 		}
 	$self->setAttributes($frame, %attr);
-		
+
 	return $frame;
 	}
-	
+
 sub	createFrame
 	{
 	my $self	= shift;
 	return $self->createFrameElement(@_);
 	}
-	
+
 #-----------------------------------------------------------------------------
 # select an individual frame element by name
 
@@ -1086,7 +1057,7 @@ sub	getFrameElement
 	my $frame	= shift;
 	return undef unless defined $frame;
 	my $tag		= shift || 'draw:frame';
-	
+
 	my $element	= undef;
 	if (ref $frame)
 		{
@@ -1103,13 +1074,7 @@ sub	getFrameElement
 			return $self->selectFrameElementByName
 				($frame, $tag, @_);
 			}
-		}	
-	}
-	
-sub	getFrame
-	{
-	my $self	= shift;
-	return $self->getFrameElement(@_);
+		}
 	}
 
 #------------------------------------------------------------------------------
@@ -1119,7 +1084,7 @@ sub	getFrameList
 	my $self	= shift;
 	return $self->getDescendants('draw:frame', shift);
 	}
-	
+
 #------------------------------------------------------------------------------
 
 sub	frameStyle
@@ -1132,7 +1097,7 @@ sub	frameStyle
 		$self->setAttribute($frame, $attr => shift)	:
 		$self->getAttribute($frame, $attr);
 	}
-	
+
 #------------------------------------------------------------------------------
 # replaces any previous content of an existing element by a given text
 # without processing other than encoding
@@ -1165,7 +1130,7 @@ sub	setText
 	my $text	= shift;
 
 	return undef	unless defined $text;
-	
+
 	my $element 	= $self->OpenOffice::OODoc::XPath::getElement
 					($path, $pos)
 					or return undef;
@@ -1183,7 +1148,7 @@ sub	setText
 		my @columns	= split "\t", $line;
 		while (@columns)
 			{
-			my $column	= 
+			my $column	=
 				$self->inputTextConversion(shift @columns);
 			$element->appendTextChild($column);
 			$element->appendChild($tabtag) if (@columns);
@@ -1205,12 +1170,12 @@ sub	extendText
 	my $text	= shift;
 
 	return undef	unless defined $text;
-	
+
 	my $element 	= $self->getElement($path, $pos);
 	return undef	unless $element;
 
 	my $offset	= shift;
-		
+
 	if (ref $text)
 		{
 		if ($text->isElementNode)
@@ -1243,7 +1208,7 @@ sub	extendText
 				$ref_node = $element->insertTextChild
 						($column, $offset);
 				$ref_node = $ref_node->insertNewNode
-						($tabtag, 'after')			
+						($tabtag, 'after')
 					if (@columns);
 				}
 			else
@@ -1252,7 +1217,7 @@ sub	extendText
 				$ref_node = $ref_node->insertNewNode
 						($tn, 'after');
 				$ref_node = $ref_node->insertNewNode
-						($tabtag, 'after')			
+						($tabtag, 'after')
 					if (@columns);
 				}
 			}
@@ -1300,7 +1265,7 @@ sub	createTextNode
 	}
 
 #------------------------------------------------------------------------------
-# replaces substring in an element 
+# replaces substring in an element and its descendants
 
 sub	replaceText
 	{
@@ -1311,6 +1276,26 @@ sub	replaceText
 				$self->getElement($path, shift);
 
 	return $self->_search_content($element, @_);
+	}
+
+#------------------------------------------------------------------------------
+# replaces substring in an element and its descendants
+
+sub	substituteText
+	{
+	my $self	= shift;
+	my $path	= shift;
+	my $element	= (ref $path) ?
+				$path	:
+				$self->getElement($path, shift);
+	return undef unless $element;
+	my $filter 	= $self->inputTextConversion(shift) or return undef;
+	my $replace	= shift;
+	unless (ref $replace)
+		{
+		$replace = $self->inputTextConversion($replace);
+		}
+	return $element->subs_text($filter, $replace);
 	}
 
 #------------------------------------------------------------------------------
@@ -1326,13 +1311,13 @@ sub	getFlatText
 #------------------------------------------------------------------------------
 # gets text in element by path (sub-element texts are concatenated)
 
-sub	getText	
+sub	getText
 	{
 	my $self	= shift;
 	my $element	= $self->OpenOffice::OODoc::XPath::getElement(@_);
 	return undef	unless ($element && $element->isElementNode);
 	my $text	= '';
-	
+
 	my $name	= $element->getName;
 
 	if	($name =~ /^text:tab(|-stop)$/)	{ return "\t"; }
@@ -1365,24 +1350,26 @@ sub	getText
 	}
 
 #------------------------------------------------------------------------------
+
+sub	xpathInContext
+	{
+	my $self	= shift;
+	my $path	= shift	|| "/";
+	my $context	= shift || $self->{'context'};
+	if ($context ne $self->{'xpath'})
+		{
+		$path =~ s/^\//\.\//;
+		}
+	return ($path, $context);
+	}
+
+#------------------------------------------------------------------------------
 # returns the children of a given element
 
 sub	getElementList
 	{
 	my $self	= shift;
-	my $path	= shift;		
-	my $context	= shift;
-
-	if ($context)
-		{
-		$path	= "./"	unless $path;
-		}
-	else
-		{
-		$path	= "/"	unless $path;
-		$context = $self->{'context'};
-		}
-	$path =~ s/^\/\//\.\// if $context ne $self->{'xpath'};
+	my ($path, $context)	= $self->xpathInContext(@_);
 	return $context->findnodes($path);
 	}
 
@@ -1407,8 +1394,7 @@ sub	selectNodesByXPath
 	my $context	= undef;
 	if (ref $p1)	{ $context = $p1; $path = $p2; }
 	else		{ $path = $p1; $context = $p2; }
-
-	$context = $self->{'context'} unless ref $context;
+	($path, $context) = $self->xpathInContext($path, $context);
 	return $context->get_xpath($path);
 	}
 
@@ -1418,19 +1404,15 @@ sub	selectNodesByXPath
 sub	selectNodeByXPath
 	{
 	my $self	= shift;
-	my ($p1, $p2)	= @_;
+	my $p1		= shift;
+	my $p2		= shift;
+	my $offset	= shift || 0;
 	my $path	= undef;
 	my $context	= undef;
 	if (ref $p1)	{ $context = $p1; $path = $p2; }
 	else		{ $path = $p1; $context = $p2; }
-	$context = $self->{'context'} unless ref $context;
-	return $context->get_xpath($path, 0);
-	}
-
-sub	getNodeByXPath
-	{
-	my $self	= shift;
-	return $self->selectNodeByXPath(@_);
+	($path, $context) = $self->xpathInContext($path, $context);
+	return $context->get_xpath($path, $offset);
 	}
 
 #------------------------------------------------------------------------------
@@ -1444,9 +1426,7 @@ sub	getXPathValue
 	my $context	= undef;
 	if (ref $p1)	{ $context = $p1; $path = $p2; }
 	else		{ $path = $p1; $context = $p2; }
-	
-	$context = $self->{'context'} unless $context;
-	$path =~ s/^\/*// if $context ne $self->{'xpath'};
+	($path, $context) = $self->xpathInContext($path, $context);
 	return $self->outputTextConversion($context->findvalue($path, @_));
 	}
 
@@ -1618,13 +1598,13 @@ sub	findElementList
 	my $path	= shift;
 	my $pattern	= shift;
 	my $replace	= shift;
+	my $context	= shift;
 
 	return undef unless $path;
 
 	my @result	= ();
 
-	my $context = $self->{'context'};
-	$path =~ s/^\/\//\.\// unless $context eq $self->{'xpath'};
+	($path, $context) = $self->xpathInContext($path, $context);
 	foreach my $n ($context->findnodes($path))
 		{
 		push @result,
@@ -1642,7 +1622,7 @@ sub	selectElements
 	{
 	my $self	= shift;
 	my $path	= shift;
-	my $context	= $self->{'xpath'};
+	my $context	= $self->{'context'};
 	if (ref $path)
 		{
 		$context	= $path;
@@ -1670,7 +1650,7 @@ sub	selectElement
 	{
 	my $self	= shift;
 	my $path	= shift;
-	my $context	= $self->{'xpath'};
+	my $context	= $self->{'context'};
 	if (ref $path)
 		{
 		$context	= $path;
@@ -1700,7 +1680,7 @@ sub	findDescendants
 	my $node	= shift;
 	my $pattern	= shift;
 	my $replace	= shift;
-	
+
 	my @result		= ();
 
 	my $n	= $self->selectNodeByContent($node, $pattern, $replace, @_);
@@ -1764,11 +1744,10 @@ sub	getTextList
 	my $path	= shift;
 	my $pattern	= shift;
 	my $context	= shift;
-	
+
 	return undef unless $path;
-	
-	$context = $self->{'context'} unless $context;
-	$path =~ s/^\/\//\.\// unless $context eq $self->{'xpath'};
+
+	($path, $context) = $self->xpathInContext($path, $context);
 	my @nodelist = $context->findnodes($path);
 	my @text = ();
 
@@ -1882,8 +1861,8 @@ sub	setAttribute
 		{
 		$node->del_att($attribute) if $node->att($attribute);
 		}
-	
-	return $value; 
+
+	return $value;
 	}
 
 #------------------------------------------------------------------------------
@@ -1979,7 +1958,7 @@ sub	createElement
 
 	return $element;
 	}
-	
+
 #------------------------------------------------------------------------------
 # replaces an element by another one
 # the new element is inserted before the old one,
@@ -2040,7 +2019,7 @@ sub	replaceElement
 					$new_element,
 					position	=> 'before'
 					);
-		$self->removeElement($old_element);
+		$old_element->delete;
 		return $result;
 		}
 	else
@@ -2065,7 +2044,7 @@ sub	appendElement
 
 	return undef	unless $name;
 	my $element	= undef;
-	
+
 	unless (ref $name)
 		{
 		$element	= $self->createElement($name, $opt{'text'});
@@ -2143,14 +2122,14 @@ sub	insertElement
 		$self->setText($element, $opt{'text'})	if $opt{'text'};
 		}
 	return undef	unless $element;
-	
+
 	my $posnode	= $self->getElement($path, $pos, $opt{'context'});
 	unless ($posnode)
 		{
 		warn "[" . __PACKAGE__ . "::insertElement] Unknown position\n";
 		return undef;
 		}
- 
+
 	if ($opt{'position'})
 		{
 		if ($opt{'position'} eq 'after')
@@ -2219,7 +2198,7 @@ sub	splitElement
 	my $old_element	=
 		(ref $path) ? $path : $self->getElement($path, shift);
 	my $offset	= shift;
-	
+
 	my $new_element = $old_element->split_at($offset);
 	$new_element->set_atts($old_element->atts);
 	return wantarray ? ($old_element, $new_element) : $new_element;
@@ -2231,6 +2210,54 @@ package	OpenOffice::OODoc::Element;
 our @ISA	= qw ( XML::Twig::Elt );
 #------------------------------------------------------------------------------
 
+sub	getAttribute
+	{
+	my $node	= shift;
+	return $node->att(@_);
+	}
+	
+sub	setNodeValue
+	{
+	my $node	= shift;
+	return $node->set_text(@_);
+	}
+	
+sub	getValue
+	{
+	my $node	= shift;
+	return $node->text(@_);
+	}
+	
+sub	getNodeValue
+	{
+	my $node	= shift;
+	return $node->text(@_);
+	}
+	
+sub	removeChildNodes
+	{
+	my $node	= shift;
+	return $node->cut_children(@_);
+	}
+	
+sub	setName
+	{
+	my $node	= shift;
+	return $node->set_tag(@_);
+	}
+	
+sub	getParentNode
+	{
+	my $node	= shift;
+	return $node->parent(@_);
+	}
+	
+sub	getPrefix
+	{
+	my $node	= shift;
+	return $node->ns_prefix(@_);
+	}
+	
 sub	hasTag
 	{
 	my $node	= shift;
@@ -2238,13 +2265,13 @@ sub	hasTag
 	my $value	= shift;
 	return ($name && ($name eq $value)) ? 1 : undef;
 	}
-
+	
 sub	isFrame
 	{
 	my $node	= shift;
 	return $node->hasTag('draw:frame');
 	}
-	
+
 sub	getLocalPosition
 	{
 	my $node	= shift;
@@ -2253,37 +2280,11 @@ sub	getLocalPosition
 	return defined $xpos ? $xpos - 1 : undef;
 	}
 
-sub	setName
-	{
-	my $node	= shift;
-	return $node->set_tag(shift);
-	}
-
-sub	getPrefix
-	{
-	my $node	= shift;
-	return $node->ns_prefix;
-	}
-
 sub	selectChildElements
 	{
 	my $node	= shift;
-	my $filter	= shift;
-	return $node->getChildNodes() unless $filter;
-	my @list	= ();
-	my $fc = $node->first_child;
-	my $name = $fc->name if $fc;
-	while ($fc)
-		{
-		if ($name && ($name =~ /$filter/))
-			{
-			return $fc unless wantarray;
-			push @list, $fc;
-			}
-		$fc = $fc->next_sibling;
-		$name = $fc->name if $fc;;
-		}
-	return @list;
+	return wantarray ?
+		$node->children(@_) : $node->selectChildElement(@_);
 	}
 
 sub	selectChildElement
@@ -2308,12 +2309,6 @@ sub	selectChildElement
 	return undef;
 	}
 
-sub	getParentNode
-	{
-	my $node	= shift;
-	return $node->parent;
-	}
-	
 sub	getFirstChild
 	{
 	my $node	= shift;
@@ -2340,18 +2335,6 @@ sub	getLastChild
 	return $lc;
 	}
 
-sub	getDescendantNodes
-	{
-	my $node	= shift;
-	my @children	= $node->getChildNodes(@_);
-	my @descendants = ();
-	foreach my $child (@children)
-		{
-		push @descendants, $child, $child->getDescendantNodes(@_);
-		}
-	return @descendants;
-	}
-
 sub	getDescendantTextNodes
 	{
 	my $node	= shift;
@@ -2368,7 +2351,7 @@ sub	appendChild
 		}
 	return $child->paste_last_child($node);
 	}
-	
+
 sub	pickUpChildren
 	{
 	my $parent	= shift;
@@ -2400,12 +2383,6 @@ sub	insertNewNode
 		}
 	}
 
-sub	removeChildNodes
-	{
-	my $node	= shift;
-	return $node->cut_children(@_);
-	}
-
 sub	replicateNode
 	{
 	my $node	= shift;
@@ -2422,30 +2399,12 @@ sub	replicateNode
 	return $last_node;
 	}
 
-sub	getNodeValue
-	{
-	my $node	= shift;
-	return $node->text;
-	}
-
-sub	getValue
-	{
-	my $node	= shift;
-	return $node->text;
-	}
-
-sub	setNodeValue
-	{
-	my $node	= shift;
-	return $node->set_text(@_);
-	}
-
 sub	flatten
 	{
 	my $node	= shift;
 	return $node->set_text($node->text);
 	}
-	
+
 sub	appendTextChild
 	{
 	my $node	= shift;
@@ -2466,12 +2425,6 @@ sub	insertTextChild
 	return $text_node->paste_within($node, $offset);
 	}
 
-sub	getAttribute
-	{
-	my $node	= shift;
-	return $node->att(@_);
-	}
-
 sub	getAttributes
 	{
 	my $node	= shift;
@@ -2489,21 +2442,15 @@ sub	setAttribute
 		}
 	else
 		{
-		if ($node->{$attribute})
-			{
-			return $node->del_att($attribute);
-			}
-		else
-			{
-			return undef;
-			}
+		return $node->removeAttribute($attribute);
 		}
 	}
 
 sub	removeAttribute
 	{
 	my $node	= shift or return undef;
-	return $node->del_att(shift);
+	my $attribute	= shift or return undef;
+	return $node->att($attribute) ? $node->del_att($attribute) : undef;
 	}
 
 #------------------------------------------------------------------------------

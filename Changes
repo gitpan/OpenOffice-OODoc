@@ -1,3 +1,18 @@
+2.027	2006-08-03
+	- Added the oofindbasic example; added oo_set_fields, oo_set_title,
+	oo_search as executable examples
+	- Styles.pm: Added masterPageExtension(); changed masterPageHeader()
+	and masterPageFooter(); added masterPageHeaderLeft() and
+	masterPageFooterLeft(), following a Volker Hirsinger's suggestion
+	- XPath.pm: Fixed a bug in removeAtribute() 
+	- XPath.pm: Fixed a bug which prevented accessing 'styles' when $1
+	was set, thanks to Dab
+	- XPath.pm: More context-sensitive get_xpath calls; some code lightening
+	and optimization
+	- Text.pm: Fixed a bug in userFieldValue(), thanks to Andy Layton
+	- Text.pm: bi-directional span allowed by cellSpan()
+	- Text.pm: Fixed a bug in getTextElementList()
+	- Text.pm: code lightening
 2.026	2006-06-11
 	- XPath.pm: added pickUpChildren(), appendElements(), moveElements()
 	- 01read.t: Bug fix in MIME type check

@@ -504,9 +504,9 @@ presentation which is one of the foundations of the OpenDocument format.
         Note 2: syntax and functionality of cell formulae differ greatly
         between the Writer and Calc applications.
 
-=head3	cellSpan(table, row, column [, span])
+=head3	cellSpan(table, row, column [, hspan [, vspan]])
 
-=head3	cellSpan(cell [, span])
+=head3	cellSpan(cell [, hspan [, vspan]])
 
 	In a spreadsheet document, get/set the span of a table cell,
 	knowing that this span can be one or more columns. The cell addressing
@@ -517,7 +517,9 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	creates a 3-cell span from B4 in a spreadsheet.
 
-	This method works only for horizontal expansion.
+	With only one span argument, this method works for horizontal, left to
+	right expansion. With an additional argument, the expansion is bi-
+	directional, covering one or more rows below the given cell.
 
 	The text of the covered cells (if any) is concatenated to the original
 	content of the expanded cell (as in OOo Writer or Calc).
@@ -1851,10 +1853,18 @@ presentation which is one of the foundations of the OpenDocument format.
 
 =head3	removeCellSpan($cell)
 
-	Removes the multi-column span of a table cell. The width of the cell
-	is reduced to the width of its column. The uncovered cells take the
-	same style and data type as the reduced cell.
-
+	Removes the multi-column, multi-row span of a table cell. The width
+	and height of the cell are reduced to one column and one row.The
+	uncovered cells take the same style and data type as the reduced cell.
+	
+	Caution: This method works with cells that heve been expanded using
+	the "number-rows-spanned" and "number-columns-spanned" OpenDocument
+	attributes. The cell expansion is done this way by the cellSpan()
+	method, as well as with the present version of OpenOffice.org Calc.
+	But other applications (including the present version of
+	OpenOffice.org Writer) can implement the cell merge using subtables
+	instead of span attributes.
+	
 =head3	removeSpan(path, position)
 
 =head3	removeSpan(element)
@@ -1949,9 +1959,8 @@ presentation which is one of the foundations of the OpenDocument format.
 	not the paragraph, is returned. However, if the current context is
 	the table, selectElementsByContent() will return the matching rows.
 	And if the context is the section, it will return the matching
-	paragraphs (as long as the paragraphs are directly attached to
-	the section, knowing that a section can contain other sections
-	and any other structured containers).
+	objects included in the section (knowing that a section can contain
+	other sections and any other structured containers).
 
         The first form simply returns the given list without modifying the
         text.
@@ -2675,18 +2684,18 @@ presentation which is one of the foundations of the OpenDocument format.
 
 =head1	AUTHOR/COPYRIGHT
 
-Copyright 2004-2006 by Genicorp, S.A. (http://www.genicorp.com)
+Developer/Maintainer: Jean-Marie Gouarne L<http://jean.marie.gouarne.online.fr>
 
-Initial developer: Jean-Marie Gouarne (http://jean.marie.gouarne.online.fr)
+Contact: jmgdoc@cpan.org
 
-Initial English version of the reference manual
-by Graeme A. Hunter (graeme.hunter@zen.co.uk)
+Copyright 2004-2006 by Genicorp, S.A. L<http://www.genicorp.com>
+
+Initial English version of the reference manual by Graeme A. Hunter
+(graeme.hunter@zen.co.uk).
 
 License:
 
-	- Genicorp General Public Licence v1.0
+	- Licence Publique Generale Genicorp v1.0
 	- GNU Lesser General Public License v2.1
-
-Contact: jmgdoc@cpan.org
 
 =cut

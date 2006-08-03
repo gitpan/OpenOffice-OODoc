@@ -1,11 +1,11 @@
 #!/usr/bin/perl -w
 #-----------------------------------------------------------------------------
-#	$Id : oo2pod 0.1 2004-03-12 JMG$
+#	$Id : oo2pod 0.2 2006-08-03 JMG$
 #-----------------------------------------------------------------------------
 
 =head1	NAME
 
-oo2pod - POD generation from an OpenOffice.org document
+oo2pod - POD generation from an OpenDocument file
 
 =head1	SYNOPSIS
 
@@ -13,11 +13,12 @@ Usage : oo2pod <oofilename>
 
 =head1	DESCRIPTION
 
-This demo script exports the content of a given OpenOffice.org file
+This demo script exports the content of a given OpenDocument file
 to POD on the standard output. In the present form, it's quite limited
 and not flexible, in order to remain easily readable. It should be
 considered as an example of text extraction using OpenOffice::OODoc
-and not as the 'definitive' oo2pod filter.
+and not as the 'definitive' oo2pod filter, knowing that complex
+document structures are not properly rendered.
 
 Before extraction, some transformations are done in the document
 in order to make it more convenient for a POD presentation. Some
@@ -64,7 +65,7 @@ sub	BEGIN	# wrappers initialisation
 			);
 	}
 
-sub	header_output
+sub	heading_output
 	{
 	my ($level, $text) = @_;
 	$text && print "=head$level\t$text\n\n";
@@ -112,19 +113,19 @@ if ($meta)
 	my $title = $meta->title;
 	if ($title)
 		{
-		header_output(1, "NAME");
+		heading_output(1, "NAME");
 		print $paragraph_wrapper->wrap($title) . "\n";
 		}
 	my $subject = $meta->subject;
 	if ($subject)
 		{
-		header_output(1, "SUBJECT");
+		heading_output(1, "SUBJECT");
 		print $paragraph_wrapper->wrap($subject) . "\n";
 		}
 	my $description = $meta->description;
 	if ($description)
 		{
-		header_output(1, "DESCRIPTION");
+		heading_output(1, "DESCRIPTION");
 		print $paragraph_wrapper->wrap($description) . "\n";
 		}
 	# we could dump other metadata here...
@@ -148,16 +149,16 @@ $doc->removeElement($_) for @notes;
 # get the full list of text objects (without the previously removed footnotes)
 my @content = $doc->getTextElementList;
 
-# if the first text element is not a header, we create a leading
-# header here, using the title or an arbitrary name
-header_output(1, $meta->title || "INTRODUCTION")
-	unless ($content[0]->isHeader);
+# if the first text element is not a heading, we create a leading
+# heading here, using the title or an arbitrary name
+heading_output(1, $meta->title || "INTRODUCTION")
+	unless ($content[0]->isHeading);
 foreach my $element (@content)
 	{
 	my $level = $doc->getLevel($element); 	# get the hierarchical level
-	if ($level)	# if an element has a 'level', it's a header
+	if ($level)	# if an element has a 'level', it's a heading
 		{
-		header_output($level, $doc->getText($element));
+		heading_output($level, $doc->getText($element));
 		}
 	else
 		{
@@ -171,7 +172,7 @@ if (@notes)
 	{
 	# OK, we have some footnotes in store
 	# create a special section
-	header_output(1, "NOTES");
+	heading_output(1, "NOTES");
 	my $count = 0;
 	while (@notes)
 		{

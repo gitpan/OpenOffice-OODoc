@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.224 2006-06-11 JMG$
+#	$Id : Text.pm 2.225 2006-08-03 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2006 by Genicorp, S.A. (www.genicorp.com)
@@ -12,9 +12,55 @@
 
 package OpenOffice::OODoc::Text;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	2.215;
+use	OpenOffice::OODoc::XPath	2.217;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.224;
+our	$VERSION	= 2.225;
+
+#-----------------------------------------------------------------------------
+# synonyms
+
+BEGIN	{
+	*findElementsByContent		= *selectElementsByContent;
+	*replaceAll			= *selectElementsByContent;
+	*findTextContent		= *selectTextContent;
+	*getHeaderList			= *getHeadingList;
+	*getHeaderTextList		= *getHeadingTextList;
+	*getBibliographyElements	= *getBibliographyMarks;
+	*bibliographyElementContent	= *bibliographyEntryContent;
+	*setBibliographyElement		= *setBibliographyMark;
+	*bookmarkElement		= *setBookmark;
+	*removeBookmark			= *deleteBookmark;
+	*getHeader			= *getHeading;
+	*getHeaderContent		= *getHeadingContent;
+	*getHeaderText			= *getHeadingText;
+	*getOutlineLevel		= *getLevel;
+	*setOutlineLevel		= *setLevel;
+	*getSections			= *getSectionList;
+	*getChapter			= *getChapterContent;
+	*getParagraphContent		= *getParagraphText;
+	*createTextBox			= *createTextBoxElement;
+	*getTextBox			= *getTextBoxElement;
+	*getTextBoxElements		= *getTextBoxElementList;
+	*getList			= *getItemList;
+	*getColumn			= *getTableColumn;
+	*getRow				= *getTableRow;
+	*getHeaderRow			= *getTableHeaderRow;
+	*getCell			= *getTableCell;
+	*getTableContent		= *getTableText;
+	*normalizeTable			= *normalizeSheet;
+	*normalizeTables		= *normalizeSheets;
+	*insertColumn			= *insertTableColumn;
+	*deleteColumn			= *deleteTableColumn;
+	*replicateRow			= *replicateTableRow;
+	*insertRow			= *insertTableRow;
+	*appendRow			= *appendTableRow;
+	*deleteRow			= *deleteTableRow;
+	*appendHeader			= *appendHeading;
+	*insertHeader			= *insertHeading;
+	*removeHeader			= *removeHeading;
+	*getNote			= *getNoteElement;
+	*getNoteList			= *getNoteElementList;
+	}
 
 #-----------------------------------------------------------------------------
 # default text style attributes
@@ -165,7 +211,7 @@ sub	getText
 		{
 		$element = $element->first_child('draw:text-box')
 			if ($element->hasTag('draw:frame'));
-		my @paragraphs = $element->selectChildElements('text:(p|h)');
+		my @paragraphs = $element->children(qr '^text:(p|h)$');
 		while (@paragraphs)
 			{
 			my $p = shift @paragraphs;
@@ -339,18 +385,6 @@ sub	selectElementsByContent
 	return @elements;
 	}
 
-sub	findElementsByContent	# deprecated
-	{
-	my $self	= shift;
-	return $self->selectElementsByContent(@_);
-	}
-
-sub	replaceAll		# deprecated
-	{
-	my $self	= shift;
-	return $self->selectElementsByContent(@_);
-	}
-
 #-----------------------------------------------------------------------------
 
 sub	selectElementByTextId
@@ -394,7 +428,7 @@ sub	selectElementByContent
 
 #-----------------------------------------------------------------------------
 # selects texts matching a given pattern, with optional replacement on the fly
-# returns the whole content without pattern
+# returns the whole text content
 # result is a list of strings or a single string
 
 sub	selectTextContent
@@ -429,13 +463,6 @@ sub	selectTextContent
 	return wantarray ? @lines : join $line_break, @lines;
 	}
 
-sub	findTextContent
-	{
-	my $self	= shift;
-
-	$self->selectTextContent(@_);
-	}
-
 #-----------------------------------------------------------------------------
 # get the list of text elements
 
@@ -449,7 +476,7 @@ sub	getTextElementList
 	return $self->selectChildElementsByName
 			(
 			$context,
-			't(ext:(h|p|.*list|table.*)|able:.*)',
+			qr '^t(ext:(h|p|.*list|table.*)|able:.*)$',
 			@_
 			);
 	}
@@ -494,12 +521,6 @@ sub	getHeadingList
 	return $self->getElementList($path, $opt{'context'});
 	}
 
-sub	getHeaderList
-	{
-	my $self	= shift;
-	return $self->getHeadingList(@_);
-	}
-
 #-----------------------------------------------------------------------------
 # get the headings as a list of strings
 
@@ -527,12 +548,6 @@ sub	getHeadingTextList
 			}
 		return $text;
 		}
-	}
-
-sub	getHeaderTextList
-	{
-	my $self	= shift;
-	return $self->getHeadingTextList(@_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -685,7 +700,7 @@ sub	setTextField
 			}
 		}
 
-	return $element->mark("($expression)", $tag, { %attrs });	
+	return $element->mark("($expression)", $tag, { %attrs });
 	}
 
 #-----------------------------------------------------------------------------
@@ -838,12 +853,6 @@ sub	getBibliographyMarks
 		}
 	}
 
-sub	getBibliographyElements
-	{
-	my $self	= shift;
-	return $self->getBibliographyMarks(@_);
-	}
-
 #-----------------------------------------------------------------------------
 # get/set the content of a bibliography entry
 
@@ -887,12 +896,6 @@ sub	bibliographyEntryContent
 	return %desc;
 	}
 
-sub	bibliographyElementContent
-	{
-	my $self	= shift;
-	return $self->bibliographyEntryContent(@_);
-	}
-
 #-----------------------------------------------------------------------------
 # inserts a new bibliography entry within a text element
 
@@ -908,12 +911,6 @@ sub	setBibliographyMark
 	$bib->paste_within($element, $offset);
 	$self->bibliographyEntryContent($bib, @_);
 	return $bib;
-	}
-
-sub	setBibliographyElement
-	{
-	my $self	= shift;
-	return $self->setBibliographyMark(@_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -967,12 +964,6 @@ sub	setBookmark
 	return $bookmark->paste_within($element, $offset);
 	}
 
-sub	bookmarkElement
-	{
-	my $self	= shift;
-	return $self->setBookmark(@_);
-	}
-
 #-----------------------------------------------------------------------------
 # delete a bookmark
 
@@ -981,12 +972,6 @@ sub	deleteBookmark
 	my $self	= shift;
 
 	$self->removeElement($self->getBookmark(@_));
-	}
-
-sub	removeBookmark
-	{
-	my $self	= shift;
-	return $self->deleteBookmark(@_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -1218,12 +1203,6 @@ sub	getHeading
 	return undef unless $heading;
 	}
 
-sub	getHeader
-	{
-	my $self	= shift;
-	return $self->getHeading(@_);
-	}
-
 #-----------------------------------------------------------------------------
 # get the text of a heading element
 
@@ -1233,22 +1212,10 @@ sub	getHeadingContent
 	return $self->getText('//text:h', @_);
 	}
 
-sub	getHeaderContent
-	{
-	my $self	= shift;
-	return $self->getHeadingContent(@_);
-	}
-
 sub	getHeadingText
 	{
 	my $self	= shift;
 	return $self->getText('//text:h', @_);
-	}
-
-sub	getHeaderText
-	{
-	my $self	= shift;
-	return $self->getHeadingText(@_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -1263,12 +1230,6 @@ sub	getLevel
 
 	my $element	= $self->getElement($path, $pos, @_);
 	return $element->getAttribute($self->{'level_attr'}) || "";
-	}
-
-sub	getOutlineLevel
-	{
-	my $self	= shift;
-	return $self->getLevel(@_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -1342,12 +1303,6 @@ sub	getSectionList
 	{
 	my $self	= shift;
 	return $self->getDescendants('text:section', @_);
-	}
-
-sub	getSections
-	{
-	my $self	= shift;
-	return $self->getSectionList(@_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -1586,12 +1541,6 @@ sub	getChapterContent
 
 	return @list;
 	}
-	
-sub	getChapter
-	{
-	my $self	= shift;
-	return $self->getChapterContent(@_);
-	}
 
 #-----------------------------------------------------------------------------
 
@@ -1609,7 +1558,6 @@ sub	moveElementsToSection
 sub	getParagraph
 	{
 	my $self	= shift;
-
 	return $self->getElement('//text:p', @_);
 	}
 
@@ -1632,7 +1580,6 @@ sub	getTopParagraph
 sub	selectParagraphsByStyle
 	{
 	my $self	= shift;
-
 	return $self->selectElementsByAttribute
 		('//text:p', 'text:style-name', @_);
 	}
@@ -1643,7 +1590,6 @@ sub	selectParagraphsByStyle
 sub	selectParagraphByStyle
 	{
 	my $self	= shift;
-
 	return $self->selectElementByAttribute
 		('//text:p', 'text:style-name', @_);
 	}
@@ -1651,17 +1597,9 @@ sub	selectParagraphByStyle
 #-----------------------------------------------------------------------------
 # get text content of a paragraph
 
-sub	getParagraphContent
-	{
-	my $self	= shift;
-
-	return $self->getText('//text:p', @_);
-	}
-
 sub	getParagraphText
 	{
 	my $self	= shift;
-
 	return $self->getText('//text:p', @_);
 	}
 
@@ -1846,12 +1784,6 @@ sub	createTextBoxElement
 	return wantarray ? ($frame, $text_box) : $text_box;
 	}
 
-sub	createTextBox
-	{
-	my $self	= shift;
-	return $self->createTextBoxElement(@_);
-	}
-
 #-----------------------------------------------------------------------------
 
 sub	getTextBoxElement
@@ -1892,12 +1824,6 @@ sub	getTextBoxElement
 			return $self->selectTextBoxElementByName($tb, @_);
 			}
 		}
-	}
-
-sub	getTextBox
-	{
-	my $self	= shift;
-	return $self->getTextBoxElement(@_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -1986,7 +1912,7 @@ sub	selectTextBoxElementByName
 
 #-----------------------------------------------------------------------------
 
-sub	getTextElements
+sub	getTextElementist
 	{
 	my $self	= shift;
 	my $context	= shift;
@@ -2000,16 +1926,10 @@ sub	getTextElements
 	return @frlist;
 	}
 
-sub	getTextBoxElementList
-	{
-	my $self	= shift;
-	return $self->getTextBoxElementList(@_);
-	}
-
 #-----------------------------------------------------------------------------
 # get list element
 
-sub	getList
+sub	getItemList
 	{
 	my $self	= shift;
 	my $pos		= shift;
@@ -2018,12 +1938,6 @@ sub	getList
 		return $pos->isItemList ? $pos : undef;
 		}
 	return $self->getElement('//text:list', $pos, @_);
-	}
-
-sub	getItemList
-	{
-	my $self	= shift;
-	return $self->getList(@_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -2499,12 +2413,6 @@ sub	getTableColumn
 	return $table->child($col, 'table:table-column');
 	}
 
-sub	getColumn
-	{
-	my $self	= shift;
-	return $self->getTableColumn(@_);
-	}
-
 #-----------------------------------------------------------------------------
 # get/set a column style
 
@@ -2568,12 +2476,6 @@ sub	getTableRow
 	return $table->child($line, 'table:table-row');
 	}
 
-sub	getRow
-	{
-	my $self	= shift;
-	return $self->getTableRow(@_);
-	}
-
 #-----------------------------------------------------------------------------
 # get a table header container
 
@@ -2607,12 +2509,6 @@ sub	getTableHeaderRow
 	my $header	= $table->first_child('table:table-header-rows')
 		or return undef;
 	return $header->child($line, 'table:table-row');
-	}
-
-sub	getHeaderRow
-	{
-	my $self	= shift;
-	return $self->getTableHeaderRow(@_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -2730,12 +2626,6 @@ sub	getTableCell
 		}
 
 	return ($cell && ! $cell->isCovered) ? $cell : undef;
-	}
-
-sub	getCell
-	{
-	my $self	= shift;
-	return $self->getTableCell(@_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -3060,29 +2950,37 @@ sub	removeCellSpan
 	{
 	my $self	= shift;
 	my $cell	= $self->getTableCell(@_) or return undef;
-
-	my $span = $cell->getAttribute('table:number-columns-spanned') || 0;
-	return undef unless ($span && $span > 0);
-
+	my $hspan = $cell->getAttribute('table:number-columns-spanned') || 1;
 	$cell->removeAttribute('table:number-columns-spanned');
-
+	my $vspan = $cell->getAttribute('table:number-rows-spanned') || 1;
+	$cell->removeAttribute('table:number-rows-spanned');
+	my $row = $cell->parent('table:table-row');
+	my $table = $row->parent('table:table');
+	my $vpos = $row->getLocalPosition;	# row number
+	my $hpos = $cell->getLocalPosition;	# column number
+	my $vend = $vpos + $vspan - 1;
+	my $hend = $hpos + $hspan - 1;
 	my $cell_paragraph = $cell->first_child('text:p');
-	my $next_cell = $cell->next_sibling;
-	while ($span > 1 && $next_cell && $next_cell->isCovered)
+	ROW: for (my $i = $vpos ; $i <= $vend ; $i++)
 		{
-		$span--;
-		$next_cell->set_name('table:table-cell');
-		$next_cell->set_atts($cell->atts);
-		$next_cell->del_att('table:value');
-		if ($cell_paragraph)
+		my $cr = $self->getRow($table, $i) or last ROW;
+		CELL: for (my $j = $hpos ; $j <= $hend ; $j++)
 			{
-			my $p = $cell_paragraph->copy;
-			$p->set_text("");
-			$p->paste_first_child($next_cell);
+			my $covered = $cr->selectChildElement
+				('table:(covered-|)table-cell', $j)
+				or last CELL;
+			next CELL if $covered == $cell;
+			$covered->set_name('table:table-cell');
+			$covered->set_atts($cell->atts);
+			$covered->removeAttribute('table:value');
+			if ($cell_paragraph)
+				{
+				my $p = $cell_paragraph->copy;
+				$p->set_text("");
+				$p->paste_first_child($covered);
+				}
 			}
-		$next_cell = $next_cell->next_sibling;
 		}
-	return 1;
 	}
 
 sub	cellSpan
@@ -3092,8 +2990,10 @@ sub	cellSpan
 	my $cell	= undef;
 	my $rnum	= undef;
 	my $cnum	= undef;
+	my $table	= undef;
 	if 	((! (ref $p1)) || $p1->isTable)
 		{
+		$table = $p1;
 		@_ = OpenOffice::OODoc::Text::_coord_conversion(@_);
 		$cell = $self->getTableCell($p1, shift, shift);
 		}
@@ -3107,57 +3007,34 @@ sub	cellSpan
 		}
 	return undef unless $cell;
 
-	my $span = shift;	# Number of columns spanned
-
-				# look for possible existing span
-	my $old_span = $cell->getAttribute('table:number-columns-spanned')
-				|| 0;
-	if (! defined $span || $span == $old_span)
-		{
-		return $old_span;
-		}
-				# remove the old span
 	$self->removeCellSpan($cell);
-	return undef unless ($span > 1);
-				# process the new span
-	my $row	= $cell->getParentNode;
-	my @cells = $row->children('table:table-cell');
-	my $cnt = scalar(@cells);
-	# which col is the current cell?
-	for ($c=0; $c<$cnt; $c++) {
-		if ($cell == $cells[$c]) {	# This is it
-			# Check span against size!
-			if (($c + $span) > $cnt) {
-				$span = ($cnt - $c);
+	my $row = $cell->parent('table:table-row');
+	$table = $row->parent('table:table') unless $table;
+	my $vpos = $row->getLocalPosition;	# row number
+	my $hpos = $cell->getLocalPosition;	# column number
+	my $hspan = shift; my $hend = $hpos + $hspan - 1;
+	my $vspan = shift; my $vend = $vpos + $vspan - 1;
+	$cell->setAttribute('table:number-columns-spanned', $hspan);
+	$cell->setAttribute('table:number-rows-spanned', $vspan);
+
+	ROW: for (my $i = $vpos ; $i <= $vend ; $i++)
+		{
+		my $cr = $self->getRow($table, $i) or last ROW;
+		CELL: for (my $j = $hpos ; $j <= $hend ; $j++)
+			{
+			my $covered = $self->getCell($cr, $j)
+				or last CELL;
+			next CELL if $covered == $cell;
+			my @paras = $covered->children('text:p');
+			$covered->set_name('table:covered-table-cell');
+			while (@paras)
+				{
+				my $p = shift @paras;
+				$p->paste_last_child($cell) if
+					(defined $p->text && $p->text ge ' ');
 				}
-
-			# Attach attribute to the cell,
-			$cell->setAttribute('table:number-columns-spanned',
-						$span);
-
-			# Change covered cells
-			for ($i = 1; $i < $span; $i ++) {
-				my $covered = $cells[$c + $i];
-				my @paras = $covered->children('text:p');
-				$self->replaceElement($covered,
-					'table:covered-table-cell');
-				while (@paras)
-					{
-					my $p = shift @paras;
-					$p->paste_last_child($cell) if
-						(
-						defined $p->text
-							&&
-						$p->text ge ' '
-						);
-					}
-				}
-
-			last
 			}
 		}
-
-	return $span;
 	}
 
 #-----------------------------------------------------------------------------
@@ -3176,7 +3053,7 @@ sub	_get_row_content
 	return @row_content;
 	}
 
-sub	getTableContent
+sub	getTableText
 	{
 	my $self	= shift;
 	my $table	= $self->getTable(shift);
@@ -3208,13 +3085,6 @@ sub	getTableContent
 			}
 		return join $line_break, @list;
 		}
-	}
-
-sub	getTableText
-	{
-	my $self	= shift;
-
-	return $self->getTableContent(@_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -3306,12 +3176,6 @@ sub	normalizeSheet
 	return $self->_expand_table($table, $length, $width, @_);
 	}
 
-sub	normalizeTable
-	{
-	my $self	= shift;
-	return $self->normalizeSheet(@_);
-	}
-
 sub	normalizeSheets
 	{
 	my $self	= shift;
@@ -3325,12 +3189,6 @@ sub	normalizeSheets
 		$count++;
 		}
 	return $count;
-	}
-
-sub	normalizeTables
-	{
-	my $self	= shift;
-	return $self->normalizeSheets(@_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -3589,12 +3447,6 @@ sub	insertTableColumn
 	return $column || $new_cell;
 	}
 
-sub	insertColumn
-	{
-	my $self	= shift;
-	return $self->insertTableColumn(@_);
-	}
-
 #-----------------------------------------------------------------------------
 # delete a column in a table
 
@@ -3644,12 +3496,6 @@ sub	deleteTableColumn
 	return 1;
 	}
 
-sub	deleteColumn
-	{
-	my $self	= shift;
-	return $self->deleteTableColumn(@_);
-	}
-
 #-----------------------------------------------------------------------------
 # replicates a row in a table
 
@@ -3681,12 +3527,6 @@ sub	replicateTableRow
 		}
 
 	return $self->replicateElement($row, $row, %options);
-	}
-
-sub	replicateRow
-	{
-	my $self	= shift;
-	return $self->replicateTableRow(@_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -3722,12 +3562,6 @@ sub	insertTableRow
 	return $self->replicateTableRow($row, %options);
 	}
 
-sub	insertRow
-	{
-	my $self	= shift;
-	return $self->insertTableRow(@_);
-	}
-
 #-----------------------------------------------------------------------------
 # append a new row (replicating the last existing one) to a table
 
@@ -3738,12 +3572,6 @@ sub	appendTableRow
 	return $self->replicateTableRow($table, -1, position => 'after', @_);
 	}
 
-sub	appendRow
-	{
-	my $self	= shift;
-	return $self->appendTableRow(@_);
-	}
-
 #-----------------------------------------------------------------------------
 # delete a given table row
 
@@ -3752,12 +3580,6 @@ sub	deleteTableRow
 	my $self	= shift;
 	my $row		= $self->getTableRow(@_) or return undef;
 	return $self->removeElement($row);
-	}
-
-sub	deleteRow
-	{
-	my $self	= shift;
-	return $self->deleteTableRow(@_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -3792,7 +3614,9 @@ sub	userFieldValue
 			or return undef;
 	my $value	= shift;
 
-	my $value_type	= $field->att('text:value-type');
+	my $type_attr	= $self->{'opendocument'} ?
+				'office:value-type' : 'text:value-type';
+	my $value_type	= $field->att($type_attr);
 	my $value_att	= $value_type eq 'string' ?
 				'text:string-value' : 'text:value';
 	if (defined $value)
@@ -3977,12 +3801,6 @@ sub	appendHeading
 	return $self->appendText('text:h',%opt);
 	}
 
-sub	appendHeader
-	{
-	my $self	= shift;
-	return $self->appendHeading(@_);
-	}
-
 #-----------------------------------------------------------------------------
 # insert a new paragraph at a given position
 
@@ -4024,12 +3842,6 @@ sub	insertHeading
 		$self->insertText($path, $pos, 'text:h', %opt);
 	}
 
-sub	insertHeader
-	{
-	my $self	= shift;
-	return $self->insertHeading(@_);
-	}
-
 #-----------------------------------------------------------------------------
 # remove the paragraph element at a given position
 
@@ -4050,12 +3862,6 @@ sub	removeHeading
 	my $pos		= shift;
 	return $self->removeElement($pos)	if (ref $pos);
 	return $self->removeElement('//text:h', $pos);
-	}
-
-sub	removeHeader
-	{
-	my $self	= shift;
-	return $self->removeHeading(@_);
 	}
 
 #-----------------------------------------------------------------------------

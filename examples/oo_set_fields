@@ -2,20 +2,29 @@
 
 =head1	NAME
 
-set_fields - Set names & values for user-defined fields
+oo_set_fields - Set names & values for user-defined fields
+
+=head1	USAGE
+
+oo_set_fields <filename> -options 
 
 =head1	SYNOPSIS
 
-Sample script updating the 4 user-defined fields of an OpenOffice.org
-document and adding new keywords
-Existing keywords are preserved
-Old user-defined fields names and values are deleted and replaced
+Sample script updating the 4 user-defined fields of an ODF file and adding
+new keywords. Existing keywords are preserved. Old user-defined fields names
+and values are deleted and replaced.
 
-usage : set_fields filename [-options]
-The 5 options are : -contact -organization -status -diffusion -keywords
-ex:
- 	set_fields foo.sxw -contact "Donald Duck" -organization "Genicorp"
- 	set_fields foo.sxw -status "Complete" -keywords "software, office"
+The keywords must be passed as a comma-separated list through the -keywords
+option.
+
+The user-defined fields/options are :
+-contact -organization -status -diffusion
+
+Examples:
+
+oo_set_fields foo.odt -contact "Donald Duck" -organization "Genicorp"
+
+oo_set_fields foo.odt -status "Complete" -keywords "software, office"
 
 =cut
 	
@@ -41,7 +50,7 @@ GetOptions
 
 	# get the command line argument as filename
 my $filename	= $ARGV[0]
-	or die "usage : set_fields filename [-options]\n";
+	or die "usage : oo_set_fields filename [-options]\n";
 
 	# create a meta-data object linked to the file
 my $doc	= OpenOffice::OODoc::Meta->new(file => $filename)

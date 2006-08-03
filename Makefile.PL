@@ -1,5 +1,5 @@
 #------------------------------------------------------
-# OpenOffice::OODoc packaging & installation 2006-06-11
+# OpenOffice::OODoc packaging & installation 2006-08-03
 #------------------------------------------------------
 
 use 5.008;
@@ -146,7 +146,11 @@ WriteMakefile
 		'examples/text2table',
 		'examples/oo2pod',
 		'examples/oobuild',
-		'examples/oometadoc'
+		'examples/oometadoc',
+		'examples/oofindbasic',
+		'examples/oosearch',
+		'examples/oo_set_fields',
+		'examples/oo_set_title'
 		]
 	);
 

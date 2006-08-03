@@ -856,6 +856,19 @@ at least a blank of each required style.
 	A font declaration must be imported if it's used in a newly
 	created style and not currently available in the target document.
 
+=head3	masterPageExtension(page, extension_type [, element])
+
+	This method allows the user to get or set an extension to an existing
+	master page. The most used extensions are "header", "footer",
+	"header-left", "footer-left", but any other key could be provided
+	(warning: there is no ODF-compliance check, so any application-
+	specific tag is allowed, knowing that any provided keyword will be
+	automatically prefixed by "style:" in the generated XML).
+	
+	See masterPageFooter(), masterPageFooterLeft(), masterPageHeader(),
+	masterPageHeaderLeft(); these methods can be regarded as synonyms
+	for masterPageExtension() with the four listed extension types.
+	
 =head3	masterPageFooter(page [, element])
 
         Returns the given page style's footer element reference (master
@@ -864,10 +877,36 @@ at least a blank of each required style.
         If the second argument is a content element, it is added to the
         footer. If the footer does not exist, it is created.
 
+=head3	masterPageFooterLeft(page [, element])
+
+        Returns the given page style's footer left element reference (master
+        page) or undef if not found.
+	
+	A "footer left" element can be used to specify different content for
+	left pages, if appropriate. Unless a footer left element is defined
+	in the master page, the content of the footers on left and right pages
+	is the same. 
+
+        If the second argument is a content element, it is added to the
+        footer. If the footer does not exist, it is created.
+	
 =head3	masterPageHeader(page [, element])
 
         Returns the given page style's header element reference (master
         page) or undef if not found.
+
+        If the second argument is a content element, it is added to the
+        header. If the header does not exist, it is created.
+	
+=head3	masterPageHeaderLeft(page [, element])
+
+        Returns the given page style's header left element reference (master
+        page) or undef if not found.
+	
+	A "header left" element can be used to specify different content for
+	left pages, if appropriate. Unless a header left element is defined
+	in the master page, the content of the headers on left and right pages
+	is the same. 
 
         If the second argument is a content element, it is added to the
         header. If the header does not exist, it is created.
@@ -1383,18 +1422,18 @@ at least a blank of each required style.
 
 =head1	AUTHOR/COPYRIGHT
 
-Copyright 2004-2006 by Genicorp, S.A. (http://www.genicorp.com)
+Developer/Maintainer: Jean-Marie Gouarne L<http://jean.marie.gouarne.online.fr>
 
-Initial developer: Jean-Marie Gouarne (http://jean.marie.gouarne.online.fr)
+Contact: jmgdoc@cpan.org
 
-Initial English version of the reference manual
-by Graeme A. Hunter (graeme.hunter@zen.co.uk)
+Copyright 2004-2006 by Genicorp, S.A. L<http://www.genicorp.com>
+
+Initial English version of the reference manual by Graeme A. Hunter
+(graeme.hunter@zen.co.uk).
 
 License:
 
-	- Genicorp General Public Licence v1.0
+	- Licence Publique Generale Genicorp v1.0
 	- GNU Lesser General Public License v2.1
-
-Contact: jmgdoc@cpan.org
 
 =cut

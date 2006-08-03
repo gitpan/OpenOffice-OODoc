@@ -2,18 +2,19 @@
 
 =head1	NAME
 
-search - Text selection and copy from one document to another using callback
+oosearch - Text selection and copy from one document to another using callback
 
 =head1	SYNOPSIS
 
 This sample script extracts the content of every text element (paragraph,
 header, list item) in a source document matching a given pattern (string or
-regex), and appends it as a new paragraph to a target document.
+regex), and appends it as a new paragraph to a target document. The target
+document must exist.
 
 The target OpenOffice.org document must exist (it can be an empty document
 or a template).
 
-usage : search target_file source_file "search_string"
+usage : oosearch target_file source_file "search_string"
 
 =cut
 
@@ -49,15 +50,15 @@ my $source_file		= $ARGV[1];
 my $search_string	= $ARGV[2];
 my $stylename		= $ARGV[3] || 'Text body';
 
-die "Usage : search target_file source_file search_string\n"
+die "Usage : oosearch target_file source_file search_string\n"
 	unless ($target_file && $source_file && $search_string);
 
-	# create the 2 OO-Text objects
+	# create the 2 Document instances
 print "Opening the target file $target_file...\n";
-my $target_doc	= ooText(file => $target_file)
+my $target_doc	= ooDocument(file => $target_file)
 	or die "$target_file is not available\n";
 print "Opening the source file $source_file...\n";
-my $source_doc	= ooText(file => $source_file)
+my $source_doc	= ooDocument(file => $source_file)
 	or die "$source_file is not available\n";
 
 	# the main processing takes place here :
@@ -87,4 +88,3 @@ print "Job complete\n";
 exit;
 
 #-----------------------------------------------------------------------------
-

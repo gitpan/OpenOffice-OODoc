@@ -51,8 +51,7 @@ as an argument, there are two ways of proceeding:
 - or give an XPath expression and a position, being a string and an
 integer respectively; for example, the pair ('//office:body/text:p', 12)
 or ('//text:p', 12) represents the thirteenth occurrence of the 'text:p'
-element, i.e. the 13th paragraph (XPath occurrences are numbered
-starting from 0).
+element, i.e. the 13th paragraph (occurrences are numbered starting from 0).
 
 The second way requires the knowledge of an appropriate XPath
 expression (according the OOo/OpenDocument XML format specification).
@@ -613,11 +612,11 @@ features of OODoc::Meta and OODoc::Document are described here.
 =head3	currentContext([context])
 
 	Accessor allowing the application to change the context for some
-	search methods.
+	search methods (including getElement()).
 	
-	Knowing that the default context is the root of the document. By
-	setting the current context to a lower level object, the application
-	can restrain the search to the children of this object.
+	The default context is the root of the document. By setting the
+	current context to a lower level object, the application can restrain
+	the search to the descendants of this object.
 	
 	In the example below, the getElement() method retrieves a paragraph
 	by order number in a previously selected section, and not in the whole
@@ -625,7 +624,7 @@ features of OODoc::Meta and OODoc::Document are described here.
 	
 		my $section = $doc->getElement("//text:section", $s_number);
 		$doc->currentContext($section);
-		my $paragraph = $doc->getElement('//text:p", $p_number);
+		my $paragraph = $doc->getElement("//text:p", $p_number);
 		
 	Without argument, simply returns the previous current context.
 	
@@ -778,7 +777,7 @@ features of OODoc::Meta and OODoc::Document are described here.
         If the third argument ('replacement') is given, every string which
         matches the filter in each child element will be replaced by this
         'replacement' value. This 'replacement' argument can be a character
-        string or a function reference. (See replaceText method below.)
+        string or a function reference. (See replaceText() method below.)
 
         Filtering and possible replacement only affects an element's content
         and not its attributes.
@@ -836,13 +835,30 @@ features of OODoc::Meta and OODoc::Document are described here.
 	If the second argument is not provided, the current context of the
 	document is used (see currentContext()).
 	
-=head3	getElement(path, position)
+=head3	getElement(path [, position [, context]])
 
-        Returns an element's reference from an XPath path and a position (or
-        undef if the given path does not indicate an existing element).
+	This method is provided in order to allow the user to retrieve any
+	element in any kind of XML document (ODF-compliant or not) using an
+	application-provided XPath expression. It should be used with elements
+	whose type is not explicitly supported by the more focused (and more
+	user-friendly) methods, described in other manual chapters (::Text,
+	::Styles, ::Meta, and ::Document).
 
-        Position indicators start at 0 just like in Perl tables (and other
-        programming languages).
+	It returns an element's reference from an XPath path and a position
+	(or undef if the given xpath does not indicate an existing element).
+	
+	The position argument is used to select a particular element, in the
+	order of the document, knowing that the given xpath expression could
+	select a set of elements. Without it, getElement() returns the first
+	element matching the given xpath.
+	
+	The XPath expression applies in the current context, and not always
+	in the whole document (see currentContext()). However, if the
+	reference of a previously selected element is provided as a third
+	argument, the given element is used as the context.
+
+        Position indicators start at 0 just like in Perl tables (and some
+	other programming languages).
 
         Example:
 
@@ -858,16 +874,17 @@ features of OODoc::Meta and OODoc::Document are described here.
 
         indicates the second-last header of a text document.
 
-        Caution: the position indicators used here are not the same in
-        XPath. In XPath indicators start at 1 and negative values are not
-        allowed. So, the first element "text:p" would be shown as
-        "//text:p[1]" if using the getNodeByXPath method (see below),
-        whereas if using getElement it would be at position 0. An XPath
-        expression such as "//text:p[-1]" would return nothing.
-
+	Note: None of the two examples above should be used in a real
+	application, knowing that the ::Text module provides getTable() and
+	getHeading() that do the job without XPath coding.
+	
         When successful, this method ensures that the returned object is
         indeed an element and not another type of node (e.g. attribute,
-        text, comment, etc.)
+        text, comment, etc.). Such an object is never a printable text; it's
+	either a text container (whose content may be extracted using
+	getText() or getFlatText()) or a non-text element (such as a style,
+	a font declaration, a variable field, a document properties container,
+	etc).
 	
 =head3	getElementList(path)
 
@@ -914,7 +931,7 @@ features of OODoc::Meta and OODoc::Document are described here.
         gives unrestricted access to the entire content of a document) is
         designed for use with the unexpected. You will obviously need to be
         familiar with XPath syntax (not documented here) as well as
-        OpenOffice.org document structure. See also selectNodesByXPath.
+        OpenDocument structure. See also selectNodesByXPath().
 
 =head3	getObjectCoordinates(object)
 
@@ -1247,9 +1264,9 @@ features of OODoc::Meta and OODoc::Document are described here.
 =head3	replaceText(element, filter, replacement)
 
         Replaces all sub-strings which match "filter" with "replacement" in
-        the text of an element indicated by [path, position] or by reference
-        and returns the modified text. The "filter" string can be an "exact"
-        literal or a regular expression.
+        the text of an element (and its descendants) indicated by
+	[path, position] or by reference and returns the modified text. The
+	"filter" string can be an "exact" literal or a regular expression.
 
         Example:
 
@@ -1262,30 +1279,32 @@ features of OODoc::Meta and OODoc::Document are described here.
         case, the function is called each time the string is matched, and
         the value returned by the function is used as the replacement value.
 
-        sub action	{
-
+        	sub action	{
         		my $arg = shift;
-
         		my $text = shift;
-
         		print "$arg : $text\n";
-
         		return "OK";
-
         		}
-
-            $doc->replaceText($p, $expression, \&action, "Found");
+		$doc->replaceText($p, $expression, \&action, "Found");
 
         displays "Found: <text>" (where <text> is the text retrieved) each
         time a string matches $expression and replaces this string with
-        "OK". If $expression contains an "exact" string, then clearly the
-        text displayed will always be the same string. However, if it
-        happens to be a regular expression, it is in effect the text
+        "OK". If $expression contains an "exact" string (not a regex), then
+	clearly the text displayed will always be the same string. However,
+	if it happens to be a regular expression, it is in effect the text
         retrieved which will be displayed.
 	
         Generally speaking, if the replacement value is a function
         reference, the called function receives the remainder of the
         arguments which follow it, in this order:
+	
+	1) all the arguments following the function reference in the
+	replaceText() call, in the same order;
+	
+	2) the string that matches the filter argument.
+	
+	See also substituteText(), which should be preferred in most
+	situations.
 
 =head3	replicateElement(original_element, position_object [, options]])
 
@@ -1324,12 +1343,12 @@ features of OODoc::Meta and OODoc::Document are described here.
             		('//office:styles', 0);
             $doc_target->replicateElement($template, $position);
 
-        This sequence adds a style 'Body of text' to the styles collection
-        of $doc_target which copies exactly the style of the same name in
-        $doc_source. Obviously, the section of code dealing with the search
-        for the element to copy and its position is the most laborious.
-	(In a real application, thanks to OODoc::Styles, a more user-friendly
-	coding would be allowed for style replication.)
+        This sequence adds a style 'Text body' to the style set of $doc_target
+        which copies exactly the style of the same name in $doc_source.
+	Obviously, the section of code dealing with the search for the element
+	to copy and its position is the most laborious. (In a real application,
+	thanks to OODoc::Styles, a more user-friendly coding would be allowed
+	for style replication.)
 
         This method creates a new element which is an exact copy of the given
 	element, but which is physically separate from it.
@@ -1554,7 +1573,7 @@ features of OODoc::Meta and OODoc::Document are described here.
 
         This low-level method returns a list of nodes (which are not
         necessarily elements) which match the give XPath expression. See
-        getNodeByXPath for options and comments.
+        getNodeByXPath() for options and comments.
 
 =head3	setAttributes(path, position, attributes_table)
 
@@ -1666,6 +1685,18 @@ features of OODoc::Meta and OODoc::Document are described here.
 	text" only. It's a bit complicated to use and probably doesn't
 	produce the right effects on elements containing line breaks, tab
 	stops, "styled spans" or any kind of structure.
+	
+=head3	substituteText(element, filter, replacement)
+
+	Replaces any substring in a given element and its descendant, matching
+	a given filter (regex) by a given replacement string.
+	
+	It "replacement" is a string, this method produces the same result as
+	replaceText(), and it should be preferred.
+	
+	If "replacement" is a function reference, the replacement value is the
+	return value of the function. But, unlike replaceText(), any argument
+	after "replacement" is ignored.
 
 =head3	tabStop
 
@@ -1876,18 +1907,18 @@ features of OODoc::Meta and OODoc::Document are described here.
 
 =head1	AUTHOR/COPYRIGHT
 
-Copyright 2004-2006 by Genicorp, S.A. (http://www.genicorp.com)
+Developer/Maintainer: Jean-Marie Gouarne L<http://jean.marie.gouarne.online.fr>
 
-Initial developer: Jean-Marie Gouarne (http://jean.marie.gouarne.online.fr)
+Contact: jmgdoc@cpan.org
 
-Initial English version of the reference manual
-by Graeme A. Hunter (graeme.hunter@zen.co.uk)
+Copyright 2004-2006 by Genicorp, S.A. L<http://www.genicorp.com>
+
+Initial English version of the reference manual by Graeme A. Hunter
+(graeme.hunter@zen.co.uk).
 
 License:
 
-	- Genicorp General Public Licence v1.0
+	- Licence Publique Generale Genicorp v1.0
 	- GNU Lesser General Public License v2.1
-
-Contact: jmgdoc@cpan.org
 
 =cut

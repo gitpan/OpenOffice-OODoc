@@ -15,8 +15,8 @@ Just before reading this intro, it's a good idea to have a look at the
 short (and commented) examples provided in the distribution.
 
 There is an alternative intro for french-reading users. It's available in
-PDF (http://jean.marie.gouarne.online.fr/doc/oodoc_guide.pdf) or ODT
-(http://jean.marie.gouarne.online.fr/doc/oodoc_guide.odt).
+ODT (L<http://jean.marie.gouarne.online.fr/doc/oodoc_guide.odt>) or PDF
+(L<http://jean.marie.gouarne.online.fr/doc/oodoc_guide.pdf>).
 
 =head1	Overview
 
@@ -71,7 +71,7 @@ the ooDocument() function. When an object is initialized using this function,
 it brings a lot of methods allowing allowing the application to retrieve,
 read, update, delete or create almost every content and style element.
 Another constructor, ooMeta() is available in order to allow metadata
-processing (see below). These (and others) ooXxx() methods are shortcuts
+processing (see below). These ooXxx() methods (and others) are shortcuts
 for
 
 	OpenOffice::OODoc::Xxx->new(options)
@@ -100,7 +100,7 @@ with the same name). However, the new file will be actually created by the
 $document->save instruction, not by the object initialization.
 
 When the 'create' option is in use, the newly created document may be
-formatted either in the OASIS OpenDocument format (ODF) or in the primary
+formatted either in the OASIS OpenDocument format (ODF) 1.0 or in the primary
 OpenOffice.org 1.0 format. If an additional 'opendocument' is provided and
 set to 'true', then the new document will be ODF-compliant. If the same
 option is present and set to 'false', the old OOo 1.0 format will be selected
@@ -122,7 +122,6 @@ the following title:
 
 "Open Document Format for Office Applications (OpenDocument) v1.0"
 
-
 =head1	Architecture
 
 The OODoc toolbox is organized in 3 logical layers. It's not necessary for
@@ -130,8 +129,7 @@ you to remember the (annoying) details given in the next few paragraphs,
 but these details are described only to explain the general organisation of
 the modules. If you have only a few dozens of seconds for reading
 this document, please jump directly at the part III (practical examples)
-and
-come back later if you want to know more.
+and come back later if you want to know more.
 
 =head2	OpenDocument file input/output
 
@@ -1079,23 +1077,28 @@ A few executable examples (not commented here, but commented in line) are
 provided in the distribution. In addition, you can have a look to the
 installation test scripts.
 
-=head1	Author & Copyright
+=head1	COMMENTS AND BUG REPORTS
 
-Copyright 2005 by Genicorp, S.A. (http://www.genicorp.com)
+Comments, questions and answers are welcome through the CPAN forum
+L<http://www.cpanforum.com/dist/OpenOffice-OODoc>
 
-Initial developer : Jean-Marie Gouarne (http://jean.marie.gouarne.online.fr)
+Bug reports should be sent using
+L<http://rt.cpan.org/NoAuth/Bugs.html?Dist=OpenOffice-OODoc>
+
+=head1	AUTHOR/COPYRIGHT
+
+Developer/Maintainer: Jean-Marie Gouarne L<http://jean.marie.gouarne.online.fr>
+
+Contact: jmgdoc@cpan.org
+
+Copyright 2004-2006 by Genicorp, S.A. L<http://www.genicorp.com>
+
+Initial English version of the reference manual by Graeme A. Hunter
+(graeme.hunter@zen.co.uk).
 
 License:
 
 	- Licence Publique Generale Genicorp v1.0
 	- GNU Lesser General Public License v2.1
-
-Contact: jmgdoc@cpan.org
-
-The initial main reference manual has been written in French by the developer,
-then translated in English by Graeme A. Hunter (graeme.hunter@zen.co.uk)
-
-The OpenOffice::OODoc man pages (not including this introduction) are
-extracted from this reference manual.
 
 =cut

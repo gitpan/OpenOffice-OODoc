@@ -417,9 +417,11 @@ separate "member".
 
 =head1	AUTHOR/COPYRIGHT
 
-Copyright 2006 by Genicorp, S.A. (http://www.genicorp.com)
+Developer/Maintainer: Jean-Marie Gouarne L<http://jean.marie.gouarne.online.fr>
 
-Initial developer: Jean-Marie Gouarne (http://jean.marie.gouarne.online.fr)
+Contact: jmgdoc@cpan.org
+
+Copyright 2004-2006 by Genicorp, S.A. L<http://www.genicorp.com>
 
 Initial English version of the reference manual by Graeme A. Hunter
 (graeme.hunter@zen.co.uk).
@@ -429,7 +431,4 @@ License:
 	- Licence Publique Generale Genicorp v1.0
 	- GNU Lesser General Public License v2.1
 
-Contact: jmgdoc@cpan.org
-
 =cut
-

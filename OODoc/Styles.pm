@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Styles.pm 2.019 2006-06-08 JMG$
+#	$Id : Styles.pm 2.020 2006-08-01 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2006 by Genicorp, S.A. (www.genicorp.com)
@@ -12,9 +12,9 @@
 
 package OpenOffice::OODoc::Styles;
 use	5.006_001;
-our	$VERSION	= 2.019;
+our	$VERSION	= 2.020;
 
-use	OpenOffice::OODoc::XPath	2.215;
+use	OpenOffice::OODoc::XPath	2.217;
 use	File::Basename;
 require	Exporter;
 our	@ISA	= qw ( Exporter OpenOffice::OODoc::XPath );
@@ -39,6 +39,18 @@ our	%COLORMAP		=
 	'violet'		=> '238,130,238',
 	'yellow'		=> '255,255,0'
 	);
+
+#-----------------------------------------------------------------------------
+
+BEGIN	{
+	*rgbColor			= *oo2rgb;
+	*odfColor			= *rgb2oo;
+	*getPageMasterElement		= *getPageLayoutElement;
+	*getPageMasterAttributes	= *getPageLayoutAttributes;
+	*createPageMaster		= *createPageLayout;
+	*updatePageMaster		= *updatePageLayout;
+	*pageMasterStyle		= *pageLayout;
+	}
 	
 #-----------------------------------------------------------------------------
 # loading a color map from an external file
@@ -96,8 +108,6 @@ sub	oo2rgb
 		return $color;
 		}
 	}
-	
-sub	rgbColor { return oo2rgb(@_); }
 
 #-----------------------------------------------------------------------------
 # converting a decimal RGB expression to an hexadecimal OOo color 
@@ -136,8 +146,6 @@ sub	rgb2oo
 		}
 	return sprintf("#%02x%02x%02x", $red, $green, $blue);
 	}
-	
-sub	odfColor { return rgb2oo(@_); }
 	
 #-----------------------------------------------------------------------------
 package	OpenOffice::OODoc::Element;
@@ -1051,7 +1059,7 @@ sub	updateStyle
 # if $page appears to be a master page (or master page name), the method
 # tries to get the linked page master
 
-sub	getPageMasterElement
+sub	getPageLayoutElement
 	{
 	my $self	= shift;
 	my $page	= shift;
@@ -1094,15 +1102,9 @@ sub	getPageMasterElement
 			($layout_path, 'style:name', $name);
 	}
 
-sub	getPageLayoutElement
-	{
-	my $self	= shift;
-	return $self->getPageMasterElement(@_);
-	}
-
 #-----------------------------------------------------------------------------
 
-sub	getPageMasterAttributes
+sub	getPageLayoutAttributes
 	{
 	my $self	= shift;
 	my %attributes	= ();
@@ -1133,15 +1135,9 @@ sub	getPageMasterAttributes
 	return %attributes;
 	}
 
-sub	getPageLayoutAttributes
-	{
-	my $self	= shift;
-	return $self->getPageMasterAttributes(@_);
-	}
-
 #-----------------------------------------------------------------------------
 
-sub	createPageMaster
+sub	createPageLayout
 	{
 	my $self	= shift;
 	my $name	= shift;
@@ -1184,15 +1180,9 @@ sub	createPageMaster
 	return $pagemaster;
 	}
 
-sub	createPageLayout
-	{
-	my $self	= shift;
-	return $self->createPageMaster(@_);
-	}
-	
 #-----------------------------------------------------------------------------
 
-sub	updatePageMaster
+sub	updatePageLayout
 	{
 	my $self	= shift;
 	my $pagemaster	= $self->getPageMasterElement(shift) or return undef;
@@ -1258,12 +1248,6 @@ sub	updatePageMaster
 	return $self->getPageMasterAttributes($pagemaster);
 	}
 
-sub	updatePageLayout
-	{
-	my $self	= shift;
-	return $self->updatePageMaster(@_);
-	}
-	
 #-----------------------------------------------------------------------------
 # switch page orientation (portrait -> landscape or landscape -> portrait)
 
@@ -1312,7 +1296,7 @@ sub	getMasterPageElement
 #-----------------------------------------------------------------------------
 # get/set the page master name of a given master page
 
-sub	pageMasterStyle
+sub	pageLayout
 	{
 	my $self	= shift;
 	my $masterpage	= $self->getMasterPageElement(shift) or return undef;
@@ -1334,12 +1318,6 @@ sub	pageMasterStyle
 		}
 	}
 
-sub	pageLayout
-	{
-	my $self	= shift;
-	return $self->pageMasterStyle(@_);
-	}
-	
 #-----------------------------------------------------------------------------
 # get the background image node in a given page master
 
@@ -1554,38 +1532,48 @@ sub	createMasterPage
 
 #-----------------------------------------------------------------------------
 
-sub	masterPageHeader
+sub	masterPageExtension
 	{
 	my $self	= shift;
 	my $masterpage	= $self->getMasterPageElement(shift) or return undef;
+	my $position	= shift or return undef;
 	my $element	= shift;
+	my $tag		= 'style:' . $position;
 	unless ($element)
 		{
-		return $self->getNodeByXPath($masterpage, '//style:header');
+		return $self->getNodeByXPath($masterpage, "//$tag");
 		}
 	else
 		{
-		my $node = $self->makeXPath($masterpage, '/style:header');
+		my $node = $self->makeXPath($masterpage, "/$tag");
 		return $self->appendElement($node, $element, @_);
 		}
 	}
 
 #-----------------------------------------------------------------------------
 
+sub	masterPageHeader
+	{
+	my $self	= shift;
+	return $self->masterPageExtension(shift, 'header', @_);
+	}
+
 sub	masterPageFooter
 	{
 	my $self	= shift;
-	my $masterpage	= $self->getMasterPageElement(shift) or return undef;
-	my $element	= shift;
-	unless ($element)
-		{
-		return $self->getNodeByXPath($masterpage, '//style:footer');
-		}
-	else
-		{
-		my $node = $self->makeXPath($masterpage, '/style:footer');
-		return $self->appendElement($node, $element, @_);
-		}
+	return $self->masterPageExtension(shift, 'footer', @_);
+	}
+
+sub	masterPageHeaderLeft
+	{
+	my $self	= shift;
+	return $self->masterPageExtension(shift, 'header-left', @_);
+	}
+
+sub	masterPageFooterLeft
+	{
+	my $self	= shift;
+	return $self->masterPageExtension(shift, 'footer-left', @_);
 	}
 
 #-----------------------------------------------------------------------------
