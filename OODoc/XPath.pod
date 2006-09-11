@@ -176,14 +176,14 @@ features of OODoc::Meta and OODoc::Document are described here.
             my $doc = ooXPath(xml => $xml_string);
 
 	    # option 2 (using a previously created OOo file interface)
-	    my $oofile = ooFile('source.sxw');
+	    my $oofile = ooFile('source.odt');
             my $doc = ooXPath(archive => $oofile, member => 'meta');
 
 	    # option 3 (using a regular OOo file directly)
-            my $doc = ooXPath(file => 'source.sxw', member => 'content');
+            my $doc = ooXPath(file => 'source.odt', member => 'content');
 	
 	    # option 4 (multiple instances against a single file)
-	    my $content = ooXPath(file => 'source.sxw', member => 'content');
+	    my $content = ooXPath(file => 'source.odt', member => 'content');
 	    my $meta = ooXPath(file => $content, member => 'meta');
 	    my $styles = ooXPath(file => $content, member => 'styles');
 
@@ -431,7 +431,8 @@ features of OODoc::Meta and OODoc::Document are described here.
 
 	Appends a sequence of multiple spaces to a text element, knowing that
 	a string containing repeated spaces shouldn't be stored as is in a
-	document (see setText() for details about repeated spaces).
+	document (see setText() and spaces() for details about repeated
+	spaces).
 	
 =head3	appendTabStop(element)
 
@@ -729,15 +730,16 @@ features of OODoc::Meta and OODoc::Document are described here.
         from one document to another in the same program (or from one
         document position to another). An element can be copied directly
         from within the same program by reference or replication without
-        going via its XML (see appendElement, insertElement and
-        replicateElement).
+        going via its XML (see appendElement(), insertElement() and
+        replicateElement()).
 
-=head3	extendText(path, position, text)
+=head3	extendText(path, position, text [, offset])
 
-=head3	extendText(element, text)
+=head3	extendText(element, text [, offset])
 
 	Appends the given text to the previous content of the given
-	element.
+	element. If the optional 'offset' element is provided, the
+	new element is inserted at the given position.
 
 	Example:
 
@@ -752,7 +754,7 @@ features of OODoc::Meta and OODoc::Document are described here.
 	example, in order to append sequences of repeated spaces:
 	
 		$doc->setText($p, "Begin");
-		$spaces = $doc->blankSpaces(6);
+		$spaces = $doc->spaces(6);
 		$doc->extentText($p, $spaces);
 		$doc->extendText($p, "End");
 	
@@ -761,18 +763,14 @@ features of OODoc::Meta and OODoc::Document are described here.
 		"Begin      End"
 	
 	knowing that a single string containing repeated spaces could
-	not be properly processed by extendtext() or setText().
+	not be properly processed by extendText() or setText().
 
 	(See also setText()).
 
 =head3	findElementList(element, filter [, replacement])
 
-        Returns a list of child elements (from a document's tree) of the
-        element given as an argument whose content agrees with the 'filter'
-        parameter. The filter can be an exact string match or a regular
-        expression. If the filter is omitted or contains a wildcard
-        expression like '.*', the returned list will contain all child
-        elements without condition.
+	Returns all the children of the given element whose content matches
+        the given filter (regexp).
 
         If the third argument ('replacement') is given, every string which
         matches the filter in each child element will be replaced by this
@@ -1289,7 +1287,7 @@ features of OODoc::Meta and OODoc::Document are described here.
 
         displays "Found: <text>" (where <text> is the text retrieved) each
         time a string matches $expression and replaces this string with
-        "OK". If $expression contains an "exact" string (not a regex), then
+        "OK". If $expression contains an "exact" string (not a regexp), then
 	clearly the text displayed will always be the same string. However,
 	if it happens to be a regular expression, it is in effect the text
         retrieved which will be displayed.
@@ -1318,7 +1316,7 @@ features of OODoc::Meta and OODoc::Document are described here.
 	- if no 'position' option is provided, then the copy is appended
 	as the last child of the position object;
 	
-	- if 'postion' => 'before' or 'after', then the copy is inserted at
+	- if 'position' => 'before' or 'after', then the copy is inserted at
 	the same hierarchical level as the position object, according to the
 	same logic as for insertElement().
 		
@@ -1558,7 +1556,7 @@ features of OODoc::Meta and OODoc::Document are described here.
         only return the elements whose "style:family" attribute equals
         "paragraph", but also all those in which the same attribute contains
         the word "paragraph". You must therefore use the appropriate syntax
-        (in regex language) if you want to select an exact value, which in
+        (in regexp language) if you want to select an exact value, which in
         this case would be "^paragraph$".
 
 =head3	selectElementByAttribute(path, attribute, value)
@@ -1681,15 +1679,26 @@ features of OODoc::Meta and OODoc::Document are described here.
 	The method returns both the original and the new elements in a list
 	context. In a scalar context, the new element only is returned.
 	
+	The new element is "free", i.e. it doesn't belong to the document.
+	It's available for later use with any element attachment method,
+	provided by OpenOffice::OODoc (appendElement(), insertElement()) or
+	by XML::Twig (paste()). Example:
+	
+		my $new_elt = $doc->splitElement($para, 12);
+		$doc->insertElement($para, $new_elt, position => 'after');
+	
+	This example splits the given paragraph in two consecutive paragraphs.
+
 	Caution: splitElement() works properly on elements containing "flat
 	text" only. It's a bit complicated to use and probably doesn't
 	produce the right effects on elements containing line breaks, tab
-	stops, "styled spans" or any kind of structure.
+	stops, "styled spans" or any kind of structure. So, it should be used
+	on flat paragraphs or headings only.
 	
 =head3	substituteText(element, filter, replacement)
 
 	Replaces any substring in a given element and its descendant, matching
-	a given filter (regex) by a given replacement string.
+	a given filter (regexp) by a given replacement string.
 	
 	It "replacement" is a string, this method produces the same result as
 	replaceText(), and it should be preferred.
@@ -1697,6 +1706,10 @@ features of OODoc::Meta and OODoc::Document are described here.
 	If "replacement" is a function reference, the replacement value is the
 	return value of the function. But, unlike replaceText(), any argument
 	after "replacement" is ignored.
+	
+	This method is a wrapper for the subs_text() method provided by the
+	XML::Twig::Elt class. See the XML::Twig documentation for advanced
+	details.
 
 =head3	tabStop
 
@@ -1821,7 +1834,7 @@ features of OODoc::Meta and OODoc::Document are described here.
 =head3	selectChildElements(filter)
 
 	Selects the children with XML tag names matching a given filter.
-	The filter is processed as a regex.
+	The filter is processed as a regexp.
 	
 	Note: the children() method of XML::Twig::Elt should be preferred
 	if the filter is the exact tag name of the needed elements.

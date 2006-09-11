@@ -103,7 +103,7 @@ which combine layout and content processing.
 =head3	createImageStyle(name [, options])
 
         Creates a graphics style which is immediately usable. With no
-        options, this method applies to a style a "reasonable" set of
+        options, this method applies to the new style a "reasonable" set of
         characteristics which match fairly closely the default image
         presentation style in OpenOffice.org before any manual changes made
         by the user. An application can set its own options in the same way
@@ -137,7 +137,7 @@ which combine layout and content processing.
 
         If the "Standard" style does not exist, a "reasonable" style is
         still created (this can happen in a document created from code and
-        not by OpenOffice.org).
+        not by an interactive office software).
 
         An application can still pass all the options it wants in the same
         way as createStyle in OODoc::Styles.
@@ -149,8 +149,8 @@ which combine layout and content processing.
         This method actually removes the page break attribute from the
         corresponding paragraph style. It does not remove paragraph styles
         which may have been created to carry page breaks, so its effects are
-        not technically the reverse of setPageBreak. Generally speaking,
-        however, this should not be a problem. See setPageBreak about the
+        not technically the reverse of setPageBreak(). Generally speaking,
+        however, this should not be a problem. See setPageBreak() about the
         logic of handling page breaks.
 
 =head3	setPageBreak(paragraph [, options])
@@ -212,7 +212,7 @@ which combine layout and content processing.
 
         Returns the style name of a text or graphics object. If the first
         argument is a "master page" (see OODoc::Styles), it even returns the
-        associated "page master".
+        associated "page layout".
 
         Replaces the object's style if a style name is given as the second
         argument.

@@ -45,8 +45,8 @@ OpenOffice::OODoc - The Perl Open OpenDocument Connector
 =head1	DESCRIPTION
 
 This toolbox is an extensible Perl interface allowing direct read/write
-operations on OASIS OpenDocument Format (ISO/IEC 26300) or OpenOffice.org
-files.
+operations on files which comply with the OASIS OpenDocument Format (ODF),
+i.e. the ISO/IEC 26300 standard.
 
 It provides a high-level, document-oriented language, and isolates the
 programmer from the details of the file format. It can process different
@@ -58,7 +58,8 @@ OpenOffice::OODoc is designed for data retrieval and update in existing
 documents, as well as full document generation.
 
 See the OpenOffice::OODoc::Intro manual page to have a look at the main
-features.
+features. This introduction, as well as the present chapter, should be
+read before any attempt to dig in the detailed documentation.
 
 =head1	HOW TO USE THE DOCUMENTATION
 

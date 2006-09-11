@@ -9,7 +9,10 @@ general principles and to learn some basic features of the OODoc module
 without browsing the whole reference manual.
 
 The reference manual is a set of OpenOffice::OODoc::xxx separate documents,
-where xxx is the codename of a particular functional area.
+where xxx is the codename of a particular functional area.  The present
+introduction, as well as the OpenOffice::OODoc main chapter, should be read
+in order to get the big picture before any attempt to dig in the detailed
+documentation.
 
 Just before reading this intro, it's a good idea to have a look at the
 short (and commented) examples provided in the distribution.
@@ -170,7 +173,7 @@ For an example, if you want to get access to the content of any OO file
 			);
 
 then $doc becomes an abstraction of the 'content.xml' (i.e. the content
-and automatic styles) of the 'foo.sxw' file, that can be used to get/set
+and automatic styles) of the 'foo.odt' file, that can be used to get/set
 any content through simple methods like:
 
 	print $doc->getText('//text:p', 2);
@@ -539,11 +542,11 @@ sheets and cells of a Calc document.
 Our program begins with something like that:
 
 	use OpenOffice::OODoc;
-	my $doc = ooDocument(file => 'myfile.sxw');
+	my $doc = ooDocument(file => 'myfile.odt');
 
 The second line produces an OpenOffice::OODoc::Document object, which
-inherits from ::Text, ::Image and ::Styles. However, in the present example,
-we'll use its ::Text features only.
+inherits from O::O::Text, O::O::Image and O::O::Styles. However, in the
+present example, we'll use its O::O::Text features only.
 
 To give a very high level abstract, we can say that OODoc::Text provides
 2 kinds of read access methods:
@@ -916,7 +919,7 @@ could be written in a different way:
 
 	use OpenOffice::OODoc;
 
-	my $content	= ooDocument(file => 'myfile.sxw');
+	my $content	= ooDocument(file => 'myfile.odt');
 	my $meta	= ooMeta(file => $content);
 	# process content and metadata
 	$content->save;

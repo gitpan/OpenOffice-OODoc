@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.225 2006-08-03 JMG$
+#	$Id : Text.pm 2.226 2006-09-08 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2006 by Genicorp, S.A. (www.genicorp.com)
@@ -12,9 +12,9 @@
 
 package OpenOffice::OODoc::Text;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	2.217;
+use	OpenOffice::OODoc::XPath	2.218;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.225;
+our	$VERSION	= 2.226;
 
 #-----------------------------------------------------------------------------
 # synonyms
@@ -60,6 +60,7 @@ BEGIN	{
 	*removeHeader			= *removeHeading;
 	*getNote			= *getNoteElement;
 	*getNoteList			= *getNoteElementList;
+	*getHeadingText			= *getHeadingContent;
 	}
 
 #-----------------------------------------------------------------------------
@@ -719,7 +720,7 @@ sub	extendText
 		my $tagname = $text->getName;
 		if ($tagname =~ /^text:(p|h)$/)
 			{
-			$text = $self->getText($text);
+			$text = $self->getFlatText($text);
 			}
 		}
 
@@ -942,7 +943,7 @@ sub	selectElementByBookmark
 	}
 
 #-----------------------------------------------------------------------------
-# set a bookmark at the beginning of an element
+# attach a bookmark to a given element
 
 sub	setBookmark
 	{
@@ -1166,7 +1167,7 @@ sub	getTableList
 	}
 
 #-----------------------------------------------------------------------------
-# get a heading element selected by number
+# get a heading element selected by position number and level
 
 sub	getHeading
 	{
@@ -1207,12 +1208,6 @@ sub	getHeading
 # get the text of a heading element
 
 sub	getHeadingContent
-	{
-	my $self	= shift;
-	return $self->getText('//text:h', @_);
-	}
-
-sub	getHeadingText
 	{
 	my $self	= shift;
 	return $self->getText('//text:h', @_);

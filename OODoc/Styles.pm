@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Styles.pm 2.020 2006-08-01 JMG$
+#	$Id : Styles.pm 2.021 2006-09-11 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2006 by Genicorp, S.A. (www.genicorp.com)
@@ -12,9 +12,9 @@
 
 package OpenOffice::OODoc::Styles;
 use	5.006_001;
-our	$VERSION	= 2.020;
+our	$VERSION	= 2.021;
 
-use	OpenOffice::OODoc::XPath	2.217;
+use	OpenOffice::OODoc::XPath	2.218;
 use	File::Basename;
 require	Exporter;
 our	@ISA	= qw ( Exporter OpenOffice::OODoc::XPath );
@@ -347,12 +347,6 @@ sub	getFontDeclaration
 		my $context = $self->getFontDeclarationBody;
 		my $path = "//$tag\[\@style:name=\"$font\"]";
 		my $font_element = $self->getNodeByXPath($context, $path);
-		unless ($font_element)
-			{
-			warn	"[" . __PACKAGE__ . "::getFontDeclaration] " .
-				"Unknown font name\n";
-			return undef;
-			}
 		return $font_element;
 		}
 	}

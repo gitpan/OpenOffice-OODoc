@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 2.217 2006-08-01 JMG$
+#	$Id : XPath.pm 2.218 2006-09-06 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2006 by Genicorp, S.A. (www.genicorp.com)
@@ -12,7 +12,7 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 2.217;
+our	$VERSION	= 2.218;
 use	XML::Twig	3.22;
 use	Encode;
 
@@ -2283,8 +2283,22 @@ sub	getLocalPosition
 sub	selectChildElements
 	{
 	my $node	= shift;
-	return wantarray ?
-		$node->children(@_) : $node->selectChildElement(@_);
+	return $node->selectChildElement(@_) unless wantarray;
+	my $filter	= shift		or return $node->getChildNodes();
+	
+	my @list	= ();
+	my $fc = $node->first_child;
+	my $name = $fc->name if $fc;
+	while ($fc)
+		{
+		if ($name && ($name =~ /$filter/))
+			{
+			push @list, $fc;
+			}
+		$fc = $fc->next_sibling;
+		$name = $fc->name if $fc;;
+		}
+	return @list;
 	}
 
 sub	selectChildElement
@@ -2295,6 +2309,7 @@ sub	selectChildElement
 
 	my $count	= 0;
 	my $fc = $node->first_child;
+	return $fc unless defined $filter;
 	my $name = $fc->name if $fc;
 	while ($fc)
 		{

@@ -16,11 +16,13 @@ to describe the style processing features of OpenOffice::OODoc::Document
 OpenOffice::OODoc::Styles component of the API).
 
 Remember that named styles are those that the end user can see and
-edit using the Stylist tool in OpenOffice.org. Such styles usually
-have meaningful names and are stored in the styles.xml member. But an
-OpenDocument-compliant style may own two names, so-called 'name' and
-'display-name'. The 'display-name' is the name as it's displayed by the
-office software, while the 'name' is the main identifier. Both are
+edit using through the GUI of an interactive office software (for ex. the
+Stylist tool in OpenOffice.org).
+
+Such styles usually have meaningful names and are stored in the styles.xml
+member. But an OpenDocument-compliant style may own two names, so-called
+'name' and 'display-name'. The 'display-name' is the name as it's displayed
+by the office software, while the 'name' is the main identifier. Both are
 displayable character strings, but they often differ. For a given
 'display-name', the application software is allowed to set any arbitrary
 'name'. For example, with OpenOffice.org 2, the well-known pre-defined
@@ -40,9 +42,10 @@ named styles, but they appear to the end user with localised names
 the 'name' nor the 'display-name' stored attributes. For example, in the
 French distribution of OpenOffice.org, the "Text body" style appears as
 "Corps de texte", while its "display-name" is "Text body" and its "name"
-is "Text_20_body". However, this is not a problem for user-defined styles
-as the stored display-name is exactly the same as the effective display
-name.
+is "Text_20_body". This localization is hard-coded in the office software
+for a few predefined style, and it's not stored in the file. However, this
+is not a problem for user-defined styles as the stored display-name is exactly
+the same as the effective display name.
 
 There are also numerous "automatic" styles in a document which are
 created implicitly by the office application each time a particular
@@ -62,23 +65,22 @@ OpenOffice.org, you must create it as a named style. This is no more
 complicated, but it is better to avoid making hundreds of styles
 visible to the user that they do not need to see.
 
-There are some structural differences between the old OpenOffice.org
-1.0 format and the new OASIS Open Document (ODF) one. A few of these
-differences aren't made fully transparent by OpenOffice::OODoc. So,
-in some cases, a program including style definitions or updates
-doesn't produce exactly the same results with both OOo 1 and OOo 2
-documents.
+There are some structural differences between the old OpenOffice.org 1.0
+format and the new OASIS OpenDocument (ODF) one. A few of these differences
+aren't made fully transparent by OpenOffice::OODoc. So, in some cases, a
+program including style definitions or updates doesn't produce exactly the
+same results with both OOo 1 and ODF documents.
 
-Some styles are more complex than others as they describe the page
-layout. These styles can themselves contain text and images. A page
-style, or a "master page", can actually define a header, a footer, margins,
-and a background.
+Some styles are more complex than others as they describe the page layout.
+These styles can themselves contain text and images. A page style, or a
+"master page", can actually define a header, a footer, margins, and a
+background.
 
-Headers and footers can contain text and images which can otherwise
-be handled by OODoc::Text and OODoc::Image.
+Headers and footers can contain text and images which can otherwise be handled
+by OODoc::Text and OODoc::Image.
 
-A background contains a colour and can also include a background
-image (several methods are possible).
+A background contains a colour and can also include a background image (several
+methods are possible).
 
 Presentation of these objects is itself controlled by styles.
 
@@ -86,7 +88,7 @@ All of this leads to the conclusion that it is not enough just to
 associate each content element with a style. In reality, document
 styles form a rather complex network of interdependencies.
 
-As for page styles, the OpenOffice.org format contains a concept
+As for page styles, the OpenDocument format contains a concept
 which must be understood in order to use some of the following
 methods. By virtue of the principle of separation of content and
 presentation, the definition of a page style is based on two
@@ -103,22 +105,28 @@ the associated "page layout".
 To complicate matters, there are also header and footer styles. Each
 object contained in a header or footer (e.g. paragraph or image) has
 a style. The number and range of styles are much larger that you
-would imagine just looking at the Stylist tool in OpenOffice.org. Up
-to a point, OODoc::Styles methods make life easier for you by
+would imagine just looking at the style management tool in any office
+software. Up to a point, OODoc::Styles methods make life easier for you by
 masking some of this complexity.
 
 In OODoc::Styles methods, styles are normally indicated by their
 logical names (which must be unique), but, except where otherwise
-stated, they can also be indicated by their style element reference.
+stated, they can also be indicated by their style element reference as well.
 Moreover, when a method is expecting a page layout as an argument
 but the programmer passes it a master page instead (whether by
 design or by mistake), it "knows" in most cases how to automatically
 select the associated page layout.
 
-Defining a style requires a great many attributes. Some appear in
-code examples in this manual, but for a full list of possible
-attributes for each style, you must refer to the OpenOffice.org
-specification or publications derived from it.
+OODoc::Styles allows the applications to create new styles, and not only
+to update existing styles. However, defining a style requires a great many
+attributes. Some appear in code examples in this manual, but for a full list
+of possible attributes for each style, you must refer to the OpenDocument
+specification. As a consequence, building styles from scratch by program is
+not a recommended practice. It's much more easy to create documents which
+all the needed styles through an ODF-compliant office software, and to use
+them as templates in the programs, knowing that it's very easy to retrieve
+an existing style, to copy it and to re-use it (as is or customised) in new
+documents.
 
 OODoc::Styles module is designed to allow applications to manipulate
 any style and even create new ones. It is not recommended, however,
@@ -626,7 +634,7 @@ at least a blank of each required style.
 			$doc->importFontDeclaration($doc2, "Times New Roman");
 			}
 
-	(See also importFontDeclaration.)
+	See also importFontDeclaration().
 
 =head3	getFooterParagraph(masterpage, number)
 
@@ -825,11 +833,11 @@ at least a blank of each required style.
 	
 		my $source = ooDocument
 			(
-			file => "source.sxw", member => "styles"
+			file => "source.odt", member => "styles"
 			);
 		my $target = ooDocument
 			(
-			file => "target.sxw", member => "styles"
+			file => "target.odt", member => "styles"
 			);
 		$target->importFontDeclaration($source, "Helvetica");
 	

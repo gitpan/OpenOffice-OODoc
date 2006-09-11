@@ -1,3 +1,5 @@
+2.028	2006-09-07
+	- XPath.pm: bug fix in selectChildElements()
 2.027	2006-08-03
 	- Added the oofindbasic example; added oo_set_fields, oo_set_title,
 	oo_search as executable examples
