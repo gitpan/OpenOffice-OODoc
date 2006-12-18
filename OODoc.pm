@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : OODoc.pm 2.028 2006-09-07 JMG$
+#	$Id : OODoc.pm 2.029 2006-11-30 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2006 by Genicorp, S.A. (www.genicorp.com)
@@ -19,7 +19,7 @@ use OpenOffice::OODoc::Manifest		2.003;
 
 package	OpenOffice::OODoc;
 use 5.008_000;
-our $VERSION				= 2.028;
+our $VERSION				= 2.029;
 
 require Exporter;
 our @ISA    = qw(Exporter);
@@ -70,11 +70,6 @@ sub	ooReadConfig
 		}
 	OpenOffice::OODoc::Styles::ooLoadColorMap();
 	return 1;
-	}
-
-sub	readConfig
-	{
-	return ooReadConfig(@_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -140,11 +135,6 @@ sub	ooLocalEncoding
 	return $OpenOffice::OODoc::XPath::LOCAL_CHARSET;
 	}
 
-sub	localEncoding
-	{
-	return ooLocalEncoding(@_);
-	}
-	
 #-----------------------------------------------------------------------------
 # accessor for default XML templates for document creation
 
@@ -169,11 +159,6 @@ sub	ooWorkingDirectory
 
 	return $OpenOffice::OODoc::File::WORKING_DIRECTORY;
 	}
-
-sub	workingDirectory
-	{
-	return ooWorkingDirectory(@_);
-	}
 	
 #-----------------------------------------------------------------------------
 # shortcuts for low-level local/utf8 code conversion 
@@ -191,8 +176,12 @@ sub	ooDecodeText
 #-----------------------------------------------------------------------------
 # initialization
 
-sub	BEGIN
+BEGIN
 	{
+	*localEncoding		= *ooLocalEncoding;
+	*workingDirectory	= *ooWorkingDirectory;
+	*readConfig		= *ooReadConfig;
+	
 	my $module_path = $INC{"OpenOffice/OODoc.pm"};
 	$module_path =~ s/\.pm$//;
 	$OpenOffice::OODoc::INSTALLATION_PATH = $module_path;

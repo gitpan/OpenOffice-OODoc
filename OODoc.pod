@@ -57,11 +57,10 @@ text content.
 OpenOffice::OODoc is designed for data retrieval and update in existing
 documents, as well as full document generation.
 
-See the OpenOffice::OODoc::Intro manual page to have a look at the main
-features. This introduction, as well as the present chapter, should be
-read before any attempt to dig in the detailed documentation.
-
 =head1	HOW TO USE THE DOCUMENTATION
+
+The present chapter, then the OpenOffice::OODoc::Intro one, should be
+read before any attempt to dig in the detailed documentation.
 
 The reference manual is provided in several separate chapters as
 described below.

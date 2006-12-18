@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.226 2006-09-08 JMG$
+#	$Id : Text.pm 2.227 2006-12-14 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2006 by Genicorp, S.A. (www.genicorp.com)
@@ -14,7 +14,7 @@ package OpenOffice::OODoc::Text;
 use	5.006_001;
 use	OpenOffice::OODoc::XPath	2.218;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.226;
+our	$VERSION	= 2.227;
 
 #-----------------------------------------------------------------------------
 # synonyms
@@ -58,6 +58,7 @@ BEGIN	{
 	*appendHeader			= *appendHeading;
 	*insertHeader			= *insertHeading;
 	*removeHeader			= *removeHeading;
+	*deleteHeading			= *removeHeading;
 	*getNote			= *getNoteElement;
 	*getNoteList			= *getNoteElementList;
 	*getHeadingText			= *getHeadingContent;
@@ -3002,13 +3003,24 @@ sub	cellSpan
 		}
 	return undef unless $cell;
 
+	my $old_hspan	= $cell->att('table:number-columns-spanned')	|| 1;
+	my $old_vspan	= $cell->att('table:number-rows-spanned')	|| 1;
+	my $hspan	= shift;
+	my $vspan	= shift;
+	unless ($hspan || $vspan)
+		{
+		return wantarray ? ($old_hspan, $old_vspan) : $old_hspan;
+		}
+	$hspan	= $old_hspan unless $hspan;
+	$vspan	= $old_vspan unless $vspan;
+
 	$self->removeCellSpan($cell);
 	my $row = $cell->parent('table:table-row');
 	$table = $row->parent('table:table') unless $table;
 	my $vpos = $row->getLocalPosition;	# row number
 	my $hpos = $cell->getLocalPosition;	# column number
-	my $hspan = shift; my $hend = $hpos + $hspan - 1;
-	my $vspan = shift; my $vend = $vpos + $vspan - 1;
+	my $hend = $hpos + $hspan - 1;
+	my $vend = $vpos + $vspan - 1;
 	$cell->setAttribute('table:number-columns-spanned', $hspan);
 	$cell->setAttribute('table:number-rows-spanned', $vspan);
 
@@ -3020,6 +3032,7 @@ sub	cellSpan
 			my $covered = $self->getCell($cr, $j)
 				or last CELL;
 			next CELL if $covered == $cell;
+			$self->removeCellSpan($covered);
 			my @paras = $covered->children('text:p');
 			$covered->set_name('table:covered-table-cell');
 			while (@paras)
@@ -3030,6 +3043,7 @@ sub	cellSpan
 				}
 			}
 		}
+	return wantarray ? ($hspan, $vspan) : $hspan;
 	}
 
 #-----------------------------------------------------------------------------
@@ -3854,9 +3868,8 @@ sub	removeParagraph
 sub	removeHeading
 	{
 	my $self	= shift;
-	my $pos		= shift;
-	return $self->removeElement($pos)	if (ref $pos);
-	return $self->removeElement('//text:h', $pos);
+	my $element = $self->getHeading(@_);
+	return $self->removeElement($element);
 	}
 
 #-----------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-OpenOffice::OODoc installation (June 2006)
+OpenOffice::OODoc installation (December 2006)
 
 SYSTEM REQUIREMENTS
 
@@ -8,7 +8,7 @@ SYSTEM REQUIREMENTS
 	Time::Local	>= 1.07
 	File::Temp	>= 0.12
 
-INSTALLATION
+INSTALLATION FROM THE CPAN DISTRIBUTION
 
 	Uncompress the distribution archive, enter the OpenOffice-OODoc-x.xxx
 	directory and (as system administrator), type the following commands:
@@ -34,8 +34,7 @@ INSTALLATION
 	- an optional color map file (default = none), if the user needs to
 	use symbolic names instead of RGB values for color attributes in the
 	documents (this file can be the generally available "rgb.txt" file
-	of the X-Window system, or the "rgb.txt" provided with the Color::Rgb
-	Perl distribution, or any specific, user-defined file with the same
+	of the X-Window system, or any specific, user-defined file with the same
 	structure);
 	- the working directory for temporary files (by default, the working
 	directory is ".", i.e. the current directory of each application);

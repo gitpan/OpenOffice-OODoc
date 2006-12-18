@@ -21,7 +21,7 @@ cells, a section can contain almost everything including other sections, etc.
 These features are text-oriented, but can be used on documents of any class,
 such as spreadsheets or presentations as well as text documents. So, the
 'Text' word doesn't mean that the features described in the present manual
-chapter are dedicated to OpenOffice.org Writer documents only. In the other
+chapter are dedicated to OpenDocument Text (ODT) documents only. In the other
 hand, a few methods can't apply to any document class (ex: creating or
 retrieving draw pages makes sense with presentation and drawing documents
 only).
@@ -38,7 +38,7 @@ OpenOffice::OODoc::XPath for XML elements which describe the text content
 of OOo/ODF documents. Here, "text content" means containers that can
 host text containers (i.e. tables, lists...) as well as flat text.
 
-Knowing that the "styles.xml" member of an OpenOffice.org file can contain
+Knowing that the "styles.xml" member of an OpenDocument file can contain
 text (because some style definitions, such as page headers or footers, can
 contain text), the presently described features can be used against this
 member as well as the "content.xml" member.
@@ -154,7 +154,7 @@ presentation which is one of the foundations of the OpenDocument format.
 
         adds a level 2 heading to the end of the text body. 'Heading_20_n'
 	styles, where 'n' is the level number, are presently available by
-	default in OpenOffice.org (2006/03).
+	default in OpenOffice.org.
 
         You can give any XML attribute to the new heading except for style or
         heading level. In this case, the program must construct a hash
@@ -354,8 +354,7 @@ presentation which is one of the foundations of the OpenDocument format.
 	    'style'	allows the application to explicitly select a style
 	    		for the new section
 	    'protected'	write-protects the section when the document is
-	    		edited through OpenOffice.org; "true" or "false",
-			default "false"
+	    		edited; "true" or "false", default "false"
 	    'key'	in combination with "protected" => "true", write-
 	    		protects the section by password (the value of
 			"key" is not the real password, but an encrypted
@@ -463,10 +462,10 @@ presentation which is one of the foundations of the OpenDocument format.
 			}
 
 	Caution: This method allows the user to create any new property and
-	to put any value in any property, without control. So we recommend
-	you to have a look at the Open Office XML specification and/or the
-	OOo bibliographic project (http://bibliographic.openoffice.org) in
-	order to know the generally accepted properties.
+	to put any value in any property, without control. For information
+	about the legal and/or recommended properties, see the OpenDocument
+	specification and the OpenOffice.org bibliographic project
+	(http://bibliographic.openoffice.org).
 
 =head3	bookmarkElement(element, name [, offset])
 
@@ -499,10 +498,10 @@ presentation which is one of the foundations of the OpenDocument format.
         Note 1: inserting or replacing a formula does not directly modify
         the value or text of the cell. Proper interpretation of a formula
         does not happen until the fields are updated when the document is
-        reloaded into OpenOffice.org.
+        reloaded into the office software.
 
         Note 2: syntax and functionality of cell formulae differ greatly
-        between the Writer and Calc applications.
+        between office applications.
 
 =head3	cellSpan(table, row, column [, hspan [, vspan]])
 
@@ -519,10 +518,27 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	With only one span argument, this method works for horizontal, left to
 	right expansion. With an additional argument, the expansion is bi-
-	directional, covering one or more rows below the given cell.
+	directional, covering one or more rows below the given cell. The
+	horizontal span should be set to 1 in order to get a vertical span
+	only.
 
 	The text of the covered cells (if any) is concatenated to the original
 	content of the expanded cell (as in OOo Writer or Calc).
+
+	The user should make sure that the cell expansion will not invade the
+	span of another, previously expanded cell. Assuming A is a the target
+	of cellSpan(), B is an existing expanded cell, and C is a covered cell
+	in the span of B, the following rules apply:
+
+	If B is to be covered by the span of A, the span of B is automatically
+	reset to 1, so C becomes visible, then B is covered by A. But if C is
+	in the target range of cellSpan() while B is not, the method produces
+	an inconsistency in the table (this inconsistency doesn't prevent
+	OpenOffice.org and KSpread from loading the file but the span of A is
+	just ignored).
+
+	In list context, the method returns the horizontal span, then the
+	vertical span. In scalar context, it returns the horizontal span only.
 
 	Caution: when related to table cells, "span" has not the same
 	meaning as when related to flat text (see getSpan() and setSpan()).
@@ -705,6 +721,10 @@ presentation which is one of the foundations of the OpenDocument format.
 	column to be deleted is "normalized". See normalizeSheet() for details
 	about table normalization.
 
+=head3	deleteHeading()
+
+	See removeHeading().
+
 =head3	deleteRow(table, row_num)
 
 =head3	deleteRow(row_elt)
@@ -850,7 +870,8 @@ presentation which is one of the foundations of the OpenDocument format.
         rest of the document.
 
 	If the cell is defined in the spreadsheet but covered (because of a
-	cell merge), the return value is undef.
+	cell merge), the return value is undef. In other words, this method
+	doesn't provide access to a covered cell.
 
         The first argument can be either the sequential number of the table
         (starting at 0), the logical name of the table, or a 'table' object
@@ -977,8 +998,8 @@ presentation which is one of the foundations of the OpenDocument format.
 =head3	getChapterContent(heading [, options])
 
 	This method returns the list of the elements depending (from the
-	end-user's point of view) on a given heading element (not including
-	the heading element itself). The argument and the options are the
+	end-user's point of view) on a given heading element, not including
+	the heading element itself. The argument and the options are the
 	same as with getHeading().
 
 	Examples:
@@ -1077,7 +1098,7 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	selects the third level 3 heading in the whole document.
 
-	See also getChapter().
+	See also getChapterContent().
 
         Caution: without the "level" option, this method counts sequentially
 	through all headings along a single plane, irrespective of their
@@ -1344,31 +1365,26 @@ presentation which is one of the foundations of the OpenDocument format.
 	numeric expression, it's automatically regarded as a table number;
 
 	- getTable() can't retrieve a table by name if the name contains
-	one or more "$", "{" or "}" characters (these characters are allowed
-	in the table names in OpenOffice.org Writer documents, but not allowed
-	in OpenOffice.org spreadsheets).
+	one or more "$", "{" or "}" characters; these characters are allowed
+	in the table names in text documents (ODT), but not allowed
+	in spreadsheets (ODS).
 
 	The returned object is a "handle" that can be used for subsequent
 	accesses to its components (rows, cells).
 
 	The additional size arguments are required with "open" tables, i.e.
-	tables whose size is not really fixed, such as OpenOffice.org Calc
-	spreadsheets. If the length and width arguments are provided, the
-	corresponding area becomes safely addressable. With OpenOffice.org
-	Writer documents, the size declaration is presently not required,
-	because every table has a fixed size and a continuous addressing
-	scheme. See normalizeSheet() for details about the table size
-	declarations.
+	tables whose size is not really fixed, such as spreadsheets. If the
+	length and width arguments are provided, the corresponding area
+	becomes safely addressable. With OpenOffice.org Writer documents,
+	the size declaration is presently not required, because every table
+	has a fixed size and a continuous addressing scheme. See
+	normalizeSheet() for details about the table size declarations. And
+	use the size arguments each time you experience an addressing problem
+	with a table.
 
 	A getTable() call with the optional length, width arguments produces
 	the same effect as an explicit call of normalizeSheet() with the same
 	arguments.
-
-	In the text documents, the tables may be used without preprocessing
-	and the paragraph above doesn't apply, as long as the application
-	doesn't to get other objects than rows and cells. However, the table
-	normalization is needed before any column-oriented operation (i.e.
-	getColumn(), insertColumn() or deleteColumn()).
 
 =head3	getTableColumn(table, column)
 
@@ -1896,11 +1912,11 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	See deleteBookmark().
 
-=head3	removeHeading(position)
+=head3	removeHeading(position [, level => level_no])
 
 =head3	removeHeading(element)
 
-        Removes the heading at the given position (first form).
+        Removes the given heading element.
 
         Example:
 
@@ -1909,9 +1925,11 @@ presentation which is one of the foundations of the OpenDocument format.
         removes the 5th heading (whatever its level) counted from the
         beginning of the document.
 
-        The heading to be removed can be indicated by element reference
-        (second form). In this case, the type of element is not checked and
-        this method becomes the equivalent of removeElement().
+	See getHeading() for the argument and option.
+
+	If the argument is an element reference (second form), the type is
+	not checked and this method becomes the equivalent of removeElement()
+	(which is documented with OpenOffice::OODoc::XPath generic methods).
 
 =head3	removeHyperlink(path, position)
 
