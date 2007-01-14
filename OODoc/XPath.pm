@@ -1,9 +1,9 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 2.218 2006-09-06 JMG$
+#	$Id : XPath.pm 2.219 2007-01-10 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
-#	Copyright 2006 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2007 by Genicorp, S.A. (www.genicorp.com)
 #	License:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
@@ -12,7 +12,7 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 2.218;
+our	$VERSION	= 2.219;
 use	XML::Twig	3.22;
 use	Encode;
 
@@ -2275,7 +2275,7 @@ sub	isFrame
 sub	getLocalPosition
 	{
 	my $node	= shift;
-	my $tag		= $node->getName or return undef;
+	my $tag		= (shift || $node->getName) or return undef;
 	my $xpos	= $node->pos($tag);
 	return defined $xpos ? $xpos - 1 : undef;
 	}

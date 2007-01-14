@@ -1,9 +1,9 @@
 #----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.227 2006-12-14 JMG$
+#	$Id : Text.pm 2.228 2007-01-10 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
-#	Copyright 2006 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2007 by Genicorp, S.A. (www.genicorp.com)
 #	License:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
@@ -12,9 +12,9 @@
 
 package OpenOffice::OODoc::Text;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	2.218;
+use	OpenOffice::OODoc::XPath	2.219;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.227;
+our	$VERSION	= 2.228;
 
 #-----------------------------------------------------------------------------
 # synonyms
@@ -2952,8 +2952,8 @@ sub	removeCellSpan
 	$cell->removeAttribute('table:number-rows-spanned');
 	my $row = $cell->parent('table:table-row');
 	my $table = $row->parent('table:table');
-	my $vpos = $row->getLocalPosition;	# row number
-	my $hpos = $cell->getLocalPosition;	# column number
+	my $vpos = $row->getLocalPosition;
+	my $hpos = $cell->getLocalPosition(qr'table:(covered-|)table-cell');
 	my $vend = $vpos + $vspan - 1;
 	my $hend = $hpos + $hspan - 1;
 	my $cell_paragraph = $cell->first_child('text:p');
@@ -2963,7 +2963,7 @@ sub	removeCellSpan
 		CELL: for (my $j = $hpos ; $j <= $hend ; $j++)
 			{
 			my $covered = $cr->selectChildElement
-				('table:(covered-|)table-cell', $j)
+				(qr 'table:(covered-|)table-cell', $j)
 				or last CELL;
 			next CELL if $covered == $cell;
 			$covered->set_name('table:table-cell');
@@ -3017,8 +3017,8 @@ sub	cellSpan
 	$self->removeCellSpan($cell);
 	my $row = $cell->parent('table:table-row');
 	$table = $row->parent('table:table') unless $table;
-	my $vpos = $row->getLocalPosition;	# row number
-	my $hpos = $cell->getLocalPosition;	# column number
+	my $vpos = $row->getLocalPosition;
+	my $hpos = $cell->getLocalPosition(qr'table:(covered-|)table-cell');
 	my $hend = $hpos + $hspan - 1;
 	my $vend = $vpos + $vspan - 1;
 	$cell->setAttribute('table:number-columns-spanned', $hspan);
@@ -3032,15 +3032,16 @@ sub	cellSpan
 			my $covered = $self->getCell($cr, $j)
 				or last CELL;
 			next CELL if $covered == $cell;
-			$self->removeCellSpan($covered);
+
 			my @paras = $covered->children('text:p');
-			$covered->set_name('table:covered-table-cell');
 			while (@paras)
 				{
 				my $p = shift @paras;
 				$p->paste_last_child($cell) if
 					(defined $p->text && $p->text ge ' ');
 				}
+			$self->removeCellSpan($covered);
+			$covered->set_name('table:covered-table-cell');
 			}
 		}
 	return wantarray ? ($hspan, $vspan) : $hspan;

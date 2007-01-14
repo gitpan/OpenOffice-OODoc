@@ -1788,10 +1788,33 @@ features of OODoc::Meta and OODoc::Document are described here.
 	
 	Caution, this method can produce terrific results when misused.
 	
-=head3	getLocalPosition()
+=head3	getLocalPosition([regexp])
 
 	Returns	the position of the current element in the list of all
-	the elements with the same type belonging to the same parent.
+	the children of the same parent with the same type.
+
+	Example:
+
+		$cell->getLocalPosition();
+
+	Assuming $cell is a table cell, this example returns the position
+	of the cell in the row without counting the covered cells (if any).
+
+	If a regular expression is provided as the optional argument, all
+	the siblings matching the expression are counted; but the method
+	returns zero if the calling element itself doesn't match the
+	expression.
+
+	Example:
+
+		$cell->getLocalPosition(qr'table:(covered-|)table-cell');
+
+	returns the position of the cell among all the cells (covered or not)
+	in the row.
+
+	Note: This method is a wrapper of the pos() method of XML::Twig::Elt,
+	but the returned values are zero-based in order to be consistent
+	with the other element addressing features of OpenOffice::OODoc.
 
 =head3	insertNewNode(xml_tag, position_flag [, offset])
 
@@ -1924,7 +1947,7 @@ Developer/Maintainer: Jean-Marie Gouarne L<http://jean.marie.gouarne.online.fr>
 
 Contact: jmgdoc@cpan.org
 
-Copyright 2004-2006 by Genicorp, S.A. L<http://www.genicorp.com>
+Copyright 2004-2007 by Genicorp, S.A. L<http://www.genicorp.com>
 
 Initial English version of the reference manual by Graeme A. Hunter
 (graeme.hunter@zen.co.uk).

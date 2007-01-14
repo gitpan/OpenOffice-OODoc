@@ -1,3 +1,6 @@
+2.031	2007-01-10
+	- Text.pm: bug fix in cellSpan (#24277)
+	- XPath.pm: improved getLocalPosition()
 2.029	2006-12-18
 	- Text.pm: bug fix in cellSpan() (#23501); improved removeHeading()
 2.028	2006-09-07
