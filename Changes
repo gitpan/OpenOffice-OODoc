@@ -1,5 +1,9 @@
+2.032	2007-01-19
+	- XPath.pm: bug fix in getText() (#24433)
+	- XPath.pm: "part" allowed as synonym of "member" in constructor
+	- XPath.pm: "attributes" allowed as synonym of "attribute" in insertElement()
 2.031	2007-01-10
-	- Text.pm: bug fix in cellSpan (#24277)
+	- Text.pm: bug fix in cellSpan() (#24277)
 	- XPath.pm: improved getLocalPosition()
 2.029	2006-12-18
 	- Text.pm: bug fix in cellSpan() (#23501); improved removeHeading()

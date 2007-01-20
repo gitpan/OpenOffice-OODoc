@@ -1434,7 +1434,7 @@ presentation which is one of the foundations of the OpenDocument format.
 	with "open" spreadsheets (such as OpenOffice.org Calc documents),
 	where the physical length and width of a table don't really make
 	sense. In the present OpenOffice.org Writer (text) documents, the
-	tables are delimited every row and cell is mapped to an exclusive
+	tables are delimited and every row and cell is mapped to an exclusive
 	XML element, so getTableSize() is workable (up to now) with this kind
 	of documents. However, the OpenDocument specification allows an
 	optimization strategy which, when implemented, prevents getTableSize()
@@ -1493,7 +1493,7 @@ presentation which is one of the foundations of the OpenDocument format.
         of elements (e.g. paragraphs, headers, tables cells, etc.), or
         deactivate them using outputDelimitersOff. This depends on where the
         text is exported to e.g. display in editable "flat" format,
-        conversion to non-OpenOffice.org XML or a markup language other than
+        conversion to non-OpenDocument XML or a markup language other than
         XML, generating code from text, etc..
 
 	A default export (ex: "\n") terminator can be set for any element that
@@ -2345,7 +2345,7 @@ presentation which is one of the foundations of the OpenDocument format.
 	instruction gives the "Highlight" style to the "OpenOffice.org",
 	"Writer", "Calc", "Draw", and "Impress" substrings:
 
-		$doc->setSpanelement, [context,] expression, style
+		$doc->setSpan
 		    (
 		    $p,
 		    'OpenOffice\.org|Writer|Draw|Calc|Impress',

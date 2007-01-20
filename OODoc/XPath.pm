@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 2.219 2007-01-10 JMG$
+#	$Id : XPath.pm 2.221 2007-01-19 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2007 by Genicorp, S.A. (www.genicorp.com)
@@ -12,7 +12,7 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 2.219;
+our	$VERSION	= 2.221;
 use	XML::Twig	3.22;
 use	Encode;
 
@@ -189,6 +189,7 @@ sub	inputTextConversion
 	{
 	my $self	= shift;
 	my $text	= shift;
+	return undef unless defined $text;
 	my $local_encoding = $self->{'local_encoding'} or return $text;
 	return Encode::decode($local_encoding, $text);
 	}
@@ -197,6 +198,7 @@ sub	outputTextConversion
 	{
 	my $self	= shift;
 	my $text	= shift;
+	return undef unless defined $text;
 	my $local_encoding = $self->{'local_encoding'} or return $text;
 	return Encode::encode($local_encoding, $text);
 	}
@@ -362,6 +364,7 @@ sub	new
 		
 	my $twig = undef;
 
+	$self->{'member'} = $self->{'part'} unless $self->{'member'};
 	if ($self->{'member'} && ! $self->{'element'})
 		{
 		my $m	= lc $self->{'member'};
@@ -1333,17 +1336,11 @@ sub	getText
 		{
 		if ($node->isElementNode)
 			{
-			$text .=
-			    (
-			    $self->getText($node)
-			    		||
-			    ''
-			    );
+			$text .= $self->getText($node);
 			}
 		else
 			{
-			my $t = ($node->text() || '');
-			$text .= $self->outputTextConversion($t);
+			$text .= $self->outputTextConversion($node->text);
 			}
 		}
 	return $text;
@@ -2109,6 +2106,7 @@ sub	insertElement
 	my $pos		= (ref $path) ? undef : shift;
 	my $name	= shift;
 	my %opt		= @_;
+	$opt{'attribute'} = $opt{'attributes'} unless $opt{'attribute'};
 
 	return undef	unless $name;
 	my $element	= undef;

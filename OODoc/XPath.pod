@@ -75,7 +75,7 @@ For those who really want to access all areas there are also
 OODoc::XPath methods which allow unrestricted access to every
 element or XML attribute via an access path in XPath syntax. If you
 are into this kind of thing, we recommend you obtain good syntax
-reference manuals for XPath and OpenOffice.org and a supply of
+reference manuals for XPath and OpenDocument and a supply of
 aspirin.
 
 Methods which may return several lines of text (e.g. getTextList) do
@@ -84,7 +84,7 @@ separators or in table form.
 
 Unless otherwise stated, the word 'document' in this chapter only
 refers to XML documents contained within OODoc::XPath objects and
-not, say, OpenOffice.org files (as an end user would use).
+not, say, OpenDocument files (as an end user would use).
 
 Amongst the different methods which return elements, attributes or
 text, some are called getXxx, others selectXxx or findXxx. Read
@@ -216,10 +216,10 @@ features of OODoc::Meta and OODoc::Document are described here.
 	recommended when the user doesn't need to get more than one member
 	in the same file.
 
-	The 'member' option is a selector that tells what component is
-	needed (the content of the document, the styles, the metadata, ...)
-	knowing that an OODoc::XPath object can handle only one component.
-	Its default value is 'content'.
+	The 'member' or 'part' option is a selector that tells what component
+	is needed (content, styles, metadata, ...) knowing that an
+	OODoc::XPath object can handle only one component. Its default value
+	is 'content'.
 	
 	If the application needs to process, say, the content and the styles
 	in the same session, it must create two, or more, OODoc::XPath objects
@@ -240,7 +240,7 @@ features of OODoc::Meta and OODoc::Document are described here.
 	linked by their 'file' parameters to the same explicit filename (and
 	not linked with each other) produces useless extra I/O operations and
 	possible conflicts.
-        
+ 
 	Caution: being associated with a common interface via OODoc::File,
 	none of these OODoc::XPath objects should be deleted before the final
 	save() call for this archive. So by calling a save, the File object
@@ -260,8 +260,8 @@ features of OODoc::Meta and OODoc::Document are described here.
         that an OODoc::XPath object will not necessarily handle an entire
         XML document, this extra parameter indicates the name of the XML
         element to be loaded and handled. If the 'element' parameter is not
-        given for an OpenOffice.org document, a default element will be
-        chosen according to the following table:
+        given for an OpenDocument file, a default element will be chosen
+	according to the following table:
 
             'meta'	=> 'office:document-meta'
             'content'	=> 'office:document-content'
@@ -272,7 +272,7 @@ features of OODoc::Meta and OODoc::Document are described here.
         Conversely, the 'element' parameter becomes mandatory if the chosen
         XML element is not listed above. Through OODoc::File, OODoc::XPath
         can actually access archives which are not necessarily in
-        OpenOffice.org format and may be, for example, "banks" of
+        OpenDocument format and may be, for example, "databases" of
         presentation and content templates.
 
 	If the application needs to create a new document, and not process
@@ -288,14 +288,14 @@ features of OODoc::Meta and OODoc::Document are described here.
 	must have the same kind of structure and content as the "templates"
 	subdirectory of the OpenOffice::OODoc installation.
 
-	An additional 'opendocument' option, set to '1' (or 'true') should be
-	provided if the new document must comply with the OASIS Open Document
-	specification, knowing that the default format is OpenOffice.org v1.
-	Be careful: the 'opendocument' option should not be set against
-	previously existing documents. OpenOffice::OODoc::XPath can create
-	and process either OpenOffice.org documents or Open Documents but
-	can't automatically convert a document from one format to the other
-	one.
+	An additional 'opendocument' option can be provided and set to 'true'
+	or 'false'. If this option is 'false', the new document is created
+	according to the OpenOffice.org 1.0 format instead of the OASIS
+	OpenDocument format. The default format is OpenDocument. The
+	'opendocument' option works for new documents only and is ignored
+	unless the 'create' option. This module can create and process either
+	OpenOffice.org 1.0 documents or ODF documents but can't directly
+	convert a document from one format to the other one.
 
 	OODoc::XPath can process OOo documents provided through XML flat
 	files as well as in the compressed (zip) format. The given file is
@@ -340,18 +340,18 @@ features of OODoc::Meta and OODoc::Document are described here.
             	);
 
         adds a paragraph containing the phrase "New text" to the end of the
-        document body. (Remember that in the case of an OpenOffice.org text
+        document body. (Remember that in the case of an OpenDocument text
 	file (Writer), it would be better to use the appendParagraph method of
 	OpenOffice::OODoc::Text as this requires fewer parameters.
 
         If the 'text' option is omitted, an empty element is created (in the
         above example it would be an empty paragraph or line feed).
 
-        You can pass the 'attribute' option which is really a hash whose
-        keys are the XML attribute names and whose values are the XML
+        You can pass the 'attribute' or 'attributes' option which is a hash
+	whose keys are the XML attribute names and whose values are the XML
         attribute values. Use of these options depends on the type of
         document and the type of element and requires knowledge of
-        OpenOffice.org conventions.
+        OpenDocument conventions.
 
         Example:
 
@@ -372,7 +372,7 @@ features of OODoc::Meta and OODoc::Document are described here.
 	indicated in the styles list as it appears to the end user).
 
         This method lets you add any kind of element into a document, even
-        exotic ones. With the most common OpenOffice.org objects (e.g.
+        exotic ones. With the most common OpenDocument objects (e.g.
         paragraphs), though, it is easier to use the specialist methods
         contained in other modules.
 
@@ -387,9 +387,9 @@ features of OODoc::Meta and OODoc::Document are described here.
 
         The 'name' argument can also be replaced by an XML string. This
         string must correspond to the correct XML description of a UTF-8
-        encoded OpenOffice.org element. For example, it could be a
+        encoded OpenDocument element. For example, it could be a
         string which had been previously exported using the exportXMLElement
-        method of OODoc::XPath, or extracted from an OpenOffice.org file by
+        method of OODoc::XPath, or extracted from an OpenDocument file by
         some other application. If for any reason you absolutely have to
 	use a non-UTF8 XML string which contains 8-bit characters (accented
 	letters, etc.), you can always convert the string using the
@@ -452,26 +452,26 @@ features of OODoc::Meta and OODoc::Document are described here.
 
             $doc1	= OpenOffice::OODoc::XPath->new
             		(
-            		file	=> 'template.sxc',
+            		file	=> 'template.ods',
             		member	=> 'styles'
             		);
             $doc2	= OpenOffice::OODoc::XPath->new
             		(
-            		file	=> 'sheet.sxc',
+            		file	=> 'sheet.ods',
             		member	=> 'styles'
             		);
             $doc2->cloneContent($doc1);
             $doc2->save;
 
-        This sequence replaces the styles and page layout of 'sheet.sxc'
-        with those of 'template.sxc'.
+        This sequence replaces the styles and page layout of 'sheet.ods'
+        with those of 'template.ods'.
 
         The above example could easily have been written without even using
         OODoc::XPath by acting directly on the files. For example, extract
-        the 'styles.xml' member from 'template.sxc' and insert it into
-        'sheet.sxc'. The use of OODoc::XPath and the cloneContent method
+        the 'styles.xml' member from 'template.ods' and insert it into
+        'sheet.ods'. The use of OODoc::XPath and the cloneContent method
         guarantees that the transferred content corresponds to an
-        OpenOffice.org document and allows reads/writes to it on the fly.
+        OpenDocument document and allows reads/writes to it on the fly.
 
         Caution: the "cloned" content is not physically copied. Calling this
         method references one single physical content in two documents. Any
@@ -482,7 +482,7 @@ features of OODoc::Meta and OODoc::Document are described here.
 
 	Accessor to get or set the class of the document content. If the
 	current member is a document content, returns its class according
-	to the OpenOffice.org terminology, i.e. one of the following values:
+	to the OpenDocument terminology, i.e. one of the following values:
 	"text", "spreadsheet", "presentation", or "drawing".
 
 	Returns an empty string if the current member is not a document
@@ -656,16 +656,14 @@ features of OODoc::Meta and OODoc::Document are described here.
         getText).
 
         Warning to contributors: any method which returns text extracted
-        from OpenOffice.org documents is based on decode_text; so any
-        modification or improvement of the decoding logic should be made
-        there.
+        from ODF documents is based on decode_text; so any modification or
+	improvement of the decoding logic should be made there.
 
 =head3	encode_text(editable_string)
 
         Class method.
 
-        Encodes "local" character strings (for writing to OpenOffice.org
-        documents).
+        Encodes "local" character strings (for writing to ODF documents).
 
         Example:
 
@@ -1095,8 +1093,9 @@ features of OODoc::Meta and OODoc::Document are described here.
 
             attribute	=> $attributes
 
-        The "attribute" option is itself a hash reference containing one or
-	more attributes in the form [name => value] as in appendElement.
+        The "attribute" (or "attributes") option is itself a hash reference
+	containing one or more attributes in the form [name => value] as in
+	appendElement.
 
         When successful, this method returns the inserted element's
         reference (else undef).
@@ -1116,8 +1115,8 @@ features of OODoc::Meta and OODoc::Document are described here.
             	attribute	=> $attributes
             	);
 
-        This sequence (in an OpenOffice.org Writer document) inserts a level
-        2 header 'New section' immediately after paragraph 4.
+        This sequence (in a text document) inserts a level 2 header
+	'New section' immediately after paragraph 4.
 
         The $name argument can be replaced by an existing element. In this
         case a new reference to the existing element is inserted, without
@@ -1177,10 +1176,9 @@ features of OODoc::Meta and OODoc::Document are described here.
 
         The only restrictions apply to namespaces which are given as
         prefixes to element and attribute names. They must be defined in the
-        document i.e. conform to OpenOffice.org specifications. For the
-        rest, this method allows the creation of almost anything anywhere
-        within a document. Its use is reserved for OpenOffice XML
-        specialists.
+        document i.e. conform to OpenDocument specifications. For the rest,
+	this method allows the creation of almost anything anywhere within a
+	document. Its use is reserved for OpenDocument XML specialists.
 
         In its second form, a context node can be given as the first
         argument. If present, the path is sought (and if necessary created)
@@ -1206,7 +1204,7 @@ features of OODoc::Meta and OODoc::Document are described here.
 
 =head3	raw_import(member, source)
 
-        Physically imports an external file into an OpenOffice.org archive
+        Physically imports an external file into an OpenDocument archive
         associated with an XPath object, if it exists i.e. if the object was
         created using file or archive parameters. This method only transmits
         the command to the OODoc::File's raw_import method. Caution: it must
@@ -1218,10 +1216,10 @@ features of OODoc::Meta and OODoc::Document are described here.
 
 =head3	raw_export(member, target)
 
-        Physically exports a member from an OpenOffice.org archive
-        associated with an XPath object, if it exists i.e. if the object was
-        created using file or archive parameters. This method only transmits
-        the command to the OODoc::File's raw_import method.
+        Physically exports a member from an OpenDocument archive associated
+	with an XPath object, if it exists i.e. if the object was created
+	using file or archive parameters. This method only transmits the
+	command to the OODoc::File's raw_import method.
 
 =head3	removeAttribute(path, position, attribute)
 
@@ -1422,7 +1420,7 @@ features of OODoc::Meta and OODoc::Document are described here.
 	the real job is done by the save() method of the associated
 	OpenOffice::OODoc::File object.
 			
-	If the document is not associated with a regular OpenOffice.org
+	If the document is not associated with a regular OpenDocument
 	compressed file (used through an OODoc::File object), it's saved
 	as "flat XML" to the given file. In such a situation, if the file name
 	is not provided, the source XML file (if any) is used as the target.
@@ -1430,7 +1428,7 @@ features of OODoc::Meta and OODoc::Document are described here.
 	output, without using any OODoc::File connector.
 
 	Note: if you need to save a document as flat XML while it's associated
-	with an OpenOffice.org file, you should use exportXMLContent() with an
+	with an OpenDocument file, you should use exportXMLContent() with an
 	application-provided file handle.
 
 =head3	selectChildElementByName(path, position [, filter])
@@ -1883,7 +1881,7 @@ features of OODoc::Meta and OODoc::Document are described here.
 
             OO_CHARSET
 
-        indicates the character set used for OpenOffice.org document
+        indicates the character set used for OpenDocument document
         encoding and whose default value is 'utf8' (it should not be changed).
 
             LOCAL_CHARSET
@@ -1902,15 +1900,15 @@ features of OODoc::Meta and OODoc::Document are described here.
         Instance hash variables are :
 
             'archive'		=> <oodoc_file_object>
-            'file'		=> <OpenOffice.org file>
+            'file'		=> <OpenDocument file>
             'member'		=> <file member>
-	    'readable_XML'	=> <'on' or not>
+	    'readable_XML'	=> <'true' or 'false'>
 	    'local_encoding'	=> <user's output encoding>
             'xml'		=> <XML string>
             'element'		=> <name of loaded XML element>
 	    'xpath'		=> <XML::Twig object>
 	    'twig_options'	=> <XML::Twig options as a hash reference>
-	    'opendocument'	=> <true if OASIS Open Document>
+	    'opendocument'	=> <'true' or 'false'>
 
         However, the 'xml' variable is cleared almost immediately after a
         successful constructor call, in order to save memory. As soon as the
