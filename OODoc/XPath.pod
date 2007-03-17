@@ -1,6 +1,6 @@
 =head1	NAME
 
-OpenOffice::OODoc::XPath - Low-level XML navigation in the documents
+OpenOffice::OODoc::XPath - Low-level navigation in the documents
 
 =head1	DESCRIPTION
 
@@ -1834,6 +1834,8 @@ features of OODoc::Meta and OODoc::Document are described here.
 	structure.
 
 	Without any argument, the calling element is replicated once.
+	But if the count argument is provided and set to zero or a
+	negative value, nothing is done.
 	
 	Example :
 	

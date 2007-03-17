@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Styles.pm 2.021 2006-09-11 JMG$
+#	$Id : Styles.pm 2.022 2007-03-16 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2006 by Genicorp, S.A. (www.genicorp.com)
@@ -12,9 +12,9 @@
 
 package OpenOffice::OODoc::Styles;
 use	5.006_001;
-our	$VERSION	= 2.021;
+our	$VERSION	= 2.022;
 
-use	OpenOffice::OODoc::XPath	2.218;
+use	OpenOffice::OODoc::XPath	2.222;
 use	File::Basename;
 require	Exporter;
 our	@ISA	= qw ( Exporter OpenOffice::OODoc::XPath );
@@ -541,11 +541,7 @@ sub	selectStyleElementsByFamily
 	}
 
 #-----------------------------------------------------------------------------
-# get style element by exact name
-# search for any type of style element
-# parameters:
-# 	path	=> <root element, or search path, default root>
-# 	type	=> <style type, default 'style'>
+# get style element by exact internal name or display name 
 
 sub	getStyleElement
 	{
@@ -553,7 +549,13 @@ sub	getStyleElement
 	my $style	= shift;
 	return	undef	unless $style;
 	return	$style->isStyle ? $style : undef	if ref $style;
-	my %opt		= @_;
+	my %opt		= (retry => 1, @_);
+	if ($opt{'retry'})
+		{
+		delete $opt{'retry'}
+		    unless
+			(($opt{'retry'} eq 1) || ($opt{'retry'} eq 'true'));
+		}
 
 	my $root	= undef;
 	my $type	= $opt{'type'}		|| 'style';
@@ -579,6 +581,22 @@ sub	getStyleElement
 	my $attr 	= $self->{'retrieve_by'} || 'name';
 	my $xpath	=	"//$namespace" . ':' .
 				"$type\[\@style:$attr\=\"$style\"\]";
+	my $e = $self->getNodeByXPath($xpath, $root);
+	return $e if ((defined $e) || !$opt{'retry'});
+	if ($attr eq 'name')
+		{
+		$attr	= 'display-name';
+		}
+	elsif ($attr eq 'display-name')
+		{
+		$attr	= 'name';
+		}
+	else
+		{
+		return undef;
+		}
+	$xpath	=	"//$namespace" . ':' .
+			"$type\[\@style:$attr\=\"$style\"\]";
 	return $self->getNodeByXPath($xpath, $root);
 	}
 

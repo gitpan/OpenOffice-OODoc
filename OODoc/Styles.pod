@@ -32,7 +32,8 @@ In the other hand, the 'name' and the 'display-name' generally don't differ
 when they contain letters and/or digits only. Remember that the 'name' (and
 not the 'display-name') is the main identifier of a style element. So, such
 a method as getStyleElement("style name") uses the 'name' attribute to
-retrieve a style descriptor (unless you change this behaviour through the
+retrieve a style descriptor and, in case of failure, it attempts to retrieve
+the same element by 'display-name' (unless you change this behaviour through the
 'retrieve_by' document property).
 
 Care should be taken particularly with predefined base styles in
@@ -786,11 +787,34 @@ at least a blank of each required style.
         for these concepts.
 
         A search is of course limited to automatic styles if the current XML
-        document is content. If the document is styles, the search for the
+        document is "content". If the document is "styles", the search for the
         name is made in all styles by default. You can, however, limit it
         with the "path" parameter where "path" equals "auto" to search in
         automatic styles or "named" in named styles.
 	
+	The name is a mandatory property, and the main identifier of any style
+	in ODF-compliant documents. But an additional property, so-called
+	'display-name', is sometimes provided by the applications. If the
+	'display-name' property is made visible for the end user by the office
+	software (for example in the stylist box of OpenOffice.org) while the
+	primary name is hidden. By default, getStyleElement() looks for a
+	style whose primary name matches the given name, then, if the query
+	fails, it tries to retrieve the style according to its display name.
+	However, the programmer can instruct OODoc to use the display name
+	as the preferred identifier. However, if the "retrieve_by" property
+	of the connector is set to 'display-name', the display name becomes
+	the preferred identifier.
+
+	If "retry" parameter is provided and set to "false" or any other value
+	than "1" or "true", no double query is done. In other words, if the
+	first query (by primary name or by display name, according to the
+	value of the "retrieve_by" property of the connector) fails, the
+	method returns immediately without trying any other query. The default
+	value is "1" (true). You should set it to "0" or "false" in order to
+	save some computation time if, for example, your application doesn't
+	need to take care of the possible differences between display names
+	and internal names.
+
 	Note: Take care of possible differences between the 'display-name'
 	and the real 'name' of any style (see the DESCRIPTION of the present
 	manual chapter). If you decide to select the styles by their visible
@@ -1407,9 +1431,8 @@ at least a blank of each required style.
 =head2	Properties
 
 	The 'retrieve_by' option, set to 'display-name', can be provided
-	in order to select the style elements by their display name instead
-	of their primary name (names and display names are introduced in the
-	beginning of this manual chapter).
+	in order to use the display name instead of the primary name as
+	the first style identifier.
 
 	The %COLORMAP hash, defined as a class variable, contains a name
 	to RGB translation table. When loaded, it allows the rgb2oo() function

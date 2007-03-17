@@ -17,9 +17,15 @@ documentation.
 Just before reading this intro, it's a good idea to have a look at the
 short (and commented) examples provided in the distribution.
 
+Another general introduction to this Perl OpenDocument Connector has been
+published in The Perl Review (issue #3.1, dec. 2006)
+L<http://www.theperlreview.com>
+
 There is an alternative intro for french-reading users. It's available in
 ODT (L<http://jean.marie.gouarne.online.fr/doc/oodoc_guide.odt>) or PDF
-(L<http://jean.marie.gouarne.online.fr/doc/oodoc_guide.pdf>).
+(L<http://jean.marie.gouarne.online.fr/doc/oodoc_guide.pdf>). In addition,
+a general presentation in French can be downloaded at
+L<http://jean.marie.gouarne.online.fr/doc/perl_odf_connector.pdf>
 
 =head1	Overview
 
@@ -458,7 +464,7 @@ fields:
 
 	my %ud	= $doc->user_defined;
 	foreach my $name (keys %ud)
-		{ print $k . '->' . $ud{$k} . "\n"; }
+		{ print $name . '->' . $ud{$name} . "\n"; }
 
 This code captures the user defined fields (names and values) in a hash
 table, which then is displayed in a "name->value" form. You could see

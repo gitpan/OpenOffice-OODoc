@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 2.221 2007-01-19 JMG$
+#	$Id : XPath.pm 2.222 2007-03-15 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2007 by Genicorp, S.A. (www.genicorp.com)
@@ -12,7 +12,7 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 2.221;
+our	$VERSION	= 2.222;
 use	XML::Twig	3.22;
 use	Encode;
 
@@ -2399,7 +2399,8 @@ sub	insertNewNode
 sub	replicateNode
 	{
 	my $node	= shift;
-	my $number	= shift || 1;
+	my $number	= shift;
+	$number = 1 unless defined $number;
 	my $position	= shift || 'after';
 	my $lastnode	= $node;
 	while ($number > 0)
