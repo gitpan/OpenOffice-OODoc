@@ -794,35 +794,25 @@ at least a blank of each required style.
 	
 	The name is a mandatory property, and the main identifier of any style
 	in ODF-compliant documents. But an additional property, so-called
-	'display-name', is sometimes provided by the applications. If the
-	'display-name' property is made visible for the end user by the office
-	software (for example in the stylist box of OpenOffice.org) while the
-	primary name is hidden. By default, getStyleElement() looks for a
-	style whose primary name matches the given name, then, if the query
-	fails, it tries to retrieve the style according to its display name.
-	However, the programmer can instruct OODoc to use the display name
-	as the preferred identifier. However, if the "retrieve_by" property
+	'display-name', is sometimes provided by the applications. The
+	'display-name' property, if provided, is made visible for the end user
+	by the office software (for example in the stylist box of
+	OpenOffice.org) while the primary name is hidden. By default,
+	getStyleElement() looks for a style whose primary name matches the
+	given name, then, if the query fails, it tries to retrieve the style
+	according to its display name.However, if the "retrieve_by" property
 	of the connector is set to 'display-name', the display name becomes
 	the preferred identifier.
 
-	If "retry" parameter is provided and set to "false" or any other value
-	than "1" or "true", no double query is done. In other words, if the
-	first query (by primary name or by display name, according to the
-	value of the "retrieve_by" property of the connector) fails, the
+	If a "retry" parameter is provided and set to "false" or any other
+	value than "1" or "true", no double query is done. In other words,
+	if the first query (by primary name or by display name, according to
+	the value of the "retrieve_by" property of the connector) fails, the
 	method returns immediately without trying any other query. The default
 	value is "1" (true). You should set it to "0" or "false" in order to
 	save some computation time if, for example, your application doesn't
 	need to take care of the possible differences between display names
 	and internal names.
-
-	Note: Take care of possible differences between the 'display-name'
-	and the real 'name' of any style (see the DESCRIPTION of the present
-	manual chapter). If you decide to select the styles by their visible
-	names, set the 'retrieve_by' property of the document to
-	'display-name'. Example:
-	
-		$doc->{'retrieve_by'} = 'display-name';
-		my $s = $doc->getStyleElement("Text body");
 
 =head3	getStyleList([options])
 
