@@ -252,7 +252,7 @@ at least a blank of each required style.
             namespace		=> 'text',
             type		=> 'footnote-configuration'
 
-        The other possible options are:
+        The possible options are:
 
             namespace		=> namespace
             type		=> style type
@@ -266,15 +266,14 @@ at least a blank of each required style.
         be grouped together in a hash provided by the application and
         indicated by a "references" option.
 
-        Of course, if you create a new style, you do not just sort it into
-        type, class or family, etc. You attribute its own presentation
-        attributes which can be inherited by other styles which cite it as
-        "parent". These personal attributes (whose nature obviously depends
-        on the style type) are all attributed by the "properties" attribute
-        which itself indicates a hash provided by the application.
+        Of course, if you create a new style, you do not just specify it into
+	terms of type, class or family, etc. You attribute its own
+	presentation attributes which can be inherited by other styles which
+	cite it as "parent". These personal attributes (whose nature obviously
+	depends on the style type) are all attributed by the "properties"
+	attribute which itself is a hash provided by the application.
 
-        Here is an example of a paragraph style creation in an OOo 1
-	document:
+        Here is an example of a paragraph style creation
 
             $doc->createStyle
             	(
@@ -286,36 +285,63 @@ at least a blank of each required style.
 			'fo:margin-left'	=> '2cm',
 			'fo:margin-right'	=> '1.5cm',
 			'fo:text-align'		=> 'justify',
-            		'style:font-name'	=> 'Times',
-            		'fo:font-size'		=> '14pt',
-            		'fo:font-weight'	=> 'bold',
-            		'fo:font-style'		=> 'italic',
-            		'fo:color'		=> '#000080',
             		'fo:background-color'	=> '#ffff00'
             		}
             	);
             $doc->setStyle($doc->getParagraph(3), "P3");
 
-        This sequence gives paragraph 3 of the document a lovely Times font
-        in dark blue size 14 bold italics on a yellow background. This is
-        done using a style called "Colour" (reusable later for other
-        paragraphs) based on the "Standard" style. You will note that the
-        colour codes are in RGB hexadecimal preceded by a '#'.
-	We could replace '#000080' with odfColor('navy blue') if we used the
-	standard rgb.txt colour table from the Xorg distribution (see
-	odfColor() below). A large part of these layout properties come from
-	the FO (Form Object) language, that is a part of the OpenDocument
-	XML vocabulary. You should look at the OpenDocument Format
-	specification for an exhaustive presentation of the supported FO
-	options.
+	This sequence gives paragraph 3 of the document a special style
+	whose properties are given margins, text justification and a
+	yellow background color (note that the ODF color codes are in RGB
+	hexadecimal preceded by a '#', and 'ffff00' is the RGB value for
+	for the yellow color). This is done using a style called "Colour"
+	(reusable later for other paragraphs) based on the "Standard" style. 
+	The names of the properties can be found in the ODF specification
+	(some of them come from the Form Object standard, so they begin with
+	the "fo:" prefix). However, the given properties are related to the
+	global layout of the paragraph. We could provide this new style with
+	additional properties related to the text content of the paragraph.
+	But, in a paragraph style definition, the "text" properties are not
+	stored in the same logical area than the "paragraph" properties, and
+	we can't set both in the same instruction. Fortunately, we can enrich
+	any existing style at any time through the updateStyle() method:
 
-	In this example, "namespace" and "type" are not specified because
-	the default namespace and type are appropriate here. (Rest assured
-	that this is often the case when working with text styles.)
+            $doc->updateStyle
+            	(
+            	"Colour",
+            	properties =>
+            		{
+			-area			=> 'text',
+            		'style:font-name'	=> 'Times',
+            		'fo:font-size'		=> '14pt',
+            		'fo:font-weight'	=> 'bold',
+            		'fo:font-style'		=> 'italic',
+			'fo:color'		=> '#000080'
+            		}
+            	);
 
-	Be careful: the example above works with an OOo 1 document, put some
-	of the given properties are ignored with an OOo 2 one. See below about
-	the differences between the two formats.
+	This new sequence gives paragraph 3 (or any paragraph using the
+	"Colour" style) a lovely Times font in dark blue size 14 bold italics.
+	The '-area' parameter which appears in the 'properties' hash is not
+	a property; it's a selector which instructs the API to select the
+	"text" property set.
+
+	Note: the hexadecimal color codes used in the example could be
+	replaced by more user-friendly color names, according to a standard or
+	application-specific RGB color table, through the odfColor() function
+	introduced in the present manual chapter.
+
+	If the '-area' selector is omitted, the property set whose name is
+	the name of the style family (i.e. 'paragraph' in the last example).
+	
+	The '-area' selector is silently ignored when used with OOo 1
+	documents, and sometimes required for ODF, so you can safely use it if
+	you want to write portable code. In addition, up to now, the unknown
+	style attributes are simply ignored by the OpenOffice.org software,
+	and they don't harm. However, if the document is later edited and
+	saved through OpenOffice.org, every unknown attribute is removed. As a
+	consequence, everybody can use proprietary (non-OpenDocument) style
+	attributes for application-specific markup.
 
         Another example:
 
@@ -347,74 +373,11 @@ at least a blank of each required style.
         increase in luminosity of 4% and contrast of 2%, gamma correction of
         1.1 and 5% transparency. Moreover, 3% less red and 2% more green
         will freshen the image and highlight the vibrancy of the
-        chlorophyll. There are yet more in the list of options, so don't
-        throw out your holiday snaps!
+        chlorophyll. There are yet more in the list of options.
 
-	While all the properties of a given style are directly available
-	through a single "properties" structure in OOo 1 documents, they are
-	stored in separate, specialised structures in OOo 2 (ODF) documents.
-	A property name can be used (with different effects) in more than one
-	property area. For example, with an OOo 2 document, we should rewrite
-	our "Colour" style definition using 2 separate instructions as shown
-	below:
-
-            $doc->createStyle
-        	(
-            	"Colour",
-            	family	=> 'paragraph',
-            	parent	=> 'Standard',
-            	properties =>
-            		{
-			'-area'			=> 'paragraph',
-			'fo:margin-left'	=> '2cm',
-			'fo:margin-right'	=> '1.5cm',
-			'fo:text-align'		=> 'justify',
-            	 	'fo:background-color'	=> '#ffff00'
-            		}
-            	);
-	    $doc->updateStyle
-		(
-		"Colour",
-		properties  =>
-			{
-			'-area'			=> 'text',
-            	 	'style:font-name'	=> 'Times',
-			'fo:font-size'		=> '14pt',
-            	 	'fo:font-weight'	=> 'bold',
-            	 	'fo:font-style'		=> 'italic',
-			'fo:color'		=> '#000080',
-			}
-		);
-
-	The first instruction creates the style with properties that apply
-	to the "paragraph" area. The second one brings additional properties
-	for the text content of the paragraph. A paragraph style includes
-	"paragraph properties", such as the margins, the text alignment, the
-	background color, and "text properties", such as any font-focused
-	attribute. The '-area' option is not a style property; it's only a
-	switch that indicates what is the target property area. Without this
-	option, the default area name is the family name (so, for a paragraph
-	style, the default area for updateStyle() is "paragraph properties").
-	This sophistication sounds strange at first look, but it could prove
-	very useful because, knowing that the OpenDocument format brings more
-	features than the old OOo format, the same property name can be
-	used in more than one area, with different effects. For example,
-	we could put a 'fo:background-color' in the 'text' area AND another
-	one in the 'paragraph' area; the 'text' background color should apply
-	to the text-covered areas only, while the 'paragraph' background
-	is a rectangular area, that is not always fully covered by text.
-	
-	The same result could be obtained (more efficiently) with
-	styleProperties() instead of updateStyle (see styleProperties()).
-	
-	The '-area' switch is silently ignored when used with OOo 1 documents,
-	and sometimes required for ODF, so you can safely use it if you want
-	to write portable code. In addition, up to now, the unknown style
-	attributes are simply ignored by the OpenOffice.org software, and
-	they don't harm. However, if the document is later edited and saved
-	through OpenOffice.org, every unknown attribute is removed. As a
-	consequence, everybody can use proprietary (non-OpenDocument) style
-	attributes for application-specific markup.
+	Note: In the given examples, "namespace" and "type" are not specified
+	because the default namespace and type are appropriate here. (Rest
+	assured that this is often the case when working with text styles.)
 
 	So, while OpenOffice::OODoc supports both OOo 1 and ODF with the
 	same API, the present version can't completely hide the differences
@@ -432,7 +395,8 @@ at least a blank of each required style.
         style whose properties are then taken up and combined with the new
         properties. New properties prevail over old ones if the new
         properties replace existing attributes in the prototype style, just
-        like when they are inherited.
+        like when they are inherited. But there is no persistent link from the
+	new style to its prototype.
 
         Example:
 
@@ -507,12 +471,11 @@ at least a blank of each required style.
 	vice-versa) should be avoided.
 
         Always be careful of dependencies. There are often dependencies
-        between styles (heritage or usage). An application must be wary of
-        importing styles without modification which are directly or
-        indirectly dependent on other styles which are not available in the
-        target document. Text styles are fairly easy to control in this way,
-        but table, page and graphic styles, for example, have more complex
-        dependencies.
+        between styles. An application must be wary of importing styles with
+	directly or indirectl dependencies on other styles which will not be
+	available in the target document. Text styles are fairly easy to
+	control in this way, but table, page and graphic styles, for example,
+	have more complex dependencies.
 
 	When a font name is set (generally through a 'style:font-name'
 	text property) in a new style, take care of the availability of
@@ -545,7 +508,7 @@ at least a blank of each required style.
 	Returns the name of the primary known ancestor of the given style.
 
 	If the style has a standalone definition (i.e. it's its own ancestor),
-	the method returns it's name.
+	the method returns it's own name.
 
 	This method returns the ancestor name as it's known in the current
 	document space. The genealogy is not followed out of the scope of
@@ -558,7 +521,7 @@ at least a blank of each required style.
 	"styles" member, so its definition (including the name of its parent
 	style) is out of the scope.
 
-	As a consequence, in a regular OOo document, there are 2 possible
+	As a consequence, in a regular ODF document, there are 2 possible
 	situations:
 
 	- if the current space is "styles", the returned style name is really
@@ -573,6 +536,9 @@ at least a blank of each required style.
 	the ancestor style is not defined in the current space (and, if
 	needed, we could reach it the "styles" member, if we currently work
 	with the "content" member).
+
+	Beware: the returned name is the main name (identifier), and not the
+	display name.
 
 	See also getParentStyle().
 
@@ -748,7 +714,9 @@ at least a blank of each required style.
 =head3	getParentStyle(style)
 
 	Returns the name of the parent of the given style, or undef if the
-	style has a standalone definition (without inheritance).
+	style has a standalone definition (without inheritance). The returned
+	name, if any, is the identifier of the parent style, which can differ
+	from its display name.
 
 	The returned parent name can be the name of a style defined elsewhere
 	(or not defined yet).
@@ -800,7 +768,7 @@ at least a blank of each required style.
 	OpenOffice.org) while the primary name is hidden. By default,
 	getStyleElement() looks for a style whose primary name matches the
 	given name, then, if the query fails, it tries to retrieve the style
-	according to its display name.However, if the "retrieve_by" property
+	according to its display name. However, if the "retrieve_by" property
 	of the connector is set to 'display-name', the display name becomes
 	the preferred identifier.
 
@@ -1058,6 +1026,9 @@ at least a blank of each required style.
         getStyleElement for these concepts). Without these parameters, the
         default values are the same as for getStyleElement.
 
+	Beware: the only recognized style name here is the main style name,
+	which can differ from the display name.
+
 =head3	styleProperties(style [, options])
 
         This method is for checking and updating the formatting properties
@@ -1083,7 +1054,7 @@ at least a blank of each required style.
             		(
             		"Colour",
 			'-area'		=> 'text',
-            		'fo:color'	=> rgb2oo("red"),
+            		'fo:color'	=> odfColor("red"),
             		'fo:font-style'	=> undef
             		);
 
@@ -1325,10 +1296,38 @@ at least a blank of each required style.
 
 =head2	Exported functions
 
-=head3	odfColor(rgb_color)
+=head3	odfColor($red, $green, $blue)
+=head3	odfColor("$red,$green,$blue")
+=head3	odfColor($colorname)
 
-	Converts an RGB color code or name into an ODF-compliant color code.
-	See rgb2oo().
+	Converts an RGB or named colour in ODF-compliant hexadecimal format
+	(6 digits after a leading '#'). The 1st form has the same effect as
+	the rgb2hex() function of the Color::Rgb Perl module.
+
+	The resulting value can be used to set any colour attribute in a
+	style.
+
+	In the first form, the 3 arguments are the conventional numeric RGB
+	values (between 0 an 255). In the second form, the only one argument
+	is a string containing 3 comma-separated RGB values. In the third
+	form, the given string is the symbolic name of a colour (the name
+	must be an existing one in the %COLORMAP hash).
+
+	Example:
+
+		ooLoadColorMap("D:\MyDocuments\Colors.txt");
+		$doc->styleProperties
+			(
+			"HighColors",
+			'fo:color'		=> odfColor('black'),
+			'fo:background-color'	=> odfColor('yellow')
+			);
+	
+	If the argument seems to be already an hexadecimal RGB string (i.e.
+	it begins by "#"), odfColor() checks it and returns it unchanged if
+	it's a regular RGB value, or undef if not.
+
+	Synonym: rgb2oo().
 
 =head3	ooLoadColorMap($filename)
 
@@ -1354,7 +1353,7 @@ at least a blank of each required style.
 	rgb.txt file is provided with the Color::Rgb Perl module (CPAN).
 
 	When a COLORMAP is loaded, the programmer can provide symbolic, user-
-	friendly names in place of RGB values to the rgb2oo() function.
+	friendly names in place of RGB values to the odfColor() function.
 	
 	Without argument, the content of the $COLORMAP variable is considered
 	as the filename.
@@ -1385,32 +1384,7 @@ at least a blank of each required style.
 =head3	rgb2oo("$red,$green,$blue")
 =head3	rgb2oo($colorname)
 
-	Converts an RGB or named colour in ODF-compliant hexadecimal format
-	(6 digits after a leading '#'). The 1st form has the same effect as
-	the rgb2hex() function of the Color::Rgb Perl module.
-
-	The resulting value can be used to set any colour attribute in a
-	style.
-
-	In the first form, the 3 arguments are the conventional numeric RGB
-	values (between 0 an 255). In the second form, the only one argument
-	is a string containing the comma-separated RGB values. In the third
-	form, the given string is the symbolic name of a colour (the name
-	must be an existing one in the %COLORMAP hash).
-
-	Example:
-
-		ooLoadColorMap("D:\MyDocuments\Colors.txt");
-		$doc->styleProperties
-			(
-			"HighColors",
-                 	'fo:color'		=> rgb2oo('black'),
-                 	'fo:background-color'	=> rgb2oo('yellow')
-			);
-	
-	If the argument seems to be already an hexadecimal RGB string (i.e.
-	it begins by "#"), rgb2oo() checks it and returns it unchanged if
-	it's a regular RGB value, or undef if not.
+	See odfColor().
 
 =head3	rgbColor(odf_color)
 

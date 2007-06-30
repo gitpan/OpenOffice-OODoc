@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 2.222 2007-03-15 JMG$
+#	$Id : XPath.pm 2.223 2007-05-12 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2007 by Genicorp, S.A. (www.genicorp.com)
@@ -12,7 +12,7 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 2.222;
+our	$VERSION	= 2.223;
 use	XML::Twig	3.22;
 use	Encode;
 
@@ -361,7 +361,8 @@ sub	new
 				$OpenOffice::OODoc::XPath::LOCAL_CHARSET,
 		@_
 		};
-		
+	
+	$self->{'archive'} = $self->{'container'} unless $self->{'archive'};
 	my $twig = undef;
 
 	$self->{'member'} = $self->{'part'} unless $self->{'member'};
@@ -513,14 +514,29 @@ sub	new
 sub	DESTROY
 	{
 	my $self	= shift;
-	delete $self->{'file'};
-	delete $self->{'context'};
-	delete $self->{'xpath'};
+	if ($self->{'body'})
+		{
+		$self->{'body'}->delete();
+		delete $self->{'body'};
+		}
+	if ($self->{'context'})
+		{
+		$self->{'context'}->dispose();
+		delete $self->{'context'};
+		}
+	if ($self->{'xpath'})
+		{
+		$self->{'xpath'}->dispose();
+		delete $self->{'xpath'};
+		}
+	if ($self->{'twig'})
+		{
+		$self->{'twig'}->dispose();
+		delete $self->{'twig'};
+		}
 	delete $self->{'xml'};
-	delete $self->{'body'};
 	delete $self->{'content_class'};
-	$self->{'twig'}->dispose	if $self->{'twig'};
-	delete $self->{'twig'};
+	delete $self->{'file'};
 	delete $self->{'archive'};
 	delete $self->{'twig_options'};
 	$self = {};

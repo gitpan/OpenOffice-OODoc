@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.228 2007-01-10 JMG$
+#	$Id : Text.pm 2.229 2007-05-12 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2007 by Genicorp, S.A. (www.genicorp.com)
@@ -12,9 +12,9 @@
 
 package OpenOffice::OODoc::Text;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	2.219;
+use	OpenOffice::OODoc::XPath	2.223;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.228;
+our	$VERSION	= 2.229;
 
 #-----------------------------------------------------------------------------
 # synonyms
@@ -3621,14 +3621,21 @@ sub	userFieldValue
 	{
 	my $self	= shift;
 	my $field	= $self->getUserFieldElement(shift)
-			or return undef;
+				or return undef;
 	my $value	= shift;
 
-	my $type_attr	= $self->{'opendocument'} ?
-				'office:value-type' : 'text:value-type';
-	my $value_type	= $field->att($type_attr);
-	my $value_att	= $value_type eq 'string' ?
-				'text:string-value' : 'text:value';
+	my $prefix	= $self->{'opendocument'} ? 'office' : 'text';
+	my $value_type	= $field->att($prefix . ':value-type');
+	my $value_att	= $prefix . ':value';
+	if 	($value_type eq 'string')
+		{
+		$value_att = $prefix . ':string-value';
+		}
+	elsif	($value_type eq 'date')
+		{
+		$value_att = $prefix . ':date-value';
+		}
+
 	if (defined $value)
 		{
 		if ($value)
@@ -3677,8 +3684,15 @@ sub	variableValue
 
 	my $prefix	= $self->{'opendocument'} ? 'office' : 'text';
 	my $value_type	= $variable->att($prefix . ':value-type');
-	my $value_att	= $value_type eq 'string' ?
-			$prefix .':string-value' : $prefix . ':value';
+	my $value_att	= $prefix . ':value';
+	if 	($value_type eq 'string')
+		{
+		$value_att = $prefix . ':string-value';
+		}
+	elsif	($value_type eq 'date')
+		{
+		$value_att = $prefix . ':date-value';
+		}
 
 	if (defined $value)
 		{
@@ -3686,7 +3700,8 @@ sub	variableValue
 		$self->setText($variable, $value);
 		}
 
-	return $self->getAttribute($variable, $value_att);
+	$value = $self->getAttribute($variable, $value_att);
+	return defined $value ? $value : $self->getText($variable);
 	}
 
 #-----------------------------------------------------------------------------

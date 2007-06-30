@@ -2,14 +2,13 @@
 
 <office:document-meta xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:meta="urn:oasis:names:tc:opendocument:xmlns:meta:1.0" xmlns:ooo="http://openoffice.org/2004/office" office:version="1.0">
  <office:meta>
-  <meta:generator>OpenOffice.org/1.9.95$Linux OpenOffice.org_project/680m95$Build-8900
-  </meta:generator>
+  <meta:generator>OpenOffice::OODoc</meta:generator>
   <dc:title>New empty spreadsheet</dc:title>
   <meta:initial-creator>OpenOffic::OODoc Project</meta:initial-creator>
-  <meta:creation-date>2005-05-04T20:07:44</meta:creation-date>
+  <meta:creation-date>2007-06-30T00:00:00</meta:creation-date>
   <dc:creator>OpenOffice::OODoc Project</dc:creator>
-  <dc:date>2005-05-04T20:12:08</dc:date>
-  <dc:language>fr-FR</dc:language>
+  <dc:date>2007-06-30T00:00:00</dc:date>
+  <dc:language>en-EN</dc:language>
   <meta:editing-cycles>2</meta:editing-cycles>
   <meta:editing-duration>PT4M25S</meta:editing-duration>
   <meta:user-defined meta:name="Info 1"/>

@@ -368,8 +368,8 @@ This piece of code declares "Welcome" as a paragraph style, whith
 The color attributes are encoded in RGB hexadecimal format. It's possible
 to use more mnemonic values or symbols, through conversion functions
 provided by the Styles module, and optional user-provided colour maps.
-For example, "#ffff00" could be replaced by rgb2oo(255,255,0) or more
-simply by rgb2oo("yellow").
+For example, "#ffff00" could be replaced by odfColor(255,255,0) or more
+simply by odfColor("yellow").
 
 According to the application logic, each newly created style can be
 registered either as a "named" style (i.e. visible and reusable for the
@@ -1041,7 +1041,7 @@ changing the font size only:
 				{
 				"area"		=> "text",
 				"fo:font-size"	=> "12pt",
-				"fo:color"	=> rgb2oo("dark blue")
+				"fo:color"	=> odfColor("dark blue")
 				}
 			);
 
@@ -1050,7 +1050,7 @@ an arbitrary string, that must be present in a user-provided, previously
 loaded color map; without this color map, the users must, at their choice,
 either directly provide an hexadecimal, OOo-compliant color code (such as
 "#00008b", that is the translation of "dark blue" in my installation), or
-get it through the rgb2oo() function with 3 decimal RGB values as arguments.)
+get it through the odfColor() function with 3 decimal RGB values as arguments.)
 
 Because a style is required for each image in a document, the OODoc::Document
 brings a more user-friendly createImageStyle method. This method allows you
@@ -1100,7 +1100,7 @@ Developer/Maintainer: Jean-Marie Gouarne L<http://jean.marie.gouarne.online.fr>
 
 Contact: jmgdoc@cpan.org
 
-Copyright 2004-2006 by Genicorp, S.A. L<http://www.genicorp.com>
+Copyright 2004-2007 by Genicorp, S.A. L<http://www.genicorp.com>
 
 Initial English version of the reference manual by Graeme A. Hunter
 (graeme.hunter@zen.co.uk).

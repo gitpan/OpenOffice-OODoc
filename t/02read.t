@@ -5,8 +5,8 @@
 use Test;
 BEGIN	{ plan tests => 9 }
 
-use OpenOffice::OODoc	2.034;
-ok($OpenOffice::OODoc::VERSION >= 2.034);
+use OpenOffice::OODoc	2.035;
+ok($OpenOffice::OODoc::VERSION >= 2.035);
 
 #-----------------------------------------------------------------------------
 
@@ -76,6 +76,9 @@ ok($doc->selectParagraphByStyle("Colour"));
 
 # Checking the installation signature in the metadata
 ok($meta->generator() eq $generator);
+
+$doc->dispose;
+$meta->dispose;
 
 exit 0;
 

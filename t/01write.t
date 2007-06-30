@@ -5,8 +5,8 @@
 use Test;
 BEGIN	{ plan tests => 20 }
 
-use OpenOffice::OODoc	2.034;
-ok($OpenOffice::OODoc::VERSION >= 2.034);
+use OpenOffice::OODoc	2.035;
+ok($OpenOffice::OODoc::VERSION >= 2.035);
 
 #-----------------------------------------------------------------------------
 
@@ -164,5 +164,8 @@ ok($meta->date($test_date));
 
 # Saving the $testfile file
 ok($archive->save);
+
+$doc->dispose;
+$meta->dispose;
 
 exit 0;

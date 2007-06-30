@@ -165,7 +165,33 @@ separate "member".
 
 =head1	GENERAL FUNCTIONS
 
-=head3	ooLocalEncoding([character_set])
+=head3	odfConnector()
+
+	See ooDocument().
+
+=head3	odfContainer()
+
+	See ooFile().
+
+=head3	odfDecodeText($ootext)
+
+	Returns the translation of a raw OpenOffice.org (UTF-8) in
+	the local character set. While the right translation is automatically
+	done by the regular text read/write methods of OpenOffice::OODoc, this
+	function is useful only if the user's application needs to bypass the
+	API.
+
+=head3	odfEncodeText($ootext)
+
+	Returns the translation of an application-provided string,
+	made of local characters, in an OpenOffice.org (UTF-8) string.
+	The given string must comply with the active local encoding (see
+	odfLocalEncoding()). While the right translation is automatically done
+	by the regular text read/write methods of OpenOffice::OODoc, this
+	function is useful only if the user's application needs to bypass the
+	API.
+
+=head3	odfLocalEncoding([character_set])
 
 	Accessor to get/set the user's local character set
 	(see $OpenOffice::OODoc::XPath::LOCAL_CHARSET in the
@@ -173,8 +199,8 @@ separate "member".
 
 	Example:
 
-		$old_charset = ooLocalEncoding();
-		ooLocalEncoding('iso-8859-15');
+		$old_charset = odfLocalEncoding();
+		odfLocalEncoding('iso-8859-15');
 
 	If the given argument is an unsupported encoding, an error
 	message is produced and the old encoding is preserved. So
@@ -195,126 +221,13 @@ separate "member".
 	See the Encode::Supported (Perl) documentation for the list
 	of supported encodings.
 
-=head3	ooDecodeText($ootext)
+=head3	odfPackage()
 
-	Returns the translation of a raw OpenOffice.org (UTF-8) in
-	the local character set. While the right translation is automatically
-	done by the regular text read/write methods of OpenOffice::OODoc, this
-	function is useful only if the user's application needs to bypass the
-	API.
+	See ooFile().
 
-=head3	ooDocument()
+=head3	odfReadConfig([filename])
 
-	Shortcut for OpenOffice::OODoc::Document->new().
-
-	This function is the most general document constructor. It creates
-	and returns a new Document object. It can be instantiated on the basis of
-	an existing OpenOffice.org file, or using XML, OpenOffice-compliant
-	data previously loaded in memory. With an appropriate "create"
-	parameter, it can be used in order to create a new document from scratch
-	as well. The Document class provides methods allowing a lot of read/update
-	operations in the text content, the graphics, and the presentation.
-	So ooDocument() is the recommended first call to get access to a document
-	for further processing.
-
-	See the OpenOffice::OODoc::Document manual page for detailed syntax.
-
-=head3	ooEncodeText($ootext)
-
-	Returns the translation of an application-provided string,
-	made of local characters, in OpenOffice.org (UTF-8).
-	The given string must comply with the active local encoding (see
-	ooLocalEncoding()). While the right translation is automatically done by
-	the regular text read/write methods of OpenOffice::OODoc, this
-	function is useful only if the user's application needs to bypass the
-	API.
-
-=head3	ooFile()
-
-	Shortcut for OpenOffice::OODoc::File->new().
-
-	This function returns a File object, that is the object representation
-	of the physical file containing the text, the images and the style
-	definitions of an OpenOffice.org document.
-
-	See the OpenOffice::OODoc::File manual page for detailed syntax.
-	See the OpenOffice::OODoc::Intro manual page to know why, in some
-	situations, the using applications need or don't need to deal with
-	explicit File objects.
-
-=head3	ooImage()
-
-	Shortcut for OpenOffice::OODoc::Image->new().
-
-	This function returns a Image object, that brings a subset of the
-	Document object. Il can be used in place of ooDocument() if the
-	calling application needs some image manipulation methods only.
-
-	See the OpenOffice::OODoc::Image manual page for detailed syntax.
-
-=head3	ooManifest()
-
-	Short cut for OpenOffice::OODoc::Manifest->new().
-
-	This function returns a Manifest object, giving access to the
-	meta-information of the physical archive containing the document.
-
-=head3	ooMeta()
-
-	Shortcut for OpenOffice::OODoc::Meta->new().
-
-	This function returns a Meta object. Such an object represents the
-	global properties, or "metadata", of a document. It brings a set of
-	accessors allowing the user to get or set some properties such as
-	the title, the keyword, the description, the creator, etc.
-
-	See the OpenOffice::OODoc::Meta manual page for details.
-
-=head3	ooStyles()
-
-	Shortcut for OpenOffice::OODoc::Styles->new().
-
-	This function returns a Style object, that brings a subset of the
-	Document object. In can be used in place of ooDocument() if the
-	calling application needs some style/presentation manipulation
-	methods only. Note the 's' at the end of 'Styles': this object doesn't
-	represent a particular style; it represents a set of styles related
-	to a document.
-
-	See the OpenOffice:OODoc::Styles manual page for detailed syntax.
-
-=head3	ooText()
-
-	Shortcut for OpenOffice::OODoc::Text->new().
-
-	This function returns a Text object, that brings a subset ot the
-	Document object. It can be used in place of ooDocument() if the
-	calling application is only text-focused (i.e. if it doesn't need
-	to deal with graphics and styles). The processed document can contain
-	(and probably contains) graphics and styles, but the methods to
-	process them are simply not loaded.
-
-	See the OpenOffice::OODoc::Text manual page for detailed syntax.
-
-=head3	ooXPath()
-
-	Shortcut for OpenOffice::OODoc::XPath->new().
-
-	This function returns an XPath object, that brings all the low level
-	XML navigation, retrieve, read and write methods of the API. The XPath
-	class (in the OpenOffice::OODoc context) is an OpenOffice-aware
-	wrapper for the general XML::Twig API. Unless you are a very advanced
-	user and you have a particular hack in mind, you should never need to
-	explicitly create an XPath object. But you must know that every method
-	or property of this class is inherited by the Text, Image, Styles,
-	Document and Meta objects. So the knowledge of the corresponding
-	manual page could be useful.
-
-	See the OpenOffice::OODoc::XPath manual page for detailed syntax.
-
-=head3	ooReadConfig([filename])
-
-	Creates or reset some variables of the API according to the
+	Creates or resets some variables of the API according to the
 	content of an XML configuration file. Without argument, this
 	function looks for 'OODoc/config.xml' under the installation
 	directory of OpenOffice::OODoc. In any case, the provided file
@@ -368,7 +281,7 @@ separate "member".
 	This function is automatically executed as soon as OpenOffice::OODoc
 	is used, if the OODoc/config.xml configuration file exists.
 
-=head3	ooTemplatePath([path])
+=head3	odfTemplatePath([path])
 
 	Shortcut for OpenOffice::OODoc::File::templatePath().
 
@@ -376,7 +289,7 @@ separate "member".
 	used to create new documents. See the manual page for the
 	OpenOffice::OODoc::File module.
 
-=head3	ooWorkingDirectory([path])
+=head3	odfWorkingDirectory([path])
 
 	Accessor to get/set the working directory to use for temporary
 	files. Short-lived temporary files are generated each time the save()
@@ -407,17 +320,141 @@ separate "member".
 	for each OOo document (see the manual page for OpenOffice::OODoc::File
 	for details, if needed).
 
-	CAUTION: a ooWorkingDirectory() call can't change the working directory
-	of a previously created File object. So, consider the following
-	code sequence:
+	CAUTION: a odfWorkingDirectory() call can't change the working
+	directory of a previously created File object. So, consider the
+	following code sequence:
 
 		my $doc0 = ooDocument(file => 'doc0.odt');
-		ooWorkingDirectory('C:\TMP');
+		odfWorkingDirectory('C:\TMP');
 		my $doc1 = ooDocument(file => 'doc1.odt');
 
 	In this example, all the write operations related to the $doc0
 	document will use the default working directory, while the ones
 	related to $doc1 will use "C:\TMP".
+
+=head3	ooDocument()
+
+	Shortcut for OpenOffice::OODoc::Document->new().
+
+	This function is the most general document constructor. It creates
+	and returns a new Document object. It can be instantiated on the basis of
+	an existing OpenOffice.org file, or using XML, OpenOffice-compliant
+	data previously loaded in memory. With an appropriate "create"
+	parameter, it can be used in order to create a new document from scratch
+	as well. The Document class provides methods allowing a lot of read/update
+	operations in the text content, the graphics, and the presentation.
+	So ooDocument() is the recommended first call to get access to a document
+	for further processing.
+
+	See the OpenOffice::OODoc::Document manual page for detailed syntax.
+
+=head3	ooDecodeText()
+
+	See odfDecodeText().
+
+=head3	ooEncodeText()
+
+	See odfEncodeText().
+
+=head3	ooFile()
+
+	Shortcut for OpenOffice::OODoc::File->new().
+
+	This function returns a File object, that is the object representation
+	of the physical file containing the text, the images and the style
+	definitions of an OpenOffice.org document.
+
+	See the OpenOffice::OODoc::File manual page for detailed syntax.
+	See the OpenOffice::OODoc::Intro manual page to know why, in some
+	situations, the using applications need or don't need to deal with
+	explicit File objects.
+
+=head3	ooImage()
+
+	Shortcut for OpenOffice::OODoc::Image->new().
+
+	This function returns a Image object, that brings a subset of the
+	Document object. Il can be used in place of ooDocument() if the
+	calling application needs some image manipulation methods only.
+
+	See the OpenOffice::OODoc::Image manual page for detailed syntax.
+
+=head3	ooLocalEncoding()
+
+	See odfLocalEncoding().
+
+=head3	ooManifest()
+
+	Short cut for OpenOffice::OODoc::Manifest->new().
+
+	This function returns a Manifest object, giving access to the
+	meta-information of the physical archive containing the document.
+
+=head3	ooMeta()
+
+	Shortcut for OpenOffice::OODoc::Meta->new().
+
+	This function returns a Meta object. Such an object represents the
+	global properties, or "metadata", of a document. It brings a set of
+	accessors allowing the user to get or set some properties such as
+	the title, the keyword, the description, the creator, etc.
+
+	See the OpenOffice::OODoc::Meta manual page for details.
+
+=head3	ooReadConfig()
+
+	See odfReadConfig().
+
+=head3	ooStyles()
+
+	Shortcut for OpenOffice::OODoc::Styles->new().
+
+	This function returns a Style object, that brings a subset of the
+	Document object. In can be used in place of ooDocument() if the
+	calling application needs some style/presentation manipulation
+	methods only. Note the 's' at the end of 'Styles': this object doesn't
+	represent a particular style; it represents a set of styles related
+	to a document.
+
+	See the OpenOffice:OODoc::Styles manual page for detailed syntax.
+
+=head3	ooTemplatePath()
+
+	See odfTemplatePath().
+
+=head3	ooText()
+
+	Shortcut for OpenOffice::OODoc::Text->new().
+
+	This function returns a Text object, that brings a subset ot the
+	Document object. It can be used in place of ooDocument() if the
+	calling application is only text-focused (i.e. if it doesn't need
+	to deal with graphics and styles). The processed document can contain
+	(and probably contains) graphics and styles, but the methods to
+	process them are simply not loaded.
+
+	See the OpenOffice::OODoc::Text manual page for detailed syntax.
+
+=head3	ooWorkingDirectory()
+
+	See odfWorkingDirectory().
+
+=head3	ooXPath()
+
+	Shortcut for OpenOffice::OODoc::XPath->new().
+
+	This function returns an XPath object, that brings all the low level
+	XML navigation, retrieve, read and write methods of the API. The XPath
+	class (in the OpenOffice::OODoc context) is an OpenOffice-aware
+	wrapper for the general XML::Twig API. Unless you are a very advanced
+	user and you have a particular hack in mind, you should never need to
+	explicitly create an XPath object. But you must know that every method
+	or property of this class is inherited by the Text, Image, Styles,
+	Document and Meta objects. So the knowledge of the corresponding
+	manual page could be useful.
+
+	See the OpenOffice::OODoc::XPath manual page for detailed syntax.
+
 
 =head1	AUTHOR/COPYRIGHT
 
@@ -425,7 +462,7 @@ Developer/Maintainer: Jean-Marie Gouarne L<http://jean.marie.gouarne.online.fr>
 
 Contact: jmgdoc@cpan.org
 
-Copyright 2004-2006 by Genicorp, S.A. L<http://www.genicorp.com>
+Copyright 2004-2007 by Genicorp, S.A. L<http://www.genicorp.com>
 
 Initial English version of the reference manual by Graeme A. Hunter
 (graeme.hunter@zen.co.uk).

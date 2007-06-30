@@ -1,6 +1,11 @@
+2.035	2007-06-30
+	Text.pm: Bug fixes related to some table cell attribute accessors
+	OODoc.pm: Added new aliases (oo -> odf)
+	Styles.pod: doc update
+2.034	2007-03-17
 2.033	2007-03-17
-	- TODO XPath.pm: bug fix in replicateNode() (#25271)
-	- TODO Styles.pm: improved style retrieval by display-name
+	- XPath.pm: bug fix in replicateNode() (#25271)
+	- Styles.pm: improved style retrieval by display-name
 	- Documentation update (Styles.pod, XPath.pod, Intro.pod)
 2.032	2007-01-19
 	- XPath.pm: bug fix in getText()

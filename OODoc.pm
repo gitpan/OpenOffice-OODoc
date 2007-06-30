@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : OODoc.pm 2.034 2007-03-17 JMG$
+#	$Id : OODoc.pm 2.035 2007-05-12 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2006 by Genicorp, S.A. (www.genicorp.com)
@@ -19,22 +19,26 @@ use OpenOffice::OODoc::Manifest		2.003;
 
 package	OpenOffice::OODoc;
 use 5.008_000;
-our $VERSION				= 2.034;
+our $VERSION				= 2.035;
 
 require Exporter;
 our @ISA    = qw(Exporter);
 our @EXPORT = qw
 	(
-	ooXPath ooFile ooText ooMeta ooManifest ooImage ooDocument ooStyles
-	localEncoding ooLocalEncoding ooEncodeText ooDecodeText
-	ooTemplatePath workingDirectory ooWorkingDirectory
-	readConfig ooReadConfig
+	ooXPath ooText ooMeta ooManifest ooImage ooStyles
+	odfXPath odfText odfMeta odfManifest odfImage odfStyles
+	odfConnector ooDocument odfPackage odfContainer ooFile
+	odfLocalEncoding localEncoding ooLocalEncoding
+	odfEncodeText odfDecodeText ooEncodeText ooDecodeText
+	odfTemplatePath ooTemplatePath
+	odfWorkingDirectory workingDirectory ooWorkingDirectory
+	odfReadConfig readConfig ooReadConfig
 	);
 
 #-----------------------------------------------------------------------------
 # config loader
 
-sub	ooReadConfig
+sub	odfReadConfig
 	{
 	my $filename = shift;
 	unless ($filename)
@@ -66,7 +70,7 @@ sub	ooReadConfig
 		my $name = $node->getName; $name =~ s/-/::/g;
 		my $varname = 'OpenOffice::OODoc::' . $name;
 		$$varname = $node->string_value;
-		$$varname = ooDecodeText($$varname);
+		$$varname = odfDecodeText($$varname);
 		}
 	OpenOffice::OODoc::Styles::ooLoadColorMap();
 	return 1;
@@ -74,42 +78,42 @@ sub	ooReadConfig
 
 #-----------------------------------------------------------------------------
 
-sub	ooFile
+sub	odfFile
 	{
 	return OpenOffice::OODoc::File->new(@_);
 	}
 
-sub	ooXPath
+sub	odfXPath
 	{
 	return OpenOffice::OODoc::XPath->new(@_);
 	}
 
-sub	ooText
+sub	odfText
 	{
 	return OpenOffice::OODoc::Text->new(@_);
 	}
 
-sub	ooMeta
+sub	odfMeta
 	{
 	return OpenOffice::OODoc::Meta->new(@_);
 	}
 
-sub	ooManifest
+sub	odfManifest
 	{
 	return OpenOffice::OODoc::Manifest->new(@_);
 	}
 
-sub	ooImage
+sub	odfImage
 	{
 	return OpenOffice::OODoc::Image->new(@_);
 	}
 
-sub	ooDocument
+sub	odfDocument
 	{
 	return OpenOffice::OODoc::Document->new(@_);
 	}
 
-sub	ooStyles
+sub	odfStyles
 	{
 	return OpenOffice::OODoc::Styles->new(@_);
 	}
@@ -117,7 +121,7 @@ sub	ooStyles
 #-----------------------------------------------------------------------------
 # accessor for local character set control
 
-sub	ooLocalEncoding
+sub	odfLocalEncoding
 	{
 	my $newcharset = shift;
 	if ($newcharset)
@@ -138,7 +142,7 @@ sub	ooLocalEncoding
 #-----------------------------------------------------------------------------
 # accessor for default XML templates for document creation
 
-sub	ooTemplatePath
+sub	odfTemplatePath
 	{
 	return OpenOffice::OODoc::File::templatePath(@_);
 	}
@@ -146,7 +150,7 @@ sub	ooTemplatePath
 #-----------------------------------------------------------------------------
 # accessor for default working directory control
 
-sub	ooWorkingDirectory
+sub	odfWorkingDirectory
 	{
 	my $path = shift;
 
@@ -163,12 +167,12 @@ sub	ooWorkingDirectory
 #-----------------------------------------------------------------------------
 # shortcuts for low-level local/utf8 code conversion 
 
-sub	ooEncodeText
+sub	odfEncodeText
 	{
 	return OpenOffice::OODoc::XPath::encode_text(@_);
 	}
 
-sub	ooDecodeText
+sub	odfDecodeText
 	{
 	return OpenOffice::OODoc::XPath::decode_text(@_);
 	}
@@ -178,14 +182,31 @@ sub	ooDecodeText
 
 BEGIN
 	{
-	*localEncoding		= *ooLocalEncoding;
-	*workingDirectory	= *ooWorkingDirectory;
-	*readConfig		= *ooReadConfig;
+	*ooDocument		= *odfDocument;
+	*odfConnector		= *odfDocument;
+	*odfContainer		= *odfFile;
+	*odfPackage		= *odfFile;
+	*ooFile			= *odfFile;
+	*ooXPath		= *odfXPath;
+	*ooText			= *odfText;
+	*ooStyles		= *odfStyles;
+	*ooImage		= *odfImage;
+	*ooMeta			= *odfMeta;
+	*ooManifest		= *odfManifest;
+	*localEncoding		= *odfLocalEncoding;
+	*workingDirectory	= *odfWorkingDirectory;
+	*readConfig		= *odfReadConfig;
+	*ooLocalEncoding	= *odfLocalEncoding;
+	*ooWorkingDirectory	= *odfWorkingDirectory;
+	*ooReadConfig		= *odfReadConfig;
+	*ooEncodeText		= *odfEncodeText;
+	*ooDecodeText		= *odfDecodeText;
+	*ooTemplatePath		= *odfTemplatePath;
 	
 	my $module_path = $INC{"OpenOffice/OODoc.pm"};
 	$module_path =~ s/\.pm$//;
 	$OpenOffice::OODoc::INSTALLATION_PATH = $module_path;
-	ooReadConfig() if ( -e "$INSTALLATION_PATH/config.xml" );
+	odfReadConfig() if ( -e "$INSTALLATION_PATH/config.xml" );
 	}
 #-----------------------------------------------------------------------------
 1;
