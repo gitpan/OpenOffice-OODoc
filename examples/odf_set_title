@@ -1,12 +1,15 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
+#-----------------------------------------------------------------------------
+#	$Id : odfbuild 0.2 2008-05-04 JMG$
+#-----------------------------------------------------------------------------
 
 =head1	NAME
 
-oo_set_title - Set the title of a document using
+odf_set_title - Set the title of a document using
 
 =head1	USAGE
 
-oo_set_title <filename> <new title>
+odf_set_title <filename> <new title>
 
 =head1	SYNOPSIS
 
@@ -18,17 +21,17 @@ is changed.
 
 =cut
  
-use OpenOffice::OODoc;
+use OpenOffice::OODoc	2.101;
 
 	# create an OpenOffice.org file object
 	# using the 1st command line argument as filename
-my $oofile	= ooFile($ARGV[0]);
+my $oofile	= odfContainer($ARGV[0]);
 	# exit if $filename isn't available or can't be open
 	# as a regular OpenOffice.org file
 die "Unavailable file $ARGV[0]\n" unless $oofile;
 
 	# create a metadata-aware object, linked to the File object
-my $doc_meta	= ooMeta(archive => $oofile);
+my $doc_meta	= odfMeta(container => $oofile);
 
 	# extract the title form the metadata object
 	# (without argument, the 'title' method is a 'get' accessor)
@@ -53,9 +56,9 @@ else
 	else
 		{
 		# create a content-aware object linked to the same file object
-		my $doc_text	= ooDocument
+		my $doc_text	= odfDocument
 				(
-				archive		=> $oofile,
+				container	=> $oofile,
 				read_only	=> 'true'
 				);
 		# get the text of the first heading element

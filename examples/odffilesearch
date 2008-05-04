@@ -1,31 +1,29 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 #-----------------------------------------------------------------------------
-#
-#	$Id: oofilesearch 0.006 2005-02-07$
-#
+#	$Id: odffilesearch 0.007 2008-05-04$
 #-----------------------------------------------------------------------------
 
 =head1	NAME
 
-	oofilesearch - File selection by keywords
+	odffilesearch - File selection by keywords
 
 =head1	SYNOPSIS
 
-	oofilesearch -R "D:\Documents\*.sxw" openoffice desktop XML
+	odffilesearch -R "D:\Documents\*.odt" openoffice desktop XML
 	
-	produces the list of the OOo-Writer documents present in the given
+	produces the list of the ODF Text documents present in the given
 	directory and its subdirectories, and containing the words
 	"openoffice", "desktop" AND "XML"
 	
-	oofilesearch -command "rm -f %f" "*.sxc *.sxw" lost dismiss cancel
+	odffilesearch -command "rm -f %f" "*.ods *.odt" lost dismiss cancel
 
 	executes the "rm -f filename" (i.e. deletes the file in a Unix system)
-	for each OOo-Writer or OOo-Calc file present in the current directory
+	for each ODT or ODS file present in the current directory
 	and containing the words "lost", "dismiss" AND "cancel"
 
 =head1	USAGE
 
-	oofilesearch [-options] <file filter> <keyword list>
+	odffilesearch [-options] <file filter> <keyword list>
 
 =head1	DESCRIPTION
 
@@ -82,10 +80,10 @@
 
 #=============================================================================
 
-use	OpenOffice::OODoc	1.301;
+use	OpenOffice::OODoc	2.101;
 use	Getopt::Long;
 
-our	$VERSION		= 0.006;
+our	$VERSION		= 0.007;
 
 #=============================================================================
 
@@ -150,10 +148,10 @@ sub	matching_file
 	my $oof	= ooFile($file);
 	unless ($oof)
 		{
-		message	"$file doesn't look like an OpenOffice.org file";
+		message	"$file doesn't look like an ODF file";
 		return undef;
 		}
-	my $meta	= ooMeta(archive => $oof) or message
+	my $meta	= odfMeta(container => $oof) or message
 				"$file doesn't contain metadata";
 	if ($meta)
 		{
@@ -173,7 +171,7 @@ sub	matching_file
 
 		$meta->dispose;
 		}
-	my $content	= ooText(archive => $oof) or message
+	my $content	= odfText(container => $oof) or message
 				"$file doesn't have a regular content";
 	if ($content)
 		{
@@ -285,7 +283,7 @@ if ($list)
 
 localEncoding($character_set)	if $character_set;
 
-die "Usage: oofilesearch [-options] <filefilter> [keywords]\n"
+die "Usage: odffilesearch [-options] <filefilter> [keywords]\n"
 		unless $ARGV[0];
 
 message "Starting the search...";

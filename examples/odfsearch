@@ -1,8 +1,11 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
+#-----------------------------------------------------------------------------
+#	$Id : odfsearch 0.2 2008-05-04 JMG$
+#-----------------------------------------------------------------------------
 
 =head1	NAME
 
-oosearch - Text selection and copy from one document to another using callback
+odfsearch - Text selection and copy from one document to another using callback
 
 =head1	SYNOPSIS
 
@@ -14,11 +17,11 @@ document must exist.
 The target OpenOffice.org document must exist (it can be an empty document
 or a template).
 
-usage : oosearch target_file source_file "search_string"
+usage : odfsearch target_file source_file "search_string"
 
 =cut
 
-use OpenOffice::OODoc;
+use OpenOffice::OODoc	2.101;
 
 our $count	= 0;
 
@@ -55,10 +58,10 @@ die "Usage : oosearch target_file source_file search_string\n"
 
 	# create the 2 Document instances
 print "Opening the target file $target_file...\n";
-my $target_doc	= ooDocument(file => $target_file)
+my $target_doc	= odfDocument(file => $target_file)
 	or die "$target_file is not available\n";
 print "Opening the source file $source_file...\n";
-my $source_doc	= ooDocument(file => $source_file)
+my $source_doc	= odfDocument(file => $source_file)
 	or die "$source_file is not available\n";
 
 	# the main processing takes place here :

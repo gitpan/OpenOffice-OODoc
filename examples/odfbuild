@@ -1,18 +1,21 @@
 #!/usr/bin/perl
+#-----------------------------------------------------------------------------
+#	$Id : odfbuild 0.2 2008-05-04 JMG$
+#-----------------------------------------------------------------------------
 
 =head1	NAME
 
-oobuild - OpenDocument file creation utility
+odfbuild - OpenDocument file creation utility - 2008-05-04
 
 =head1	SYNOPSIS
 
-oobuild filename.odt
+odfbuild filename.odt
 
-oobuild filename.odt --title "My Document" --subject "Test"
+odfbuild filename.odt --title "My Document" --subject "Test"
 
-oobuild filename.ods --class spreadsheet --source "data.csv" --tablesize "8x16"
+odfbuild filename.ods --class spreadsheet --source "data.csv" --tablesize "8x16"
 
-cat data.txt | oobuild filename.odt -
+cat data.txt | odfbuild filename.odt -
 
 =head1	OPTIONS
 
@@ -61,7 +64,7 @@ cat data.txt | oobuild filename.odt -
 
 #----------------------------------------------------------------------------------------
 
-use OpenOffice::OODoc	2.036;
+use OpenOffice::OODoc	2.101;
 use Getopt::Long;
 
 my $INPUT	= undef;
@@ -111,7 +114,7 @@ my $archive	= odfContainer
 
 #----------------------------------------------------------------------------------------
 
-my $meta	= odfMeta(archive => $archive, readable_XML => $rxml_flag);
+my $meta	= odfMeta(container => $archive, readable_XML => $rxml_flag);
 $meta->creation_date($date);
 $meta->date($date);
 $meta->generator($generator);
@@ -141,7 +144,7 @@ if ($stdin || $source)
 			}
 		}
 	my $content = odfDocument
-			(archive => $archive, readable_XML => $rxml_flag);
+			(container => $archive, readable_XML => $rxml_flag);
 	if ($class eq 'text')
 		{
 		my $first_para = $content->getParagraph(0);

@@ -26,9 +26,7 @@ OODoc/Meta.pod
 OODoc/Styles.pod
 OODoc/Text.pod
 OODoc/XPath.pod
-examples/change_style
-examples/command_doc
-examples/extract
+examples/odfextract
 examples/odffindbasic
 examples/odfmetadoc
 examples/odf2pod
@@ -38,7 +36,6 @@ examples/odfhighlight
 examples/odfsearch
 examples/odf_set_fields
 examples/odf_set_title
-examples/export_images
 examples/text2odf
 examples/text2table
 OODoc/data/scarab.png

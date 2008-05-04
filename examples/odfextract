@@ -1,8 +1,11 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
+#-----------------------------------------------------------------------------
+#	$Id : odfextract 0.4 2008-05-04 JMG$
+#-----------------------------------------------------------------------------
 
 =head1	NAME
 
-extract - Text selection and copy from one document to another one
+odfextract - Text selection and copy from one document to another one
 
 =head1	SYNOPSIS
 
@@ -17,18 +20,18 @@ filter (i.e. any quoted string or Perl regular expression)
 
 =cut
 
-use OpenOffice::OODoc;
+use OpenOffice::OODoc	2.101;
 
-die "Usage : extract source_file target_file filter\n"
+die "Usage : odfextract source_file target_file filter\n"
 	unless ($ARGV[0] && $ARGV[1] && $ARGV[2]);
 
 	# document objects initialization
 print "Opening $ARGV[0] as source document...\n";
-my $source_doc = ooText(file => $ARGV[0])
-	or die "$ARGV[0] is not a regular OO file\n";
+my $source_doc = odfText(file => $ARGV[0])
+	or die "$ARGV[0] is not a regular ODF file\n";
 print "Opening $ARGV[1] as target document...\n";
-my $target_doc = ooText(file => $ARGV[1])
-	or die "$ARGV[1] is not a regular OO file\n";
+my $target_doc = odfText(file => $ARGV[1])
+	or die "$ARGV[1] is not a regular ODF file\n";
 
 	# the imported elements will be appended to the document body
 my $root_element = $target_doc->getBody;
@@ -36,7 +39,7 @@ my $root_element = $target_doc->getBody;
 	# selection & transfer are done here
 print "Selecting the content matching $ARGV[2]...\n";
 $target_doc->appendElement($root_element, $_)
-	for $source_doc->selectElementsByContent($ARGV[2]);
+	for $source_doc->selectElementsByContent($ARGV[2])->copy;
 
 	# commit the changes in target file
 print "Saving the selection in $ARGV[1]...\n";

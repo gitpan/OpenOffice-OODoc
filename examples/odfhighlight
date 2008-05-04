@@ -1,18 +1,21 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
+#-----------------------------------------------------------------------------
+#	$Id : odfhighlight 0.2 2008-05-04 JMG$
+#-----------------------------------------------------------------------------
 
 =head1	NAME
 
-oohighlight - search, replace and highlight text in a document
+odfhighlight - search, replace and highlight text in a document
 
 =head1	SYNOPSIS
 
-oohighlight "source.odt" "search string" -r "replacement" -o "target.odt"
+odfhighlight "source.odt" "search string" -r "replacement" -o "target.odt"
 
 replaces "search string" by "replacement" in the file "source.odt", highlights
 each replacement with a yellow (default) backgound, then writes the resulting
 document as "target.odt"
 
-oohighlight "myfile.odt" "search string" -color "green"
+odfhighlight "myfile.odt" "search string" -color "green"
 
 highlights each occurrence of "search string" in "myfile.sxw" with a green
 background color, without changing the text (without "-o" option, the changes
@@ -74,7 +77,7 @@ and represented with the "Standard" style.
 
 #-----------------------------------------------------------------------------
 
-use OpenOffice::OODoc	2.000;
+use OpenOffice::OODoc	2.101;
 use Getopt::Long;
 
 #-----------------------------------------------------------------------------
@@ -97,7 +100,7 @@ GetOptions
 	'output|target=s'	=> \$target
 	);
 
-$color	= rgb2oo($color) or die "Color code is not valid\n";
+$color	= odfColor($color) or die "Color code is not valid\n";
 
 #-----------------------------------------------------------------------------
 
@@ -109,7 +112,7 @@ die "usage: oohighlight <file> <search_string> [-options]\n"
 #-----------------------------------------------------------------------------
 # opening the document
 
-my $doc		= ooDocument
+my $doc		= odfDocument
 			(
 			file		=> $filename,
 			local_encoding	=> $encoding

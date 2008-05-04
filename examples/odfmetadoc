@@ -1,13 +1,15 @@
 #!/usr/bin/perl -w
-#------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
+#	$Id : odfmetadoc 0.3 2008-05-04 JMG$
+#-----------------------------------------------------------------------------
 
 =head1	NAME
 
-oometadoc 0.2 - Document properties management interface
+odfmetadoc - Document properties management interface
 
 =head1	SYNOPSIS
 
-	oometadoc <directory>
+	odfmetadoc <directory>
 
 =head1	DESCRIPTION
 
@@ -40,7 +42,7 @@ Requires Tk and some Tk extensions (TK::Dialog, Tk::LabFrame, Tk::LabEntry)
 
 use Tk;
 use Tk::Dialog;
-use OpenOffice::OODoc;
+use OpenOffice::OODoc	2.101;
 
 #------------------------------------------------------------------------------
 
@@ -91,13 +93,12 @@ sub	accesMeta
 	require Tk::LabEntry;
 
 	my $fichier	= shift;
-	my $oo_archive = ooFile($fichier);
+	my $oo_archive = odfContainer($fichier);
 	return undef unless $oo_archive;
-	my $doc	= ooMeta
-		(archive => $oo_archive);
+	my $doc	= odfMeta(container => $oo_archive);
 	return undef unless $doc;
-	my $txt = ooText
-		(archive => $oo_archive, delimiters => { %delimiteurs });
+	my $txt = odfText
+		(container => $oo_archive, delimiters => { %delimiteurs });
 	my ($titre, $auteur, $sujet, $description, @clefs, $mot);
 
 	$f->idletasks;

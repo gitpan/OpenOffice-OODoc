@@ -160,6 +160,7 @@ WriteMakefile
 	'EXE_FILES'	=>
 		[
 		'examples/odfhighlight',
+		'examples/odfextract',
 		'examples/odffilesearch',
 		'examples/text2odf',
 		'examples/text2table',

@@ -1,5 +1,7 @@
-#!/usr/bin/perl -w
-#-------------------------------------------------------------------------
+#!/usr/bin/perl
+#-----------------------------------------------------------------------------
+#	$Id : text2table 0.2 2008-05-04 JMG$
+#-----------------------------------------------------------------------------
 
 =head1	NAME
 
@@ -25,7 +27,7 @@ The input values are processed as text values.
 
 =cut
 
-use OpenOffice::OODoc	1.304;
+use OpenOffice::OODoc	2.101;
 
 my ($input_file, $output_file, $lines, $columns) = @ARGV;
 
@@ -33,7 +35,7 @@ die "Usage : txt2table <input file> <output OOo file> <lines> <columns>\n"
 	unless ($input_file && $output_file && $lines && $columns);
 
 	# create the OOo spreadsheet
-my $doc = ooDocument(file => $output_file, create => 'spreadsheet');
+my $doc = odfDocument(file => $output_file, create => 'spreadsheet');
 
 	# select & size the 1st (and only) sheet in the document
 my $sheet = $doc->getTable(0, $lines, $columns);

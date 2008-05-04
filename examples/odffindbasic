@@ -1,12 +1,15 @@
 #!/usr/bin/perl
+#-----------------------------------------------------------------------------
+#	$Id : odffindbasic 0.2 2008-05-04 JMG$
+#-----------------------------------------------------------------------------
 
 =head1	NAME
 
-oofindbasic - Basic macro removal from OpenOffice.org files
+odffindbasic - Basic macro removal from OpenOffice.org files
 
 =head1	USAGE
 
-oofindbasic [options] <sourcefile> [<targetfile>]
+odffindbasic [options] <sourcefile> [<targetfile>]
 
 =head1	DESCRIPTION
 
@@ -50,7 +53,7 @@ The 2nd filename is used in combination with the --delete option.
 
 =cut
 
-use OpenOffice::OODoc;
+use OpenOffice::OODoc	2.101;
 use Getopt::Long;
 
 my $show_count	= 1;
@@ -68,12 +71,12 @@ my $input	= $ARGV[0]
 	or die "Usage: oofindbasic <source_odf> [<target_odf>]\n";
 my $output	= $ARGV[1] || $input;
 print "Loading $input\n" if $verbose;
-my $archive	= ooFile($input) or die "Unavailable file\n";
+my $archive	= odfFile($input) or die "Unavailable file\n";
 my $manifest	= undef;
 if ($delete)
 	{
 	print "Extracting the manifest\n" if $verbose;
-	$manifest = ooManifest(file => $archive);
+	$manifest = odfManifest(file => $archive);
 	}
 my $deleted	= 0;
 my $count	= 0;
@@ -90,10 +93,10 @@ foreach my $m (@{$archive->{members}})
 	$count++;
 	if ($export)
 		{
-		my $module = ooDocument
+		my $module = odfDocument
 			(
-			file		=> $archive,
-			member		=> $m,
+			container	=> $archive,
+			part		=> $m,
 			read_only	=> 'true',
 			element		=> 'script:module'
 			);

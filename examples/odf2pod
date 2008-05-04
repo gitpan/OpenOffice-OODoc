@@ -1,15 +1,15 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 #-----------------------------------------------------------------------------
-#	$Id : oo2pod 0.2 2006-08-03 JMG$
+#	$Id : odf2pod 0.3 2008-05-04 JMG$
 #-----------------------------------------------------------------------------
 
 =head1	NAME
 
-oo2pod - POD generation from an OpenDocument file
+odf2pod - POD generation from an OpenDocument file
 
 =head1	SYNOPSIS
 
-Usage : oo2pod <oofilename>
+Usage : odf2pod <filename>
 
 =head1	DESCRIPTION
 
@@ -17,7 +17,7 @@ This demo script exports the content of a given OpenDocument file
 to POD on the standard output. In the present form, it's quite limited
 and not flexible, in order to remain easily readable. It should be
 considered as an example of text extraction using OpenOffice::OODoc
-and not as the 'definitive' oo2pod filter, knowing that complex
+and not as the 'definitive' odf2pod filter, knowing that complex
 document structures are not properly rendered.
 
 Before extraction, some transformations are done in the document
@@ -32,7 +32,7 @@ presentation rules, you could use Text::Format instead.
 
 =cut
 
-use OpenOffice::OODoc;
+use OpenOffice::OODoc	2.101;
 use Text::Wrapper;
 
 #-----------------------------------------------------------------------------
@@ -96,16 +96,16 @@ sub	content_output
 #-----------------------------------------------------------------------------
 
 # initialise the OOo file object
-my $ooarchive	= ooFile($ARGV[0])
+my $ooarchive	= odfContainer($ARGV[0])
 	or die "No regular OpenOffice.org file\n";
 
 # extract the metadata
-$meta	= ooMeta(archive => $ooarchive)
-	or warn "This file has not standard OOo properties. Looks strange.\n";
+$meta	= odfMeta(container => $ooarchive)
+	or warn "This file has not standard ODF properties. Looks strange.\n";
 
 # extract the content
-$doc	= ooDocument(archive => $ooarchive, member => 'content')
-	or die "No standard OOo content ! I give up !\n";
+$doc	= odfDocument(container => $ooarchive, part => 'content')
+	or die "No standard ODF content ! I give up !\n";
 
 # attempt to use some metadata to begin the output
 if ($meta)

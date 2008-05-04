@@ -1,12 +1,15 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
+#-----------------------------------------------------------------------------
+#	$Id : odf_set_fields 0.2 2008-05-04 JMG$
+#-----------------------------------------------------------------------------
 
 =head1	NAME
 
-oo_set_fields - Set names & values for user-defined fields
+odf_set_fields - Set names & values for user-defined fields
 
 =head1	USAGE
 
-oo_set_fields <filename> -options 
+odf_set_fields <filename> -options 
 
 =head1	SYNOPSIS
 
@@ -22,12 +25,12 @@ The user-defined fields/options are :
 
 Examples:
 
-oo_set_fields foo.odt -contact "Donald Duck" -organization "Genicorp"
+odf_set_fields foo.odt -contact "Donald Duck" -organization "Genicorp"
 
-oo_set_fields foo.odt -status "Complete" -keywords "software, office"
+odf_set_fields foo.odt -status "Complete" -keywords "software, office"
 
 =cut
-	
+
 use OpenOffice::OODoc::Meta;
 use Getopt::Long;
 

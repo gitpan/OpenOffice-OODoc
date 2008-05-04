@@ -1,3 +1,5 @@
+2.102	2008-05-04
+	Cleaned some code examples
 2.101	2008-05-04
 	Intro.pod: doc update
 	Meta.pm: fixed wrong exports for ooLocaltime() and ooTimelocal(), added
@@ -11,8 +13,8 @@
 	normalization feature
 	XPath.pm: added 'container' and 'part' attributes ('archive' and 'member'
 	are now deprecated)
-	All modules and docs: various renamings
 	Makefile.PL: added PACKAGING_DATE
+	All modules, docs and examples: various renamings
 2.035	2007-06-30
 	Text.pm: Bug fixes related to some table cell attribute accessors
 	OODoc.pm: Added new aliases (oo -> odf)
