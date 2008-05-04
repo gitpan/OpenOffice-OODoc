@@ -132,7 +132,7 @@ features of OODoc::Meta and OODoc::Document are described here.
 
 =head3	Constructor : OpenOffice::OODoc::XPath->new(<parameters>);
 
-        Short Form: ooXPath(<parameters>)
+        Short Form: odfXPath(<parameters>)
 
 	Returns a new OpenDocument connector, i.e. an interface which
 	can be used for subsequent operations on a well-formed document.
@@ -147,10 +147,10 @@ features of OODoc::Meta and OODoc::Document are described here.
 	
 	Example:
 
-		my $doc = ooXPath
+		my $doc = odfXPath
 				(
 				file	=> "myfile.ods",
-				member	=> "content"
+				part	=> "content"
 				);
 		# ... lot of processing ...
 		$doc->save;
@@ -163,9 +163,9 @@ features of OODoc::Meta and OODoc::Document are described here.
 	from scratch.
 	
 	Because every feature of OODoc::XPath is inherited by OODoc::Document
-	and OODoc::Meta (see the corresponding manual pages), ooXPath() is
+	and OODoc::Meta (see the corresponding manual pages), odfXPath() is
 	generally not explicitly invoked in a real application. Its silently
-	used through ooDocument() or ooMeta().
+	used through odfDocument() or odfMeta().
 
         Parameters are named (hash key => value). The constructor must get
         at least one parameter giving a means of obtaining the XML document
@@ -173,21 +173,21 @@ features of OODoc::Meta and OODoc::Document are described here.
 	represented through the following examples:
 
 	    # option 1 (using an existing flat XML document)
-            my $doc = ooXPath(xml => $xml_string);
+            my $doc = odfXPath(xml => $xml_string);
 
 	    # option 2 (using a previously created OOo file interface)
-	    my $oofile = ooFile('source.odt');
-            my $doc = ooXPath(archive => $oofile, member => 'meta');
+	    my $oofile = odfContainer('source.odt');
+            my $doc = odfXPath(container => $oofile, part => 'meta');
 
 	    # option 3 (using a regular OOo file directly)
-            my $doc = ooXPath(file => 'source.odt', member => 'content');
+            my $doc = odfXPath(file => 'source.odt', part => 'content');
 	
 	    # option 4 (multiple instances against a single file)
-	    my $content = ooXPath(file => 'source.odt', member => 'content');
-	    my $meta = ooXPath(file => $content, member => 'meta');
-	    my $styles = ooXPath(file => $content, member => 'styles');
+	    my $content = odfXPath(file => 'source.odt', part => 'content');
+	    my $meta = odfXPath(file => $content, part => 'meta');
+	    my $styles = odfXPath(file => $content, part => 'styles');
 
-	Remember "ooXPath()" represents "OpenOffice::OODoc::XPath->new()" 
+	Remember "odfXPath()" represents "OpenOffice::OODoc::XPath->new()" 
 	in the instructions above, and you can (and should) use this shortcut
 	provided that you have loaded the main OpenOffice::OODoc module, and
 	not only and explicitly the OpenOffice::OODoc::XPath module.
@@ -198,15 +198,14 @@ features of OODoc::Meta and OODoc::Document are described here.
 	OOo/OpenDocument files.
 
         The second method links OODoc::XPath to an existing OODoc::File
-        object (so-called "archive" because it's a zip archive used through
-	an object-oriented API) and indicates which XML member it is to
-	extract (metadata, content, styles, etc). The OODoc::File is an
-	abstraction of an already open OOo file. It can be shared, i.e.
+        object (through the "container" option) and indicates which XML part it
+	is to extract (metadata, content, styles, etc). The OODoc::File is an
+	abstraction of an already open ODF container. It can be shared, i.e.
 	several OODoc::XPath objects can be instantiated with the same
 	OODoc::File object, and this possibility must be used when
-	several OODoc::XPath objects must bring consistent changes in
+	several OODoc::XPath objects have to bring consistent changes in
 	a single file (see option 4 below). In order to create the
-	required OODoc::File object, simply use ooFile() with a filename
+	required OODoc::File object, simply use odfFile() with a filename
 	as argument (for advanced use, see OpenOffice::OODoc::File).
 
 	The third method is the easiest, because the user just provide
@@ -216,10 +215,9 @@ features of OODoc::Meta and OODoc::Document are described here.
 	recommended when the user doesn't need to get more than one member
 	in the same file.
 
-	The 'member' or 'part' option is a selector that tells what component
-	is needed (content, styles, metadata, ...) knowing that an
-	OODoc::XPath object can handle only one component. Its default value
-	is 'content'.
+	The 'part' option is a selector that tells what component is needed
+	(content, styles, metadata, ...) knowing that an OODoc::XPath object
+	can handle only one component. Its default value is 'content'.
 	
 	If the application needs to process, say, the content and the styles
 	in the same session, it must create two, or more, OODoc::XPath objects
@@ -753,7 +751,7 @@ features of OODoc::Meta and OODoc::Document are described here.
 	
 		$doc->setText($p, "Begin");
 		$spaces = $doc->spaces(6);
-		$doc->extentText($p, $spaces);
+		$doc->extendText($p, $spaces);
 		$doc->extendText($p, "End");
 	
 	After the code sequence above, the $p element contains:
@@ -1382,20 +1380,20 @@ features of OODoc::Meta and OODoc::Document are described here.
 	all the linked objects are automatically saved in the target
 	file. Example:
 	
-		my $content	= ooXPath
+		my $content	= odfXPath
 				(
-				file	=> 'source.odt',
-				member	=> 'content'
+				file		=> 'source.odt',
+				part		=> 'content'
 				);
-		my $styles	= ooXPath
+		my $styles	= odfXPath
 				(
-				file	=> $content,
-				member	=> 'styles'
+				container	=> $content,
+				part		=> 'styles'
 				)
-		my $meta	= ooXPath
+		my $meta	= odfXPath
 				(
-				file	=> $content,
-				member	=> 'meta'
+				container	=> $content,
+				part		=> 'meta'
 				);
 		# ... a lot of content processing
 		# ... a lot of style processing
@@ -1409,16 +1407,16 @@ features of OODoc::Meta and OODoc::Document are described here.
 	of the objects sharing the file interface (i.e. $content->save
 	could be replaced by $styles->save or $meta->save).
 	
-	However, any XML member (content, styles, meta, ...) whose
+	However, any XML part (content, styles, meta, ...) whose
 	'read_only' property is set to "true" is not saved. In the example
-	above, if, say, the $meta object is created (through ooXPath())
+	above, if, say, the $meta object is created (through odfXPath())
 	with a "read_only" option set to "true", only $content and $styles
 	are really saved by the last instruction.
 
 	Note: OpenOffice::OODoc::XPath doesn't really know anything about
 	the physical archive file; here save() is only a stub method and
-	the real job is done by the save() method of the associated
-	OpenOffice::OODoc::File object.
+	the real job is done by the save() method of the associated container,
+	which is an OpenOffice::OODoc::File object.
 			
 	If the document is not associated with a regular OpenDocument
 	compressed file (used through an OODoc::File object), it's saved
@@ -1695,8 +1693,8 @@ features of OODoc::Meta and OODoc::Document are described here.
 	
 =head3	substituteText(element, filter, replacement)
 
-	Replaces any substring in a given element and its descendant, matching
-	a given filter (regexp) by a given replacement string.
+	Replaces any substring in a given element and its descendants,
+	matching a given filter (regexp) by a given replacement string.
 	
 	It "replacement" is a string, this method produces the same result as
 	replaceText(), and it should be preferred.
@@ -1892,7 +1890,7 @@ features of OODoc::Meta and OODoc::Document are described here.
 	be changed according to the real user's needs (warning: there is no
 	kind of automatic adaptation to the user's locales, so the application
 	must explicitly load the right value in this variable); it should be
-	done using the ooLocalEncoding() accessor (see the OpenOffice::OODoc
+	done using the odfLocalEncoding() accessor (see the OpenOffice::OODoc
 	man page and, for the list of supported character sets, the Encode
 	module's documentation).
 
@@ -1901,14 +1899,13 @@ features of OODoc::Meta and OODoc::Document are described here.
 
         Instance hash variables are :
 
-            'archive'		=> <oodoc_file_object>
+            'container'		=> <oodoc_file_object>
             'file'		=> <OpenDocument file>
-            'member'		=> <file member>
+            'part'		=> <name of the XML part in the ODF package>
 	    'readable_XML'	=> <'true' or 'false'>
 	    'local_encoding'	=> <user's output encoding>
-            'xml'		=> <XML string>
             'element'		=> <name of loaded XML element>
-	    'xpath'		=> <XML::Twig object>
+	    'xpath'		=> <XML::Twig, XPath-capable object>
 	    'twig_options'	=> <XML::Twig options as a hash reference>
 	    'opendocument'	=> <'true' or 'false'>
 
@@ -1932,7 +1929,7 @@ features of OODoc::Meta and OODoc::Document are described here.
 	
 	'twig_options' allows the user to provide a hash reference of
 	additional options to XML::Twig. These options can modify the way the
-	document is parsed during the execution of ooXPath. For special
+	document is parsed during the execution of odfXPath(). For special
 	applications only (see the XML::Twig reference manual).
 
 	The 'opendocument' property, if true, means that the document is
@@ -1947,7 +1944,7 @@ Developer/Maintainer: Jean-Marie Gouarne L<http://jean.marie.gouarne.online.fr>
 
 Contact: jmgdoc@cpan.org
 
-Copyright 2004-2007 by Genicorp, S.A. L<http://www.genicorp.com>
+Copyright 2004-2008 by Genicorp, S.A. L<http://www.genicorp.com>
 
 Initial English version of the reference manual by Graeme A. Hunter
 (graeme.hunter@zen.co.uk).

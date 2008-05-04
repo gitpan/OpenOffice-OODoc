@@ -3,16 +3,15 @@
 
 =head1	NAME
 
-text2ooo - Text to OpenDocument conversion
+text2odf - Text to OpenDocument conversion
 
 =head1	SYNOPSIS
 
-cat sourcefile.txt | text2oo targetfile.sxw
+cat sourcefile.txt | text2odf targetfile.odt
 
 =head1	DESCRIPTION
 
-This filter creates an OpenDocument (ODF) or OpenOffice.org (SXW) file
-(according to the default installation configuration) and fills it
+This filter creates an OpenDocument (ODF) file and fills it
 with the text coming through the standard entry. The target file is
 created, and any existing file with the same name is replaced.
 To avoid this behaviour and append the text to an existing OOo file,
@@ -23,7 +22,7 @@ just remove the create => 'text' option in the script.
 use	OpenOffice::OODoc;
 
 die "Missing target filename\n" unless $ARGV[0];
-my $doc = ooDocument(file => $ARGV[0], create => 'text');
+my $doc = odfDocument(file => $ARGV[0], create => 'text');
 while (my $line = <STDIN>)
 	{
 	$doc->appendParagraph(text => $line);

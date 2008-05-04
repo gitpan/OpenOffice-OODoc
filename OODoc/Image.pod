@@ -54,7 +54,11 @@ documents. But it can't process the images themselves.
 
 	Short Form: ooImage(<parameters>)
 
-        See OpenOffice::OODoc::XPath->new.
+	This constructor should not be explicitly used in ordinary applications
+	knowing that all the features of the returned object are inherited by
+	any Document object.
+
+        See OpenOffice::OODoc::XPath->new for commun arguments.
 
         The XML member loaded by default is 'content.xml', but only member
         => 'styles' is required if you want to work with page background

@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Document.pm 2.021 2005-09-12 JMG$
+#	$Id : Document.pm 2.022 2008-05-03 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -10,9 +10,9 @@
 #
 #-----------------------------------------------------------------------------
 
-use OpenOffice::OODoc::Text	2.208;
-use OpenOffice::OODoc::Image	2.014;
-use OpenOffice::OODoc::Styles	2.011;
+use OpenOffice::OODoc::Text	2.231;
+use OpenOffice::OODoc::Image	2.017;
+use OpenOffice::OODoc::Styles	2.023;
 
 package OpenOffice::OODoc::Document;
 our @ISA	= qw	(
@@ -20,7 +20,7 @@ our @ISA	= qw	(
 			OpenOffice::OODoc::Image
 			OpenOffice::OODoc::Styles
 			);
-our $VERSION	= 2.021;
+our $VERSION	= 2.022;
 
 #-----------------------------------------------------------------------------
 # constructor
@@ -31,7 +31,7 @@ sub	new
 	my $class	= ref ($caller) || $caller;
 	my %options	=
 			(
-			member	=> 'content',
+			part	=> 'content',
 			@_
 			);
 	my $object	= $class->SUPER::new(%options);

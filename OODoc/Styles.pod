@@ -139,16 +139,20 @@ at least a blank of each required style.
 
 =head3	Constructor : OpenOffice::OODoc::Styles->new(<parameters>)
 
-        Short form: ooStyles(<parameters>)
+        Short form: odfStyles(<parameters>)
 
-        See OpenOffice::OODoc::XPath->new.
+	This constructor should not be explicitly used in ordinary applications
+	knowing that all the features of the returned object are inherited by
+	any Document object.
+
+	See OpenOffice::OODoc::XPath->new() for common arguments.
 
         Returns an OODoc::XPath OpenDocument connector with additional
 	style-aware features.
 	
 	The member loaded by default is "styles.xml" which gives access to
         named or automatic styles associated with the page layout. The
-        "content.xml" member should be forced if the application is to work
+        "content.xml" part should be forced if the application is to work
         with styles associated with the document body (automatic styles
         only).
 
@@ -207,7 +211,7 @@ at least a blank of each required style.
 =head3	createPageLayout(name, options)
 
         Creates a new layout style (page layout) which can be used by a page
-        style (master page). Options are the same as for updatePageLayout.
+        style (master page). Options are the same as for updatePageLayout().
 
 =head3	createPageMaster(name, options)
 
@@ -232,7 +236,7 @@ at least a blank of each required style.
 
         If the active OODoc::Styles object is associated with a document
         content (content.xml), the new style is always taken to be an
-        automatic style. If associated with the styles.xml member, the new
+        automatic style. If associated with the styles.xml part, the new
         style is considered to be a named style by default. However, the
         category => 'automatic' option (or category => 'auto') allows you to
         specify it as an automatic style. Please note: in the case of
@@ -414,7 +418,7 @@ at least a blank of each required style.
 	defined "Colour" style, except for the font size.
 
 	The given "parent" style is not necessarily defined yet and, if the
-	current document member is "content", it can be the name of a style
+	current document part is "content", it can be the name of a style
 	defined in the "styles" member. (See getAncestorStyle() and
 	getParentStyle()).
 
@@ -461,7 +465,7 @@ at least a blank of each required style.
 	set or redefined in the new style.
 
         Not only can you import styles available in other documents, but
-	you can also create automatic styles in a 'content' member which
+	you can also create automatic styles in a 'content' part which
 	are derived from named styles found in the 'styles' member and
 	vice-versa.
 
@@ -512,7 +516,7 @@ at least a blank of each required style.
 
 	This method returns the ancestor name as it's known in the current
 	document space. The genealogy is not followed out of the scope of
-	the current XML member.
+	the current XML part.
 	
 	For example, if we have an automatic paragraph style "P1", defined in
 	the "content" member and derived from "Text body", the returned
@@ -813,13 +817,13 @@ at least a blank of each required style.
 	
 	Example:
 	
-		my $source = ooDocument
+		my $source = odfDocument
 			(
-			file => "source.odt", member => "styles"
+			file => "source.odt", part => "styles"
 			);
-		my $target = ooDocument
+		my $target = odfDocument
 			(
-			file => "target.odt", member => "styles"
+			file => "target.odt", part => "styles"
 			);
 		$target->importFontDeclaration($source, "Helvetica");
 	
@@ -1216,7 +1220,7 @@ at least a blank of each required style.
         to change the style's name.
 
         This data structure is the same as returned by
-        getMasterPageAttributes(). A combination of these two methods allows
+        getPageLayoutAttributes(). A combination of these two methods allows
         you to copy the characteristics of one page style to another easily,
         especially when you want to apply the page setup of one document to
         another. When you only want to modify an existing style however, you
@@ -1255,7 +1259,7 @@ at least a blank of each required style.
             	 }
             	);
 
-        Once again, it is better to start with a getMasterPageAttributes()
+        Once again, it is better to start with a getPageLayoutAttributes()
         of an existing page than to create all your styles from code.
 
 =head3	updatePageMaster(page, options)
@@ -1329,7 +1333,7 @@ at least a blank of each required style.
 
 	Synonym: rgb2oo().
 
-=head3	ooLoadColorMap($filename)
+=head3	odfLoadColorMap($filename)
 
 	Populates the %OpenOffice::OODoc::Styles::COLORMAP hash from the
 	content of an RGB file. This file defines a colour dictionary.
@@ -1367,6 +1371,23 @@ at least a blank of each required style.
 
 	Returns the conventional RGB value of an OOo-encoded colour.
 
+	See rgbColor().
+
+=head3	ooLoadColorMap($filename)
+
+	Synonym of odfLoadColorMap().
+
+=head3	rgb2oo($red, $green, $blue)
+=head3	rgb2oo("$red,$green,$blue")
+=head3	rgb2oo($colorname)
+
+	See odfColor().
+
+=head3	rgbColor(odf_color)
+
+	Converts an ODF-color code into a decimal RGB code or, according
+	to a mapping file, into a plain text conventional color name.
+
 	In array context, returns a 3-element array containing the red, green,
 	blue decimal values of the colour.
 
@@ -1380,17 +1401,7 @@ at least a blank of each required style.
 	to an image processing software. It produces the same result as the
 	hex2rgb() method of the Color::Rgb Perl module.
 
-=head3	rgb2oo($red, $green, $blue)
-=head3	rgb2oo("$red,$green,$blue")
-=head3	rgb2oo($colorname)
-
-	See odfColor().
-
-=head3	rgbColor(odf_color)
-
-	Converts an ODF-color code into a decimal RGB code or, according
-	to a mapping file, into a plain text conventional color name.
-	See oo2rgb().
+	rgbColor() is a synonym of oo2rgb(). 
 	
 =head2	Properties
 
@@ -1421,7 +1432,7 @@ Developer/Maintainer: Jean-Marie Gouarne L<http://jean.marie.gouarne.online.fr>
 
 Contact: jmgdoc@cpan.org
 
-Copyright 2004-2006 by Genicorp, S.A. L<http://www.genicorp.com>
+Copyright 2004-2008 by Genicorp, S.A. L<http://www.genicorp.com>
 
 Initial English version of the reference manual by Graeme A. Hunter
 (graeme.hunter@zen.co.uk).

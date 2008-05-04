@@ -30,7 +30,8 @@ not necessarily in OpenOffice.org format.
 
 =head3	Constructor : OpenOffice::OODoc::File->new(<filename>)
 
-        Short Form: ooFile(filename)
+        Short Forms (equivalent):
+		odfFile(filename), odfContainer(filename), or odfPackage()
 
         Returns an instance of OODoc::File if <filename> is a valid zip
         archive name.
@@ -77,11 +78,10 @@ not necessarily in OpenOffice.org format.
 	"opendocument" option in order to override the installation-level
 	default file format for new documents. If this option is set to
 	"1", "on" or "true", the new document will comply to the OASIS
-	OpenDocument format (OpenOffice.org 2.0); if it's set to "0",
-	"off" or "false", the new document will be created according to
-	the OpenOffice.org 1.0 format. The "opendocument" option is ignored
-	without the "create" one (this tool is not a format converter for
-	existing documents).
+	OpenDocument format; if it's set to "0", "off" or "false", the new
+	document will be created according to the OpenOffice.org 1.0 format.
+	The "opendocument" option is ignored without the "create" one (this
+	tool is not a format converter for existing documents).
 
         The returned object of new(), if successful, is a valid File object,
 	whose methods listed below become available.
@@ -354,7 +354,7 @@ Developer/Maintainer: Jean-Marie Gouarne L<http://jean.marie.gouarne.online.fr>
 
 Contact: jmgdoc@cpan.org
 
-Copyright 2004-2006 by Genicorp, S.A. L<http://www.genicorp.com>
+Copyright 2004-2008 by Genicorp, S.A. L<http://www.genicorp.com>
 
 Initial English version of the reference manual by Graeme A. Hunter
 (graeme.hunter@zen.co.uk).

@@ -1,9 +1,9 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Image.pm 2.016 2006-05-05 JMG$
+#	$Id : Image.pm 2.017 2008-05-03 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
-#	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
 #	License:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
@@ -12,10 +12,10 @@
 
 package	OpenOffice::OODoc::Image;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	2.215;
+use	OpenOffice::OODoc::XPath	2.224;
 use	File::Basename;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.016;
+our	$VERSION	= 2.017;
 
 #-----------------------------------------------------------------------------
 # default attributes for image style
@@ -53,7 +53,6 @@ sub	new
 	my $class	= ref ($caller) || $caller;
 	my %options	=
 		(
-		member		=> 'content',	# default member
 		@_
 		);
 	my $object = $class->SUPER::new(%options);
@@ -546,7 +545,7 @@ sub	imageDescription
 	}
 
 #-----------------------------------------------------------------------------
-# export a selected image file from OO archive
+# export a selected image file from ODF container
 
 sub	exportImage
 	{

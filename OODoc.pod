@@ -7,7 +7,7 @@ OpenOffice::OODoc - The Perl Open OpenDocument Connector
 	use OpenOffice::OODoc;
 
 			# get global access to the content of an OOo file
-	my $document = ooDocument(file => "MyFile.odt");
+	my $document = odfDocument(file => "MyFile.odt");
 			# select a text element containing a given string
 	my $place = $document->selectElementByContent("my search string");
 			# insert a new text element before the selected one
@@ -167,11 +167,22 @@ separate "member".
 
 =head3	odfConnector()
 
-	See ooDocument().
+	Synonym: odfDocument()
 
-=head3	odfContainer()
+=head3	odfContainer($filename)
 
-	See ooFile().
+	Shortcut for OpenOffice::OODoc::File->new().
+
+	This function returns a File object, that is the object representation
+	of the physical package containing the text, the images and the style
+	definitions of an ODF document.
+
+	See the OpenOffice::OODoc::File manual page for detailed syntax.
+	See the OpenOffice::OODoc::Intro manual page to know why, in some
+	situations, the using applications need or don't need to deal with
+	explicit File objects.
+
+	Synonyms: odfFile(), odfPackage().
 
 =head3	odfDecodeText($ootext)
 
@@ -180,6 +191,23 @@ separate "member".
 	done by the regular text read/write methods of OpenOffice::OODoc, this
 	function is useful only if the user's application needs to bypass the
 	API.
+
+=head3	odfDocument()
+
+	Shortcut for OpenOffice::OODoc::Document->new().
+
+	This function is the most general document constructor. It creates
+	and returns a new Document object. It can be instantiated on the basis of
+	an existing OpenOffice.org file, or using XML, OpenOffice-compliant
+	data previously loaded in memory. With an appropriate "create"
+	parameter, it can be used in order to create a new document from scratch
+	as well. The Document class provides methods allowing a lot of read/update
+	operations in the text content, the graphics, and the presentation.
+	So ooDocument() is the recommended first call to get access to a document
+	for further processing.
+
+	See the OpenOffice::OODoc::Document manual page for detailed syntax.
+
 
 =head3	odfEncodeText($ootext)
 
@@ -190,6 +218,21 @@ separate "member".
 	by the regular text read/write methods of OpenOffice::OODoc, this
 	function is useful only if the user's application needs to bypass the
 	API.
+
+=head3	odfFile($filename)
+
+	Synonyms: odfContainer(), odfPackage().
+
+=head3	odfImage()
+
+	Shortcut for OpenOffice::OODoc::Image->new().
+
+	Generally not used explicitly by the applications.
+
+	This function returns a document object whose features are related to
+	image element processing, which is a subset of the Document object.
+
+	See the OpenOffice::OODoc::Image manual page for detailed syntax.
 
 =head3	odfLocalEncoding([character_set])
 
@@ -221,9 +264,27 @@ separate "member".
 	See the Encode::Supported (Perl) documentation for the list
 	of supported encodings.
 
-=head3	odfPackage()
+=head3	odfManifest()
 
-	See ooFile().
+	Short cut for OpenOffice::OODoc::Manifest->new().
+
+	This function returns a Manifest object, giving access to the
+	meta-information of the physical archive containing the document.
+
+=head3	odfMeta()
+
+	Shortcut for OpenOffice::OODoc::Meta->new().
+
+	This function returns a Meta object. Such an object represents the
+	global properties, or "metadata", of a document. It brings a set of
+	accessors allowing the user to get or set some properties such as
+	the title, the keyword, the description, the creator, etc.
+
+	See the OpenOffice::OODoc::Meta manual page for details.
+
+=head3	odfPackage($filename)
+
+	Synonyms: odfContainer(), odfFile().
 
 =head3	odfReadConfig([filename])
 
@@ -281,6 +342,21 @@ separate "member".
 	This function is automatically executed as soon as OpenOffice::OODoc
 	is used, if the OODoc/config.xml configuration file exists.
 
+=head3	odfStyles()
+
+	Shortcut for OpenOffice::OODoc::Styles->new().
+
+	Generally not used explicitly by the applications.
+
+	This function returns a Styles object, that brings a subset of the
+	Document object. In can be used in place of odfDocument() if the
+	calling application needs some style/presentation manipulation
+	methods only. Note the 's' at the end of 'Styles': this object doesn't
+	represent a particular style; it represents a set of styles related
+	to a document.
+
+	See the OpenOffice:OODoc::Styles manual page for detailed syntax.
+
 =head3	odfTemplatePath([path])
 
 	Shortcut for OpenOffice::OODoc::File::templatePath().
@@ -288,6 +364,21 @@ separate "member".
 	Accessor to get/set an alternative path for the XML template files
 	used to create new documents. See the manual page for the
 	OpenOffice::OODoc::File module.
+
+=head3	odfText()
+
+	Shortcut for OpenOffice::OODoc::Text->new().
+
+	Generally not used explicitly by the applications.
+
+	This function returns a Text object, that brings a subset ot the
+	Document object. It can be used in place of ooDocument() if the
+	calling application is only text-focused (i.e. if it doesn't need
+	to deal with graphics and styles). The processed document can contain
+	(and probably contains) graphics and styles, but the methods to
+	process them are simply not loaded.
+
+	See the OpenOffice::OODoc::Text manual page for detailed syntax.
 
 =head3	odfWorkingDirectory([path])
 
@@ -332,116 +423,11 @@ separate "member".
 	document will use the default working directory, while the ones
 	related to $doc1 will use "C:\TMP".
 
-=head3	ooDocument()
-
-	Shortcut for OpenOffice::OODoc::Document->new().
-
-	This function is the most general document constructor. It creates
-	and returns a new Document object. It can be instantiated on the basis of
-	an existing OpenOffice.org file, or using XML, OpenOffice-compliant
-	data previously loaded in memory. With an appropriate "create"
-	parameter, it can be used in order to create a new document from scratch
-	as well. The Document class provides methods allowing a lot of read/update
-	operations in the text content, the graphics, and the presentation.
-	So ooDocument() is the recommended first call to get access to a document
-	for further processing.
-
-	See the OpenOffice::OODoc::Document manual page for detailed syntax.
-
-=head3	ooDecodeText()
-
-	See odfDecodeText().
-
-=head3	ooEncodeText()
-
-	See odfEncodeText().
-
-=head3	ooFile()
-
-	Shortcut for OpenOffice::OODoc::File->new().
-
-	This function returns a File object, that is the object representation
-	of the physical file containing the text, the images and the style
-	definitions of an OpenOffice.org document.
-
-	See the OpenOffice::OODoc::File manual page for detailed syntax.
-	See the OpenOffice::OODoc::Intro manual page to know why, in some
-	situations, the using applications need or don't need to deal with
-	explicit File objects.
-
-=head3	ooImage()
-
-	Shortcut for OpenOffice::OODoc::Image->new().
-
-	This function returns a Image object, that brings a subset of the
-	Document object. Il can be used in place of ooDocument() if the
-	calling application needs some image manipulation methods only.
-
-	See the OpenOffice::OODoc::Image manual page for detailed syntax.
-
-=head3	ooLocalEncoding()
-
-	See odfLocalEncoding().
-
-=head3	ooManifest()
-
-	Short cut for OpenOffice::OODoc::Manifest->new().
-
-	This function returns a Manifest object, giving access to the
-	meta-information of the physical archive containing the document.
-
-=head3	ooMeta()
-
-	Shortcut for OpenOffice::OODoc::Meta->new().
-
-	This function returns a Meta object. Such an object represents the
-	global properties, or "metadata", of a document. It brings a set of
-	accessors allowing the user to get or set some properties such as
-	the title, the keyword, the description, the creator, etc.
-
-	See the OpenOffice::OODoc::Meta manual page for details.
-
-=head3	ooReadConfig()
-
-	See odfReadConfig().
-
-=head3	ooStyles()
-
-	Shortcut for OpenOffice::OODoc::Styles->new().
-
-	This function returns a Style object, that brings a subset of the
-	Document object. In can be used in place of ooDocument() if the
-	calling application needs some style/presentation manipulation
-	methods only. Note the 's' at the end of 'Styles': this object doesn't
-	represent a particular style; it represents a set of styles related
-	to a document.
-
-	See the OpenOffice:OODoc::Styles manual page for detailed syntax.
-
-=head3	ooTemplatePath()
-
-	See odfTemplatePath().
-
-=head3	ooText()
-
-	Shortcut for OpenOffice::OODoc::Text->new().
-
-	This function returns a Text object, that brings a subset ot the
-	Document object. It can be used in place of ooDocument() if the
-	calling application is only text-focused (i.e. if it doesn't need
-	to deal with graphics and styles). The processed document can contain
-	(and probably contains) graphics and styles, but the methods to
-	process them are simply not loaded.
-
-	See the OpenOffice::OODoc::Text manual page for detailed syntax.
-
-=head3	ooWorkingDirectory()
-
-	See odfWorkingDirectory().
-
-=head3	ooXPath()
+=head3	odfXPath()
 
 	Shortcut for OpenOffice::OODoc::XPath->new().
+
+	Generally not used explicitly by the applications.
 
 	This function returns an XPath object, that brings all the low level
 	XML navigation, retrieve, read and write methods of the API. The XPath
@@ -455,6 +441,61 @@ separate "member".
 
 	See the OpenOffice::OODoc::XPath manual page for detailed syntax.
 
+=head3	ooDocument()
+
+	Synonyms: odfDocument(), odfConnector().
+
+=head3	ooDecodeText()
+
+	See odfDecodeText().
+
+=head3	ooEncodeText()
+
+	See odfEncodeText().
+
+=head3	ooFile($filename)
+
+	Synonyms: odfContainer(), odfPackage(), odfFile().
+
+=head3	ooImage()
+
+	Synonym: odfImage().
+
+=head3	ooLocalEncoding()
+
+	See odfLocalEncoding().
+
+=head3	ooManifest()
+
+	Synonym: odfManifest().
+
+=head3	ooMeta()
+
+	Synonym: odfMeta().
+
+=head3	ooReadConfig()
+
+	See odfReadConfig().
+
+=head3	ooStyles()
+
+	Synonym: odfStyles().
+
+=head3	ooTemplatePath()
+
+	See odfTemplatePath().
+
+=head3	ooText()
+
+	Synonym: odfText().
+
+=head3	ooWorkingDirectory()
+
+	See odfWorkingDirectory().
+
+=head3	ooXPath()
+
+	Synonym: odfXPath().
 
 =head1	AUTHOR/COPYRIGHT
 
@@ -462,7 +503,7 @@ Developer/Maintainer: Jean-Marie Gouarne L<http://jean.marie.gouarne.online.fr>
 
 Contact: jmgdoc@cpan.org
 
-Copyright 2004-2007 by Genicorp, S.A. L<http://www.genicorp.com>
+Copyright 2004-2008 by Genicorp, S.A. L<http://www.genicorp.com>
 
 Initial English version of the reference manual by Graeme A. Hunter
 (graeme.hunter@zen.co.uk).

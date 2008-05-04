@@ -1,9 +1,9 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Meta.pm 2.008 2006-03-22 JMG$
+#	$Id : Meta.pm 2.009 2008-05-03 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
-#	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2005-2008 by Genicorp, S.A. (www.genicorp.com)
 #	License:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
@@ -12,17 +12,29 @@
 
 package	OpenOffice::OODoc::Meta;
 use	5.006_001;
-our	$VERSION	= 2.008;
+our	$VERSION	= 2.009;
 
-use	OpenOffice::OODoc::XPath	2.215;
+use	OpenOffice::OODoc::XPath	2.224;
 require Exporter;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath Exporter );
-our	@EXPORT		= qw ( ooLocaltime ooTimelocal );
+our	@EXPORT		= qw
+				(
+				ooLocaltime	ooTimelocal
+				odfLocaltime	odfTimelocal
+				);
+
+#-----------------------------------------------------------------------------
+
+BEGIN
+	{
+	*ooLocaltime			= *odfLocaltime;
+	*ooTimelocal			= *odfTimelocal;
+	}
 
 #-----------------------------------------------------------------------------
 # date conversion from standard Perl localtime to OOo metadata format
 
-sub	ooLocaltime
+sub	odfLocaltime
 	{
 	my $time = shift || time();
 	my @t = localtime($time);
@@ -36,7 +48,7 @@ sub	ooLocaltime
 #-----------------------------------------------------------------------------
 # date conversion from OOo metadata format to standard time()
 
-sub	ooTimelocal
+sub	odfTimelocal
 	{
 	require Time::Local;
 
@@ -55,8 +67,7 @@ sub	new
 	my $class	= ref ($caller) || $caller;
 	my %options	=
 		(
-		utf8		=> 1,
-		member		=> 'meta',
+		part		=> 'meta',
 		body_path	=> '//office:meta',
 		@_
 		);
@@ -437,14 +448,6 @@ sub	user_defined
 	}
 
 #-----------------------------------------------------------------------------
-# get/set the 'statistic' element of the meta-data
-# result is a hash where keys are OpenOffice variable names and values are
-# the current values of these variables in meta.xml ;
-# to update all or part of the statistic fields, you should pass a hash
-# with the same structure
-# WARNING : you should not update statistics unless you know exactly what
-# you do ; updating statistic attributes may introduce inconsistencies between
-# the meta-data and the real content of the document
 
 sub	statistic
 	{

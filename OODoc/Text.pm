@@ -1,9 +1,9 @@
 #----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.229 2007-05-12 JMG$
+#	$Id : Text.pm 2.231 2008-05-04 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
-#	Copyright 2007 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
 #	License:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
@@ -12,9 +12,9 @@
 
 package OpenOffice::OODoc::Text;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	2.223;
+use	OpenOffice::OODoc::XPath	2.224;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.229;
+our	$VERSION	= 2.231;
 
 #-----------------------------------------------------------------------------
 # synonyms
@@ -46,6 +46,7 @@ BEGIN	{
 	*getRow				= *getTableRow;
 	*getHeaderRow			= *getTableHeaderRow;
 	*getCell			= *getTableCell;
+	*getSheet			= *getTable;
 	*getTableContent		= *getTableText;
 	*normalizeTable			= *normalizeSheet;
 	*normalizeTables		= *normalizeSheets;
@@ -62,6 +63,9 @@ BEGIN	{
 	*getNote			= *getNoteElement;
 	*getNoteList			= *getNoteElementList;
 	*getHeadingText			= *getHeadingContent;
+	*cellType			= *fieldType;
+	*cellValueAttributeName		= *fieldValueAttributeName;
+	*cellCurrency			= *fieldCurrency;
 	}
 
 #-----------------------------------------------------------------------------
@@ -125,6 +129,60 @@ our $ROW_REPEAT_ATTRIBUTE       = 'table:number-rows-repeated';
 our $COL_REPEAT_ATTRIBUTE       = 'table:number-columns-repeated';
 
 #-----------------------------------------------------------------------------
+
+sub	fieldType
+	{
+	my $self	= shift;
+	my $field	= shift		or return undef;
+	my $newtype	= shift;
+	my $prefix	= $self->{'opendocument'} ? 'office' : 'table';
+	my $attribute	= $prefix . ':value-type';
+	my $oldtype	= $field->att($attribute);
+	unless (defined $newtype)
+		{
+		return $oldtype;
+		}
+	else
+		{
+		if (($newtype eq 'date') || ($newtype eq 'time'))
+			{
+			$field->del_att($prefix . ':value');
+			}
+		else
+			{
+			$field->del_att($prefix . ':date-value');
+			$field->del_att($prefix . ':time-value');
+			}
+		return $field->set_att($attribute, $newtype);
+		}
+	}
+
+sub	fieldValueAttributeName
+	{
+	my $self	= shift;
+	my $field	= shift		or return undef;
+
+	my $value_type	= ref $field ?
+				$self->fieldType($field)	:
+				$field;
+	my $attribute	= "";
+	my $prefix	= $self->{'opendocument'} ? 'office' : 'table';
+	if	(
+			($value_type eq 'string')	||
+			($value_type eq 'date')		||
+			($value_type eq 'time')
+		)
+		{
+		$attribute = $prefix . ':' . $value_type . '-value';
+		}
+	else
+		{
+		$attribute = $prefix . ':value';
+		}
+	return $attribute;
+	}
+
+#-----------------------------------------------------------------------------
 # constructor
 
 sub	new
@@ -133,7 +191,6 @@ sub	new
 	my $class	= ref($caller) || $caller;
 	my %options	=
 		(
-		member		=> 'content',
 		level_attr	=> 'text:outline-level',
 		paragraph_style	=> 'Standard',
 		heading_style	=> 'Heading_20_1',
@@ -2211,7 +2268,7 @@ sub	_expand_row
 			"Unknown table row\n";
 		return undef;
 		}
-	my $width	= shift || $self->{'max_cols'};
+	my $width	= shift;
 
 	my @cells	= $row->selectChildElements
 					('table:(covered-|)table-cell');
@@ -2220,17 +2277,21 @@ sub	_expand_row
 	my $last_cell	= undef;
 	my $rep		= 0;
 	my $cellnum	= 0;
-	while (@cells && ($cellnum < $width))
+	while (@cells)
 		{
-		$cell = shift @cells; $last_cell = $cell;
+		last	if (defined $width and ($cellnum >= $width));
+		$cell = shift @cells;
+		$last_cell = $cell;
 		$rep  =	$cell	?
 				$cell->getAttribute($COL_REPEAT_ATTRIBUTE) :
 				0;
 		if ($rep)
 			{
 			$cell->removeAttribute($COL_REPEAT_ATTRIBUTE);
-			while ($rep > 1 && ($cellnum < $width))
+			while ($rep > 1)
 				{
+				last if
+				    (defined $width and ($cellnum >= $width));
 				$last_cell = $last_cell->replicateNode;
 				$rep--; $cellnum++;
 				}
@@ -2238,26 +2299,10 @@ sub	_expand_row
 		$cellnum++ if $cell;
 		}
 
-	if ($cellnum < $width)
-		{
-		my $c = $self->createElement('table:table-cell');
-		unless ($last_cell)
-			{
-			$last_cell = $c->paste_last_child($row); $rep = 0;
-			}
-		else
-			{
-			$last_cell = $c->paste_after($last_cell); $rep--;
-			}
-		$cellnum++;
-		my $nc = $width - $cellnum;
-		$last_cell = $last_cell->replicateNode($nc);
-		$rep -= $nc if $rep > 0;
-		}
 	$last_cell->setAttribute($COL_REPEAT_ATTRIBUTE, $rep)
 			if ($rep && ($rep > 1));
 
-	return $row;
+	return $cellnum;
 	}
 
 #-----------------------------------------------------------------------------
@@ -2268,7 +2313,7 @@ sub	_expand_columns
 	my $self	= shift;
 	my $table	= shift;
 	return undef unless ($table && ref $table);
-	my $width	= shift || $self->{'max_cols'};
+	my $width	= shift;
 
 	my @cols	= $table->children('table:table-column');
 
@@ -2276,8 +2321,9 @@ sub	_expand_columns
 	my $last_col	= undef;
 	my $rep		= 0;
 	my $colnum	= 0;
-	while (@cols && ($colnum < $width))
+	while (@cols)
 		{
+		last if (defined $width and ($colnum >= $width));
 		$col	= shift @cols; $last_col = $col;
 		$rep =	$col	?
 				$col->getAttribute($COL_REPEAT_ATTRIBUTE) :
@@ -2285,8 +2331,10 @@ sub	_expand_columns
 		if ($rep)
 			{
 			$col->removeAttribute($COL_REPEAT_ATTRIBUTE);
-			while ($rep > 1 && ($colnum < $width))
+			while ($rep > 1)
 				{
+				last if
+				    (defined $width and ($colnum >= $width));
 				$last_col = $last_col->replicateNode;
 				$rep--; $colnum++;
 				}
@@ -2294,25 +2342,9 @@ sub	_expand_columns
 		$colnum++ if $col;
 		}
 
-	if ($colnum < $width)
-		{
-		my $c = $self->createElement('table:table-column');
-		unless ($last_col)
-			{
-			$last_col = $c->paste_last_child($table); $rep = 0;
-			}
-		else
-			{
-			$last_col = $c->paste_after($last_col); $rep--;
-			}
-		$colnum++;
-		my $nc = $width - $colnum;
-		$last_col = $last_col->replicateNode($nc);
-		$rep -= $nc;
-		}
 	$last_col->setAttribute($COL_REPEAT_ATTRIBUTE, $rep)
 			if ($rep && ($rep > 1));
-	return $table;
+	return $colnum;
 	}
 
 #-----------------------------------------------------------------------------
@@ -2326,8 +2358,12 @@ sub	_expand_table
 	my $length	= shift	|| $self->{'max_rows'};
 	my $width	= shift || $self->{'max_cols'};
 	return undef unless ($table && ref $table);
+	if ($length && ($length eq 'full'))
+		{
+		$length = undef; $width = undef;
+		}
 
-	$self->_expand_columns($table, $width);
+	my $new_width = $self->_expand_columns($table, $width);
 
 	my @rows	= ();
 	my $header = $table->first_child('table:table-header-rows');
@@ -2338,18 +2374,22 @@ sub	_expand_table
 	my $last_row	= undef;
 	my $rep		= 0;
 	my $rownum	= 0;
-	while (@rows && ($rownum < $length))
+	while (@rows)
 		{
+		last	if (defined $length and ($rownum >= $length));
 		$row	= shift @rows; $last_row = $row;
-		$self->_expand_row($row, $width);
+		my $last_width = $self->_expand_row($row, $width);
+		$new_width = $last_width if $last_width > $new_width;
 		$rep =	$row	?
 				$row->getAttribute($ROW_REPEAT_ATTRIBUTE) :
 				0;
 		if ($rep)
 			{
 			$row->removeAttribute($ROW_REPEAT_ATTRIBUTE);
-			while ($rep > 1 && ($rownum < $length))
+			while ($rep > 1)
 				{
+				last if
+				    (defined $length and ($rownum >= $length));
 				$last_row = $last_row->replicateNode;
 				$rep--; $rownum++;
 				}
@@ -2357,27 +2397,10 @@ sub	_expand_table
 		$rownum++ if $row;
 		}
 
-	if ($rownum < $length)
-		{
-		my $r = $self->createElement('table:table-row');
-		unless ($last_row)
-			{
-			$last_row = $r->paste_last_child($table); $rep = 0;
-			}
-		else
-			{
-			$last_row = $r->paste_after($last_row); $rep--;
-			}
-		$rownum++;
-		$self->_expand_row($last_row, $width);
-		my $nc = $length - $rownum;
-		$last_row = $last_row->replicateNode($nc);
-		$rep -= $nc if $rep > 0;
-		}
 	$last_row->setAttribute($ROW_REPEAT_ATTRIBUTE, $rep)
 			if ($rep && ($rep > 1));
 
-	return $table;
+	return wantarray ? ($rownum, $new_width) : $table;
 	}
 
 #-----------------------------------------------------------------------------
@@ -2387,12 +2410,28 @@ sub	getTableSize
 	{
 	my $self	= shift;
 	my $table	= $self->getTable(@_)	or return undef;
-	my $lines	= $table->children_count('table:table-row');
-	my $last_row	= $self->getTableRow($table, -1) or return undef;
-	my $columns	=
-		$last_row->children_count('table:table-cell')	+
-		$last_row->children_count('table:covered-table-cell');
-	return ($lines, $columns);
+	my $height	= 0;
+	my $width	= 0;
+
+	my @rows	= ();
+	my $header = $table->first_child('table:table-header-rows');
+	@rows = $header->children('table:table-row') if $header;
+	push @rows, $table->children('table:table-row');
+	foreach my $row (@rows)
+		{
+		my $rep = $row->getAttribute($ROW_REPEAT_ATTRIBUTE) || 1;
+		$height += $rep;
+		my @cells = $row->selectChildElements
+					('table:(covered-|)table-cell');
+		my $row_width = 0;
+		foreach my $cell (@cells)
+			{
+			my $rep = $cell->getAttribute($COL_REPEAT_ATTRIBUTE);
+			$row_width += $rep ? $rep : 1;
+			}
+		$width = $row_width if $row_width > $width;
+		}
+	return ($height, $width);
 	}
 
 #-----------------------------------------------------------------------------
@@ -2679,22 +2718,16 @@ sub	getCellValue
 	return undef unless $cell;
 
 	my $prefix = $self->{'opendocument'} ? 'office' : 'table';
-
-	my $cell_type	= $cell->getAttribute($prefix . ':value-type');
+	my $cell_type	= $self->cellType($cell);
 	if ((! $cell_type) || ($cell_type eq 'string'))		# text value
 		{
 		return $self->getText($cell);
 		}
-	elsif ($cell_type eq 'date') 		# date
-		{				# thanks to Rafel Amer Ramon
-		return $cell->att($prefix . ':date-value');
-		}
-	else					# numeric
+	else
 		{
-		return $cell->att($prefix . ':value');
+		my $attribute = $self->cellValueAttributeName($cell);
+		return $cell->att($attribute);
 		}
-
-	return undef;
 	}
 
 #-----------------------------------------------------------------------------
@@ -2720,32 +2753,13 @@ sub	cellValueType
 		$cell = $self->getTableCell($p1, shift);
 		}
 
-	return undef unless $cell;
-
-	my $newtype	= shift;
-	my $prefix = $self->{'opendocument'} ? 'office' : 'table';
-	unless ($newtype)
-		{
-		return $cell->att($prefix . ':value-type');
-		}
-	else
-		{
-		if ($newtype eq 'date')
-			{
-			$cell->del_att($prefix . ':value');
-			}
-		else
-			{
-			$cell->del_att($prefix . ':date-value');
-			}
-		return $cell->set_att($prefix . ':value-type', $newtype);
-		}
+	return $self->cellType($cell, @_);
 	}
 
 #-----------------------------------------------------------------------------
 # get/set a cell currency
 
-sub	cellCurrency
+sub	fieldCurrency
 	{
 	my $self	= shift;
 	my $p1		= shift;
@@ -2844,14 +2858,12 @@ sub	updateCell
 	my $value	= shift;
 	my $text	= shift;
 
-	my $prefix = $self->{'opendocument'} ? 'office' : 'table';
-
 	$text		= $value	unless defined $text;
-	my $cell_type	= $cell->getAttribute($prefix . ':value-type');
+	my $cell_type	= $self->cellType($cell);
 	unless ($cell_type)
 		{
-		$cell->setAttribute($prefix . ':value-type', 'string');
-		$cell_type = 'string';
+		$cell_type	= 'string';
+		$self->cellType($cell, $cell_type);
 		}
 
 	my $p = $cell->first_child('text:p');
@@ -2867,9 +2879,8 @@ sub	updateCell
 
 	unless ($cell_type eq 'string')
 		{
-		my $attribute = ($cell_type eq 'date') ?
-				':date-value' : ':value';
-		$cell->setAttribute($prefix . $attribute, $value);
+		my $attribute = $self->cellValueAttributeName($cell);
+		$cell->setAttribute($attribute, $value);
 		}
 	return $cell;
 	}
@@ -3124,7 +3135,8 @@ sub	getTable
 	return undef	unless defined $table;
 	if (ref $table)
 		{
-		return $table->isTable ? $table : undef ;
+		return undef unless $table->isTable;
+		return wantarray ? $self->getTableSize($table) : $table;
 		}
 	if (($table =~ /^\d*$/) || ($table =~ /^[\d+-]\d+$/))
 		{
@@ -3145,9 +3157,10 @@ sub	getTable
 			)
 		)
 		{
+		$length = 'full' if ($length && ($length eq 'normalize'));
 		return $self->_expand_table($t, $length, $width);
 		}
-	return $t;
+	return wantarray ? $self->getTableSize($t) : $t;
 	}
 
 #-----------------------------------------------------------------------------
@@ -3624,17 +3637,7 @@ sub	userFieldValue
 				or return undef;
 	my $value	= shift;
 
-	my $prefix	= $self->{'opendocument'} ? 'office' : 'text';
-	my $value_type	= $field->att($prefix . ':value-type');
-	my $value_att	= $prefix . ':value';
-	if 	($value_type eq 'string')
-		{
-		$value_att = $prefix . ':string-value';
-		}
-	elsif	($value_type eq 'date')
-		{
-		$value_att = $prefix . ':date-value';
-		}
+	my $value_att	= $self->fieldValueAttributeName($field);
 
 	if (defined $value)
 		{
@@ -3682,17 +3685,7 @@ sub	variableValue
 	my $variable	= $self->getVariableElement(shift) or return undef;
 	my $value	= shift;
 
-	my $prefix	= $self->{'opendocument'} ? 'office' : 'text';
-	my $value_type	= $variable->att($prefix . ':value-type');
-	my $value_att	= $prefix . ':value';
-	if 	($value_type eq 'string')
-		{
-		$value_att = $prefix . ':string-value';
-		}
-	elsif	($value_type eq 'date')
-		{
-		$value_att = $prefix . ':date-value';
-		}
+	my $value_att	= $self->fieldValueAttributeName($variable);
 
 	if (defined $value)
 		{

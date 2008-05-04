@@ -1,9 +1,9 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Styles.pm 2.022 2007-03-16 JMG$
+#	$Id : Styles.pm 2.023 2008-05-03 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
-#	Copyright 2006 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2006-2008 by Genicorp, S.A. (www.genicorp.com)
 #	License:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
@@ -12,13 +12,17 @@
 
 package OpenOffice::OODoc::Styles;
 use	5.006_001;
-our	$VERSION	= 2.022;
+our	$VERSION	= 2.023;
 
-use	OpenOffice::OODoc::XPath	2.222;
+use	OpenOffice::OODoc::XPath	2.224;
 use	File::Basename;
 require	Exporter;
 our	@ISA	= qw ( Exporter OpenOffice::OODoc::XPath );
-our	@EXPORT	= qw ( ooLoadColorMap oo2rgb rgb2oo rgbColor odfColor );
+our	@EXPORT	= qw
+		(
+		odfLoadColorMap ooLoadColorMap
+		oo2rgb rgb2oo rgbColor odfColor
+		);
 
 #-----------------------------------------------------------------------------
 
@@ -43,6 +47,7 @@ our	%COLORMAP		=
 #-----------------------------------------------------------------------------
 
 BEGIN	{
+	*odfLoadColorMap		= *ooLoadColorMap;
 	*rgbColor			= *oo2rgb;
 	*odfColor			= *rgb2oo;
 	*getPageMasterElement		= *getPageLayoutElement;
@@ -1067,9 +1072,9 @@ sub	updateStyle
 
 #-----------------------------------------------------------------------------
 # get a page layout descriptor (pagemaster) element.
-# the argument $page could be already a pagemaster, or a pageMasterStyle
+# the argument $page could be already a page layout;
 # if $page appears to be a master page (or master page name), the method
-# tries to get the linked page master
+# tries to get the linked page layout.
 
 sub	getPageLayoutElement
 	{
@@ -1120,10 +1125,10 @@ sub	getPageLayoutAttributes
 	{
 	my $self	= shift;
 	my %attributes	= ();
-	my $pagemaster	= $self->getPageMasterElement(shift);
+	my $pagemaster	= $self->getPageLayoutElement(shift);
 	unless ($pagemaster)
 		{
-		warn	"[" . __PACKAGE__ . "::getPageMasterAttributes] " .
+		warn	"[" . __PACKAGE__ . "::getPageLayoutAttributes] " .
 			"Unknown page master\n";
 		return	%attributes;
 		}
@@ -1197,12 +1202,12 @@ sub	createPageLayout
 sub	updatePageLayout
 	{
 	my $self	= shift;
-	my $pagemaster	= $self->getPageMasterElement(shift) or return undef;
+	my $pagemaster	= $self->getPageLayoutElement(shift) or return undef;
 	my %opt		= @_;
 	if ($opt{'prototype'})
 		{
 		my $sv_name = $self->getAttribute($pagemaster, 'style:name');
-		my %proto = $self->getPageMasterAttributes($opt{'prototype'});
+		my %proto = $self->getPageLayoutAttributes($opt{'prototype'});
 		while (my ($key, $value) = each %proto)
 			{
 			if (ref $value)
@@ -1257,7 +1262,7 @@ sub	updatePageLayout
 		$self->setAttributes($node, %attr);
 		}
 
-	return $self->getPageMasterAttributes($pagemaster);
+	return $self->getPageLayoutAttributes($pagemaster);
 	}
 
 #-----------------------------------------------------------------------------
@@ -1266,7 +1271,7 @@ sub	updatePageLayout
 sub	switchPageOrientation
 	{
 	my $self	= shift;
-	my $page	= $self->getPageMasterElement(shift);
+	my $page	= $self->getPageLayoutElement(shift);
 	my %op		= $self->styleProperties($page);
 	my %np		= ();
 	$np{'fo:page-width'}	= $op{'fo:page-height'};
@@ -1337,13 +1342,13 @@ sub	getBackgroundImageElement
 	{
 	my $self	= shift;
 	my $page	= shift;
-	my $pagemaster	= $self->getPageMasterElement($page);
+	my $pagemaster	= $self->getPageLayoutElement($page);
 	unless ($pagemaster)
 		{
 		my $masterpage = $self->getMasterPageElement($page)
 			or return undef;
-		my $name = $self->pageMasterStyle($masterpage);
-		$pagemaster	= $self->getPageMasterElement($name)
+		my $name = $self->pageLayout($masterpage);
+		$pagemaster	= $self->getPageLayoutElement($name)
 			or return undef;
 		}
 	return	$self->getStyleNode($pagemaster, 'background-image');
@@ -1356,13 +1361,13 @@ sub	backgroundImageLink
 	{
 	my $self	= shift;
 	my $page	= shift;
-	my $pagemaster	= $self->getPageMasterElement($page);
+	my $pagemaster	= $self->getPageLayoutElement($page);
 	unless ($pagemaster)
 		{
 		my $masterpage = $self->getMasterPageElement($page)
 			or return undef;
-		my $name = $self->pageMasterStyle($masterpage);
-		$pagemaster	= $self->getPageMasterElement($name)
+		my $name = $self->pageLayout($masterpage);
+		$pagemaster	= $self->getPageLayoutElement($name)
 			or return undef;
 		}
 	my $newlink = shift;
@@ -1400,13 +1405,13 @@ sub	setBackgroundImage
 	{
 	my $self	= shift;
 	my $page	= shift;
-	my $pagemaster	= $self->getPageMasterElement($page);
+	my $pagemaster	= $self->getPageLayoutElement($page);
 	unless ($pagemaster)
 		{
 		my $masterpage = $self->getMasterPageElement($page)
 			or return undef;
-		my $name = $self->pageMasterStyle($masterpage);
-		$pagemaster	= $self->getPageMasterElement($name)
+		my $name = $self->pageLayout($masterpage);
+		$pagemaster	= $self->getPageLayoutElement($name)
 			or return undef;
 		}
 	my %opt		=
@@ -1455,13 +1460,13 @@ sub	importBackgroundImage
 	{
 	my $self	= shift;
 	my $page	= shift;
-	my $pagemaster	= $self->getPageMasterElement($page);
+	my $pagemaster	= $self->getPageLayoutElement($page);
 	unless ($pagemaster)
 		{
 		my $masterpage = $self->getMasterPageElement($page)
 			or return undef;
-		my $name = $self->pageMasterStyle($masterpage);
-		$pagemaster	= $self->getPageMasterElement($name)
+		my $name = $self->pageLayout($masterpage);
+		$pagemaster	= $self->getPageLayoutElement($name)
 			or return undef;
 		}
 	my $filename	= shift;

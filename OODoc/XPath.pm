@@ -1,9 +1,9 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 2.223 2007-05-12 JMG$
+#	$Id : XPath.pm 2.224 2008-05-04 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
-#	Copyright 2007 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
 #	License:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
@@ -12,7 +12,7 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 2.223;
+our	$VERSION	= 2.224;
 use	XML::Twig	3.22;
 use	Encode;
 
@@ -28,6 +28,10 @@ BEGIN	{
 	*createSpaces		= *spaces;
 	*getFrame		= *getFrameElement;
 	*getNodeByXPath		= *selectNodeByXPath;
+	*isCalcDocument		= *isSpreadsheet;
+	*isDrawDocument		= *isDrawing;
+	*isImpressDocument	= *isPresentation;
+	*isWriterDocument	= *isText;
 	}
 
 #------------------------------------------------------------------------------
@@ -302,6 +306,7 @@ sub	isOpenDocument
 	{
 	my $self	= shift;
 	my $root	= $self->getRootElement;
+	die __PACKAGE__ . "ERREUR\n" unless $root;
 	my $ns		= $root->att('xmlns:office');
 	return $ns && ($ns =~ /opendocument/) ? 1 : undef;
 	}
@@ -315,35 +320,28 @@ sub	isContent
 	return ($self->contentClass()) ? 1 : undef;
 	}
 
-sub	isCalcDocument
+sub	isSpreadsheet
 	{
 	my $self	= shift;
 	return ($self->contentClass() eq 'spreadsheet') ? 1 : undef;
 	}
-sub	isImpressDocument
+sub	isPresentation
 	{
 	my $self	= shift;
 	return ($self->contentClass() eq 'impress') ? 1 : undef;
 	}
-sub	isDrawDocument
+sub	isDrawing
 	{
 	my $self	= shift;
 	return ($self->contentClass() eq 'drawing') ? 1 : undef;
 	}
-sub	isWriterDocument
+sub	isText
 	{
 	my $self	= shift;
 	return ($self->contentClass() eq 'text') ? 1 : undef;
 	}
 
 #------------------------------------------------------------------------------
-# constructor; accepts one from 3 types of parameters to create an instance:
-#	file	=> a regular OpenOffice.org filename
-#	archive	=> an OODoc::File, previously created object
-#	xml	=> an XML string, representing an OO XML member
-# if 'file' or 'archive' (not 'xml') is provided, another parameter 'member'
-# must be provided in addition
-# 	member	=> member of the zip archive (meta.xml, content.xml, ...)
 
 sub	new
 	{
@@ -362,13 +360,13 @@ sub	new
 		@_
 		};
 	
-	$self->{'archive'} = $self->{'container'} unless $self->{'archive'};
+	$self->{'container'} = $self->{'archive'} unless $self->{'container'};
 	my $twig = undef;
 
-	$self->{'member'} = $self->{'part'} unless $self->{'member'};
-	if ($self->{'member'} && ! $self->{'element'})
+	$self->{'part'} = $self->{'member'} unless $self->{'part'};
+	if ($self->{'part'} && ! $self->{'element'})
 		{
-		my $m	= lc $self->{'member'};
+		my $m	= lc $self->{'part'};
 		if ($m =~ /(^.*)\..*/) { $m = $1; }
 		$self->{'element'} =
 		    $OpenOffice::OODoc::XPath::XMLNAMES{$m};
@@ -412,18 +410,18 @@ sub	new
 			);
 		}
 
-	unless ($self->{'archive'})
+	unless ($self->{'container'})
 		{
 		if (ref $self->{'file'})
 			{
 		 	my $obj = $self->{'file'};
 			if	($obj->isa("OpenOffice::OODoc::File"))
 				{
-				$self->{'archive'} = $obj;
+				$self->{'container'} = $obj;
 				}
 			elsif	($obj->isa("OpenOffice::OODoc::XPath"))
 				{
-				$self->{'archive'} = $obj->{'archive'};
+				$self->{'container'} = $obj->{'container'};
 				}
 			else
 				{
@@ -439,15 +437,15 @@ sub	new
 		{
 		$self->{'xpath'} = $twig->safe_parse($self->{'xml'});
 		}
-	elsif ($self->{'archive'})	# load from existing OOFile
+	elsif ($self->{'container'})	# load from existing OOFile
 		{
-		unless ($self->{'archive'}->isa("OpenOffice::OODoc::File"))
+		unless ($self->{'container'}->isa("OpenOffice::OODoc::File"))
 			{
-			warn "[" . __PACKAGE__ . "] Invalid archive\n";
+			warn "[" . __PACKAGE__ . "] Invalid container\n";
 			return undef;
 			}
-		$self->{'member'} = 'content' unless $self->{'member'};
-		$self->{'xml'} = $self->{'archive'}->link($self);
+		$self->{'part'} = 'content' unless $self->{'part'};
+		$self->{'xml'} = $self->{'container'}->link($self);
 		$self->{'xpath'} = $twig->safe_parse($self->{'xml'});
 		}
 	elsif ($self->{'file'})		# look for a file
@@ -460,16 +458,16 @@ sub	new
 			{		# create OOFile & extract from it
 			require OpenOffice::OODoc::File;
 
-			$self->{'archive'} = OpenOffice::OODoc::File->new
+			$self->{'container'} = OpenOffice::OODoc::File->new
 				(
 				$self->{'file'},
 				create		=> $self->{'create'},
 				opendocument	=> $self->{'opendocument'},
 				template_path	=> $self->{'template_path'}
 				);
-			$self->{'member'} = 'content'
-					unless $self->{'member'};
-			$self->{'xml'} = $self->{'archive'}->link($self);
+			$self->{'part'} = 'content'
+					unless $self->{'part'};
+			$self->{'xml'} = $self->{'container'}->link($self);
 			$self->{'xpath'} = $twig->safe_parse($self->{'xml'});
 			}
 		else
@@ -502,7 +500,9 @@ sub	new
 		$self->{'image_xpath'}		= '//draw:frame';
 		$self->{'image_fpath'}		= 'Pictures/';
 		}
-		
+	
+	$self->{'member'} = $self->{'part'};		# for compatibility
+	$self->{'archive'} = $self->{'container'};	# for compatibility
 	$self->{'body'} = $self->getBody;
 	
 	return $self;
@@ -537,6 +537,7 @@ sub	DESTROY
 	delete $self->{'xml'};
 	delete $self->{'content_class'};
 	delete $self->{'file'};
+	delete $self->{'container'};
 	delete $self->{'archive'};
 	delete $self->{'twig_options'};
 	$self = {};
@@ -560,7 +561,7 @@ sub	save
 	my $target	= shift;
 
 	my $filename	= ($target) ? $target : $self->{'file'};
-	my $archive	= $self->{'archive'};
+	my $archive	= $self->{'container'};
 	unless ($archive)
 		{
 		my $ro = $self->{'read_only'};
@@ -575,7 +576,7 @@ sub	save
 			}
 		else
 			{
-			warn "[" . __PACKAGE__ . "::save] No archive object\n";
+			warn "[" . __PACKAGE__ . "::save] No container\n";
 			return undef;
 			}
 		}
@@ -585,15 +586,14 @@ sub	save
 		warn "[" . __PACKAGE__ . "::save] No target file\n";
 		return undef;
 		}
-	my $member	= $self->{'member'};
-	unless ($member)
+
+	unless ($self->{'part'})
 		{
-		warn "[" . __PACKAGE__ . "::save] No member\n";
+		warn "[" . __PACKAGE__ . "::save] Missing archive part name\n";
 		return undef;
 		}
 
 	my $result = $archive->save($filename);
-
 	return $result;
 	}
 
@@ -603,7 +603,7 @@ sub	save
 sub	raw_import
 	{
 	my $self	= shift;
-	if ($self->{'archive'})
+	if ($self->{'container'})
 		{
 		my $target	= shift;
 		unless ($target)
@@ -613,12 +613,12 @@ sub	raw_import
 			return undef;
 			}
 		$target =~ s/^#//;
-		return $self->{'archive'}->raw_import($target, @_);
+		return $self->{'container'}->raw_import($target, @_);
 		}
 	else
 		{
 		warn	"[" . __PACKAGE__ . "::raw_import] "	.
-			"No archive for file import\n";
+			"No container for file import\n";
 		return undef;
 		}
 	}
@@ -629,7 +629,7 @@ sub	raw_import
 sub	raw_export
 	{
 	my $self	= shift;
-	if ($self->{'archive'})
+	if ($self->{'container'})
 		{
 		my $source	= shift;
 		unless ($source)
@@ -639,12 +639,12 @@ sub	raw_export
 			return undef;
 			}
 		$source =~ s/^#//;
-		return $self->{'archive'}->raw_export($source, @_);
+		return $self->{'container'}->raw_export($source, @_);
 		}
 	else
 		{
 		warn	"[" . __PACKAGE__ . "::raw_import] "	.
-			"No archive for file export\n";
+			"No container for file export\n";
 		return undef;
 		}
 	}
@@ -742,7 +742,7 @@ sub	getRootName
 	}
 
 #------------------------------------------------------------------------------
-# member type checks
+# XML part type checks
 
 sub	isMeta
 	{

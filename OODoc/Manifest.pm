@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Mamifest.pm 2.003 2005-04-30 JMG$
+#	$Id : Mamifest.pm 2.004 2008-05-03 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
 #	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
@@ -12,9 +12,9 @@
 
 package	OpenOffice::OODoc::Manifest;
 use	5.006_001;
-our	$VERSION	= 2.003;
+our	$VERSION	= 2.004;
 
-use	OpenOffice::OODoc::XPath	2.200;
+use	OpenOffice::OODoc::XPath	2.224;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
 
 #-----------------------------------------------------------------------------
@@ -26,8 +26,7 @@ sub	new
 	my $class	= ref ($caller) || $caller;
 	my %options	=
 		(
-		utf8		=> 1,
-		member		=> 'META-INF/manifest.xml',
+		part		=> 'META-INF/manifest.xml',
 		element		=> 'manifest:manifest',
 		body_path	=> '/manifest:manifest',
 		@_

@@ -26,7 +26,7 @@ of OpenDocument (ODF) and OpenOffice.org documents.
             $my meta	= ooMeta(file => 'document.odt');
 
         returns a new object which represents the metadata of the
-        OpenOffice.org "document.odt".
+        ODF document "document.odt".
 
 =head3	addKeyword(text)
 
@@ -42,7 +42,7 @@ of OpenDocument (ODF) and OpenOffice.org documents.
 =head3	creation_date()
 
         Without argument, returns the document's creation date in
-        OpenOffice.org (ISO-8601) format.
+        ISO-8601 format (i.e. the ODF-compliant date format).
 
         Example of returned value:
 
@@ -71,12 +71,12 @@ of OpenDocument (ODF) and OpenOffice.org documents.
 =head3	date()
 
         Without argument, returns the document's date of last modification,
-        in OpenOffice.org format.
+        in ISO-8601 format.
 
         With argument, inserts the given string (without checking) as the
         last modification date. The argument, if any, must comply with the
-	OOo date format (ISO-8601). The ooLocaltime() function can be used
-	in order to convert a regular Perl time() value in OOo format.
+	ODF date format (ISO-8601). The odfLocaltime() function can be used
+	in order to convert a regular Perl time() value in ODF format.
 
 	The returned value can be converted in standard numeric time format
 	with the ooTimelocal() function.
@@ -91,15 +91,15 @@ of OpenDocument (ODF) and OpenOffice.org documents.
 =head3	editing_cycles()
 
         Without argument, returns the number of edit sessions (i.e. saves,
-        under OpenOffice.org or StarOffice). Or, technically, the number of
-        versions.
+        under an ODF-compliant editing software). Or, technically, the number
+	of versions.
 
         With argument, modifies this number without checking.
 
 =head3	editing_duration()
 
         Without argument, returns the total editing time for the document,
-        in OpenOffice.org date/time format.
+        in ISO-8601 date/time format.
 
         For example, the returned string can be:
 
@@ -116,7 +116,7 @@ of OpenDocument (ODF) and OpenOffice.org documents.
         Without argument, returns a label representing the signature of the
         software which generated the document. Example of signature:
 
-            "OpenOffice.org 1.1.1 (Linux)"
+            "OpenOffice.org 2.3.1 (Linux)"
 
         With argument, inserts any signature.
 
@@ -239,7 +239,7 @@ of OpenDocument (ODF) and OpenOffice.org documents.
 
 =head2	Exported functions
 
-=head3	ooLocaltime([$time_value])
+=head3	odfLocaltime()
 
 	Converts the numeric time given in argument to an OpenOffice-compliant
 	date (ISO-8601). The argument type is the same as for the standard
@@ -253,12 +253,12 @@ of OpenDocument (ODF) and OpenOffice.org documents.
 
 	Example:
 
-		$doc->date(ooLocaltime());
+		$doc->date(odfLocaltime());
 
 	This line puts the current time as the last modification date in the
 	document (assuming $doc is an OpenOffice::OODoc::Meta object).
 
-=head3	ooTimelocal($oodate)
+=head3	odfTimelocal()
 
 	Converts a date in OOo format (ISO-8601) in a regular Perl numeric
 	time format, i.e. a number of seconds since the "epoch". So, the
@@ -267,7 +267,7 @@ of OpenDocument (ODF) and OpenOffice.org documents.
 
 	Example:
 
-		my $date_created = ooTimelocal($doc->creation_date());
+		my $date_created = odfTimelocal($doc->creation_date());
 		$lt = localtime($date_created);
 		$elapsed = time() - $date_created;
 		print "This document has been created $date_created\n";
@@ -279,13 +279,21 @@ of OpenDocument (ODF) and OpenOffice.org documents.
 
 	Note: This function requires the Time::Local Perl module.
 
+=head3	ooLocaltime([$time_value])
+
+	See odfLocaltime()
+
+=head3	ooTimelocal($oodate)
+
+	See odfTimelocal()
+
 =head1	AUTHOR/COPYRIGHT
 
 Developer/Maintainer: Jean-Marie Gouarne L<http://jean.marie.gouarne.online.fr>
 
 Contact: jmgdoc@cpan.org
 
-Copyright 2004-2006 by Genicorp, S.A. L<http://www.genicorp.com>
+Copyright 2004-2008 by Genicorp, S.A. L<http://www.genicorp.com>
 
 Initial English version of the reference manual by Graeme A. Hunter
 (graeme.hunter@zen.co.uk).

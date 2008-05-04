@@ -1,5 +1,5 @@
 #------------------------------------------------------
-# OpenOffice::OODoc packaging & installation 2006-08-03
+# OpenOffice::OODoc packaging & installation 2008-05-04
 #------------------------------------------------------
 
 use 5.008;
@@ -16,7 +16,8 @@ GetOptions
 	'encoding=s'	=> \(my $encoding = 'iso-8859-1'),
 	'colormap=s'	=> \(my $colormap = ''),
 	'workdir=s'	=> \(my $workdir = '.'),
-	'format=s'	=> \(my $format = 2)
+	'format=s'	=> \(my $format = 2),
+	'packaging'	=> \(my $packaging = undef)
 	);
 
 #------------------------------------------------------
@@ -99,11 +100,28 @@ if ($config)
 #------------------------------------------------------
 
 	my @lt = localtime();
-	my $install_date = sprintf
+	my $current_date = sprintf
 		(
 		"%04d-%02d-%02dT%02d:%02d:%02d",
 		$lt[5] + 1900, $lt[4] + 1, $lt[3], $lt[2], $lt[1], $lt[0]
 		);
+	my $install_date	= undef;
+	my $packaging_date	= undef;
+	if ($packaging)
+		{
+		open TS, ">", "packaging_date";
+		print TS $current_date;
+		close TS;
+		$packaging_date = $current_date;
+		$install_date	= "N/A";
+		}
+	else
+		{
+		open TS, "<", "packaging_date";
+		$packaging_date	= <TS>;
+		close TS;
+		$install_date	= $current_date;
+		}
 
 #------------------------------------------------------
 
@@ -116,6 +134,7 @@ if ($config)
 	print CF "\t\t<XPath-LOCAL_CHARSET>$encoding</XPath-LOCAL_CHARSET>\n";
 	print CF "\t\t<File-WORKING_DIRECTORY>$workdir</File-WORKING_DIRECTORY>\n";
 	print CF "\t\t<Styles-COLORMAP>$colormap</Styles-COLORMAP>\n";
+	print CF "\t\t<PACKAGING_DATE>$packaging_date</PACKAGING_DATE>\n";
 	print CF "\t\t<INSTALLATION_DATE>$install_date</INSTALLATION_DATE>\n";
 	print CF "\t</OpenOffice-OODoc>\n";
 	print CF "</config>";
@@ -140,17 +159,17 @@ WriteMakefile
 		},
 	'EXE_FILES'	=>
 		[
-		'examples/oohighlight',
-		'examples/oofilesearch',
-		'examples/text2ooo',
+		'examples/odfhighlight',
+		'examples/odffilesearch',
+		'examples/text2odf',
 		'examples/text2table',
-		'examples/oo2pod',
-		'examples/oobuild',
-		'examples/oometadoc',
-		'examples/oofindbasic',
-		'examples/oosearch',
-		'examples/oo_set_fields',
-		'examples/oo_set_title'
+		'examples/odf2pod',
+		'examples/odfbuild',
+		'examples/odfmetadoc',
+		'examples/odffindbasic',
+		'examples/odfsearch',
+		'examples/odf_set_fields',
+		'examples/odf_set_title'
 		]
 	);
 

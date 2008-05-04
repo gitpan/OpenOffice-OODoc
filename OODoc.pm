@@ -1,25 +1,25 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : OODoc.pm 2.035 2007-05-12 JMG$
+#	$Id : OODoc.pm 2.101 2008-05-04 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
-#	Copyright 2006 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2006-2008 by Genicorp, S.A. (www.genicorp.com)
 #	License:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
 #
 #-----------------------------------------------------------------------------
 
-use OpenOffice::OODoc::File		2.113;
-use OpenOffice::OODoc::Meta		2.008;
-use OpenOffice::OODoc::Document		2.021;
-use OpenOffice::OODoc::Manifest		2.003;
+use OpenOffice::OODoc::File		2.114;
+use OpenOffice::OODoc::Meta		2.009;
+use OpenOffice::OODoc::Document		2.022;
+use OpenOffice::OODoc::Manifest		2.004;
 
 #-----------------------------------------------------------------------------
 
 package	OpenOffice::OODoc;
 use 5.008_000;
-our $VERSION				= 2.035;
+our $VERSION				= 2.101;
 
 require Exporter;
 our @ISA    = qw(Exporter);
@@ -27,7 +27,7 @@ our @EXPORT = qw
 	(
 	ooXPath ooText ooMeta ooManifest ooImage ooStyles
 	odfXPath odfText odfMeta odfManifest odfImage odfStyles
-	odfConnector ooDocument odfPackage odfContainer ooFile
+	odfConnector odfDocument ooDocument odfPackage odfContainer ooFile
 	odfLocalEncoding localEncoding ooLocalEncoding
 	odfEncodeText odfDecodeText ooEncodeText ooDecodeText
 	odfTemplatePath ooTemplatePath
@@ -48,14 +48,14 @@ sub	odfReadConfig
 		}
 	unless ($filename)
 		{
-		warn	"[" . __PACKAGE__ . "::ooReadConfig] "	.
+		warn	"[" . __PACKAGE__ . "::odfReadConfig] "	.
 			"Missing configuration file\n";
 		return undef;
 		}
 	my $config = XML::Twig->new->safe_parsefile($filename);
 	unless ($config)
 		{
-		warn	"[" . __PACKAGE__ . "::ooReadConfig] "	.
+		warn	"[" . __PACKAGE__ . "::odfReadConfig] "	.
 			"Syntax error in configuration file $filename\n";
 		return undef;
 		}
@@ -132,7 +132,7 @@ sub	odfLocalEncoding
 		    }
 		else
 		    {
-		    warn	"[" . __PACKAGE__ . "::ooLocalEncoding] " .
+		    warn	"[" . __PACKAGE__ . "::odfLocalEncoding] " .
 				"Unsupported encoding\n";
 		    }
 		}

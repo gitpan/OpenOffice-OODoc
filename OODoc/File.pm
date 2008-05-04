@@ -1,9 +1,9 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : File.pm 2.113 2006-03-15 JMG$
+#	$Id : File.pm 2.114 2008-05-02 JMG$
 #
 #	Initial developer: Jean-Marie Gouarne
-#	Copyright 2006 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
 #	License:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
@@ -12,7 +12,7 @@
 
 package	OpenOffice::OODoc::File;
 use	5.006_001;
-our	$VERSION	= 2.113;
+our	$VERSION	= 2.114;
 use	Archive::Zip	1.14	qw ( :DEFAULT :CONSTANTS :ERROR_CODES );
 use	File::Temp;
 
@@ -34,6 +34,13 @@ our	%OOTYPE				=
 		drawing		=> 'draw',
 		);
 		
+#-----------------------------------------------------------------------------
+
+BEGIN
+	{
+	*ooCreateFile			= *odfCreateFile;
+	}
+
 #-----------------------------------------------------------------------------
 # returns the mimetype string according to a document class
 
@@ -131,7 +138,7 @@ sub	store_member
 #-----------------------------------------------------------------------------
 # file creation from template
 
-sub	ooCreateFile
+sub	odfCreateFile
 	{
 	my %opt	=
 		(
@@ -143,7 +150,7 @@ sub	ooCreateFile
 	
 	unless (checkWorkingDirectory($opt{'work_dir'}))
 		{
-                warn    "[" . __PACKAGE__ . "::ooCreateFile] "          .
+                warn    "[" . __PACKAGE__ . "::odfCreateFile] "          .
 			"Write operation not allowed - "        .
 			"Working directory missing or non writable\n";
 		return undef;
@@ -168,7 +175,7 @@ sub	ooCreateFile
 	my $path	= $basepath . '/' . $opt{'class'};
 	unless (-d $path)
 		{
-                warn    "[" . __PACKAGE__ . "::ooCreateFile] "          .
+                warn    "[" . __PACKAGE__ . "::odfCreateFile] "          .
 			"No valid template access path\n";
 		return undef;
 		}
@@ -421,7 +428,7 @@ sub	new
 		}
 	else
 		{
-		$self->{'archive'} = ooCreateFile
+		$self->{'archive'} = odfCreateFile
 				(
 				class		=> $self->{'create'},
 				work_dir	=> $self->{'work_dir'},
@@ -559,7 +566,7 @@ sub	link
 	my $ooobject	= shift;
 
 	push @{$self->{'linked'}}, $ooobject;
-	return $self->extract($ooobject->{'member'});
+	return $self->extract($ooobject->{'part'});
 	}
 
 #-----------------------------------------------------------------------------
@@ -676,7 +683,7 @@ sub	save
 		my $ro = $nm->{'read_only'};
 		next if $ro &&
 			(($ro eq '1') || ($ro eq 'on') || ($ro eq 'true'));
-		$newmembers{$nm->{'member'}} = $nm->getXMLContent;
+		$newmembers{$nm->{'part'}} = $nm->getXMLContent;
 		}
 
 	my $outfile	= undef;

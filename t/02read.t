@@ -1,12 +1,12 @@
 #-----------------------------------------------------------------------------
-# 02read.t	OpenOffice::OODoc Installation test		(c) GENICORP
+# 02read.t	OpenOffice::OODoc Installation test		2008-05-04
 #-----------------------------------------------------------------------------
 
 use Test;
 BEGIN	{ plan tests => 9 }
 
-use OpenOffice::OODoc	2.035;
-ok($OpenOffice::OODoc::VERSION >= 2.035);
+use OpenOffice::OODoc	2.101;
+ok($OpenOffice::OODoc::VERSION >= 2.101);
 
 #-----------------------------------------------------------------------------
 
@@ -16,7 +16,7 @@ my $generator	=	"OpenOffice::OODoc " . $OpenOffice::OODoc::VERSION .
 			" installation test";
 
 # Opening the $testfile file
-my $archive = ooFile($testfile);
+my $archive = odfContainer($testfile);
 unless ($archive)
 	{
 	ok(0); # Unable to get the $testfile file
@@ -25,7 +25,7 @@ unless ($archive)
 ok(1); # Test file open
 
 # Opening the document content
-my $doc = ooDocument(archive => $archive);
+my $doc = odfConnector(container => $archive);
 unless ($doc)
 	{
 	ok(0); # Unable to get a regular document content
@@ -36,7 +36,7 @@ else
 	}
 
 # Opening the metadata
-my $meta = ooMeta(archive => $archive);
+my $meta = odfMeta(container => $archive);
 unless ($meta)
 	{
 	ok(0); # Unable to get regular metadata
@@ -47,7 +47,7 @@ else
 	ok(1); # Metadata parsed
 	}
 
-my $manifest = ooManifest(archive => $archive);
+my $manifest = odfManifest(container => $archive);
 unless ($manifest)
 	{
 	ok(0); # Unable to get the manifest
@@ -77,6 +77,7 @@ ok($doc->selectParagraphByStyle("Colour"));
 # Checking the installation signature in the metadata
 ok($meta->generator() eq $generator);
 
+$manifest->dispose;
 $doc->dispose;
 $meta->dispose;
 

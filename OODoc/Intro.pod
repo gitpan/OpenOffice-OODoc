@@ -43,7 +43,7 @@ programmer from low level XML navigation, UTF8 encoding and file
 compression details. For example:
 
 	use OpenOffice::OODoc;
-	my $document = ooDocument(file => 'filename.odt');
+	my $document = odfDocument(file => 'filename.odt');
 	$document->appendParagraph
 			(
 			text	=> 'Some new text',
@@ -76,11 +76,11 @@ operations with document elements such as:
 	
 Every document processing begins by the initialization of an object
 abstraction of the document. The most usual constructor for this object is
-the ooDocument() function. When an object is initialized using this function,
+the odfDocument() function. When an object is initialized using this function,
 it brings a lot of methods allowing allowing the application to retrieve,
 read, update, delete or create almost every content and style element.
-Another constructor, ooMeta() is available in order to allow metadata
-processing (see below). These ooXxx() methods (and others) are shortcuts
+Another constructor, odfMeta() is available in order to allow metadata
+processing (see below). These odfXxx() methods (and others) are shortcuts
 for
 
 	OpenOffice::OODoc::Xxx->new(options)
@@ -88,7 +88,7 @@ for
 where "Xxx" is generally "Document", for full access to the content, but
 may be another specialized object such as "Manifest", "Styles", "Meta", etc.
 The long "OpenOffice::OODoc::...->new()" syntax can (and should) be avoided,
-and replaced by the ooDocument() function.
+and replaced by the odfDocument() function.
 
 A document object initialization requires one or more options. The most
 usual option is the file name, as in the first example. By default, this
@@ -97,27 +97,27 @@ instantiate a document object with a new, empty document, with an
 additional "create" option giving the content class of the document to
 be generated. So, in our first example, the constructor could be:
 
-	my $document = ooDocument
+	my $document = odfDocument
 			(
 			file		=> 'filename.odt',
 			create		=> 'text'
 			);
 
 This instruction creates a new file containing a text (i.e. an
-OpenOffice.org Writer) document (and replaces any previously existing file
+OpenDocument Text) document (and replaces any previously existing file
 with the same name). However, the new file will be actually created by the
 $document->save instruction, not by the object initialization.
 
 When the 'create' option is in use, the newly created document may be
-formatted either in the OASIS OpenDocument format (ODF) 1.0 or in the primary
+formatted either in the OASIS OpenDocument format (ODF) or in the primary
 OpenOffice.org 1.0 format. If an additional 'opendocument' is provided and
 set to 'true', then the new document will be ODF-compliant. If the same
 option is present and set to 'false', the old OOo 1.0 format will be selected
 instead. Without the 'opendocument' option, the format will depend on the
 installation default (in the CPAN distribution, the default is set to
 OpenDocument but it can be changed by the user at the install time). In the
-other hand, the provided filename in not used by OODoc in order to
-select the file format, so you are free to create an OpenDocument file with
+other hand, the provided filename is not used by OODoc in order to
+select the file format, so you are free to create an ODF file with
 an OOo-like ".sxw" extension, and so on. The only one filename suffix that
 is meaningful for OODoc is ".xml" (by default, a file whose name is like
 "*.xml" is processed as flat XML and not as a regular, compressed ODF file).
@@ -140,25 +140,27 @@ the modules. If you have only a few dozens of seconds for reading
 this document, please jump directly at the part III (practical examples)
 and come back later if you want to know more.
 
-=head2	OpenDocument file input/output
+=head2	OpenDocument packaging
 
 The first layer consists of the OpenOffice::OODoc::File class (defined in
 the File.pm module). This class is responsible of read/write operations
-with the OpenOffice.org physical files. It does every I/O and
+with the ODF physical files. It does every I/O and
 compression/uncompression processing. It's mainly an easy-to-use,
-OpenOffice-oriented wrapper for the standard Archive::Zip Perl
+OpenDocument-oriented wrapper for the standard Archive::Zip Perl
 module (but it could be extended to encapsulate any other physical
-storage method for the OpenOffice.org documents).
+storage method for the ODF documents).
 
 =head2	XML access
 
 The second layer is made of the OpenOffice::OODoc::XPath class (XPath.pm), which
-is an OpenOffice/XML-aware class. This class is generally not directly used by
+is an ODF/XML-aware class. This class is generally not directly used by
 the applications; it's mainly a common ancestor for more specialised (and more
 user-friendly) other classes. OpenOffice::OODoc::XPath is an object-oriented
-Perl representation of an XML member of an OpenDocument file
+representation of an XML part of an OpenDocument file
 (ex: content.xml, meta.xml, styles.xml, etc.), using the XML::Twig
-Perl API to access individual XML elements. If you want to deal in
+Perl API to access individual XML elements. It provides an XPath-based
+syntax for advanced users who want to directly get or set any element or
+attribute in any part of a document. If you want to deal in
 the same time with several XML components of the same document, you
 can/must create several OpenOffice::OODoc::XPath against the document (ex: one
 OpenOffice::OODoc::XPath will be associated with 'meta.xml' to represent the
@@ -172,7 +174,7 @@ For an example, if you want to get access to the content of any OO file
 (say 'foo.odt'), you have to write something like:
 
 	use OpenOffice::OODoc;
-	my $doc = ooXPath
+	my $doc = odfXPath
 			(
 			file	=> 'foo.odt',
 			member	=> 'content'
@@ -185,12 +187,14 @@ any content through simple methods like:
 	print $doc->getText('//text:p', 2);
 
 The last instruction outputs the content of the 3rd paragraph as flat,
-editable text (because '//text:p' is the logical path to any paragraph,
-and the paragraphs are numbered from zero). But don't worry about this
-XPath syntax, that is shown here in order to show the basic logic of the API.
+editable text (because '//text:p' is the XPath expression which selects all
+the paragraphs in the current context, and the paragraphs are numbered from
+zero). But don't worry about this XPath syntax, that is shown here in order
+to explain the basic logic of the API.
 You don't need to remember the path of such usual objects as paragraphs,
 headings, lists, images, ..., and other well known document components, because
-the 3rd layer (see below) provides easy-to-use, predefined accessors.
+the 3rd layer (see below) provides easy-to-use, predefined accessors for these
+objects.
 
 You could also put your own text in the same paragraph with:
 
@@ -206,8 +210,8 @@ have just to do a
 OpenOffice::OODoc::XPath allows some quick element manipulation and exchange,
 and can operate on several documents in the same session. For example:
 
-	my $doc1 = ooXPath(file => 'file1.odt', member => 'content');
-	my $doc2 = ooXPath(file => 'file2.odt', member => 'content');
+	my $doc1 = odfXPath(file => 'file1.odt', member => 'content');
+	my $doc2 = odfXPath(file => 'file2.odt', member => 'content');
 	my $paragraph = $doc1->getElement('//text:p', 15);
 	$doc2->insertElement
 		('//text:h', 0, $paragraph, position => 'after');
@@ -221,13 +225,13 @@ formed XML string describing any document element in regular OpenOffice
 syntax. Example:
 
 	# a program
-	my $doc = ooXPath(file => 'file1.odt', member => 'content');
+	my $doc = odfXPath(file => 'file1.odt', member => 'content');
 	open MYFILE, "> transfer.xml";
 	print MYFILE $doc1->exportXMLElement('//text:p', 15);
 	close MYFILE;
 	
 	# another program
-	my $doc2 = ooXPath(file => 'file2.odt', member => 'content');
+	my $doc2 = odfXPath(file => 'file2.odt', member => 'content');
 	open MYFILE, "< transfer.xml";
 	$doc2->insertElement
 		('//text:h', 0, <MYFILE>, position => 'after');
@@ -268,22 +272,34 @@ following classes:
 	OpenOffice::OODoc::Styles for page/style definitions;
 	OpenOffice::OODoc::Meta for the metadata (meta.xml);
 
-The 3 first ones are generally not expressly used by the applications; they
-are internally used by the top level OpenOffice::OODoc::Document class. So
-one can see them as "chapters" of the functional description of the Document
-objects.
+Fortunately, the 3 first ones should not be expressly used in real applications,
+knowing that the toolbox provides a compound OpenOffice::OODoc::Document class
+which inherits all their features. As a consequence, ordinary users have just
+to deal with OpenOffice::OODoc::Document to process any content (graphic or
+textual) or layout. An OpenOffice::OODoc::Document object is instantiated
+through the odfDocument() function, that is a shortcut for
+OpenOffice::OODoc::Document->new().
+
+However, the reference manual in organized according to the kind of features,
+in order to avoid a huge manual page for the Document class. As a consequence,
+the documentation of this compound class includes 4 chapters (::Text, ::Styles,
+::Image and ::Document, the last one describing a few transverse methods. In
+addition, the user should remember that all the low-level attributes and methods
+described in the ::Xpath manual chapter are inherited by both ::Document and
+::Meta.
 
 The OpenOffice::OODoc::Text class brings some table processing methods
 (table creation, direct access to individual cells). These methods, (under
-some conditions) can be used with spreadsheets (OpenOffice.org Calc
-documents) as well as with tables included in text documents.
+some conditions) can be used with spreadsheets (ODF spreadsheet documents) as
+well as with tables included in text documents.
 
-To illustrate the differences between the layers, with OODoc::Text (if
-you know your document is really an OpenOffice.org Writer one), the
-two following instructions are equivalent:
+To illustrate the differences between the layers, with the ::Text features of
+a ::Document object, the two following instructions are equivalent:
 
-	print $doc->getText('//text:p', 2);
-	print $doc->getParagraphText(2);	
+	print $doc->getText('//text:p', 2); # common ::XPath method
+	print $doc->getParagraphText(2); # ::Text (::Document) method	
+
+provided that $doc has been previously created through an odfDocument() call.
 
 The difference looks tiny, but in fact OODoc::Text contains much more
 sophisticated text-aware methods that avoid a lot of coding and probably
@@ -344,17 +360,17 @@ program, or imported (directly or through an XML string) from another
 document. The second way is generally the better because you need a lot
 of parameters to build a completely new style by program, but the creation
 of a simple style is not a headache with the OODoc::Styles module,
-provided that you have an OpenOffice.org attributes glossary at hand.
+provided that you have an ODF attributes glossary at hand.
 The following example show the way to build the "Welcome" style.
 This piece of code declares "Welcome" as a paragraph style, whith
-"Text body" as parent style, and with some private properties
+"Standard" as parent style, and with some private properties
 (Times 16 bold font and navy blue foreground).
 
 	$doc->createStyle
 			(
 			"Welcome",
 			family		=> 'paragraph',
-			parent		=> 'Text body',
+			parent		=> 'Standard',
 			properties	=>
 				{
 				'area'			=> 'text',
@@ -368,8 +384,9 @@ This piece of code declares "Welcome" as a paragraph style, whith
 The color attributes are encoded in RGB hexadecimal format. It's possible
 to use more mnemonic values or symbols, through conversion functions
 provided by the Styles module, and optional user-provided colour maps.
-For example, "#ffff00" could be replaced by odfColor(255,255,0) or more
-simply by odfColor("yellow").
+For example, "#000080" could be replaced by odfColor('navy blue'), provided
+that an appropriate color table is available at the run time; see
+odfLoadColorMap() in the OpenOffice::OODoc::Styles manual chapter.
 
 According to the application logic, each newly created style can be
 registered either as a "named" style (i.e. visible and reusable for the
@@ -385,13 +402,13 @@ control the presentation of both the paragraph and the image, all that
 in the same sequence and in any order.
 
 Caution: In order to get a convenient translation between the user's local
-character set and the common OpenOffice.org encoding (utf8), the application
+character set and the common ODF encoding (utf8), the application
 must indicate the appropriate encoding. The default one is iso-8859-1 in the
-CPAN distribution; it can be set using the ooLocalEncoding() function.
+CPAN distribution; it can be set using the odfLocalEncoding() function.
 Example:
 
 	use OpenOffice::OODoc;
-	ooLocalEncoding 'iso-8859-15';
+	odfLocalEncoding 'iso-8859-15';
 
 The default encoding can be selected by the user during the installation,
 and changed later by editing a configuration file. In addition, a program
@@ -422,7 +439,7 @@ You can avoid the heavy object oriented notation such as:
 
 and use the shortcuts like:
 
-	my $meta = ooMeta(file => "xxx.ods");
+	my $meta = odfMeta(file => "xxx.ods");
 
 The first thing you have to do with a document is to create an object
 focused on the member you want to work with, and "feed" it with regular
@@ -435,7 +452,7 @@ We need metadata access, so we use OODoc::Meta
 
 	use OpenOffice::OODoc;
 
-	my $doc = ooMeta(file => 'myfile.odt');
+	my $doc = odfMeta(file => 'myfile.odt');
 	my $title = $doc->title;
 	if ($title)	{ print "The title is $title"; }
 	else		{ print "There is no title"; }
@@ -514,16 +531,14 @@ object. With an object created with an 'xml' parameter (providing
 the metadata through an XML string, without reference to a file), a
 'save' call generates a 'No archive object' error. However, if the object
 had been created from an XML flat file (instead of a regular
-OOo/OpenDocument compressed file), the output would be a flat XML file
-as well.
+ODF compressed file), the output would be a flat XML file as well.
 
 Note: A document is always saved in the same file format as it's source.
 The save() can't act as a format converter. So, you can't save an OOo 1.0
 file in OASIS OpenDocument format and vice versa, and you can't directly
-(without intermediate processing) save in OOo/OpenDocument compressed format
-a document loaded from XML data. However, thanks to the getXMLContent()
-method, you can write the flat XML to the standard output or a given file
-handle.
+(without intermediate processing) save in ODF compressed format a document
+loaded from XML data. However, thanks to the getXMLContent() method, you can
+write the flat XML to the standard output or a given file handle.
 
 If you prefer to keep the original file unchanged, you can issue a
 
@@ -541,14 +556,14 @@ you will never process valuable documents without a backup copy...
 
 Here we must read and update some text content elements. By "text content",
 we mean not only "flat text". While the most interesting module is named
-OpenOffice::OODoc::Text, it's not fully dedicated to OOo-Writer documents.
-It can deal with the text content of Impress documents, as well as the
-sheets and cells of a Calc document.
+OpenOffice::OODoc::Text, it's not fully dedicated to text documents.
+It can deal with the text content of presentations, as well as the
+sheets and cells of a spreadsheet.
 
 Our program begins with something like that:
 
 	use OpenOffice::OODoc;
-	my $doc = ooDocument(file => 'myfile.odt');
+	my $doc = odfDocument(file => 'myfile.odt');
 
 The second line produces an OpenOffice::OODoc::Document object, which
 inherits from O::O::Text, O::O::Image and O::O::Styles. However, in the
@@ -608,7 +623,7 @@ to process. For example, the getText method (exporting the text content
 of a given text element), can return the content of many kinds of element
 (paragraphs, headings, table cells, item lists or individuals list items).
 In addition, any text content extracted with an high-level OODoc method is
-transcoded in the local character set (UTF8 issues are (we hope) hidden for
+transcoded in the local character set (UTF-8 issues are (we hope) hidden for
 the application). Optionnally, the text output can be instrumented with
 begin and end application-provided tags according to the element type (so
 it's possible to export the text in an alternative, simple XML dialect, or
@@ -900,25 +915,25 @@ objects with the same OODoc::File "server".
 
 	use OpenOffice::OODoc;
 
-	my $archive	= ooFile('myfile.odt');
-	my $content	= ooDocument(archive => $archive);
-	my $meta	= ooMeta(archive => $archive);
+	my $archive	= odfContainer('myfile.odt');
+	my $content	= odfDocument(container => $archive);
+	my $meta	= odfMeta(container => $archive);
 	# process content and metadata
 	$archive->save;
 
 In this case, the OODoc::Document and OODoc::Meta objects are created with
-an 'archive' parameter, so they are required to connect to an existing
+a 'container' parameter, so they are required to connect to an existing
 OODoc::File object. After processing, a 'save' call directly addressed
 to the OODoc::File is sufficient to do the physical file update, because
 this object "knows" the list of the OODoc::XPath objects connected to it,
 and "asks" to each of them the XML content it's responsible of (the other
 XML members of the file remain unchanged).
 
-In the example above, if the user writes 'file' instead of 'archive', the
+In the example above, if the user writes 'file' instead of 'container', the
 API automatically detects the real type of the $archive value (i.e. an
 OODoc::File object) and adapts its behaviour accordingly. So, one can use
 the 'file' option either if the parameter is really a file path/name or if
-it's a reference to a previously instantiated ODF archive.
+it's a reference to a previously instantiated ODF package.
 
 However, the explicit use of OODoc::File is not mandatory. The example above
 could be written in a different way:
@@ -986,9 +1001,10 @@ image:
 	$doc->imageSize("Paris landscape", "10cm, 7cm");
 	$doc->imagePosition("Paris landscape", "3cm, 0cm");
 
-The size and position strings indicate the used length unit. Such units as
-"cm", "mm", "in" and "pt" are currently supported by OpenOffice.org (but
-OODoc doesn't check them, so you can use any arbitrary unit).
+The size and position strings indicate the used length unit. OODoc doesn't
+the provided unit, so the application should ensure that only ODF-compliant
+units are used. Possible units are, for example, "cm" (centimeter), "mm"
+(meter), "in" (inch), "pt" (point).
 		
 The logical name of the image (here "Paris landscape") is the best way to
 retrieve an image object, so it's a mandatory argument with the
@@ -1021,7 +1037,7 @@ it and, if really needed, to create new styles. In the first part of this
 document, you can see an example of paragraph style creation. Unfortunately,
 createStyle could drive you to heavy coding efforts, because a very
 sophisticated style definition needs a lot of parameters and requires the
-knowledge of a lot of OpenOffice.org attribute names. So we recommend you to
+knowledge of a lot of ODF attribute names. So we recommend you to
 systematically reuse existing styles (stored in OO template documents used as
 "style repositories" or in XML databases). The createStyle method supports
 a "prototype" parameter that allows you to clone an existing style, contained
@@ -1045,12 +1061,13 @@ changing the font size only:
 				}
 			);
 
-(Here a "dark blue" color has been given to the text; but "dark blue" is
+Here a "dark blue" color has been given to the text; but "dark blue" is
 an arbitrary string, that must be present in a user-provided, previously
 loaded color map; without this color map, the users must, at their choice,
-either directly provide an hexadecimal, OOo-compliant color code (such as
-"#00008b", that is the translation of "dark blue" in my installation), or
-get it through the odfColor() function with 3 decimal RGB values as arguments.)
+either directly provide an hexadecimal, six-digit color code, with a leading
+"#" (such as "#00008b", that is the translation of "dark blue" in my
+installation), or get it through the odfColor() function with 3 decimal RGB
+values as arguments.
 
 Because a style is required for each image in a document, the OODoc::Document
 brings a more user-friendly createImageStyle method. This method allows you
@@ -1082,9 +1099,51 @@ There are special styles for page layout. While these styles are described
 with very specific data structures, the OODoc::Styles module contains
 some methods dedicated to page styling.
 
-A few executable examples (not commented here, but commented in line) are
-provided in the distribution. In addition, you can have a look to the
-installation test scripts.
+=head2	Dealing with styles AND content
+
+While the OpenOffice::OODoc::Document methods can process both the content
+(text, complex structures and graphics) and the styles, it's not always
+possible any style and any content through the same object in the same session.
+
+Each individual instance of ::Document wraps an indivudual part of an ODF
+package. The default part is "content.xml", but all the named style definitions
+are stored in the "styles.xml" part (in a few words, a named style is a style
+which was designed in order to be used by more than one content element; for
+example, any style which could be selected through the style dialog box of a
+typical user-oriented office software is a "named" style).
+
+In order to avoid a lot of useless XML parsing, only one part at a time is
+loaded. As a consequence, if the application needs to process content and
+named styles during the same session, it must create 2 instances of
+::Document objects, associated with the same ODF container. Each instance must
+be associated with the appropriate target. For example:
+
+	use OpenOffice::OODoc;
+
+	my $archive	= odfContainer('myfile.odt');
+	my $content	= odfDocument
+			(
+			container => $archive,
+			part => 'content'
+			);
+	my $styles	= odfDocument
+			(
+			container => $archive,
+			part => 'styles'
+			);
+
+After this sequence, the $styles object gives access to any named style while
+all the document body can be processed through the $content object. Note that
+in this last example, we could avoid the "part" option for the "content"
+member of the package (because "content" is the default).
+
+Knowing that its always possible to process content, named styles and
+metadata in the same session, we could instantiate a ::Meta object through
+odfMeta() as well. So up to 3 connecting objects can be used as interfaces
+for the same ODF file.
+
+Of course, a single $archive->save() can make all the changes made through all
+the connected objects persistent.
 
 =head1	COMMENTS AND BUG REPORTS
 
@@ -1100,7 +1159,7 @@ Developer/Maintainer: Jean-Marie Gouarne L<http://jean.marie.gouarne.online.fr>
 
 Contact: jmgdoc@cpan.org
 
-Copyright 2004-2007 by Genicorp, S.A. L<http://www.genicorp.com>
+Copyright 2004-2008 by Genicorp, S.A. L<http://www.genicorp.com>
 
 Initial English version of the reference manual by Graeme A. Hunter
 (graeme.hunter@zen.co.uk).

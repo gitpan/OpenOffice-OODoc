@@ -54,9 +54,13 @@ presentation which is one of the foundations of the OpenDocument format.
 
 =head3	Constructor : OpenOffice::OODoc::Text->new(<parameters>)
 
-        Short Form: ooText(<parameters>)
+        Short Form: odfText(<parameters>)
 
-        See OpenOffice::OODoc::XPath->new
+	This constructor should not be explicitly used in ordinary applications
+	knowing that all the features of the returned object are inherited by
+	any Document object.
+
+        See OpenOffice::OODoc::XPath->new for common arguments.
 
         Returns an OODoc::XPath OpenDocument connector with additional
 	features mainly focused on text containers.
@@ -67,10 +71,10 @@ presentation which is one of the foundations of the OpenDocument format.
 	The XML member loaded by default is 'content.xml'. The most common
         creation method is like this:
 
-            my $doc = ooText(file => 'my_file.odt');
+            my $doc = odfText(file => 'my_file.odt');
 
 	This constructor should generally not be called directly, because it's
-	inherited by ooDocument().
+	inherited by odfDocument().
 
         Other parameters can be supplied as options (see the properties list
         at the end of the chapter).
@@ -94,7 +98,7 @@ presentation which is one of the foundations of the OpenDocument format.
             		end	=> '}'
             		}
             	);
-            my $doc = ooText
+            my $doc = odfText
             		(
             		file		=> 'filename.odt',
             		paragraph_style	=> 'My Paragraphs',
@@ -324,7 +328,7 @@ presentation which is one of the foundations of the OpenDocument format.
         number of records to be loaded (using, for example, select count if
         from a relational database or otherwise preloading the data into an
         ordinary Perl table) and create a table of appropriate size in
-        advance using insertTable or appendTable.
+        advance using insertTable() or appendTable().
 
 =head3	appendSection(name [, options])
 
@@ -370,6 +374,14 @@ presentation which is one of the foundations of the OpenDocument format.
         body. The name must be unique within the document (the call is
         rejected if the name already exists). Returns the created table
         element if successful.
+
+	Beware: Creating simple tables from scratch is very easy; however,
+	for a realistic application, it's strongly recommended to replicate
+	XML table templates previously created with an ODF-compatible editing
+	software. A reasonably sophisticated table implies dozens of style
+	definitions and would require a lot of perl code and a deep knowledge
+	of the ODF specification, while it could be created in a few minutes
+	through a WYSIWYG tool.
 
 	'rows' and/or 'columns', if omitted, are replaced by the 'max_rows'
 	and 'max_cols' properties of the document (see the properties below).
@@ -421,6 +433,26 @@ presentation which is one of the foundations of the OpenDocument format.
 =head3	appendTableRow(table)
 
         See appendRow.
+
+=head3	autoSheetNormalizationOff()
+
+	Deactivates the automatic sheet normalization.
+
+	See autoSheetNormalizationOn().
+
+=head3	autoSheetNormalizationOn('full')
+
+=head3	autoSheetNormalizationOn(height, width)
+
+	Activates the automatic normalization of any used table.
+	This method instructs the API to automatically normalize anything
+	table or sheet as soon as it's reached through getTable() or another
+	table-related access method. The automatic normalization is not
+	activated by default. It can be deactivated at any time using
+	autoSheetNormalizationOff().
+
+	See normalizeSheet() for details about the arguments and the
+	effects.
 
 =head3	bibliographyEntryContent(id [, key1 => value1, key2 => value2, ...])
 
@@ -1344,22 +1376,25 @@ presentation which is one of the foundations of the OpenDocument format.
 
         Obsolete. See textStyle.
 
-=head3	getTable(number [, length, width])
+=head3	getTable(number_or_name [, 'normalize'])
 
-=head3	getTable(name [, length, width])
+=head3	getTable(number_or_name [, length, width])
 
-	Returns the reference of a table, selected by name or number.
+	Returns the reference of a table, selected by name or number, in a
+	scalar context. In an array context, returns the table size, like
+	getTableSize().
+
+	This method works with spreadsheets as well as with tables included
+	in other documents.
 
 	If the first argument is a number, returns the nth+1 table in a
 	document (table numbers are zero-based; if the argument is negative,
-	the tables are counted from the end).
-
-        The second form allows you to select a table by its logical name (as
-        it would appear to the end user when editing the table's
-        properties). This name is obviously easier to use than a number.
-        Moreover, this type of selection means the application will still
-        work even if a table changes position within a document. But the
-	retrieval by name works with two restrictions:
+	the tables are counted from the end). If it's a string, the table is
+	selected by its its logical name (as it would appear to the end user
+	when editing the table's properties). This name is obviously easier
+	to use than a number. Moreover, this type of selection means the
+	application will still work even if a table changes position within
+	a document. But the retrieval by name works with two restrictions:
 
 	- if a table name is made of digits only, or if if represents a
 	numeric expression, it's automatically regarded as a table number;
@@ -1372,19 +1407,32 @@ presentation which is one of the foundations of the OpenDocument format.
 	The returned object is a "handle" that can be used for subsequent
 	accesses to its components (rows, cells).
 
-	The additional size arguments are required with "open" tables, i.e.
-	tables whose size is not really fixed, such as spreadsheets. If the
-	length and width arguments are provided, the corresponding area
-	becomes safely addressable. With OpenOffice.org Writer documents,
-	the size declaration is presently not required, because every table
-	has a fixed size and a continuous addressing scheme. See
-	normalizeSheet() for details about the table size declarations. And
-	use the size arguments each time you experience an addressing problem
-	with a table.
+	The additional arguments, if any, instruct OODoc to normalize they
+	target table in order to allow subsequent addressing of its content.
+	If the "normalize" keyword is provided, the table will be fully
+	normalized. If length and width arguments are provided instead,
+	only an accordingly limited area, beginning at the "A1" position.
+	Practically, getTable() uses normalizeSheet() in order to perform
+	this job, so you should have a look at the normalizeSheet()
+	documentation (in the same chapter) for explanations.
 
-	A getTable() call with the optional length, width arguments produces
-	the same effect as an explicit call of normalizeSheet() with the same
-	arguments.
+	Examples:
+
+		my $sheet = $doc->getTable('Checklist');
+
+	returns the reference of the sheet (or table) corresponding to the
+	given name, without processing
+
+		my $first_sheet = $doc->getTable(0);
+		my $last_sheet = $doc->getTable(-1);
+
+	returns the references of the first and the last tables according to
+	the physical order of the document
+
+		($lines, $columns) = $doc->getTable('Friends', 'normalize');
+
+	fully normalizes the table whose title is "Friends" and returns itself	
+	size.
 
 =head3	getTableColumn(table, column)
 
@@ -1428,20 +1476,6 @@ presentation which is one of the foundations of the OpenDocument format.
         Example:
 
             my ($rows, $columns) = $doc->getTableSize("Table1");
-
-	Caution: This method provides meaningful results with well delimited
-	tables whose the XML storage is "normalized". It should not be used
-	with "open" spreadsheets (such as OpenOffice.org Calc documents),
-	where the physical length and width of a table don't really make
-	sense. In the present OpenOffice.org Writer (text) documents, the
-	tables are delimited and every row and cell is mapped to an exclusive
-	XML element, so getTableSize() is workable (up to now) with this kind
-	of documents. However, the OpenDocument specification allows an
-	optimization strategy which, when implemented, prevents getTableSize()
-	from returning workable results. In such a situation, the applications
-	must assume the length and width of the table and, before using it,
-	prepare a normalized addressing workspace. See normalizeSheet() for
-	more details.
 
 =head3	getTableText(n)
 
@@ -1784,19 +1818,39 @@ presentation which is one of the foundations of the OpenDocument format.
 
 =head3	normalizeSheet(sheet, rows, columns)
 
+=head3	normalizeSheet(sheet, 'full')
+
 	This method preprocesses a given sheet so its components (rows,
 	cells) become available for all the table-oriented methods described
-	in this chapter. The 2nd and 3rd arguments control the size of a
+	in this chapter. In some situations, this method must be used before
+	any attempt to address any individual table component (column, row or
+	cell). The return value is the target table object in a scalar context
+	and the size (height, width) in an array context.
+
+	This method works with any kind of ODF tables, whatever the containing
+	document, and not only with spreadsheets.
+
+	In the first form, the 2nd and 3rd arguments define the size of a
 	rectangular area, beginning at the first cell ([0, 0] or "A1"), to
-	be processed. The processed area becomes a workspace which is safely
+	be processed, in order to save time and CPU resources when the
+	application needs to address objects only in the first corner of a huge
+	table.
+
+	The second form allows the OODoc to normalize the whole table,
+	whatever the size. It's certainly the preferred form, as long as
+	the target sheets are reasonably sized or the hardware is powerful
+	enough.
+
+	The processed area becomes a workspace which is safely
 	addressable by any cell/row/column processing method. This
-	preprocessing is sometimes required, sometimes not. Simply speaking,
+	preprocessing is sometimes required, sometimes not. For example,
 	it's required on present OpenOffice.org Calc spreadsheets, and
 	useless on present OpenOffice.org Text tables.
 
-	It's automatically executed when getTable() is called
-	with size arguments; therefore it's not always explicitly invoked by
-	the applications. However, it's useful to know its purpose.
+	It's automatically executed when getTable() is called with size
+	arguments (or with the "normalize" option); therefore it's not always
+	explicitly invoked by the applications. However, it's useful to know
+	its purpose.
 
 	The object addressing logic (which, for example, allows a program to
 	directly reach a cell using its coordinates) relies on a continuous,
@@ -1842,11 +1896,11 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	In the other hand, normalizeSheet() is not required to address a sheet
 	which has been created through the OODoc methods (provided that the
-	document has not been edited with OpenOffice.org in the meantime).
-	These methods, i.e. appendTable() and insertTable(), create normalized
-	tables, whatever the document class.
+	document has not been edited with another application software in the
+	meantime). These methods, i.e. appendTable() and insertTable(), create
+	normalized tables, whatever the document class.
 
-	Because this method is very time and memory consuming, it should never
+	Because this method is time and memory consuming, it should never
 	be used to reorganize the largest possible area of a sheet (meaning
 	thousands of rows and hundreds of columns that will probably never be
 	used). So it's action is limited to a given area, controlled by the
@@ -1863,14 +1917,31 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	Example:
 
-		$doc = ooDocument(file => 'report.sxc');
+		$doc = odfDocument(file => 'report.ods');
 		my $sheet = $doc->normalizeSheet('Sheet1', 7, 9);
 		my $result = $doc->cellValue($sheet, 5, 6);
 
 	In the sequence above, a top left area of 7 rows by 8 columns is
 	pre-processed, so the cells from A1 to H6 of this sheet can be
 	reached according to the same addressing scheme as in Writer tables.
-	The last instruction gets the content of G6.
+	The last instruction gets the content of G6. Note that the second line
+	of this example could be replaced by
+
+		my sheet = $doc->getTable('Sheet1', 7, 9);
+
+	knowing that, when called with size arguments, getTable() automatically
+	executes normalizeSheet().
+
+	The following code normalizes the whole table, whatever its size (but
+	I don't recommend this option for tables containing thousands of rows
+	by hundred of columns):
+
+		$doc->normalizeSheet('Sheet1', 'full');
+
+	This last instruction could be automatically and silently executed
+	through the following one:
+
+		$doc->getTable('Sheet1', 'normalize');
 
 	The transformed sheets, of course, are readable by OOo Calc.
 	They simply take some more disk space when the processed spreadsheet
@@ -1878,12 +1949,7 @@ presentation which is one of the foundations of the OpenDocument format.
 	the storage is optimized again, so the effects of normalizeSheet()
 	disappear.
 
-	normalizeSheet() can be used safely against Writer document tables,
-	with two possible results. If the table size is greater than the given
-	size, the method is neutral. Otherwise, the length and/or the width is
-	increased according to the given arguments (however, the new rows and
-	columns appear with default styles, so the extended table may be badly
-	presented).
+	normalizeSheet() is neutral against already normalized tables.
 
 	An explicit call to this method can be replaced by getTable() with the
 	additional length and width parameters.
@@ -2645,8 +2711,8 @@ presentation which is one of the foundations of the OpenDocument format.
         If the cell is set to numeric (float, currency, date, etc.), you
         should generally pass a literal argument as well as the value.
 
-        This method can be replaced by the accessor cellValue which allows
-        reads and writes.
+        This method can be replaced by cellValue() which allows reads and
+	writes.
 
 =head3	userFieldValue(user_field [, value])
 
@@ -2660,9 +2726,9 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	If the given user field is numeric (ex: date, currency) the returned
 	and/or provided value is the internally stored value, and not the
-	displayed one. The user field is displayed according to a data style
-	by OpenOffice.org. For example, 'Tuesday, March 1, 2005' is a possible
-	displayed value for 38412.
+	displayed one. The user field is displayed according to a date style
+	by the applications. For example, 'Tuesday, March 1, 2005' is a
+	possible displayed value for 38412.
 
 =head3	variableValue(name/element [, newvalue])
 
@@ -2811,7 +2877,7 @@ Developer/Maintainer: Jean-Marie Gouarne L<http://jean.marie.gouarne.online.fr>
 
 Contact: jmgdoc@cpan.org
 
-Copyright 2004-2006 by Genicorp, S.A. L<http://www.genicorp.com>
+Copyright 2004-2007 by Genicorp, S.A. L<http://www.genicorp.com>
 
 Initial English version of the reference manual by Graeme A. Hunter
 (graeme.hunter@zen.co.uk).
