@@ -1,9 +1,9 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Meta.pm 2.009 2008-05-03 JMG$
+#	$Id : Meta.pm 2.010 2008-06-13 JMG$
 #
-#	Initial developer: Jean-Marie Gouarne
-#	Copyright 2005-2008 by Genicorp, S.A. (www.genicorp.com)
+#	Created and maintained by Jean-Marie Gouarne
+#	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
 #	License:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
@@ -12,9 +12,9 @@
 
 package	OpenOffice::OODoc::Meta;
 use	5.006_001;
-our	$VERSION	= 2.009;
+our	$VERSION	= 2.010;
 
-use	OpenOffice::OODoc::XPath	2.224;
+use	OpenOffice::OODoc::XPath	2.225;
 require Exporter;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath Exporter );
 our	@EXPORT		= qw
@@ -29,6 +29,7 @@ BEGIN
 	{
 	*ooLocaltime			= *odfLocaltime;
 	*ooTimelocal			= *odfTimelocal;
+	*version			= *editing_cycles;
 	}
 
 #-----------------------------------------------------------------------------

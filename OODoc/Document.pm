@@ -2,8 +2,8 @@
 #
 #	$Id : Document.pm 2.022 2008-05-03 JMG$
 #
-#	Initial developer: Jean-Marie Gouarne
-#	Copyright 2005 by Genicorp, S.A. (www.genicorp.com)
+#	Created and maintained by Jean-Marie Gouarne
+#	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
 #	License:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1

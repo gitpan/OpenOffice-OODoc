@@ -1,8 +1,8 @@
 #----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.231 2008-05-04 JMG$
+#	$Id : Text.pm 2.232 2008-06-15 JMG$
 #
-#	Initial developer: Jean-Marie Gouarne
+#	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
 #	License:
 #		- Licence Publique Generale Genicorp v1.0
@@ -12,9 +12,9 @@
 
 package OpenOffice::OODoc::Text;
 use	5.006_001;
-use	OpenOffice::OODoc::XPath	2.224;
+use	OpenOffice::OODoc::XPath	2.225;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.231;
+our	$VERSION	= 2.232;
 
 #-----------------------------------------------------------------------------
 # synonyms
@@ -50,6 +50,7 @@ BEGIN	{
 	*getTableContent		= *getTableText;
 	*normalizeTable			= *normalizeSheet;
 	*normalizeTables		= *normalizeSheets;
+	*expandSheet			= *expandTable;
 	*insertColumn			= *insertTableColumn;
 	*deleteColumn			= *deleteTableColumn;
 	*replicateRow			= *replicateTableRow;
@@ -63,6 +64,7 @@ BEGIN	{
 	*getNote			= *getNoteElement;
 	*getNoteList			= *getNoteElementList;
 	*getHeadingText			= *getHeadingContent;
+	*getUserFieldElement		= *getUserField;
 	*cellType			= *fieldType;
 	*cellValueAttributeName		= *fieldValueAttributeName;
 	*cellCurrency			= *fieldCurrency;
@@ -449,7 +451,7 @@ sub	selectElementsByContent
 sub	selectElementByTextId
 	{
 	my $self	= shift;
-	my $id		= shift		or return undef;
+	my $id		= $self->inputTextConversion(shift) or return undef;
 	return $self->getNodeByXPath("//*[\@text:id=\"$id\"]");
 	}
 
@@ -923,9 +925,10 @@ sub	bibliographyEntryContent
 	my %desc	= @_;
 	unless (ref $id)
 		{
+		my $i = $self->inputTextConversion($id);
 		$e = $self->getNodeByXPath
 		      (
-		      "//text:bibliography-mark[\@text:identifier=\"$id\"]",
+		      "//text:bibliography-mark[\@text:identifier=\"$i\"]",
 		      $desc{'context'}
 		      );
 		}
@@ -978,7 +981,7 @@ sub	setBibliographyMark
 sub	getBookmark
 	{
 	my $self	= shift;
-	my $name	= shift;
+	my $name	= $self->inputTextConversion(shift);
 
 	return	(
 		$self->getNodeByXPath
@@ -1344,9 +1347,10 @@ sub	getSection
 		return $self->getElement('//text:section', $name, $context);
 		}
 
+	my $n = $self->inputTextConversion($name);
 	return $self->getNodeByXPath
 			(
-			"//text:section[\@text:name=\"$name\"]"
+			"//text:section[\@text:name=\"$n\"]"
 			);
 	}
 
@@ -1662,7 +1666,7 @@ sub	getParagraphText
 sub	selectDrawPageByName
 	{
 	my $self	= shift;
-	my $text	= shift;
+	my $text	= $self->inputTextConversion(shift);
 	return $self->selectNodeByXPath
 			("//draw:page\[\@draw:name=\"$text\"\]", @_);
 	}
@@ -2435,6 +2439,41 @@ sub	getTableSize
 	}
 
 #-----------------------------------------------------------------------------
+# increases the size of an existing table
+
+sub	expandTable
+	{
+	my $self	= shift;
+	my $table	= shift;
+	my $length	= shift || 0;
+	my $width	= shift || 0;
+	my $context	= shift;
+
+	my ($old_length, $old_width) = $self->getTableSize($table);
+	$table = $self->normalizeSheet($table, 'full');
+	unless ($table)
+		{
+		warn	"[" . __PACKAGE__ . "::expandTable] " .
+			"Unknown or badly formed table\n";
+		return undef;
+		}
+	my $last_col	= $self->getTableColumn($table, -1);
+	my $last_row	= $self->getRow($table, -1);
+	my $last_cell	= $self->getCell($last_row, -1);
+	my $i		= 0;
+	for ($i = $old_width; $i < $width; $i++)
+		{
+		$last_col	= $last_col->replicateNode;
+		$last_cell	= $last_cell->replicateNode;
+		}
+	for ($i = $old_length; $i < $length; $i++)
+		{
+		$last_row = $last_row->replicateNode;
+		}
+	return wantarray ? $self->getTableSize($table) : $table;
+	}
+
+#-----------------------------------------------------------------------------
 # get a table column descriptor element
 
 sub	getTableColumn
@@ -2636,16 +2675,19 @@ sub	getTableCell
 		else
 			{
 			my $context = shift;
+			unless (ref $context)
+				{
+				unshift @_, $context; $context = undef;
+				}
 			$table	= $self->getTable($p1, $context)
 				or return undef;
 			}
 		$row	= $table->child($r, 'table:table-row')
 				or return undef;
-		$cell = $row->selectChildElement
-				(
-				'table:(covered-|)table-cell',
-				$c
-				);
+		$cell = (
+			$row->selectChildElements
+				('table:(covered-|)table-cell')
+			)[$c];
 		}
 	elsif	($p1->isTableCell)
 		{
@@ -2660,7 +2702,8 @@ sub	getTableCell
 				);
 		}
 
-	return ($cell && ! $cell->isCovered) ? $cell : undef;
+	return undef unless ($cell && ! $cell->isCovered);
+	return wantarray ? ($cell, @_) : $cell;
 	}
 
 #-----------------------------------------------------------------------------
@@ -2698,24 +2741,7 @@ sub	getCellParagraphs
 sub	getCellValue
 	{
 	my $self	= shift;
-	my $p1		= shift;
-
-	my $cell	= undef;
-	if 	((! (ref $p1)) || $p1->isTable)
-		{
-		@_ = OpenOffice::OODoc::Text::_coord_conversion(@_);
-		$cell = $self->getTableCell($p1, @_);
-		}
-	elsif	($p1->isTableCell)
-		{
-		$cell = $p1;
-		}
-	elsif	($p1->isTableRow)
-		{
-		$cell = $self->getTableCell($p1, shift);
-		}
-
-	return undef unless $cell;
+	my $cell	= $self->getTableCell(@_) or return undef;
 
 	my $prefix = $self->{'opendocument'} ? 'office' : 'table';
 	my $cell_type	= $self->cellType($cell);
@@ -2736,22 +2762,8 @@ sub	getCellValue
 sub	cellValueType
 	{
 	my $self	= shift;
-	my $p1		= shift;
-
-	my $cell	= undef;
-	if 	((! (ref $p1)) || $p1->isTable)
-		{
-		@_ = OpenOffice::OODoc::Text::_coord_conversion(@_);
-		$cell = $self->getTableCell($p1, shift, shift);
-		}
-	elsif	($p1->isTableCell)
-		{
-		$cell = $p1;
-		}
-	elsif	($p1->isTableRow)
-		{
-		$cell = $self->getTableCell($p1, shift);
-		}
+	@_ = $self->getTableCell(@_);
+	my $cell	= shift		or return undef;
 
 	return $self->cellType($cell, @_);
 	}
@@ -2762,23 +2774,8 @@ sub	cellValueType
 sub	fieldCurrency
 	{
 	my $self	= shift;
-	my $p1		= shift;
-	my $cell	= undef;
-
-	if 	((! (ref $p1)) || $p1->isTable)
-		{
-		@_ = OpenOffice::OODoc::Text::_coord_conversion(@_);
-		$cell = $self->getTableCell($p1, shift, shift);
-		}
-	elsif	($p1->isTableCell)
-		{
-		$cell = $p1;
-		}
-	elsif	($p1->isTableRow)
-		{
-		$cell = $self->getTableCell($p1, shift);
-		}
-	return undef unless $cell;
+	@_ = $self->getTableCell(@_);
+	my $cell	= shift		or return undef;
 
 	my $newcurrency	= shift;
 	my $prefix	= $self->{'opendocument'} ? 'office' : 'table';
@@ -2799,22 +2796,9 @@ sub	fieldCurrency
 sub	cellFormula
 	{
 	my $self	= shift;
-	my $p1		= shift;
-	my $cell	= undef;
-	if 	((! (ref $p1)) || $p1->isTable)
-		{
-		@_ = OpenOffice::OODoc::Text::_coord_conversion(@_);
-		$cell = $self->getTableCell($p1, shift, shift);
-		}
-	elsif	($p1->isTableCell)
-		{
-		$cell = $p1;
-		}
-	elsif	($p1->isTableRow)
-		{
-		$cell = $self->getTableCell($p1, shift);
-		}
-	return undef unless $cell;
+	@_ = $self->getTableCell(@_);
+	my $cell	= shift		or return undef;
+
 	my $formula = shift;
 	if (defined $formula)
 		{
@@ -2836,24 +2820,8 @@ sub	cellFormula
 sub	updateCell
 	{
 	my $self	= shift;
-	my $p1		= shift;
-	my $cell	= undef;
-
-	if 	((! (ref $p1)) || $p1->isTable)
-		{
-		@_ = OpenOffice::OODoc::Text::_coord_conversion(@_);
-		$cell = $self->getTableCell($p1, shift, shift);
-		}
-	elsif	($p1->isTableCell)
-		{
-		$cell = $p1;
-		}
-	elsif	($p1->isTableRow)
-		{
-		$cell = $self->getTableCell($p1, shift);
-		}
-	return undef	unless $cell;
-
+	@_ = $self->getTableCell(@_);
+	my $cell	= shift		or return undef;
 
 	my $value	= shift;
 	my $text	= shift;
@@ -2891,33 +2859,14 @@ sub	updateCell
 sub	cellValue
 	{
 	my $self	= shift;
-	my $p1		= shift;
-
-	my $cell	= undef;
-	if 	((! (ref $p1)) || $p1->isTable)
-		{
-		@_ = OpenOffice::OODoc::Text::_coord_conversion(@_);
-		$cell = $self->getTableCell($p1, shift, shift);
-		}
-	elsif	($p1->isTableCell)
-		{
-		$cell = $p1;
-		}
-	elsif	($p1->isTableRow)
-		{
-		$cell = $self->getTableCell($p1, shift);
-		}
-	return undef unless $cell;
-
+	@_ = $self->getTableCell(@_);
+	my $cell	= shift		or return undef;
 	my $newvalue	= shift;
-	unless (defined $newvalue)
+	if (defined $newvalue)
 		{
-		return $self->getCellValue($cell);
+		$self->updateCell($cell, $newvalue, @_);
 		}
-	else
-		{
-		return $self->updateCell($cell, $newvalue, @_);
-		}
+	return $self->getCellValue($cell);
 	}
 
 #-----------------------------------------------------------------------------
@@ -2926,22 +2875,8 @@ sub	cellValue
 sub	cellStyle
 	{
 	my $self	= shift;
-	my $p1		= shift;
-	my $cell	= undef;
-	if 	((! (ref $p1)) || $p1->isTable)
-		{
-		@_ = OpenOffice::OODoc::Text::_coord_conversion(@_);
-		$cell = $self->getTableCell($p1, shift, shift);
-		}
-	elsif	($p1->isTableCell)
-		{
-		$cell = $p1;
-		}
-	elsif	($p1->isTableRow)
-		{
-		$cell = $self->getTableCell($p1, shift);
-		}
-	return undef unless $cell;
+	@_ = $self->getTableCell(@_);
+	my $cell	= shift		or return undef;
 
 	my $newstyle	= shift;
 
@@ -2993,26 +2928,12 @@ sub	removeCellSpan
 sub	cellSpan
 	{
 	my $self	= shift;
-	my $p1		= shift;
-	my $cell	= undef;
+	@_ = $self->getTableCell(@_);
+	my $cell	= shift		or return undef;
+
 	my $rnum	= undef;
 	my $cnum	= undef;
 	my $table	= undef;
-	if 	((! (ref $p1)) || $p1->isTable)
-		{
-		$table = $p1;
-		@_ = OpenOffice::OODoc::Text::_coord_conversion(@_);
-		$cell = $self->getTableCell($p1, shift, shift);
-		}
-	elsif	($p1->isTableCell)
-		{
-		$cell = $p1;
-		}
-	elsif	($p1->isTableRow)
-		{
-		$cell = $self->getTableCell($p1, shift);
-		}
-	return undef unless $cell;
 
 	my $old_hspan	= $cell->att('table:number-columns-spanned')	|| 1;
 	my $old_vspan	= $cell->att('table:number-rows-spanned')	|| 1;
@@ -3133,22 +3054,34 @@ sub	getTable
 		}
 
 	return undef	unless defined $table;
+
+	my $t	= undef;
 	if (ref $table)
 		{
-		return undef unless $table->isTable;
-		return wantarray ? $self->getTableSize($table) : $table;
+		if ($table->isTable)
+			{
+			$t = $table;
+			}
+		else
+			{
+			warn	"[" . __PACKAGE__ . "::getTable] "	.
+				"Non table object\n";
+			return undef;
+			}
 		}
-	if (($table =~ /^\d*$/) || ($table =~ /^[\d+-]\d+$/))
+	elsif (($table =~ /^\d*$/) || ($table =~ /^[\d+-]\d+$/))
 		{
 		$t = $self->getElement('//table:table', $table, $context);
 		}
 	else
 		{
+		my $n = $self->inputTextConversion($table);
 		$t = $self->getNodeByXPath
 				(
-				"//table:table[\@table:name=\"$table\"]"
+				"//table:table[\@table:name=\"$n\"]"
 				);
 		}
+	return undef	unless $t;
 	if	(
 		$length		||
 			(
@@ -3182,9 +3115,10 @@ sub	normalizeSheet
 			}
 		else
 			{
+			my $n = $self->inputTextConversion($table);
 			$table = $self->getNodeByXPath
 				(
-				"//table:table[\@table:name=\"$table\"]",
+				"//table:table[\@table:name=\"$n\"]",
 				$context
 				);
 			}
@@ -3606,16 +3540,52 @@ sub	deleteTableRow
 	}
 
 #-----------------------------------------------------------------------------
+# update the user field references according to the internal value
+
+sub	updateUserFieldReferences
+	{
+	my $self	= shift;
+	my $fd		= shift or return undef;
+	my $field_decl	= undef;
+	my $name	= undef;
+	if (ref $fd)
+		{
+		$name = $self->getAttribute($fd, 'text:name');
+		$field_decl = $fd;
+		}
+	else
+		{
+		$field_decl= $self->getUserFieldElement($fd);
+		$name = $fd;
+		}
+	unless ($field_decl && $name)
+		{
+		warn	"[" . __PACKAGE__ . "::updateUserFieldReferences] " .
+			"Unknown or bad user field\n";
+		return undef;
+		}
+	my @fields = $self->selectNodesByXPath
+		("//text:user-field-get[\@text:name=\"$name\"]");
+	my $content = $self->userFieldValue($field_decl) || "";
+	my $count = 0;
+	foreach my $field (@fields)
+		{
+		$self->setText($field, $content);
+		$count++;
+		}
+	return $count;
+	}
+
+#-----------------------------------------------------------------------------
 # get user field element
 
-sub	getUserFieldElement
+sub	getUserField
 	{
 	my $self	= shift;
 	my $name	= shift;
 	unless ($name)
 		{
-		warn	"[" . __PACKAGE__ . "::getUserFieldElement] "	.
-			"Missing name\n";
+		warn "[" . __PACKAGE__ . "::getUserField] Missing name\n";
 		return undef;
 		}
 	if (ref $name)
@@ -3623,6 +3593,7 @@ sub	getUserFieldElement
 		my $n = $name->getName;
 		return ($n eq 'text:user-field-decl') ? $name : undef;
 		}
+	$name = $self->inputTextConversion($name);
 	return $self->getNodeByXPath
 			("//text:user-field-decl[\@text:name=\"$name\"]");
 	}
@@ -3673,6 +3644,7 @@ sub	getVariableElement
 	}
 
 	return
+	$name = $self->inputTextConversion($name);
 	$self->getNodeByXPath("//text:variable-set[\@text:name=\"$name\"]");
 	}
 
@@ -3721,8 +3693,7 @@ sub	createParagraph
 		{
 		$self->SUPER::setText($p, $text);
 		}
-	$self->setAttribute
-		($p, 'text:style-name' => $self->inputTextConversion($style));
+	$self->setAttribute($p, 'text:style-name' => $style);
 	return $p;
 	}
 

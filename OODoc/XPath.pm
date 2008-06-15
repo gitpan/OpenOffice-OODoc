@@ -1,8 +1,8 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 2.224 2008-05-04 JMG$
+#	$Id : XPath.pm 2.225 2008-06-15 JMG$
 #
-#	Initial developer: Jean-Marie Gouarne
+#	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
 #	License:
 #		- Licence Publique Generale Genicorp v1.0
@@ -12,7 +12,7 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 2.224;
+our	$VERSION	= 2.225;
 use	XML::Twig	3.22;
 use	Encode;
 
@@ -28,6 +28,7 @@ BEGIN	{
 	*createSpaces		= *spaces;
 	*getFrame		= *getFrameElement;
 	*getNodeByXPath		= *selectNodeByXPath;
+	*getNodesByXPath	= *selectNodesByXPath;
 	*isCalcDocument		= *isSpreadsheet;
 	*isDrawDocument		= *isDrawing;
 	*isImpressDocument	= *isPresentation;
@@ -49,7 +50,7 @@ our %XMLNAMES	=			# OODoc root element names
 our	$CHARS_TO_ESCAPE	= "\"<>'&";
 					# standard external character set
 our	$LOCAL_CHARSET		= 'iso-8859-1';
-					# OpenOffice.org character set
+					# standard ODF character set
 our	$OO_CHARSET		= 'utf8';
 
 #------------------------------------------------------------------------------
@@ -360,11 +361,12 @@ sub	new
 		@_
 		};
 	
-	$self->{'container'} = $self->{'archive'} unless $self->{'container'};
-	my $twig = undef;
+	$self->{'container'} = $self->{'file'} if defined $self->{'file'};
+	$self->{'container'} = $self->{'archive'} if defined $self->{'archive'};
+	$self->{'part'} = $self->{'member'} if $self->{'member'};
+	$self->{'part'} = 'content' unless $self->{'part'};
 
-	$self->{'part'} = $self->{'member'} unless $self->{'part'};
-	if ($self->{'part'} && ! $self->{'element'})
+	unless ($self->{'element'})
 		{
 		my $m	= lc $self->{'part'};
 		if ($m =~ /(^.*)\..*/) { $m = $1; }
@@ -389,7 +391,7 @@ sub	new
 				unless $self->{'element'};
 	if ($self->{'element'})
 		{
-		$twig = XML::Twig->new
+		$self->{'twig'} = XML::Twig->new
 			(
 			elt_class	=> "OpenOffice::OODoc::Element",
 			twig_roots	=>
@@ -402,7 +404,7 @@ sub	new
 		}
 	else
 		{
-		$twig = XML::Twig->new
+		$self->{'twig'} = XML::Twig->new
 			(
 			elt_class	=> "OpenOffice::OODoc::Element",
 			pretty_print	=> $self->{'readable_XML'},
@@ -410,52 +412,43 @@ sub	new
 			);
 		}
 
-	unless ($self->{'container'})
+	if ($self->{'xml'})			# load from XML string
 		{
-		if (ref $self->{'file'})
-			{
-		 	my $obj = $self->{'file'};
-			if	($obj->isa("OpenOffice::OODoc::File"))
-				{
-				$self->{'container'} = $obj;
-				}
-			elsif	($obj->isa("OpenOffice::OODoc::XPath"))
-				{
-				$self->{'container'} = $obj->{'container'};
-				}
-			else
-				{
-				warn "[" . __PACKAGE__ . "::new] " .
-					"Invalid file object\n";
-				return undef;
-				}
-			delete $self->{'file'};
-			}
+		delete $self->{'container'};
+		delete $self->{'file'};
+		$self->{'xpath'} =
+			$self->{'twig'}->safe_parse($self->{'xml'});
+		delete $self->{'xml'};
 		}
-		
-	if ($self->{'xml'})		# load from XML string
+	elsif (ref $self->{'container'})	# load from OOFile container
 		{
-		$self->{'xpath'} = $twig->safe_parse($self->{'xml'});
-		}
-	elsif ($self->{'container'})	# load from existing OOFile
-		{
-		unless ($self->{'container'}->isa("OpenOffice::OODoc::File"))
+		delete $self->{'file'};
+	 	my $obj = $self->{'container'};
+		$self->{'container'} = $obj->{'container'}
+			if $obj->isa('OpenOffice::OODoc::XPath');
+		unless ($self->{'container'}->isa('OpenOffice::OODoc::File'))
 			{
-			warn "[" . __PACKAGE__ . "] Invalid container\n";
+			warn "[" . __PACKAGE__ . "::new] Invalid container\n";
 			return undef;
 			}
-		$self->{'part'} = 'content' unless $self->{'part'};
-		$self->{'xml'} = $self->{'container'}->link($self);
-		$self->{'xpath'} = $twig->safe_parse($self->{'xml'});
+		my $xml = $self->{'container'}->link($self);
+		$self->{'xpath'} = $self->{'twig'}->safe_parse($xml);
 		}
-	elsif ($self->{'file'})		# look for a file
+	else					# load from file
 		{
-		unless	(
+		$self->{'file'} = $self->{'container'};
+		delete $self->{'container'};
+		if	(
 			$self->{'flat_xml'}
 					||
 			(lc $self->{'file'}) =~ /\.xml$/
 			)
-			{		# create OOFile & extract from it
+			{			# load from XML flat file
+			$self->{'xpath'} =
+			    $self->{'twig'}->safe_parsefile($self->{'file'});
+			}
+		else
+			{			# load from ODF archive
 			require OpenOffice::OODoc::File;
 
 			$self->{'container'} = OpenOffice::OODoc::File->new
@@ -465,30 +458,17 @@ sub	new
 				opendocument	=> $self->{'opendocument'},
 				template_path	=> $self->{'template_path'}
 				);
-			$self->{'part'} = 'content'
-					unless $self->{'part'};
-			$self->{'xml'} = $self->{'container'}->link($self);
-			$self->{'xpath'} = $twig->safe_parse($self->{'xml'});
-			}
-		else
-			{		# load from XML flat file
-			$self->{'xpath'} =
-				$twig->safe_parsefile($self->{'file'});
-			}
+			delete $self->{'file'};
+			my $xml = $self->{'container'}->link($self);
+			$self->{'xpath'} = $self->{'twig'}->safe_parse($xml);
+			}	
 		}
-	else
-		{
-		warn "[" . __PACKAGE__ . "::new] No XML content\n";
-		return undef;
-		}
-		
-	delete $self->{'xml'};
 	unless ($self->{'xpath'})
 		{
 		warn "[" . __PACKAGE__ . "::new] No well formed content\n";
 		return undef;
 		}
-	$self->{'twig'} = $twig;
+						# XML content loaded & parsed
 	$self->{'context'} = $self->{'xpath'};
 	bless $self, $class;
 	
@@ -517,28 +497,29 @@ sub	DESTROY
 	if ($self->{'body'})
 		{
 		$self->{'body'}->delete();
-		delete $self->{'body'};
 		}
+	delete $self->{'body'};
 	if ($self->{'context'})
 		{
 		$self->{'context'}->dispose();
-		delete $self->{'context'};
 		}
+	delete $self->{'context'};
 	if ($self->{'xpath'})
 		{
 		$self->{'xpath'}->dispose();
-		delete $self->{'xpath'};
 		}
+	delete $self->{'xpath'};
 	if ($self->{'twig'})
 		{
 		$self->{'twig'}->dispose();
-		delete $self->{'twig'};
 		}
+	delete $self->{'twig'};
 	delete $self->{'xml'};
 	delete $self->{'content_class'};
 	delete $self->{'file'};
 	delete $self->{'container'};
 	delete $self->{'archive'};
+	delete $self->{'part'};
 	delete $self->{'twig_options'};
 	$self = {};
 	}
@@ -576,7 +557,7 @@ sub	save
 			}
 		else
 			{
-			warn "[" . __PACKAGE__ . "::save] No container\n";
+			warn "[" . __PACKAGE__ . "::save] Missing file\n";
 			return undef;
 			}
 		}
@@ -1009,8 +990,9 @@ sub	createFrameElement
 				($content_class eq 'drawing')
 			)
 			{
+			my $n = $self->inputTextConversion($pg);
 			$opt{'attachment'} = $self->getNodeByXPath
-					("//draw:page[\@draw:name=\"$pg\"]");
+					("//draw:page[\@draw:name=\"$n\"]");
 			}
 		}
 	delete $opt{'page'};
@@ -1061,7 +1043,7 @@ sub	createFrame
 sub	selectFrameElementByName
 	{
 	my $self	= shift;
-	my $text	= shift;
+	my $text	= $self->inputTextConversion(shift);
 	my $tag		= shift || 'draw:frame';
 	return $self->selectNodeByXPath
 			("//$tag\[\@draw:name=\"$text\"\]", @_);

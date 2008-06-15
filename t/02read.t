@@ -1,19 +1,20 @@
 #-----------------------------------------------------------------------------
-# 02read.t	OpenOffice::OODoc Installation test		2008-05-04
+# 02read.t	OpenOffice::OODoc Installation test		2008-05-18
 #-----------------------------------------------------------------------------
 
 use Test;
-BEGIN	{ plan tests => 9 }
+BEGIN	{ plan tests => 12 }
 
-use OpenOffice::OODoc	2.101;
-ok($OpenOffice::OODoc::VERSION >= 2.101);
+use OpenOffice::OODoc	2.103;
+ok($OpenOffice::OODoc::VERSION >= 2.103);
 
 #-----------------------------------------------------------------------------
 
 my $testfile    =       $OpenOffice::OODoc::File::DEFAULT_OFFICE_FORMAT == 2 ?
-                "ootest.odt" : "ootest.sxw";
+                "odftest.odt" : "ootest.sxw";
 my $generator	=	"OpenOffice::OODoc " . $OpenOffice::OODoc::VERSION .
 			" installation test";
+my $image_name	= "Logo";
 
 # Opening the $testfile file
 my $archive = odfContainer($testfile);
@@ -69,10 +70,29 @@ else
 	}
 
 # Checking the image element
-ok($doc->getImageElement("Logo"));
+ok($doc->getImageElement($image_name));
 
 # Selecting a paragraph by style
 ok($doc->selectParagraphByStyle("Colour"));
+
+# Getting the table
+my $table = $doc->getTable("Environment");
+unless ($table)
+	{
+	ok(0);		# unable to get the table
+	}
+else
+	{
+	ok(1);		# table found
+	}
+my ($h, $w) = $doc->getTableSize($table);
+
+# Checking the table size; must be 6x2
+ok(($h == 6) && ($w == 2)); 
+
+# Checking cell value
+my $cv = $doc->cellValue($table, "B5");
+ok($cv eq $OpenOffice::OODoc::VERSION);
 
 # Checking the installation signature in the metadata
 ok($meta->generator() eq $generator);

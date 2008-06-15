@@ -4,19 +4,19 @@ OpenOffice::OODoc::Document - Top level component for content and layout process
 
 =head1	SYNOPSIS
 
-	# get an OOo file handler
-	my $oofile = ooFile("myfile.odt");
+	# get an ODF file handler
+	my $oofile = odfContainer("myfile.odt");
 	# connect a content-focused document interface
-	my $content = ooDocument
+	my $content = odfDocument
 			(
-			file => $oofile,
-			member => 'content'
+			container => $oofile,
+			part => 'content'
 			);
 	# connect a style-focused document interface
-	my $styles = ooDocument
+	my $styles = odfDocument
 			(
-			file => $oofile,
-			member => 'styles'
+			container => $oofile,
+			part => 'styles'
 			);
 	# process any content and style element
 	$content->appendParagraph
@@ -47,7 +47,7 @@ from OODoc::XPath, OODoc::Text, OODoc::Styles and OODoc::Image.
 The most usual instruction to get access to any member of a document, with
 the exception if the metadata (meta.xml) should be something like:
 
-	my $doc = ooDocument([options]);
+	my $doc = odfDocument([options]);
 
 This constructor, if successful, returns an object that can be used
 (according to its "member" option) to process styles, images and text.
@@ -58,11 +58,11 @@ OODoc::XPath (which should not be called directly by applications).
 
 For example
 
-	my $styles = ooDocument(file => "source.odt", member => "styles");
+	my $styles = odfDocument(file => "source.odt", part => "styles");
 
 is generally better than
 
-	my styles = ooStyles(file => "source.odt");
+	my styles = odfStyles(file => "source.odt");
 
 While OODoc::Document inherits all the methods and properties of these
 classes, its detailed documentation in essentially provided in
@@ -84,9 +84,9 @@ which combine layout and content processing.
 
 =head3	Constructor : OpenOffice::OODoc::Document->new(<parameters>)
 
-        Short Form: ooDocument(<parameters>)
+        Short Form: odfDocument(<parameters>) or odfConnector(<parameters>)
 	
-        See OpenOffice::OODoc::XPath->new (or ooXPath)
+        See OpenOffice::OODoc::XPath->new (or odfXPath)
 	
 	Returns an OpenDocument connector, available for subsequent
 	access to any element of a well-formed document.
@@ -96,8 +96,8 @@ which combine layout and content processing.
 	corresponding constructors. So all the options of these constuctors
 	are available.
 	
-        If no "member" parameter is given, the member selected by default is
-	"content" (see OODoc::XPath). The most generally used members are
+        If no "part" parameter is given, the member selected by default is
+	"content" (see OODoc::XPath). The most generally used parts are
 	"content" and "styles".
 
 =head3	createImageStyle(name [, options])
@@ -128,6 +128,19 @@ which combine layout and content processing.
             	size		=> "4cm, 12cm",
             	import		=> "eiffel_tower.jpg"
             	);
+
+	The 'properties' option is available for customizations, according
+	to the OpenDocument naming rules. For example, the following
+	instruction creates a style for centered images:
+
+	    $doc->createImageStyle
+		(
+		'Centered Image',
+		properties =>
+			{
+			'style:horizontal-pos' => 'center'
+			}
+		);
 
 =head3	createTextStyle(name [, options])
 
@@ -223,7 +236,7 @@ Developer/Maintainer: Jean-Marie Gouarne L<http://jean.marie.gouarne.online.fr>
 
 Contact: jmgdoc@cpan.org
 
-Copyright 2004-2006 by Genicorp, S.A. L<http://www.genicorp.com>
+Copyright 2004-2008 by Genicorp, S.A. L<http://www.genicorp.com>
 
 Initial English version of the reference manual by Graeme A. Hunter
 (graeme.hunter@zen.co.uk).

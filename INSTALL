@@ -1,4 +1,4 @@
-OpenOffice::OODoc installation (December 2006)
+OpenOffice::OODoc installation (May 2008)
 
 SYSTEM REQUIREMENTS
 
@@ -54,8 +54,8 @@ INSTALLATION FROM THE CPAN DISTRIBUTION
 	
 	These options define installation-level default values only; each of
 	these values can be overridden by the applications (thanks, for
-	example, to the ooLocalEncoding(), ooWorkingDirectory() and
-	ooLoadColorMap() functions). The installation-level options are stored
+	example, to the odfLocalEncoding(), odfWorkingDirectory() and
+	odfLoadColorMap() functions). The installation-level options are stored
 	in a XML file (OODoc/config.xml) below the installation directory.
 	This file can be manually edited at any time after the installation
 	in order to change any parameter.
@@ -64,10 +64,15 @@ INSTALLATION FROM THE CPAN DISTRIBUTION
 	applications; it contains the installation date in ISO-8601 format.
 	If the customization has been skipped (due to the --noconfig option),
 	this variable contains the packaging date of the distribution.
+	Caution, this value is significant if the installation has been done
+	from the original CPAN distribution only.
 
-	If the installation is successful, the test procedure generates an
-	OpenOffice.org document, writes some content in it, and checks the
-	result. You can later open this document with OpenOffice.org Writer
-	or a compatible software; the file is named 'ootest.sxw' or
-	'ootest.odt' (according to your default file format) and resides
-	in the working directory of the installation.
+	The date of the original CPAN package is provided by the variable
+	$OpenOffice::OODoc::BUILD_DATE.
+
+	If the installation is successful, the test procedure generates a
+	document, writes some content in it, and checks the result. This
+	document is named 'ootest.sxw' or 'odftest.odt' (according to your
+	default file format) and resides in the working directory of the
+	installation. You can later check this document with a compatible
+	text processor or viewer.

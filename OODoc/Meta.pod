@@ -12,9 +12,9 @@ of OpenDocument (ODF) and OpenOffice.org documents.
 
 =head3	Constructor : OpenOffice::OODoc::Meta->new(<parameters>)
 
-        Short Form: ooMeta(<parameters>)
+        Short Form: odfMeta(<parameters>)
 
-        See OpenOffice::OODoc::XPath->new (or ooXPath)
+        See OpenOffice::OODoc::XPath->new (or odfXPath)
 
         Returns an OpenDocument connector allowing subsequent access to
 	the metadata of a well-formed, ODF-compliant document.
@@ -23,7 +23,7 @@ of OpenDocument (ODF) and OpenOffice.org documents.
 
         Example:
 
-            $my meta	= ooMeta(file => 'document.odt');
+            $my meta	= odfMeta(file => 'document.odt');
 
         returns a new object which represents the metadata of the
         ODF document "document.odt".
@@ -56,7 +56,7 @@ of OpenDocument (ODF) and OpenOffice.org documents.
 	(ISO-8601) date format. The ooLocaltime() function can be used in
 	order to convert a regular Perl time() value in ODF.
 
-	The OpenOffice.org desktop software never changes this value, but
+	A conventional editing software should never changes this value, but
 	this method allows the user to read or write it.
 
 	See also date().
@@ -116,7 +116,7 @@ of OpenDocument (ODF) and OpenOffice.org documents.
         Without argument, returns a label representing the signature of the
         software which generated the document. Example of signature:
 
-            "OpenOffice.org 2.3.1 (Linux)"
+        "OpenOffice.org/2.4$Linux OpenOffice.org_project/680m12$Build-9286"
 
         With argument, inserts any signature.
 
@@ -232,6 +232,10 @@ of OpenDocument (ODF) and OpenOffice.org documents.
         If the number of elements supplied in the hash is less than 4, the
         last fields are left untouched. If, however, the hash contains more
         than 4 elements, only the first 4 are taken into account.
+
+=head3	version()
+
+	Synonym of editing_cycles().
 
 =head2	Properties
 

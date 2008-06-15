@@ -44,7 +44,7 @@ the 'name' nor the 'display-name' stored attributes. For example, in the
 French distribution of OpenOffice.org, the "Text body" style appears as
 "Corps de texte", while its "display-name" is "Text body" and its "name"
 is "Text_20_body". This localization is hard-coded in the office software
-for a few predefined style, and it's not stored in the file. However, this
+for a few predefined styles, and it's not stored in the file. However, this
 is not a problem for user-defined styles as the stored display-name is exactly
 the same as the effective display name.
 
@@ -54,8 +54,8 @@ set of presentation attributes is given to an element, but where no
 named style is referenced. Automatic styles which apply to the
 document body are stored in content.xml (but in an XML element
 isolated from the content). An automatic style's name can change
-randomly each time the document is edited or saved in
-OpenOffice.org. Applications which access automatic styles will not
+randomly each time the document is edited or saved through an interactive
+desktop application. Applications which access automatic styles will not
 want to indicate them using "hard-coded" names. The best way is to
 retrieve each automatic style via an object that is known to use it.
 Using a "hard-coded" name is all right for styles created by a
@@ -67,18 +67,18 @@ complicated, but it is better to avoid making hundreds of styles
 visible to the user that they do not need to see.
 
 There are some structural differences between the old OpenOffice.org 1.0
-format and the new OASIS OpenDocument (ODF) one. A few of these differences
+format and the OASIS OpenDocument (ODF) one. A few of these differences
 aren't made fully transparent by OpenOffice::OODoc. So, in some cases, a
 program including style definitions or updates doesn't produce exactly the
 same results with both OOo 1 and ODF documents.
 
+The page styles are more complex than the other usual styles. A page style
 Some styles are more complex than others as they describe the page layout.
-These styles can themselves contain text and images. A page style, or a
-"master page", can actually define a header, a footer, margins, and a
-background.
+so called "master page", can actually define a header, a footer, margins,
+and a background.
 
-Headers and footers can contain text and images which can otherwise be handled
-by OODoc::Text and OODoc::Image.
+Page headers and footers can contain text and images; as a consequence,
+some of their features can be handled by OODoc::Text and OODoc::Image.
 
 A background contains a colour and can also include a background image (several
 methods are possible).
@@ -247,14 +247,13 @@ at least a blank of each required style.
         "style:style" (which corresponds to the most commonly used content
         styles). Some style elements are indicated in a different way. The
         "namespace" and "type" options are available for this. If, for
-        example, you want to create a footer configuration style (called
-        "text:footnote-configuration" in the OpenOffice.org specification),
-        you will have to specify the "footnote-configuration" type
-        explicitly in the "text" namespace using one of the following two
-        options:
+        example, you want to create a notes configuration style (called
+        "text:notes-configuration" in the ODF specification), you will have
+	to specify the "notes-configuration" type explicitly in the "text"
+	namespace using one of the following two options:
 
             namespace		=> 'text',
-            type		=> 'footnote-configuration'
+            type		=> 'notes-configuration'
 
         The possible options are:
 
@@ -606,6 +605,25 @@ at least a blank of each required style.
 			}
 
 	See also importFontDeclaration().
+
+=head3	getFontDeclarations()
+
+	Returns the full list of the font declaration elements present in
+	the document.
+
+	The following example prints every declared font name:
+
+		foreach my $fd ($doc->getFontDeclarations)
+			{
+			print $doc->getFontName($fd) . "\n";
+			}
+
+=head3	getFontName(font_decl)
+
+	Returns the name of the given font declaration element.
+
+	Returns the argument as is if this argument is the name of a declared
+	font, or undef if the name is unknown.
 
 =head3	getFooterParagraph(masterpage, number)
 

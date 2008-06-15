@@ -6,7 +6,7 @@ OpenOffice::OODoc::File - I/O operations with OpenDocument files
 
 The explicit use of this module is generally required only in
 programs which need to do some raw data import or export operations
-in OOo/OpenDocument files. This module can be used as a special
+in OpenDocument files. This module can be used as a special
 wrapper of Archve::Zip.
 
 However, a look at the constructor and the save() methods is
@@ -69,10 +69,17 @@ not necessarily in OpenOffice.org format.
 
 		template_path	=> "path"
 
-	to generate the new file from special, user-provided XML templates
+	to generate the new file from special, user-provided ODF templates
 	instead of those included in the installation. If this option is
 	not provided, the general template path (possibly changed with
-	the templatePath() function) is used.
+	the templatePath() function) is used. The template path must
+	indicate a directory which contains a set of ODF files whose
+	names are "template.???", where "???" represents the conventional
+	ODF and OOo suffixes, knowing that the supported suffixes are
+	presently odt, ods, odp, odg, sxw, sxc, sxi, sxd. Of course, some
+	applications don't need all the templates; for example, the
+	"template.sx?" files should be omitted if the user don't want to
+	use the legacy OpenOffice.org format for new documents.
 
 	When the "create" option is used, it's possible to provide an
 	"opendocument" option in order to override the installation-level
@@ -290,18 +297,22 @@ not necessarily in OpenOffice.org format.
 
 	Class function (not to be used as a method).
 
-	Accessor to get/set the path for a user-defined set of XML templates,
+	Can be replaced by odfTemplatePath(), see OODoc man page.
+
+	Accessor to get/set the path for a user-defined set of ODF templates,
 	to be used in case of new document creation. This path is empty by
 	default. Without an explicit template path, the default XML templates
 	provided with the OpenOffice::OODoc distribution are automatically
 	selected.
 
-	The given path, if any, must correspond to a directory with the
-	"text", "presentation", "spreadsheet" and "drawing" subdirectories,
-	each one containing the appropriates XML templates for the
-	corresponding document class and their associated non-XML data, if
-	any (ex: images). These templates can be produced, for example, by
-	uncompressing ordinary OpenOffice.org files.
+	The template path must designate a directory containing 4 regular
+	ODF files, each one corresponding to a supported ODF document class,
+	i.e. "template.odt", "template.ods", "template.odp", "template.odg".
+	However, the user don't need to provide templates that will not be
+	used.
+
+	Note that it's always possible to override the default template path
+	when a new document is created, thanks to the 'template_path' option.
 
 =head2	Properties
 

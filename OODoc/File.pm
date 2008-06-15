@@ -1,8 +1,8 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : File.pm 2.114 2008-05-02 JMG$
+#	$Id : File.pm 2.115 2008-05-18 JMG$
 #
-#	Initial developer: Jean-Marie Gouarne
+#	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
 #	License:
 #		- Licence Publique Generale Genicorp v1.0
@@ -12,7 +12,7 @@
 
 package	OpenOffice::OODoc::File;
 use	5.006_001;
-our	$VERSION	= 2.114;
+our	$VERSION	= 2.115;
 use	Archive::Zip	1.14	qw ( :DEFAULT :CONSTANTS :ERROR_CODES );
 use	File::Temp;
 
@@ -33,13 +33,20 @@ our	%OOTYPE				=
 		presentation	=> 'impress',
 		drawing		=> 'draw',
 		);
-		
-#-----------------------------------------------------------------------------
-
-BEGIN
-	{
-	*ooCreateFile			= *odfCreateFile;
-	}
+our	%ODF_SUFFIX			=
+		(
+		text		=> 'odt',
+		spreadsheet	=> 'ods',
+		presentation	=> 'odp',
+		drawing		=> 'odg'
+		);
+our	%OOO_SUFFIX			=
+		(
+		text		=> 'sxw',
+		spreadsheet	=> 'sxc',
+		presentation	=> 'sxi',
+		drawing		=> 'sxd'
+		);
 
 #-----------------------------------------------------------------------------
 # returns the mimetype string according to a document class
@@ -52,25 +59,6 @@ sub	mime_type
 	}
 		
 #-----------------------------------------------------------------------------
-# returns the template member list
-
-our	@_archive_members;
-
-sub	_fill_manifest
-	{
-	push @_archive_members, $File::Find::name;
-	}
-
-sub	get_template_manifest
-	{
-	require File::Find;
-	my $path	= shift;
-	@_archive_members = ();
-	File::Find::find(\&_fill_manifest, $path);
-	return @_archive_members;
-	}
-
-#-----------------------------------------------------------------------------
 # get/set the path for XML templates
 
 sub	templatePath
@@ -80,11 +68,6 @@ sub	templatePath
 	return $TEMPLATE_PATH;
 	}
 
-sub	ooTemplatePath
-	{
-	return OpenOffice::OODoc::File::templatePath(@_);
-	}
-	
 #-----------------------------------------------------------------------------
 # member storage
 
@@ -136,25 +119,15 @@ sub	store_member
 	}
 
 #-----------------------------------------------------------------------------
-# file creation from template
+# new container creation from template
 
-sub	odfCreateFile
+sub	_load_template_file
 	{
 	my %opt	=
 		(
-		class		=> 'text',
 		template_path	=> $TEMPLATE_PATH,
-		work_dir	=> $WORKING_DIRECTORY,
 		@_
 		);
-	
-	unless (checkWorkingDirectory($opt{'work_dir'}))
-		{
-                warn    "[" . __PACKAGE__ . "::odfCreateFile] "          .
-			"Write operation not allowed - "        .
-			"Working directory missing or non writable\n";
-		return undef;
-		}
 
 	my $basepath = undef;
 	if ($opt{'template_path'})
@@ -168,47 +141,20 @@ sub	odfCreateFile
 			File::Basename::dirname
 				($INC{"OpenOffice/OODoc/File.pm"}) .
 			'/templates/';
-		$basepath .= $opt{'opendocument'} ?
-				'opendocument' : 'ooffice';
 		}
 	$basepath =~ s/\\/\//g;
-	my $path	= $basepath . '/' . $opt{'class'};
-	unless (-d $path)
-		{
-                warn    "[" . __PACKAGE__ . "::odfCreateFile] "          .
-			"No valid template access path\n";
-		return undef;
-		}
+	my $suffix = $opt{'opendocument'} ?
+				$ODF_SUFFIX{$opt{'class'}}	:
+				$OOO_SUFFIX{$opt{'class'}};
 	delete $opt{'class'};
-	my @files = OpenOffice::OODoc::File::get_template_manifest($path);
-       	my $zipfile = Archive::Zip->new;
-	foreach my $file (@files)
+
+	my $source_file = $basepath . '/template.' . $suffix;
+	my $archive = Archive::Zip->new;
+	if ($archive->read($source_file) != AZ_OK)
 		{
-		next unless ($file && -f $file);
-		my $member = $file; $member =~ s/\Q$path\///;
-		next unless $member;
-		store_member
-			(
-			$zipfile,
-			member		=> $member,
-			file		=> $file,
-			compress	=> ($member eq 'meta.xml') ? 0 : 1
-			);
+		$archive = undef;
 		}
-	if ($opt{'filename'})
-		{
-		unless ($zipfile->writeToFileNamed($filename) == AZ_OK)
-			{
-                	warn    "[" . __PACKAGE__ . "::createOOFile] "          .
-				"Archive initialization error\n";
-			return undef;
-			}
-		return $filename;
-		}
-	else
-		{
-		return $zipfile;
-		}
+	return $archive;
 	}
 
 #-----------------------------------------------------------------------------
@@ -428,10 +374,9 @@ sub	new
 		}
 	else
 		{
-		$self->{'archive'} = odfCreateFile
+		$self->{'archive'} = _load_template_file
 				(
 				class		=> $self->{'create'},
-				work_dir	=> $self->{'work_dir'},
 				template_path	=> $self->{'template_path'},
 				opendocument	=> $self->{'opendocument'}
 				);
@@ -439,7 +384,7 @@ sub	new
 			{
 			delete $self->{'archive'};
 			warn	"[" . __PACKAGE__ . "::new] "	.
-				"File creation failure\n";
+				"Bad or missing template\n";
 			return undef;
 			}
 		}

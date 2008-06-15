@@ -1,15 +1,18 @@
-# http://module-build.sourceforge.net/META-spec.html
-#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
-name:         OpenOffice-OODoc
-version:      2.102
-version_from: OODoc.pm
-installdirs:  site
-requires:
+--- #YAML:1.0
+name:                OpenOffice-OODoc
+version:             2.103
+abstract:            The Perl Open OpenDocument Connector
+license:             ~
+author:              
+    - Jean-Marie Gouarné <jmgdoc@cpan.org>
+generated_by:        ExtUtils::MakeMaker version 6.42
+distribution_type:   module
+requires:     
     Archive::Zip:                  1.14
     File::Find:                    1.01
     File::Temp:                    0.12
     Time::Local:                   1.07
     XML::Twig:                     3.22
-
-distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.30_01
+meta-spec:
+    url:     http://module-build.sourceforge.net/META-spec-v1.3.html
+    version: 1.3

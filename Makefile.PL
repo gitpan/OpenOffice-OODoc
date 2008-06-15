@@ -1,5 +1,5 @@
 #------------------------------------------------------
-# OpenOffice::OODoc packaging & installation 2008-05-04
+# OpenOffice::OODoc packaging & installation 2008-05-19
 #------------------------------------------------------
 
 use 5.008;
@@ -17,7 +17,7 @@ GetOptions
 	'colormap=s'	=> \(my $colormap = ''),
 	'workdir=s'	=> \(my $workdir = '.'),
 	'format=s'	=> \(my $format = 2),
-	'packaging'	=> \(my $packaging = undef)
+	'build'		=> \(my $build = undef)
 	);
 
 #------------------------------------------------------
@@ -106,19 +106,19 @@ if ($config)
 		$lt[5] + 1900, $lt[4] + 1, $lt[3], $lt[2], $lt[1], $lt[0]
 		);
 	my $install_date	= undef;
-	my $packaging_date	= undef;
-	if ($packaging)
+	my $build_date	= undef;
+	if ($build)
 		{
-		open TS, ">", "packaging_date";
+		open TS, ">", "build_date";
 		print TS $current_date;
 		close TS;
-		$packaging_date = $current_date;
+		$build_date = $current_date;
 		$install_date	= "N/A";
 		}
 	else
 		{
-		open TS, "<", "packaging_date";
-		$packaging_date	= <TS>;
+		open TS, "<", "build_date";
+		$build_date	= <TS>;
 		close TS;
 		$install_date	= $current_date;
 		}
@@ -134,7 +134,7 @@ if ($config)
 	print CF "\t\t<XPath-LOCAL_CHARSET>$encoding</XPath-LOCAL_CHARSET>\n";
 	print CF "\t\t<File-WORKING_DIRECTORY>$workdir</File-WORKING_DIRECTORY>\n";
 	print CF "\t\t<Styles-COLORMAP>$colormap</Styles-COLORMAP>\n";
-	print CF "\t\t<PACKAGING_DATE>$packaging_date</PACKAGING_DATE>\n";
+	print CF "\t\t<BUILD_DATE>$build_date</BUILD_DATE>\n";
 	print CF "\t\t<INSTALLATION_DATE>$install_date</INSTALLATION_DATE>\n";
 	print CF "\t</OpenOffice-OODoc>\n";
 	print CF "</config>";

@@ -21,15 +21,15 @@ control. There is no automatic consistency check between the manifest
 and the real content (but this check and others could be easily
 developed with the combination of this module and the other ones).
 
-The manifest (i.e. the "META-INF/manifest.xml") is a special member
-of a regular OpenDocument file. It describes the MIME types and the
-full internal paths of the other members.
+The manifest (i.e. the "META-INF/manifest.xml" part of an ODF package)
+is a special member that describes the MIME types and the full internal
+paths of the other members.
 
 =head2	Methods
 
 =head3	Constructor : OpenOffice::OODoc::Manifest->new(<parameters>)
 
-        Short Form: ooManifest(<parameters>)
+        Short Form: odfManifest(<parameters>)
 
         See OpenOffice::OODoc::XPath->new
 
@@ -43,7 +43,7 @@ full internal paths of the other members.
 				);
 
         returns a new object which represents the member list of an
-        OpenOffice.org "document.odt" file.
+        ODF-compliant "document.odt" file.
 
 =head3	getEntry($entry)
 
@@ -58,7 +58,7 @@ full internal paths of the other members.
 	
 =head3	getMainType()
 
-	Returns the main MIME type of the OpenOffice.org document.
+	Returns the main MIME type of the document.
 	For example, this type is
 	
 		"application/vnd.oasis.opendocument.text"
@@ -123,7 +123,7 @@ Developer/Maintainer: Jean-Marie Gouarne L<http://jean.marie.gouarne.online.fr>
 
 Contact: jmgdoc@cpan.org
 
-Copyright 2004-2006 by Genicorp, S.A. L<http://www.genicorp.com>
+Copyright 2004-2008 by Genicorp, S.A. L<http://www.genicorp.com>
 
 Initial English version of the reference manual by Graeme A. Hunter
 (graeme.hunter@zen.co.uk).

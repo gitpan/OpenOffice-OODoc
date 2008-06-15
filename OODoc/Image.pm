@@ -2,7 +2,7 @@
 #
 #	$Id : Image.pm 2.017 2008-05-03 JMG$
 #
-#	Initial developer: Jean-Marie Gouarne
+#	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
 #	License:
 #		- Licence Publique Generale Genicorp v1.0

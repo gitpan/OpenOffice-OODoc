@@ -263,7 +263,7 @@ presentation which is one of the foundations of the OpenDocument format.
 	provided through an 'attachment' option. For example, to append a new
 	paragraph in a table cell, one can write
 
-		my $cell = $doc->getCell("Table1", "B12");
+		my $cell = $doc->getTableCell("Table1", "B12");
 		$doc->appendParagraph
 			(
 			text		=> "The cell, reloaded",
@@ -541,7 +541,7 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	In a spreadsheet document, get/set the span of a table cell,
 	knowing that this span can be one or more columns. The cell addressing
-	is the same as with getCell().
+	is the same as with getTableCell().
 	Example:
 
 		$doc->cellSpan($table, "B4", 3);
@@ -602,7 +602,7 @@ presentation which is one of the foundations of the OpenDocument format.
 	one and fill it with a numeric value, cellValueType() must be called
 	*before* cellValue(). Ex:
 
-		my $cell = $doc->getCell('Sheet1', 4, 8);
+		my $cell = $doc->getTableCell('Sheet1', 4, 8);
 		$doc->cellValueType($cell, 'float');
 		$doc->cellValue($cell, 12.34);
 
@@ -788,6 +788,40 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	See deleteRow().
 
+=head3	expandSheet()
+
+	Synonym of expandTable().
+
+=head3	expandTable(table, height, width)
+
+	Increases the size of the given table or spreadsheet.
+
+	This method silently executes a full normalization of the table before
+	resizing it. See normalizeSheet() for details about this operation.
+
+	This method is specially useful in order to ensure the availability of
+	an appropriate workspace in a spreadsheet whose apparent size is
+	almost unlimited through the GUI of a typical desktop software but
+	but whose real size is unknown and/or doesn't include all the target
+	area of the application.
+
+	The vertical expansion is implemented by repetitive replication of the
+	last row, while the horizontal expansion is implemented by repetitive
+	replication of the last cell of the last row. So the new cells in the
+	right side are copies of the old bottom-right cell, while the new rows
+	are copies of the old last row.
+
+	Any size argument which is not larger than the previous height or width
+	is silently ignored, so method produces the same effect as
+	normalizeSheet() with the "full" parameter.
+
+	The return value is the table element itself in scalar context, or
+	the table size in array context.
+
+	Note that there is no direct method to shrink a table. However, it's
+	possible to do the job by deleting selected rows and or columns
+	through deleteTableColumn() and/or deleteTableRow().
+
 =head3	extendText(element, text [, style [, offset]])
 
 	Inserts the text provided as the second argument into the element
@@ -888,99 +922,10 @@ presentation which is one of the foundations of the OpenDocument format.
 	If the bookmark covers a range of text (i.e. if it's not a position),
 	the returned element is the "bookmark start" one.
 
-=head3	getCell(table, row, column)
+=head3	getCell()
 
-=head3	getCell(table, coord)
+	Synonym of getTableCell().
 
-=head3	getCell(row, column)
-
-        Returns the element which represents the given cell. Possible
-        arguments are respectively: the table number or its reference in the
-        document, row number and column number. Each table cell contained in
-        the body of an OOo/ODF document can be referenced in this
-        manner, as if it belonged to a single 3D table irrespective of the
-        rest of the document.
-
-	If the cell is defined in the spreadsheet but covered (because of a
-	cell merge), the return value is undef. In other words, this method
-	doesn't provide access to a covered cell.
-
-        The first argument can be either the sequential number of the table
-        (starting at 0), the logical name of the table, or a 'table' object
-	(which can be retrieved in advance using getTable). If it's a number
-	or a name, getTable() is automatically called by getCell() in order
-	to convert it in a 'table' object. However, if the first argument is
-	a row object (previously obtained via getRow() or getHeaderRow()),
-	the second one is processed as the column number. Before using several
-	cells in the same row, it's a good idea to get the row object and then
-	to use it in every cell selection, in order to minimize the
-	coordinates calculation.
-
-	In tables including one or more header rows, the best way to get a
-	header cell is to use a header row (previously obtained using
-	getHeaderRow()) as the first argument. If the first argument is a
-	table, getCell() looks in the table body only.
-
-	Alternatively, the user can provide the cell coordinates in a single
-	alphanumeric argument, beginning with one or two letters and ending
-	with one or more decimal digits, according to the same logic as in a
-	spreadsheet. So, for example
-
-		$doc->getCell($table, 'B12');
-
-	is equivalent to
-
-		$doc->getCell($table, 11, 1);
-
-	(Remember that, with the numeric coordinates, the row number is the
-	first argument, while with the alphanumeric, spreadsheet-like ones,
-	the column letter(s) come first.)
-
-        Numbers can also be negative, where position -1 is the last. For
-        example:
-
-            $cell = $doc->getCell(-1, -1, -1);
-
-        returns the very bottom right cell of the very last table in the
-        document $doc.
-
-        Returns a null value if the given cell does not exist or if it's
-	covered by the span of another cell.
-
-	Any cellXXX() method in this module uses the same cell addressing
-	logic as getCell().
-
-        CAUTION: Remember that OODoc works with the XML representation of
-	the tables, and not with the tables themselves. The [x,y] direct
-	addressing feature works as long as there is a continuous, one-to-one
-	mapping between the logical view and the physical XML storage of the
-	table. But, according to the OpenDocument specification, several
-	contiguous objects (cells or rows) are allowed to be mapped to a
-	single XML object when they have the same content and the same
-	style, in order to save some storage space. This optimization is
-	systematically used, for example, by OpenOffice.org Calc.
-
-	Addressing cells in spreadsheets is considerably more complex
-        than in text document tables. However, the same addressing scheme
-	in allowed in the "Calc" documents than in the "Writer" ones,
-	provided the targeted cells belong to a preprocessed workspace
-	(beginning at the upper-left cell, and ending at a parametrizable
-	position). It's possible to use normalizeSheet() or getTable() in
-	order to make this workspace available.
-
-	See normalizeSheet() for more explanations.
-
-	Remember that the table addressing is zero-based and
-	the row comes before the column in OpenOffice::OODoc, so, for
-	example:
-
-		$cell1 = $doc->getCell($table, 0, 0);
-		$cell2 = $doc->getCell($table, 31, 25);
-
-	returns respectively the A1 and Z32 cells.
-
-	Note: in a spreadsheet, (0,0) are the coordinates of the "A1" cell,
-	and, for example, (16, 25) are the coordinates of the "Z17" cell.
 
 =head3	getCellParagraph(table, row, column)
 
@@ -1434,6 +1379,96 @@ presentation which is one of the foundations of the OpenDocument format.
 	fully normalizes the table whose title is "Friends" and returns itself	
 	size.
 
+=head3	getTableCell(table, row, column)
+
+=head3	getTableCell(table, coord)
+
+=head3	getTableCell(row, column)
+
+        Returns the element which represents the given cell. Possible
+        arguments are respectively: the table number or its reference in the
+        document, row number and column number. Each table cell contained in
+        the body of an OOo/ODF document can be referenced in this
+        manner, as if it belonged to a single 3D table irrespective of the
+        rest of the document.
+
+	If the cell is defined in the spreadsheet but covered (because of a
+	cell merge), the return value is undef. In other words, this method
+	doesn't provide access to a covered cell.
+
+        The first argument can be either the sequential number of the table
+        (starting at 0), the logical name of the table, or a 'table' object
+	(which can be retrieved in advance using getTable). If it's a number
+	or a name, getTable() is automatically called by getTableCell() in
+	order to convert it in a 'table' object. However, if the first
+	argument is a row object (previously obtained via getRow() or
+	getHeaderRow()), the second one is processed as the column number.
+	Before using several cells in the same row, it's a good idea to get
+	the row object and then to use it in every cell selection, in order
+	to minimize the coordinates calculation.
+
+	In tables including one or more header rows, the best way to get a
+	header cell is to use a header row (previously obtained using
+	getHeaderRow()) as the first argument. If the first argument is a
+	table, getCell() looks in the table body only.
+
+	Alternatively, the user can provide the cell coordinates in a single
+	alphanumeric argument, beginning with one or two letters and ending
+	with one or more decimal digits, according to the same logic as in a
+	spreadsheet. So, for example
+
+		$doc->getTableCell($table, 'B12');
+
+	is equivalent to
+
+		$doc->getTableCell($table, 11, 1);
+
+	(Remember that, with the numeric coordinates, the row number is the
+	first argument, while with the alphanumeric, spreadsheet-like ones,
+	the column letter(s) come first.)
+
+        Numbers can also be negative, where position -1 is the last. For
+        example:
+
+            $cell = $doc->getCell(-1, -1, -1);
+
+        returns the very bottom right cell of the very last table in the
+        document $doc.
+
+        Returns a null value if the given cell does not exist or if it's
+	covered by the span of another cell.
+
+	Any cellXXX() method in this module uses the same cell addressing
+	logic as getTableCell().
+
+        CAUTION: Remember that OODoc works with the XML representation of
+	the tables, and not with the tables themselves. The [x,y] direct
+	addressing feature works as long as there is a continuous, one-to-one
+	mapping between the logical view and the physical XML storage of the
+	table. But, according to the OpenDocument specification, several
+	contiguous objects (cells or rows) are allowed to be mapped to a
+	single XML object when they have the same content and the same
+	style, in order to save some storage space. This optimization is
+	systematically used, for example, by OpenOffice.org Calc. In addition,
+	OODoc can't address a cell that could be displayed through the GUI
+	of a typical interactive spreadsheet software but that isn't stored
+	because it's not initialized yet. As a consequence, the direct
+	addressing logic of getTableCell() may require some preprocessing.
+	See normalizeSheet() and/or expandTable() about such preprocessing.
+
+	Remember that the table addressing is zero-based and
+	the row comes before the column in OpenOffice::OODoc, so, for
+	example:
+
+		$cell1 = $doc->getTableCell($table, 0, 0);
+		$cell2 = $doc->getTableCell($table, 31, 25);
+
+	returns respectively the A1 and Z32 cells.
+
+	Note: in a spreadsheet, (0,0) are the coordinates of the "A1" cell,
+	and, for example, (16, 25) are the coordinates of the "Z17" cell.
+
+
 =head3	getTableColumn(table, column)
 
         See getColumn.
@@ -1449,7 +1484,7 @@ presentation which is one of the foundations of the OpenDocument format.
 	default).
 
 	The returned elements can be used with subsequent cell access methods
-	in order to process header cells (see getCell()).
+	in order to process header cells (see getTableCell()).
 
 =head3	getTableList()
 
@@ -1587,10 +1622,14 @@ presentation which is one of the foundations of the OpenDocument format.
 	WARNING: Ordered lists are possible in the OpenOffice.org 1 format
 	only. Don't use it against OpenDocument.
 
-=head3	getUserFieldElement(name)
+=head3	getUserField(name)
 
 	Returns the element (if defined) representing a user-defined field,
 	and corresponding to the given name. See also userFieldValue().
+
+=head3	getUserFieldElement(name)
+
+	See getUserField().
 
 =head3	getVariableElement(name)
 
@@ -1952,7 +1991,9 @@ presentation which is one of the foundations of the OpenDocument format.
 	normalizeSheet() is neutral against already normalized tables.
 
 	An explicit call to this method can be replaced by getTable() with the
-	additional length and width parameters.
+	additional length and width parameters. In addition, normalizeSheet()
+	is automatically executed before resizing each time a table is
+	processed by expandTable().
 
 =head3	normalizeTable(table [, rows [, columns]])
 
@@ -2701,7 +2742,7 @@ presentation which is one of the foundations of the OpenDocument format.
         Modifies the content of a table cell.
 
         In its first form, indicates a cell by its 3D coordinates, as with
-        getCell(). In its second form, indicates a cell by its element
+        getTableCell(). In its second form, indicates a cell by its element
         reference.
 
         If the cell is set to literal, its content is limited to its text.
@@ -2713,6 +2754,13 @@ presentation which is one of the foundations of the OpenDocument format.
 
         This method can be replaced by cellValue() which allows reads and
 	writes.
+
+=head3	updateUserFieldReferences(user_field)
+
+	Forces an immediate update of the display representation(s) of
+	a given user field, according to the actual value of the field.
+
+	See also userFieldValue().
 
 =head3	userFieldValue(user_field [, value])
 
@@ -2726,9 +2774,16 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	If the given user field is numeric (ex: date, currency) the returned
 	and/or provided value is the internally stored value, and not the
-	displayed one. The user field is displayed according to a date style
-	by the applications. For example, 'Tuesday, March 1, 2005' is a
-	possible displayed value for 38412.
+	displayed one.
+
+	Warning: the changes made in a document using userFieldValue() don't
+	necessarily produce visible changes for the end-user. This method
+	can update the internal value of a field, but not the displayable
+	representations of this field. The way these representations are
+	updated (or not) according to the internal value depends on the
+	field refreshment logic of the editing or printing software. However,
+	this update can be explicitly executed through another OODoc method,
+	updateUserFieldReferences().
 
 =head3	variableValue(name/element [, newvalue])
 
@@ -2857,7 +2912,7 @@ presentation which is one of the foundations of the OpenDocument format.
 	these 2 properties control the size of the "managed area" in a
 	spreadsheet; the default "managed area" is the A1:Z31 rectangle,
 	corresponding to the (0,0)-(31,25) coordinates; see getTable() and
-	getCell() and normalizeSheet() for more explanations.
+	getTableCell() and normalizeSheet() for more explanations.
 
 	    'expand_tables'	=> table transformation usage
 

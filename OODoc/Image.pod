@@ -13,8 +13,8 @@ document.
 This class should not be explictly used in an ordinary application, because
 all its features are available in the OpenOffice::OODoc::Document class, in
 combination with other features. So, each time an application needs to get
-an image-focused access to a document, it should use the general ooDocument()
-constructor instead of the ooImage() one.
+an image-focused access to a document, it should use the general odfDocument()
+constructor instead of the odfImage() one.
 
 Practically, the present manual is provided to describe the image-container
 processing features of OpenOffice::OODoc::Document (knowing that these
@@ -52,7 +52,7 @@ documents. But it can't process the images themselves.
 
 =head3	Constructor : OpenOffice::OODoc::Image->new(<parameters>) 
 
-	Short Form: ooImage(<parameters>)
+	Short Form: odfImage(<parameters>)
 
 	This constructor should not be explicitly used in ordinary applications
 	knowing that all the features of the returned object are inherited by
@@ -64,10 +64,10 @@ documents. But it can't process the images themselves.
         => 'styles' is required if you want to work with page background
         images. Example:
 
-        	my $doc = ooImage
+        	my $doc = odfImage
         		(
         		file	=> 'my_presentation.odp',
-        		member	=> 'styles.xml'
+        		part	=> 'styles.xml'
         		);
 
 	Real applications should not expressly use this constructor,

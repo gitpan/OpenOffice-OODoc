@@ -1,3 +1,23 @@
+2.103	2008-06-15
+	Some cosmetic changes in the installation tests
+	Makefile.PL, config.xml: added BUILD_DATE
+	Meta.pm: added version()
+	Styles.pm: added getFontDeclarations(), getFontName()
+	Styles.pm: bugfix related to non-ASCII characters in style names
+	File.pm: changed the way of creating new documents
+	Replaced XML templates by ODF and OOo files (including a few paragraph
+	styles)
+	XPath.pm: given priority to 'member' option over 'part' option, to 'archive'
+	over 'container', for legacy reasons; other parameter priority changes;
+	code cleaning in the constructor
+	XPath.pm: bugfix related to non-ASCII characters in frame names
+	Text.pm: bugfixes related to non-ASCII characters in styles and draw page names
+	Text.pm: removed some code redundancies in table cell related accessors
+	Text.pm: added updateUserFieldReferences()
+	Text.pm: added expandTable()
+	Text.pm: removed an undesirable warning in getTable()
+	Text.pm: fixed a bug in getTableCell()
+	Examples: Changed text2table in order to use expandTable()
 2.102	2008-05-04
 	Cleaned some code examples
 2.101	2008-05-04

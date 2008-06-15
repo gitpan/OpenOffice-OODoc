@@ -1,9 +1,9 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Styles.pm 2.023 2008-05-03 JMG$
+#	$Id : Styles.pm 2.024 2008-06-15 JMG$
 #
-#	Initial developer: Jean-Marie Gouarne
-#	Copyright 2006-2008 by Genicorp, S.A. (www.genicorp.com)
+#	Created and maintained by Jean-Marie Gouarne
+#	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
 #	License:
 #		- Licence Publique Generale Genicorp v1.0
 #		- GNU Lesser General Public License v2.1
@@ -12,7 +12,7 @@
 
 package OpenOffice::OODoc::Styles;
 use	5.006_001;
-our	$VERSION	= 2.023;
+our	$VERSION	= 2.024;
 
 use	OpenOffice::OODoc::XPath	2.224;
 use	File::Basename;
@@ -203,7 +203,7 @@ sub	new
 	my $class	= ref($caller) || $caller;
 	my %options	=
 		(
-		member			=> 'styles',	# XML member
+		part			=> 'styles',	# XML member
 		@_
 		);
 	my $object	= $class->SUPER::new(%options);
@@ -351,9 +351,29 @@ sub	getFontDeclaration
 		{
 		my $context = $self->getFontDeclarationBody;
 		my $path = "//$tag\[\@style:name=\"$font\"]";
-		my $font_element = $self->getNodeByXPath($context, $path);
-		return $font_element;
+		return $self->getNodeByXPath($context, $path);
 		}
+	}
+
+#-----------------------------------------------------------------------------
+
+sub	getFontDeclarations
+	{
+	my $self	= shift;
+	my $context	= $self->getFontDeclarationBody;
+	my $path	= $self->{'opendocument'}	?
+				'//style:font-face' : 'style:font-decl';
+	return $self->getNodesByXPath($context, $path);
+	}
+
+#-----------------------------------------------------------------------------
+
+sub	getFontName
+	{
+	my $self	= shift;
+	my $fd		= $self->getFontDeclaration(@_)
+		or return undef;
+	return $self->getAttribute($fd, 'style:name');
 	}
 
 #-----------------------------------------------------------------------------
@@ -554,6 +574,7 @@ sub	getStyleElement
 	my $style	= shift;
 	return	undef	unless $style;
 	return	$style->isStyle ? $style : undef	if ref $style;
+	$style		= $self->inputTextConversion($style);
 	my %opt		= (retry => 1, @_);
 	if ($opt{'retry'})
 		{

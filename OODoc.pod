@@ -302,7 +302,8 @@ separate "member".
 		<Styles-COLORMAP>my_colormap_file</Styles-COLORMAP>
 		<File-WORKING_DIRECTORY>my_path</File-WORKING_DIRECTORY>
 		<File-DEFAULT_OFFICE_FORMAT>2</File-DEFAULT_OFFICE_FORMAT>
-		<INSTALLATION_DATE>my_oo_date</INSTALLATION_DATE>
+		<BUILD_DATE>cpan_package_build_date</BUILD_DATE>
+		<INSTALLATION_DATE>my_installation_date</INSTALLATION_DATE>
 	    </OpenOffice-OODoc>
 	</config>
 
@@ -339,6 +340,8 @@ separate "member".
 	config.xml provided with the distribution, this element contains the
 	package generation date.
 
+	The <BUILD_DATE> element is the date of the CPAN package.
+
 	This function is automatically executed as soon as OpenOffice::OODoc
 	is used, if the OODoc/config.xml configuration file exists.
 
@@ -361,9 +364,12 @@ separate "member".
 
 	Shortcut for OpenOffice::OODoc::File::templatePath().
 
-	Accessor to get/set an alternative path for the XML template files
-	used to create new documents. See the manual page for the
-	OpenOffice::OODoc::File module.
+	Accessor to get/set an alternative path for the ODF template files
+	used to create new documents.
+
+	The template path must designate a directory containing 4 regular
+	ODF files, each one corresponding to an supported ODF document class,
+	i.e. "template.odt", "template.ods", "template.odp", "template.odg".
 
 =head3	odfText()
 
