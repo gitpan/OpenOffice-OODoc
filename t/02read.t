@@ -1,12 +1,12 @@
 #-----------------------------------------------------------------------------
-# 02read.t	OpenOffice::OODoc Installation test		2008-09-16
+# 02read.t	OpenOffice::OODoc Installation test		2008-10-08
 #-----------------------------------------------------------------------------
 
 use Test;
 BEGIN	{ plan tests => 12 }
 
-use OpenOffice::OODoc	2.104;
-ok($OpenOffice::OODoc::VERSION >= 2.104);
+use OpenOffice::OODoc	2.105;
+ok($OpenOffice::OODoc::VERSION >= 2.105);
 
 #-----------------------------------------------------------------------------
 
