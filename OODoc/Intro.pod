@@ -1176,9 +1176,6 @@ Copyright 2004-2008 by Genicorp, S.A. L<http://www.genicorp.com>
 Initial English version of the reference manual by Graeme A. Hunter
 (graeme.hunter@zen.co.uk).
 
-License:
-
-	- Licence Publique Generale Genicorp v1.0
-	- GNU Lesser General Public License v2.1
+License: GNU Lesser General Public License v2.1
 
 =cut

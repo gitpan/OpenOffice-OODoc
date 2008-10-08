@@ -1,20 +1,17 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Meta.pm 2.010 2008-06-13 JMG$
+#	$Id : Meta.pm 2.011 2008-09-16 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
-#	License:
-#		- Licence Publique Generale Genicorp v1.0
-#		- GNU Lesser General Public License v2.1
 #
 #-----------------------------------------------------------------------------
 
 package	OpenOffice::OODoc::Meta;
-use	5.006_001;
-our	$VERSION	= 2.010;
+use	5.008_000;
+our	$VERSION	= 2.011;
 
-use	OpenOffice::OODoc::XPath	2.225;
+use	OpenOffice::OODoc::XPath	2.226;
 require Exporter;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath Exporter );
 our	@EXPORT		= qw

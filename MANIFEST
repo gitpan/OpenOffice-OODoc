@@ -3,9 +3,9 @@ MANIFEST
 README
 INSTALL
 LICENCE
-LICENCE.FR
 Changes
 build_date
+oodoc_version
 OODoc.pm
 OODoc.pod
 OODoc/config.xml

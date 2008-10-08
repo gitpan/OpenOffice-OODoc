@@ -1,8 +1,8 @@
 --- #YAML:1.0
 name:                OpenOffice-OODoc
-version:             2.103
+version:             2.104
 abstract:            The Perl Open OpenDocument Connector
-license:             ~
+license:             LGPL
 author:              
     - Jean-Marie Gouarné <jmgdoc@cpan.org>
 generated_by:        ExtUtils::MakeMaker version 6.42

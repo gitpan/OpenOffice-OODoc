@@ -1,21 +1,18 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Image.pm 2.017 2008-05-03 JMG$
+#	$Id : Image.pm 2.018 2008-09-16 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
-#	License:
-#		- Licence Publique Generale Genicorp v1.0
-#		- GNU Lesser General Public License v2.1
 #
 #-----------------------------------------------------------------------------
 
 package	OpenOffice::OODoc::Image;
-use	5.006_001;
-use	OpenOffice::OODoc::XPath	2.224;
+use	5.008_000;
+use	OpenOffice::OODoc::XPath	2.226;
 use	File::Basename;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.017;
+our	$VERSION	= 2.018;
 
 #-----------------------------------------------------------------------------
 # default attributes for image style

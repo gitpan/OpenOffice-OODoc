@@ -1,18 +1,15 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : File.pm 2.115 2008-05-18 JMG$
+#	$Id : File.pm 2.116 2008-09-16 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
-#	License:
-#		- Licence Publique Generale Genicorp v1.0
-#		- GNU Lesser General Public License v2.1
 #
 #-----------------------------------------------------------------------------
 
 package	OpenOffice::OODoc::File;
-use	5.006_001;
-our	$VERSION	= 2.115;
+use	5.008_000;
+our	$VERSION	= 2.116;
 use	Archive::Zip	1.14	qw ( :DEFAULT :CONSTANTS :ERROR_CODES );
 use	File::Temp;
 

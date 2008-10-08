@@ -1,3 +1,10 @@
+2.104	2008-10-08
+	Added the oodoc_version executable script
+	Replaced "use" by "require" for Tk and Text::Wrapper in examples,
+	in order to avoid some non essential installation dependencies.
+	Text.pm: bug fix in extendText() (#39174)
+	Perl >= 5.8 required in every PM file
+	Licensing: now GNU-LGPL 2.1 only
 2.103	2008-06-15
 	Some cosmetic changes in the installation tests
 	Makefile.PL, config.xml: added BUILD_DATE

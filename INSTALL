@@ -1,4 +1,4 @@
-OpenOffice::OODoc installation (May 2008)
+OpenOffice::OODoc installation (2008-10-07)
 
 SYSTEM REQUIREMENTS
 
@@ -72,7 +72,12 @@ INSTALLATION FROM THE CPAN DISTRIBUTION
 
 	If the installation is successful, the test procedure generates a
 	document, writes some content in it, and checks the result. This
-	document is named 'ootest.sxw' or 'odftest.odt' (according to your
+	document is named 'ootest.odt' or 'odftest.sxw' (according to your
 	default file format) and resides in the working directory of the
 	installation. You can later check this document with a compatible
 	text processor or viewer.
+
+	A Perl executable script, oodoc_version, is provided in the package.
+	After a successful installation using the CPAN distribution,
+	this script displays the version number, the package build date,
+	the installation date and the installation path.

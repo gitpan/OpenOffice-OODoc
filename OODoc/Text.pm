@@ -1,20 +1,17 @@
 #----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.232 2008-06-15 JMG$
+#	$Id : Text.pm 2.233 2008-09-16 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
-#	License:
-#		- Licence Publique Generale Genicorp v1.0
-#		- GNU Lesser General Public License v2.1
 #
 #-----------------------------------------------------------------------------
 
 package OpenOffice::OODoc::Text;
-use	5.006_001;
-use	OpenOffice::OODoc::XPath	2.225;
+use	5.008_000;
+use	OpenOffice::OODoc::XPath	2.226;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.232;
+our	$VERSION	= 2.233;
 
 #-----------------------------------------------------------------------------
 # synonyms
@@ -772,7 +769,8 @@ sub	extendText
 	my $path	= shift;
 	my $pos		= (ref $path) ? undef : shift;
 	my $element = $self->getElement($path, $pos) or return undef;
-	my $text	= shift	or return undef;
+	my $text	= shift;
+	return undef	unless defined $text;
 	my $style	= shift;
 
 	if (ref $text)
