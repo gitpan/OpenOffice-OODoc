@@ -1,5 +1,5 @@
 #------------------------------------------------------
-# OpenOffice::OODoc packaging & installation 2008-10-08
+# OpenOffice::OODoc packaging & installation 2008-11-05
 #------------------------------------------------------
 
 use 5.008;
@@ -172,7 +172,8 @@ WriteMakefile
 		'examples/odffindbasic',
 		'examples/odfsearch',
 		'examples/odf_set_fields',
-		'examples/odf_set_title'
+		'examples/odf_set_title',
+		'examples/oodoc_test'
 		]
 	);
 

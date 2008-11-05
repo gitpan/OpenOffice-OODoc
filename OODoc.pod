@@ -67,15 +67,15 @@ described below.
 
 The OpenOffice::OODoc documentation, as the API itself, is distributed
 amongst several manual pages on a thematic and technical basis. The present
-page is a general foreword only.
+section is a general foreword.
 
-Each manual page correspond to a Perl module, with the exception of
-OpenOffice::OODoc::Intro. It's strongly recommended to have a look at
-the Intro, and to read the examples, before any other manual chapter, in
-order to get a quick and practical knowledge of the big picture. Another
-possible introductory reading has been published in The Perl Review
-(issue #3.1, dec. 2006) L<http://www.theperlreview.com>, while an alternative
-presentation article, intended for French-reading users, can be downloaded at
+Each manual page corresponds to a Perl module, with the exception of
+OpenOffice::OODoc::Intro. It's strongly recommended to have a look at the
+Intro before any other manual chapter, in order to get a quick and practical
+knowledge of the big picture. Another possible introductory reading has been
+published in The Perl Review (issue #3.1, dec. 2006)
+L<http://www.theperlreview.com>, while an alternative presentation article,
+intended for French-reading users, can be downloaded at
 L<http://jean.marie.gouarne.online.fr/doc/perl_odf_connector.pdf>
 
 The API is object-oriented and, with the exception of the main module
@@ -85,7 +85,7 @@ classes inherit from other ones, they bring a lot of features that are not
 documented in the corresponding manual page. The best example is
 OpenOffice::OODoc::Document: it contains a few method definitions by itself,
 but it's the most powerful class, because it inherits from four other classes,
-so it's features are documented in five manual pages. Fortunately, the classes
+so its features are documented in five manual pages. Fortunately, the classes
 are defined on a functional basis. So, for example, to know the text-related
 capabilities of a Document object, the user should select the Text manual page
 before the Document one.
@@ -120,10 +120,11 @@ can be useful even if the user don't need to work with explicit XPath objects.
 
 This manual page describes all the high level text processing methods and
 allows the user's program to deal with all the text containers (headers,
-paragraphs, item lists, tables, and footnotes). It can deal with any text
-content in any OOo document, and not only in Writer documents (a special
-mapping allows the programmer to address rows and cells in the same way in
-spreadsheets as in the tables belonging to other documents).
+paragraphs, item lists, tables, and footnotes). OpenOffice::OODoc::Text is
+dedicated to the text content and structure of any kind of document, and *NOT*
+to the so-called "text documents". As a consequence, this chapter describes
+all the methods which process ODF text containers in spreadsheets and
+presentations as well as in text documents.
 
 =head2	OpenOffice::OODoc::Image
 
@@ -138,6 +139,10 @@ of a document, knowing that each page layout, each text element, and each
 image is displayed or printed according to a style. This part of the
 documentation can be ignored if the user's programs are strictly content-
 focused and don't care with the presentation.
+
+Note that some style definitions, such as master pages, can include text
+containers or images, which can be processed through methods provides by
+OpenOffice::OODoc::Text or OpenOffice::OODoc::Image.
 
 =head2	OpenOffice::OODoc::Document
 
@@ -163,7 +168,7 @@ manifest, in an OpenOffice.org file, contains the list of the file components
 the style definitions, the embedded images, etc. are each one stored as a
 separate "member".
 
-=head1	GENERAL FUNCTIONS
+=head1	GENERAL FUNCTIONS (EXPORTED)
 
 =head3	odfConnector()
 
@@ -263,6 +268,22 @@ separate "member".
 
 	See the Encode::Supported (Perl) documentation for the list
 	of supported encodings.
+
+=head3	odfLocaltime()
+
+	Converts the numeric time given in argument to an ISO-8601 date
+	(aaaa-mm-jjThh:mm:ss), knowing that this format is required for
+	the stored content of any ODF-compliant date element or attribute.
+	
+	The argument type is the same as for the standard Perl localtime()
+	function, i.e. a number of seconds since the "epoch". It can be, for
+	example, a value previously returned by a time() call.
+
+	Without argument, returns the current local time in ISO-8601 format.
+
+	Beware: The resolution of this function is limited to the second,
+	unlike the ISO-8601 standard which supports an optional subsecond
+	field.
 
 =head3	odfManifest()
 
@@ -386,6 +407,29 @@ separate "member".
 
 	See the OpenOffice::OODoc::Text manual page for detailed syntax.
 
+=head3	odfTimelocal()
+
+	Translates an ODF-formatted date (ISO-8601) into a regular Perl
+	numeric time format, i.e. a number of seconds since the "epoch". So,
+	the returned value can be processed with any Perl date formatting or
+	calculation function.
+
+	Example:
+
+		my $date_created = odfTimelocal($meta->creation_date());
+		$lt = localtime($date_created);
+		$elapsed = time() - $date_created;
+		print "This document has been created $date_created\n";
+		print "$elapsed seconds ago";
+	
+	This sequence prints the creation date of a document in local time
+	string format, then prints the number of seconds between the creation
+	date and now. Note that the creation_date() method used here works
+	with the meta-data document part only (see OpenOffice::OODoc::Meta for
+	details about this method).
+
+	Note: This function requires the Time::Local Perl module.
+
 =head3	odfWorkingDirectory([path])
 
 	Accessor to get/set the working directory to use for temporary
@@ -471,6 +515,10 @@ separate "member".
 
 	See odfLocalEncoding().
 
+=head3	ooLocaltime([$time_value])
+
+	See odfLocaltime()
+
 =head3	ooManifest()
 
 	Synonym: odfManifest().
@@ -494,6 +542,10 @@ separate "member".
 =head3	ooText()
 
 	Synonym: odfText().
+
+=head3	ooTimelocal($oodate)
+
+	See odfTimelocal()
 
 =head3	ooWorkingDirectory()
 

@@ -38,6 +38,7 @@ examples/odf_set_fields
 examples/odf_set_title
 examples/text2odf
 examples/text2table
+examples/oodoc_test
 OODoc/data/image.png
 OODoc/templates/template.odt
 OODoc/templates/template.ods

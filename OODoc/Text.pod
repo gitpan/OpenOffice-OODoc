@@ -1343,6 +1343,7 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	- if a table name is made of digits only, or if if represents a
 	numeric expression, it's automatically regarded as a table number;
+	use getTableByName() to avoid this behaviour;
 
 	- getTable() can't retrieve a table by name if the name contains
 	one or more "$", "{" or "}" characters; these characters are allowed
@@ -1378,6 +1379,16 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	fully normalizes the table whose title is "Friends" and returns itself	
 	size.
+
+=head3	getTableByName(name [, 'normalize'])
+
+=head3	getTableByName(name [, length, width])
+
+	Retrieves a table according to its name (if it exists). This methods
+	allows the retrieval of a table whose name is made of digits and
+	which, as a consequence, can't be properly selected with getTable().
+
+	The behaviour and the optional arguments are the same as getTable().
 
 =head3	getTableCell(table, row, column)
 
@@ -2139,6 +2150,10 @@ presentation which is one of the foundations of the OpenDocument format.
 	operations, or user-defined function triggering, in the same
 	conditions as selectElementsByContent().
 
+	The retrieval functionality of selectElementByContent() is the same
+	as selectElementsByContent(). See selectElementsByContent() for
+	limits.
+
 =head3	selectElementsByContent(filter)
 
 =head3	selectElementsByContent(filter, replacement)
@@ -2148,7 +2163,9 @@ presentation which is one of the foundations of the OpenDocument format.
         This method returns a list of text elements such as paragraphs,
         headers or ordered/unordered lists whose content matches the search
         criteria contained in 'filter' (which can be an exact string or a
-        regular expression).
+        regular expression). Note that this method can be used with a
+	"non-filtering" regular expression (".*") for unconditional movement
+	through all text elements.
 
 	This method is context-sensitive (see currentContext() and
 	resetCurrentContext() in OpenOffice::OODoc::XPath for details about
@@ -2234,17 +2251,19 @@ presentation which is one of the foundations of the OpenDocument format.
         filter, and the paragraph which is selected when the search string
         is found in an attached footnote.
 
-        However, a character string cannot be considered to match the filter
-        unless it is entirely within the same sub-element and all its
-        characters have the same style. For example, if you were searching
-        for the string "OpenOffice" using selectElementsByContent, the
-        string, if present, can't be found if, say, "Open" and "Office" are
-	not represented with the same font, the same color and/or the same
-	font size.
-
-        Note: This method can be used with a "non-filtering" regular
-        expression (".*") for unconditional movement through all text
-        elements.
+	Important limit: This method can't retrieve elements whose display
+	content apparently matches the given filter but whose internal
+	storage doesn't. For example, a paragraph containing "foo bar" will
+	never be selected through selectElementByContent() if "foo" and "bar"
+	have different text styles. In the same way, a substring containing
+	multiple successive whitespaces will never match, because, according
+	to the ODF standard, multiple spaces (like tabs or line breaks) are
+	stored as special XML element instead of flat text. A character string
+	cannot be considered to match the filter unless it is entirely within
+	the same sub-element and all its characters have the same style. More
+	generally, a substring can match the filter if and only if it's
+	represented with only one style and if it doesn't contain multiple
+	spaces, tab stops or line breaks.
 
 =head3	selectElementByTextId(id)
 
@@ -2310,6 +2329,29 @@ presentation which is one of the foundations of the OpenDocument format.
         will result in a "flat" export of the document:
 
             print $doc->selectTextContent('.*');
+
+=head3	setAnnotation(element [, options])
+
+	Creates and inserts an annotation in a given element.
+
+	The possible options are:
+
+	'date' => the date/time of the annotation (ISO-8601 format)
+
+	'author' => the name of the author of the annotation; unless this
+	option is provided; the default is the current system user name
+
+	'offset' => the offset of the insertion point; by default, the
+	annotation is inserted at the beginning of the element
+
+	'text' => the text of the annotation; the default is an empty string
+
+	'style' => a paragraph style for the annotation
+
+	Returns the reference of the annotation element. Note that this
+	reference could be used later as a context for additional insertions
+	(for example in order to append several paragraphs to the content of
+	the annotation).
 
 =head3	setBibliographyMark(element, offset, identifier => id [, options])
 
@@ -2486,7 +2528,8 @@ presentation which is one of the foundations of the OpenDocument format.
 =head3	setText(element, text ,[text, ...])
 
         Alters the setText method of OODoc::XPath, so that it can handle
-        complex text elements.
+        complex text elements. Please read the setText() entry in
+	OpenOffice::OODoc::XPath before the present entry.
 
         If the element is a paragraph, a header or a list item (ordered or
         unordered), its content is replaced by the 'text' argument. Caution:
@@ -2515,10 +2558,10 @@ presentation which is one of the foundations of the OpenDocument format.
         For all other types of $element, setText() behaves normally as defined
         in OODoc::XPath.
 
-	Note: setText(), as any other text input method, can't properly
-	process repeated spaces. So, a sequence of spaces, whatever its
-	length, is replaced by a single space. See setText() and extendText()
-	in OpenOffice::OODoc::XPath.
+	Note: setText(), as any other text input method, doesn't properly
+	process repeated spaces by default. So, a sequence of spaces, whatever
+	its length, is replaced by a single space. See setText() and
+	extendText() in OpenOffice::OODoc::XPath.
 	
 =head3	setTextBoxContent(text_box, content)
 
@@ -2932,7 +2975,7 @@ Developer/Maintainer: Jean-Marie Gouarne L<http://jean.marie.gouarne.online.fr>
 
 Contact: jmgdoc@cpan.org
 
-Copyright 2004-2007 by Genicorp, S.A. L<http://www.genicorp.com>
+Copyright 2004-2008 by Genicorp, S.A. L<http://www.genicorp.com>
 
 Initial English version of the reference manual by Graeme A. Hunter
 (graeme.hunter@zen.co.uk).

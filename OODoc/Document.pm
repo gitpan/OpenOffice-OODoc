@@ -1,13 +1,13 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Document.pm 2.023 2008-09-16 JMG$
+#	$Id : Document.pm 2.024 2008-10-23 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
 #
 #-----------------------------------------------------------------------------
 
-use OpenOffice::OODoc::Text	2.233;
+use OpenOffice::OODoc::Text	2.234;
 use OpenOffice::OODoc::Image	2.018;
 use OpenOffice::OODoc::Styles	2.025;
 
@@ -17,7 +17,7 @@ our @ISA	= qw	(
 			OpenOffice::OODoc::Image
 			OpenOffice::OODoc::Styles
 			);
-our $VERSION	= 2.023;
+our $VERSION	= 2.024;
 
 #-----------------------------------------------------------------------------
 # constructor

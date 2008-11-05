@@ -1,3 +1,20 @@
+2.106	2008-11-05
+	Added the oodoc_test example
+	Moved odfLocatime() and odfTimeLocal() from Meta.pm to XPath.pm, and
+	updated Meta.pod, OODoc.pod and XPath.pod accordingly
+	XPath.pm: added openDocumentVersion()
+	XPath.pm: fixed a bug in isPresentation()
+	XPath.pm: added automatic replacement by 0 of any constructor parameter
+	set to 'off' or 'false' by the calling application
+	XPath.pm: added multiple spaces handling in setText()
+	XPath.pm: normalized the content produced by setText() and extendText()
+	Text.pm: added setAnnotation()
+	Text.pm: added getTableByName()
+	Reverted the (ugly and buggy) use/require changes in examples
+	Some doc cleaning (README, INSTALL)
+	Removed useless install date info from oodoc_version
+2.105	2008-10-08
+	No code change; just fixed a small doc mistake
 2.104	2008-10-08
 	Added the oodoc_version executable script
 	Replaced "use" by "require" for Tk and Text::Wrapper in examples,

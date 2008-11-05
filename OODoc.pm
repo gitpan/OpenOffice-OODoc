@@ -1,14 +1,14 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : OODoc.pm 2.105 2008-10-08 JMG$
+#	$Id : OODoc.pm 2.106 2008-10-29 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
 #
 #-----------------------------------------------------------------------------
 
-use OpenOffice::OODoc::File		2.116;
-use OpenOffice::OODoc::Meta		2.011;
+use OpenOffice::OODoc::File		2.117;
+use OpenOffice::OODoc::Meta		2.012;
 use OpenOffice::OODoc::Document		2.023;
 use OpenOffice::OODoc::Manifest		2.005;
 
@@ -16,7 +16,7 @@ use OpenOffice::OODoc::Manifest		2.005;
 
 package	OpenOffice::OODoc;
 use 5.008_000;
-our $VERSION				= 2.105;
+our $VERSION				= 2.106;
 
 require Exporter;
 our @ISA    = qw(Exporter);
@@ -27,6 +27,7 @@ our @EXPORT = qw
 	odfConnector odfDocument ooDocument odfPackage odfContainer ooFile
 	odfLocalEncoding localEncoding ooLocalEncoding
 	odfEncodeText odfDecodeText ooEncodeText ooDecodeText
+	ooLocaltime ooTimelocal odfLocaltime odfTimelocal
 	odfTemplatePath ooTemplatePath
 	odfWorkingDirectory workingDirectory ooWorkingDirectory
 	odfReadConfig readConfig ooReadConfig
@@ -199,11 +200,16 @@ BEGIN
 	*ooEncodeText		= *odfEncodeText;
 	*ooDecodeText		= *odfDecodeText;
 	*ooTemplatePath		= *odfTemplatePath;
+	*odfLocaltime		= *OpenOffice::OODoc::XPath::odfLocaltime;
+	*odfTimelocal		= *OpenOffice::OODoc::XPath::odfTimelocal;
+	*ooLocaltime		= *odfLocaltime;
+	*ooTimelocal		= *odfTimelocal;
 	
 	my $module_path = $INC{"OpenOffice/OODoc.pm"};
 	$module_path =~ s/\.pm$//;
 	$OpenOffice::OODoc::INSTALLATION_PATH = $module_path;
 	odfReadConfig() if ( -e "$INSTALLATION_PATH/config.xml" );
 	}
+
 #-----------------------------------------------------------------------------
 1;

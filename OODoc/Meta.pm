@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Meta.pm 2.011 2008-09-16 JMG$
+#	$Id : Meta.pm 2.012 2008-10-23 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
@@ -9,51 +9,16 @@
 
 package	OpenOffice::OODoc::Meta;
 use	5.008_000;
-our	$VERSION	= 2.011;
-
-use	OpenOffice::OODoc::XPath	2.226;
-require Exporter;
-our	@ISA		= qw ( OpenOffice::OODoc::XPath Exporter );
-our	@EXPORT		= qw
-				(
-				ooLocaltime	ooTimelocal
-				odfLocaltime	odfTimelocal
-				);
+our	$VERSION	= 2.012;
+use	OpenOffice::OODoc::XPath	2.227;
+our	@ISA		= qw ( OpenOffice::OODoc::XPath );
 
 #-----------------------------------------------------------------------------
 
 BEGIN
 	{
-	*ooLocaltime			= *odfLocaltime;
-	*ooTimelocal			= *odfTimelocal;
-	*version			= *editing_cycles;
-	}
-
-#-----------------------------------------------------------------------------
-# date conversion from standard Perl localtime to OOo metadata format
-
-sub	odfLocaltime
-	{
-	my $time = shift || time();
-	my @t = localtime($time);
-	return sprintf
-			(
-			"%04d-%02d-%02dT%02d:%02d:%02d",
-			$t[5] + 1900, $t[4] + 1, $t[3], $t[2], $t[1], $t[0]
-			);
-	}
-
-#-----------------------------------------------------------------------------
-# date conversion from OOo metadata format to standard time()
-
-sub	odfTimelocal
-	{
-	require Time::Local;
-
-	my $ootime = shift;
-	return undef unless $ootime;
-	$ootime =~ /(\d*)-(\d*)-(\d*)T(\d*):(\d*):(\d*)/;
-	return Time::Local::timelocal($6, $5, $4, $3, $2 - 1, $1); 
+	*author			= *creator;
+	*version		= *editing_cycles;
 	}
 
 #-----------------------------------------------------------------------------

@@ -20,7 +20,12 @@ See INSTALL for system requirements and installation instructions for
 the CPAN original distribution.
 
 The present version supports both the OpenOffice.org 1.0 document format
-and the OASIS OpenDocument Format (ODF) 1.0
+and the OASIS OpenDocument Format (ODF) 1.0. It works with ODF 1.1 and
+1.2 as well, knowing that its present features are not directly impacted
+by the changes between the successive versions of the ODF specification.
+In addition, advanced users can rely on OpenOffice::OODoc to process any
+kind of flat or zipped XML files, in order to combine ODF documents with
+non-ODF XML data through a single application programming interface.
 
 -------------------------------------------------------------------------
 
@@ -28,7 +33,8 @@ This software is free software. For more information about the licence,
 see LICENCE.
 
 Comments are welcome. They should be posted through the public forum
-(http://www.cpanforum.com/dist/OpenOffice-OODoc) or privately sent to the
-developer (jmgdoc[at]cpan.org).
+(http://www.cpanforum.com/dist/OpenOffice-OODoc).
+
+Bug reports should be registered through the CPAN Request Tracker (http://rt.cpan.org/Public/Dist/Display.html?Name=OpenOffice-OODoc)
 
 -------------------------------------------------------------------------

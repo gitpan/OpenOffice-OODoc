@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.233 2008-09-16 JMG$
+#	$Id : Text.pm 2.234 2008-10-31 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
@@ -9,9 +9,9 @@
 
 package OpenOffice::OODoc::Text;
 use	5.008_000;
-use	OpenOffice::OODoc::XPath	2.226;
+use	OpenOffice::OODoc::XPath	2.227;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.233;
+our	$VERSION	= 2.234;
 
 #-----------------------------------------------------------------------------
 # synonyms
@@ -44,6 +44,8 @@ BEGIN	{
 	*getHeaderRow			= *getTableHeaderRow;
 	*getCell			= *getTableCell;
 	*getSheet			= *getTable;
+	*selectTableByName		= *getTableByName;
+	*getSheetByName			= *getTableByName;
 	*getTableContent		= *getTableText;
 	*normalizeTable			= *normalizeSheet;
 	*normalizeTables		= *normalizeSheets;
@@ -840,6 +842,42 @@ sub	hyperlinkURL
 
 #-----------------------------------------------------------------------------
 
+sub	setAnnotation
+	{
+	my $self	= shift;
+	my $path	= shift;
+	my $pos		= ref $path ? undef : shift;
+	my $element	= $self->getElement($path, $pos);
+	my %opt		=
+		(
+		'offset'	=> 0,
+		'text'		=> "",
+		'style'		=> 'Standard',
+		@_
+		);
+
+	my $creator = $opt{'creator'} || $opt{'author'} || $ENV{'USER'};
+	my $date = (defined $opt{'date'}) ?
+		$opt{'date'}	:
+		OpenOffice::OODoc::XPath::odfLocaltime();
+	my $annotation	= $element->insertNewNode
+		('office:annotation', 'within', $opt{'offset'});
+	$self->appendElement
+		($annotation, 'dc:creator', text => $creator);
+	$self->appendElement
+		($annotation, 'dc:date', text => $date);
+	$self->appendParagraph
+		(
+		attachment	=> $annotation,
+		text		=> $opt{'text'},
+		style		=> $opt{'style'}
+		);
+
+	return $annotation;
+	}
+
+#-----------------------------------------------------------------------------
+
 sub	removeSpan
 	{
 	my $self	= shift;
@@ -967,7 +1005,8 @@ sub	setBibliographyMark
 	my $element	= $self->getElement($path, $pos);
 	my $offset	= shift;
 	my %opt		= @_;
-	my $bib	= $self->createElement('text:bibliography-mark');
+# 	my $bib	= $self->createElement('text:bibliography-mark');
+	my $bib	= OpenOffice::OODoc::Element->new('text:bibliography-mark');
 	$bib->paste_within($element, $offset);
 	$self->bibliographyEntryContent($bib, @_);
 	return $bib;
@@ -3095,6 +3134,17 @@ sub	getTable
 	}
 
 #-----------------------------------------------------------------------------
+
+sub	getTableByName
+	{
+	my $self	= shift;
+	my $name 	= $self->inputTextConversion(shift);
+	my $table = $self->getNodeByXPath
+		("//table:table[\@table:name=\"$n\"]");
+	return $self->getTable($table, @_);
+	}
+
+#-----------------------------------------------------------------------------
 # user-controlled spreadsheet expansion
 
 sub	normalizeSheet
@@ -3686,7 +3736,7 @@ sub	createParagraph
 	my $text	= shift;
 	my $style	= shift || "Standard";
 
-	my $p = OpenOffice::OODoc::Element->new('text:p');
+	my $p = OpenOffice::OODoc::XPath::new_element('text:p');
 	if (defined $text)
 		{
 		$self->SUPER::setText($p, $text);

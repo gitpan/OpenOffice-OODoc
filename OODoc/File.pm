@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : File.pm 2.116 2008-09-16 JMG$
+#	$Id : File.pm 2.117 2008-10-23 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
@@ -9,7 +9,7 @@
 
 package	OpenOffice::OODoc::File;
 use	5.008_000;
-our	$VERSION	= 2.116;
+our	$VERSION	= 2.117;
 use	Archive::Zip	1.14	qw ( :DEFAULT :CONSTANTS :ERROR_CODES );
 use	File::Temp;
 
@@ -22,13 +22,20 @@ our	$DEFAULT_COMPRESSION_LEVEL	= COMPRESSION_LEVEL_BEST_COMPRESSION;
 our	$DEFAULT_EXPORT_PATH		= './';
 our	$WORKING_DIRECTORY		= '.';
 our	$TEMPLATE_PATH			= '';
-our	$MIMETYPE_BASE			= 'application/vnd.sun.xml.';
+our	$MIMETYPE_BASE			= 'application/vnd.oasis.opendocument.';
 our	%OOTYPE				=
 		(
 		text		=> 'writer',
 		spreadsheet	=> 'calc',
 		presentation	=> 'impress',
 		drawing		=> 'draw',
+		);
+our	%ODFTYPE			=
+		(
+		text		=> 'text',
+		spreadsheet	=> 'spreadsheet',
+		presentation	=> 'presentation',
+		drawing		=> 'graphics'
 		);
 our	%ODF_SUFFIX			=
 		(
@@ -51,8 +58,8 @@ our	%OOO_SUFFIX			=
 sub	mime_type
 	{
 	my $class	= shift;
-	return undef unless ($class && $OOTYPE{$class});
-	return $MIMETYPE_BASE . $OOTYPE{$class};
+	return undef unless ($class && $ODFTYPE{$class});
+	return $MIMETYPE_BASE . $ODFTYPE{$class};
 	}
 		
 #-----------------------------------------------------------------------------
@@ -371,6 +378,8 @@ sub	new
 		}
 	else
 		{
+		$self->{'create'} = 'drawing'
+			if $self->{'create'} eq 'graphics';
 		$self->{'archive'} = _load_template_file
 				(
 				class		=> $self->{'create'},
@@ -536,12 +545,14 @@ sub	copyMember
 		return undef;
 		}
 		
+	my $compress	=
+		(($member eq 'meta.xml') || ($member eq 'mimetype')) ? 0 : 1;
 	store_member
 		(
 		$archive,
 		member		=> $member,
 		file		=> $tmpfile,
-		compress	=> ($member eq 'meta.xml') ? 0 : 1
+		compress	=> $compress
 		);
 	}
 
@@ -572,12 +583,14 @@ sub	addNewMember
 				
 				# member insertion/compression ---------------
 
+	my $compress	=
+		(($member eq 'meta.xml') || ($member eq 'mimetype')) ? 0 : 1;
 	return	store_member
 			(
 			$archive,
 			member		=> $member,
 			file		=> $tmpfile,
-			compress	=> ($member eq 'meta.xml') ? 0 : 1
+			compress	=> $compress
 			);
 	}
 
@@ -589,12 +602,11 @@ sub	change_mimetype
 	my $self	= shift;
 	my $class	= shift;
 	my $mimetype	= mime_type($class);
-	my $ootool	= $OOTYPE{$class};
 	
 	return undef unless $mimetype;
 	my $tmpfile = $self->store_temp_file($mimetype);
 	$self->raw_delete('mimetype');
-	$self->raw_import('mimetype', $tmpfile); 
+	$self->raw_import('mimetype', $tmpfile);
 	return 1;
 	}
 
@@ -712,7 +724,9 @@ sub	save
 			$archive,
 			member		=> $raw_member->{'member'},
 			file		=> $raw_member->{'file'},
-			compress	=> 1
+			compress	=>
+				($raw_member->{'member'} eq 'mimetype') ?
+				0 : 1
 			)
 		}
 		

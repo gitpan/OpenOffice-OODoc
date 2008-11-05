@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #-----------------------------------------------------------------------------
-#	$Id : odfmetadoc 0.3 2008-10-07 JMG$
+#	$Id : odfmetadoc 0.3 2008-05-04 JMG$
 #-----------------------------------------------------------------------------
 
 =head1	NAME
@@ -40,12 +40,9 @@ Requires Tk and some Tk extensions (TK::Dialog, Tk::LabFrame, Tk::LabEntry)
 
 #------------------------------------------------------------------------------
 
+use Tk;
+use Tk::Dialog;
 use OpenOffice::OODoc	2.101;
-
-eval { require Tk; };
-die "Perl/Tk is not installed\n" if $@;
-eval { require Tk::Dialog; };
-die "Tk::Dialog is not installed\n" if $@;
 
 #------------------------------------------------------------------------------
 

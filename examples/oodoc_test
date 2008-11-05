@@ -1,35 +1,57 @@
+#!/usr/bin/perl
 #-----------------------------------------------------------------------------
-# 01write.t	OpenOffice::OODoc Installation test		2008-10-30
+# OpenOffice::OODoc test					2008-10-31
 #-----------------------------------------------------------------------------
 
-use Test;
-BEGIN	{ plan tests => 19 }
+=head1	NAME
 
-use OpenOffice::OODoc	2.106;
-ok($OpenOffice::OODoc::VERSION >= 2.106);
+oodoc_test - OpenOffice::OODoc test document generation
+
+=head1	DESCRIPTION
+
+This utility checks the current OpenOffice::OODoc installation and generates
+a test document from scratch. The generated document can then be found in the
+current directory, and its name is "odftest.odt".
+
+=cut
+
+use strict;
+use OpenOffice::OODoc;
 
 #-----------------------------------------------------------------------------
+
+sub	display_date
+	{
+	return localtime(odfTimelocal(shift));
+	}
+
+#-----------------------------------------------------------------------------
+
+my $version	= $OpenOffice::OODoc::VERSION;
+my $pkgdate	= display_date $OpenOffice::OODoc::BUILD_DATE;
+my $instpath	= $OpenOffice::OODoc::INSTALLATION_PATH;
+
+print	"OpenOffice::OODoc installation test\n  Version\t\t$version\n"	.
+	"  Build date\t\t$pkgdate\n"		.
+	"  Installation path\t$instpath\n";
 
 my $generator	=	"OpenOffice::OODoc " . $OpenOffice::OODoc::VERSION .
 				" installation test";
 my $testfile	=	$OpenOffice::OODoc::File::DEFAULT_OFFICE_FORMAT == 2 ?
 				"odftest.odt" : "ootest.sxw";
 my $class	=	"text";
-my $image_file	=	"OODoc/data/image.png";
+my $image_file	=	"$instpath/data/image.png";
 my $image_size	=	"91mm, 53mm";
 my $test_date	=	odfLocaltime();
 
+print "Generating $testfile file\n";
+
 # Creating an empty new ODF file with the default template
-unlink $testfile;
-my $archive = odfContainer($testfile, create => $class);
+# unlink $testfile;
+my $archive = odfContainer($testfile, create => 'text');
 unless ($archive)
 	{
-	ok(0); # Unable to create the test file
 	die "# Unable to create the test file\n";
-	}
-else
-	{
-	ok(1); # Test file created
 	}
 	
 #-----------------------------------------------------------------------------
@@ -52,7 +74,6 @@ my $doc	= odfConnector
 		readable_XML	=> 'true'
 		)
 	or die "# Unable to find a regular document content\n";
-ok($doc); # Document open and parsed
 
 my $styles = odfConnector
 		(
@@ -61,31 +82,26 @@ my $styles = odfConnector
 		readable_XML	=> 'true'
 		)
 	or die "# Unable to get the styles\n";
-ok($styles); # Styles open and parsed
 
 # Creating a graphic style
-ok	(
-	$styles->createImageStyle
-		(
-		'Centered Image',
-		properties	=>
+$styles->createImageStyle
+	(
+	'Centered Image',
+	properties	=>
 			{
 			'style:horizontal-pos'	=> 'center',
 			'style:vertical-pos'	=> 'from-top',
 			'fo:margin-bottom'	=> '2cm'
 			}
-		)
 	);
 # Inserting an image in the document
-ok	(
-	$doc->createImageElement
-		(
+$doc->createImageElement
+	(
 		'Logo',
 		style		=> 'Centered Image',
 		page		=> 1,
 		size		=> $image_size,
 		import		=> $image_file
-		)
 	);
 
 # Appending a page footer
@@ -105,41 +121,36 @@ $styles->styleProperties
 	area		=> 'text',
 	'fo:font-size'	=> '60%'
 	);
-ok	(
-	$styles->masterPageFooter
-		(
-		'Standard',
-		$styles->createParagraph
+$styles->masterPageFooter
+	(
+	'Standard',
+	$styles->createParagraph
 			(
 			"Created by OpenOffice::OODoc\n" . localtime(),
 			'Centered Paragraph'
 			)
-		)
 	);
 # Appending a level 1 heading
-ok	(
-	$doc->appendHeading
-		(
-		text	=> "Congratulations !",
-		level	=> "1",
-		style	=> "Heading_20_1"
-		)
+$doc->appendHeading
+	(
+	text	=> "Congratulations !",
+	level	=> "1",
+	style	=> "Heading_20_1"
 	);
+
 # Creating a coloured paragraph style (blue foreground, yellow background)
-ok	(
-	$styles->createStyle
-		(
-		"Colour",
-		family		=> 'paragraph',
-		parent		=> 'Standard',
-		properties	=>
+$styles->createStyle
+	(
+	"Colour",
+	family		=> 'paragraph',
+	parent		=> 'Standard',
+	properties	=>
 			{
 			-area			=> 'paragraph',
 			'fo:color'		=> odfColor(0,0,128),
 			'fo:background-color'	=> odfColor("yellow"),
 			'fo:text-align'		=> 'justify'
 			}
-		)
 	);
 if ($doc->isOpenDocument)
 	{
@@ -147,17 +158,14 @@ if ($doc->isOpenDocument)
 		("Colour", -area => 'text', 'fo:color' => '#000080');
 	}
 # Appending another paragraph using the new style
-ok	(
-	$doc->appendParagraph(text => $notice, style => "Colour" )
-	);
+my $pg = $doc->appendParagraph(text => $notice, style => "Colour" );
+
 # Appending another level 1 heading
-ok	(
-	$doc->appendHeading
-		(
-		text	=> "Your environment",
-		level	=> 1,
-		style	=> "Heading_20_1"
-		)
+$doc->appendHeading
+	(
+	text	=> "Your environment",
+	level	=> 1,
+	style	=> "Heading_20_1"
 	);
 # Appending a table showing some environment details
 my $table = $doc->appendTable("Environment", 6, 2);
@@ -176,13 +184,11 @@ $doc->cellValueType($table, "B6", 'date');
 $doc->cellValue($table, "B6", $OpenOffice::OODoc::BUILD_DATE);
 
 # Appending another level 1 heading
-ok	(
-	$doc->appendHeading
-		(
-		text	=> "Your installation choices",
-		level	=> 1,
-		style	=> "Heading_20_1"
-		)
+$doc->appendHeading
+	(
+	text	=> "Your installation choices",
+	level	=> 1,
+	style	=> "Heading_20_1"
 	);
 
 # Appending a table with the installation parameters
@@ -202,18 +208,18 @@ $doc->cellValue($table, "B4", $office_format);
 # Opening the metadata of the document
 my $meta = odfMeta(container => $archive, readable_XML => 'on')
 	or die "# Unable to find regular metadata\n";
-ok($meta);
 # Writing some metadata elements
-ok($meta->title($title));
-ok($meta->description($description));
-ok($meta->generator($generator));
-ok($meta->creation_date($test_date));
-ok($meta->date($test_date));
+$meta->title($title);
 $meta->creator($ENV{'USER'});
 $meta->initial_creator($ENV{'USER'});
+$meta->description($description);
+$meta->generator($generator);
+$meta->creation_date($test_date);
+$meta->date($test_date);
 
 # Saving the $testfile file
-ok($archive->save);
+print "Saving $testfile file\n";
+$archive->save;
 
 $doc->dispose;
 $styles->dispose;

@@ -241,56 +241,6 @@ of OpenDocument (ODF) and OpenOffice.org documents.
 
         As for OpenOffice::OODoc::XPath
 
-=head2	Exported functions
-
-=head3	odfLocaltime()
-
-	Converts the numeric time given in argument to an OpenOffice-compliant
-	date (ISO-8601). The argument type is the same as for the standard
-	Perl localtime() function, i.e. a number of seconds since the "epoch".
-	It can be, for example, a value previously returned by a time() call.
-
-	Without argument, returns the current local time in OOo format.
-
-	The result of this function can be used as an argument for the date()
-	or creation_date() methods of OpenOffice::OODoc::Meta.
-
-	Example:
-
-		$doc->date(odfLocaltime());
-
-	This line puts the current time as the last modification date in the
-	document (assuming $doc is an OpenOffice::OODoc::Meta object).
-
-=head3	odfTimelocal()
-
-	Converts a date in OOo format (ISO-8601) in a regular Perl numeric
-	time format, i.e. a number of seconds since the "epoch". So, the
-	returned value can be processed with any Perl date formatting or
-	calculation function.
-
-	Example:
-
-		my $date_created = odfTimelocal($doc->creation_date());
-		$lt = localtime($date_created);
-		$elapsed = time() - $date_created;
-		print "This document has been created $date_created\n";
-		print "$elapsed seconds ago";
-	
-	This sequence prints the creation date of a document in local time
-	string format, then prints the number of seconds between the creation
-	date and now.
-
-	Note: This function requires the Time::Local Perl module.
-
-=head3	ooLocaltime([$time_value])
-
-	See odfLocaltime()
-
-=head3	ooTimelocal($oodate)
-
-	See odfTimelocal()
-
 =head1	AUTHOR/COPYRIGHT
 
 Developer/Maintainer: Jean-Marie Gouarne L<http://jean.marie.gouarne.online.fr>

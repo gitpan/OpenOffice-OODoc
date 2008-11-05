@@ -1,25 +1,19 @@
 #!/usr/bin/perl
 
 use strict;
-
-eval { require OpenOffice::OODoc; };
-die "OpenOffice::OODoc is not installed\n" if $@;
-
-require OpenOffice::OODoc;
+use OpenOffice::OODoc;
 
 sub	display_date
 	{
-	return localtime(OpenOffice::OODoc::Meta::odfTimelocal(shift));
+	return localtime(odfTimelocal(shift));
 	}
 
 my $version	= $OpenOffice::OODoc::VERSION;
 my $pkgdate	= display_date $OpenOffice::OODoc::BUILD_DATE;
-my $instdate	= display_date $OpenOffice::OODoc::INSTALLATION_DATE;
 my $instpath	= $OpenOffice::OODoc::INSTALLATION_PATH;
 
 print	"OpenOffice::OODoc\n  Version\t\t$version\n"	.
 	"  Build date\t\t$pkgdate\n"		.
-	"  Installation date\t$instdate\n"	.
 	"  Installation path\t$instpath\n";
 exit;
 

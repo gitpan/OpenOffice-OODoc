@@ -759,7 +759,9 @@ features of OODoc::Meta and OODoc::Document are described here.
 		"Begin      End"
 	
 	knowing that a single string containing repeated spaces could
-	not be properly processed by extendText() or setText().
+	not be properly processed by extendText(), even if the
+	'multiple_spaces' property is set (this property affects the
+	setText() method only).
 
 	(See also setText()).
 
@@ -907,7 +909,7 @@ features of OODoc::Meta and OODoc::Document are described here.
 
 	Like getText() below, but without rendering of possible tab stops,
 	line breaks, repeated spaces, or any other markup. The returned text
-	is a just a decoded flat string.
+	is just a decoded flat string.
 	
 =head3	getFrameElement(name/number)
 
@@ -1199,6 +1201,77 @@ features of OODoc::Meta and OODoc::Document are described here.
 	This method can be used to move elements from one place to another
 	place in the same document, as well as from one document to another
 	one (caution, the elements are moved, not copied).
+
+=head3	odfLocaltime()
+
+	Class method.
+
+	Converts the numeric time given in argument to an OpenOffice-compliant
+	date (ISO-8601). The argument type is the same as for the standard
+	Perl localtime() function, i.e. a number of seconds since the "epoch".
+	It can be, for example, a value previously returned by a time() call.
+
+	Without argument, returns the current local time in ISO-8601 format.
+
+	The result of this function can be used as is in order to set the
+	value of an ODF-compliant date-time element or attribute.
+
+=head3	odfTimelocal()
+
+	Class method.
+
+	Translates an ODF-formatted date (ISO-8601) into a regular Perl
+	numeric time format, i.e. a number of seconds since the "epoch". So,
+	the returned value can be processed with any Perl date formatting or
+	calculation function.
+
+	Example:
+
+		my $date_created = odfTimelocal($meta->creation_date());
+		$lt = localtime($date_created);
+		$elapsed = time() - $date_created;
+		print "This document has been created $date_created\n";
+		print "$elapsed seconds ago";
+	
+	This sequence prints the creation date of a document in local time
+	string format, then prints the number of seconds between the creation
+	date and now. Note that the creation_date() method used here works
+	with the meta-data document part only (see OpenOffice::OODoc::Meta for
+	details about this method).
+
+	Note: This function requires the Time::Local Perl module.
+
+=head3	odfVersion([new_version])
+
+	See openDocumentVersion()
+
+=head3	ooLocaltime([$time_value])
+
+	Class method.
+
+	See odfLocaltime()
+
+=head3	ooTimelocal($oodate)
+
+	Class method.
+
+	See odfTimelocal()
+
+=head3	openDocumentVersion([new_version])
+
+	Returns the version of the Open Document Format (ODF) in use in the
+	current document. If an argument is provided, it's used to set a
+	new version identifier.
+
+	Beware, this method doesn't really check the conformance of the
+	document to any version of the ODF standard. It just retrieves the
+	value of the version number attribute as it has been set by the
+	application which created or modified the document.
+
+	If openDocumentVersion() is used to set a new version number
+	declaration, the given value is not checked. So, this value could
+	be the number of a real or future ODF version (1.0, 1.1, 1.2, etc),
+	as well as any other arbitrary value (ex: 99, -1, ...).
 
 =head3	raw_import(member, source)
 
@@ -1639,18 +1712,33 @@ features of OODoc::Meta and OODoc::Document are described here.
 	they are replaced by the appropriate OpenDocument tags. If this
 	translation must be avoided, use setFlatText() instead.
 	
-	Note: The strings containing repeated spaces are not properly
-	processed. A sequence of repeated spaces, whatever its length,
-	is replaced by a single space in the target document. So
+	Note: The strings containing repeated whitespaces are not properly
+	processed by default. A sequence of repeated spaces, whatever its
+	length, is replaced by a single space in the target document. So
 
 		$doc->setText($p, "Begin        End");
 	
 	produces the same visible result as
 	
 		$doc->setText($p, "Begin End");
-	
+
+	It's possible to override this default behaviour using the
+	'multiple_spaces' document property. If 'multiple_spaces' is
+	set to 'on', the repeated spaces in the example above are properly
+	recorded. However, this optional feature is a the price of some
+	other features and, above all, it have a negative impact on the
+	performances (due to an additional processing of *every* space).
+	Of course, a temporary activation of the 'multiple_spaces'
+	feature is allowed, like in the following example, which sets
+	a content including multiples whitespaces:
+
+		$doc->{'multiple_spaces'} = 'on';
+		$doc->setText($p, "Begin        End");
+		$doc->{'multiple_spaces'} = undef;
+
 	See spaces() and extendText() for a workaround if you
-	need to insert repeated spaces.
+	need to insert repeated spaces without using the 'multiple_spaces'
+	property.
 	
 =head3	spaces(length)
 
@@ -1904,6 +1992,7 @@ features of OODoc::Meta and OODoc::Document are described here.
             'part'		=> <name of the XML part in the ODF package>
 	    'readable_XML'	=> <'true' or 'false'>
 	    'local_encoding'	=> <user's output encoding>
+	    'multiple_spaces'	=> <'on' or undef, see setText()>
             'element'		=> <name of loaded XML element>
 	    'xpath'		=> <XML::Twig, XPath-capable object>
 	    'twig_options'	=> <XML::Twig options as a hash reference>

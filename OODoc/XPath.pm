@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 2.226 2008-09-16 JMG$
+#	$Id : XPath.pm 2.227 2008-11-05 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
@@ -9,7 +9,7 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 2.226;
+our	$VERSION	= 2.227;
 use	XML::Twig	3.22;
 use	Encode;
 
@@ -30,6 +30,7 @@ BEGIN	{
 	*isDrawDocument		= *isDrawing;
 	*isImpressDocument	= *isPresentation;
 	*isWriterDocument	= *isText;
+	*odfVersion		= *openDocumentVersion;
 	}
 
 #------------------------------------------------------------------------------
@@ -61,6 +62,30 @@ sub	OpenOffice::OODoc::XPath::decode_text
 sub	OpenOffice::OODoc::XPath::encode_text
 	{
 	return Encode::decode($LOCAL_CHARSET, shift);
+	}
+
+#------------------------------------------------------------------------------
+# common date formatting functions
+
+sub	odfLocaltime
+	{
+	my $time = shift || time();
+	my @t = localtime($time);
+	return sprintf
+			(
+			"%04d-%02d-%02dT%02d:%02d:%02d",
+			$t[5] + 1900, $t[4] + 1, $t[3], $t[2], $t[1], $t[0]
+			);
+	}
+
+sub	odfTimelocal
+	{
+	require Time::Local;
+
+	my $ootime = shift;
+	return undef unless $ootime;
+	$ootime =~ /(\d*)-(\d*)-(\d*)T(\d*):(\d*):(\d*)/;
+	return Time::Local::timelocal($6, $5, $4, $3, $2 - 1, $1); 
 	}
 
 #------------------------------------------------------------------------------
@@ -162,10 +187,8 @@ sub	OpenOffice::OODoc::XPath::new_element
 	{
 	my $name	= shift		or return undef;
 	return undef if ref $name;
-
 	$name		=~ s/^\s+//;
 	$name		=~ s/\s+$//;
-
 	if ($name =~ /^<.*>$/)	# create element from XML string
 		{
 		return OpenOffice::OODoc::Element->parse($name, @_);
@@ -304,9 +327,18 @@ sub	isOpenDocument
 	{
 	my $self	= shift;
 	my $root	= $self->getRootElement;
-	die __PACKAGE__ . "ERREUR\n" unless $root;
+	die __PACKAGE__ . " Missing root element\n" unless $root;
 	my $ns		= $root->att('xmlns:office');
 	return $ns && ($ns =~ /opendocument/) ? 1 : undef;
+	}
+
+sub	openDocumentVersion
+	{
+	my $self	= shift;
+	my $new_version	= shift;
+	my $root	= $self->getRootElement or return undef;
+	$root->set_att('office:version' => $new_version) if $new_version;
+	return $root->att('office:version');
 	}
 
 #------------------------------------------------------------------------------
@@ -326,7 +358,7 @@ sub	isSpreadsheet
 sub	isPresentation
 	{
 	my $self	= shift;
-	return ($self->contentClass() eq 'impress') ? 1 : undef;
+	return ($self->contentClass() eq 'presentation') ? 1 : undef;
 	}
 sub	isDrawing
 	{
@@ -358,6 +390,13 @@ sub	new
 		@_
 		};
 	
+	foreach my $optk (keys %$self)
+		{
+		next unless $self->{$optk};
+		my $v = lc $self->{$optk};
+		$self->{$optk} = 0 if ($v =~ /^false$|^off$/);
+		}
+
 	$self->{'container'} = $self->{'file'} if defined $self->{'file'};
 	$self->{'container'} = $self->{'archive'} if defined $self->{'archive'};
 	$self->{'part'} = $self->{'member'} if $self->{'member'};
@@ -944,6 +983,28 @@ sub	appendSpaces
 	}
 
 #------------------------------------------------------------------------------
+# multiple whitespace handling routine, contributed by J David Eisenberg 
+
+sub processSpaces
+	{
+	my $self = shift;
+	my $element = shift;
+	my $str = shift;
+	my @words = split(/(\s\s+)/, $str);
+	foreach my $word (@words)
+		{
+		if ($word =~ m/^ +$/)
+			{
+			$self->appendSpaces($element, length($word));
+			}
+		elsif (length($word) > 0)
+			{
+			$element->appendTextChild($word);
+			}
+		}
+	}
+
+#------------------------------------------------------------------------------
 
 sub	appendTabStop
 	{
@@ -1148,12 +1209,19 @@ sub	setText
 			{
 			my $column	=
 				$self->inputTextConversion(shift @columns);
-			$element->appendTextChild($column);
+			unless ($self->{'multiple_spaces'})
+				{
+				$element->appendTextChild($column);
+				}
+			else
+				{
+				$self->processSpaces($element, $column);
+				}
 			$element->appendChild($tabtag) if (@columns);
 			}
 		$element->appendChild('text:line-break') if (@lines);
 		}
-
+	$element->normalize;
 	return $text;
 	}
 
@@ -1238,6 +1306,7 @@ sub	extendText
 			}
 		}
 
+	$element->normalize;
 	return $text;
 	}
 

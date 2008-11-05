@@ -33,8 +33,7 @@ presentation rules, you could use Text::Format instead.
 =cut
 
 use OpenOffice::OODoc	2.101;
-eval { require Text::Wrapper; };
-die "Text::Wrapper is not installed\n" if $@;
+use Text::Wrapper;
 
 #-----------------------------------------------------------------------------
 my $meta;	# will be the metadata object
