@@ -1,5 +1,5 @@
 #------------------------------------------------------
-# OpenOffice::OODoc packaging & installation 2008-11-05
+# OpenOffice::OODoc packaging & installation 2008-11-08
 #------------------------------------------------------
 
 use 5.008;
@@ -148,11 +148,11 @@ WriteMakefile
     	'NAME'		=> 'OpenOffice::OODoc',
 	'VERSION_FROM'	=> 'OODoc.pm',
 	'ABSTRACT_FROM'	=> 'OODoc.pod',
-    	'AUTHOR'	=> 'Jean-Marie Gouarné <jmgdoc@cpan.org>',
+    	'AUTHOR'	=> 'Jean-Marie Gouarne <jmgdoc@cpan.org>',
 	'LICENSE'	=> 'LGPL',
     	'PREREQ_PM'	=>
     		{
-		'XML::Twig'		=> '3.22',
+		'XML::Twig'		=> '3.32',
 		'Archive::Zip'		=> '1.14',
 		'File::Temp'		=> '0.12',
 		'File::Find'		=> '1.01',

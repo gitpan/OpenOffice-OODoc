@@ -1,3 +1,9 @@
+2.107	2008-12-07
+	Text.pm: added getCellPosition(), adapted from a proposal by dhoworth
+	Makefile.PL: updated the XML::Twig version requirement
+	Makefile.PL: (grrr...) removed the accent in the author's name, due to
+	a Solaris-specific trouble with non-ASCII characters in the makefiles
+	XPath.pm: now uses XML::Twig 3.32 instead of 3.22
 2.106	2008-11-05
 	Added the oodoc_test example
 	Moved odfLocatime() and odfTimeLocal() from Meta.pm to XPath.pm, and

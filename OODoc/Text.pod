@@ -943,6 +943,32 @@ presentation which is one of the foundations of the OpenDocument format.
 	table cell (knowing that a single cell can contain one or more
 	paragraphs).
 
+=head3	getCellPosition(cell)
+
+	Returns an array corresponding to the zero-based, numeric coordinates
+	of a table cell in a document, which can be used later to retrieve
+	a cell at the same location through getCell(). The return values
+	represent, in this order, the table, the row and the column. The header
+	rows of the table, if any, are not counted.
+
+	Example:
+
+		my @coord = $doc->getCellPosition($cell);
+
+	A triplet such as (2, 4, 9) tells that the cell is located at the
+	10th position in the 5th row of the 3rd table of the document.
+
+	In scalar context, this method returns nothing more than the first
+	element of the triplet, i.e. the zero-based position of the table
+	in the order of the document. However, if the real need is to retrieve
+	the table element itself, $cell->parent->parent is more efficient.
+
+	This method produces a warning and returns undef if the argument is
+	not a table cell.
+
+	Caution: getCellPostion(), like any other accessor using object
+	coordinates related, works only with normalized tables.
+
 =head3	getCellValue(table, row, column)
 
 =head3	getCellValue(cell)

@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 2.227 2008-11-05 JMG$
+#	$Id : XPath.pm 2.228 2008-11-07 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
@@ -9,8 +9,8 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 2.227;
-use	XML::Twig	3.22;
+our	$VERSION	= 2.228;
+use	XML::Twig	3.32;
 use	Encode;
 
 #------------------------------------------------------------------------------

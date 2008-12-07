@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.234 2008-10-31 JMG$
+#	$Id : Text.pm 2.235 2008-12-07 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
@@ -9,9 +9,9 @@
 
 package OpenOffice::OODoc::Text;
 use	5.008_000;
-use	OpenOffice::OODoc::XPath	2.227;
+use	OpenOffice::OODoc::XPath	2.228;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.234;
+our	$VERSION	= 2.235;
 
 #-----------------------------------------------------------------------------
 # synonyms
@@ -2741,6 +2741,27 @@ sub	getTableCell
 
 	return undef unless ($cell && ! $cell->isCovered);
 	return wantarray ? ($cell, @_) : $cell;
+	}
+
+#-----------------------------------------------------------------------------
+# adapted from a suggestion by dhoworth
+
+sub getCellPosition
+	{
+	my $self	= shift;
+	my $cell	= $self->getTableCell(@_);
+	unless ($cell && $cell->isTableCell)
+		{
+		warn	"[" . __PACKAGE__ . "::cellPosition] "	.
+			"Non-cell argument\n";
+		return undef;
+		}
+	my $cp		= $cell->pos() - 1;
+	my $row		= $cell->parent;
+	my $rp		= $row->pos('table:table-row') - 1;
+	my $table	= $row->parent;
+	my $tp		= $table->pos('table:table') - 1;
+	return wantarray ? ($tp, $rp, $cp) : $tp;
 	}
 
 #-----------------------------------------------------------------------------
