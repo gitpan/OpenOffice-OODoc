@@ -103,8 +103,8 @@ provide the user with some basic utilities.
 =head2	OpenOffice::OODoc::File
 
 This manual page contains detailed information about the physical access to
-the OpenOffice.org files. In some simple applications, this page can be
-ignored without risk.
+the ODF files. In some simple applications, this page can be ignored without
+risk.
 
 =head2	OpenOffice::OODoc::XPath
 
@@ -163,7 +163,7 @@ command with the OpenOffice.org desktop software.
 =head2	OpenOffice::OODoc::Manifest
 
 This manual page describes the manifest management API, knowing that the
-manifest, in an OpenOffice.org file, contains the list of the file components
+manifest, in an ODF file, contains the list of the file components
 (or "members") and the media type (or MIME) of each one. The text content,
 the style definitions, the embedded images, etc. are each one stored as a
 separate "member".
@@ -191,11 +191,10 @@ separate "member".
 
 =head3	odfDecodeText($ootext)
 
-	Returns the translation of a raw OpenOffice.org (UTF-8) in
-	the local character set. While the right translation is automatically
-	done by the regular text read/write methods of OpenOffice::OODoc, this
-	function is useful only if the user's application needs to bypass the
-	API.
+	Returns the translation of a raw ODF (UTF-8) string in the local character
+	set. While the right translation is automatically done by the regular text
+	read/write methods of OpenOffice::OODoc, this function is useful only if
+	the user's application needs to bypass the API.
 
 =head3	odfDocument()
 
@@ -203,13 +202,12 @@ separate "member".
 
 	This function is the most general document constructor. It creates
 	and returns a new Document object. It can be instantiated on the basis of
-	an existing OpenOffice.org file, or using XML, OpenOffice-compliant
-	data previously loaded in memory. With an appropriate "create"
-	parameter, it can be used in order to create a new document from scratch
-	as well. The Document class provides methods allowing a lot of read/update
-	operations in the text content, the graphics, and the presentation.
-	So ooDocument() is the recommended first call to get access to a document
-	for further processing.
+	an existing ODF file, or using XML, OpenDocument-compliant data previously
+	loaded in memory. With an appropriate "create" parameter, it can be used
+	in order to create a new document from scratch as well. The Document class
+	provides methods allowing a lot of read/update operations in the text
+	content, the graphics, and the presentation. So ooDocument() is the
+	recommended first call to get access to a document for further processing.
 
 	See the OpenOffice::OODoc::Document manual page for detailed syntax.
 
@@ -217,7 +215,7 @@ separate "member".
 =head3	odfEncodeText($ootext)
 
 	Returns the translation of an application-provided string,
-	made of local characters, in an OpenOffice.org (UTF-8) string.
+	made of local characters, in an ODF-compliant (UTF-8) string.
 	The given string must comply with the active local encoding (see
 	odfLocalEncoding()). While the right translation is automatically done
 	by the regular text read/write methods of OpenOffice::OODoc, this

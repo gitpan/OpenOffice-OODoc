@@ -6,7 +6,7 @@ OpenOffice::OODoc::Meta - Access to document metadata
 
 The OpenOffice::OODoc::Meta class is a specialist derivative of
 OpenOffice::OODoc::XPath for XML members which describe the metadata
-of OpenDocument (ODF) and OpenOffice.org documents.
+of ODF documents.
 
 =head2	Methods
 
@@ -46,7 +46,7 @@ of OpenDocument (ODF) and OpenOffice.org documents.
 
         Example of returned value:
 
-            2002-11-12T08:22:50
+            2008-11-12T08:22:50
 
 	The returned value can be converted in standard numeric time format
 	with the ooTimelocal() function.
@@ -116,9 +116,21 @@ of OpenDocument (ODF) and OpenOffice.org documents.
         Without argument, returns a label representing the signature of the
         software which generated the document. Example of signature:
 
-        "OpenOffice.org/2.4$Linux OpenOffice.org_project/680m12$Build-9286"
+        "OpenOffice.org/3.1$Unix OpenOffice.org_project/310m11$Build-9399"
 
         With argument, inserts any signature.
+
+=head3	getUserProperty(name)
+
+	Retrieves the content of the user-defined property corresponding to the
+	given name, if any.
+
+	In scalar context, returns the value only.
+	In array context, returns the data type (1st) and the value (2nd).
+
+	Returns undef if the property is not defined.
+
+	See also setUserProperty().
 
 =head3	initial_creator()
 
@@ -151,6 +163,31 @@ of OpenDocument (ODF) and OpenOffice.org documents.
 
         Removes the given keyword if it exists.
 
+=head3	removeUserProperty(name)
+
+	Deletes the user-defined property corresponding to the given name (does
+	nothing if the given property is not defined in the document).
+
+=head3	setUserProperty(name, type => value_type, value => text)
+
+	Creates or updates a user-defined property with the given data type and
+	the given value.
+	
+	According to the ODF specification, the presently allowed data types in
+	a meta property are float, date, time, boolean and string.
+	However, the given type is not checked so the application can provide any
+	abritrary type.
+
+	While the consistency between the type and the value is not checked, the
+	ODF compliance requires 'true' or 'false' for a boolean, and the ISO-8601
+	format for a date (see odfLocaltime()).
+
+	If the 'type' option is not provided, the 'string' type is selected
+	by default.
+
+	The return value reflects the new status of the user defined item,
+	in the same format as with getUserProperty().
+
 =head3	statistic()
 
         Without argument, returns a hash which represents the entire
@@ -175,7 +212,7 @@ of OpenDocument (ODF) and OpenOffice.org documents.
 
         Example:
 
-            my $meta	= OpenOffice::OODoc::Meta->new("invoice.sxc");
+            my $meta	= odfMeta->new("invoice.ods");
             my %stat	= $meta->statistic;
             print 	"This invoice contains " .
             	"$stat{'meta:cell-count'} cells and "	.
@@ -183,8 +220,8 @@ of OpenDocument (ODF) and OpenOffice.org documents.
 
         With arguments, you can modify (or falsify ?!) all or some of the
         statistical data and even create attributes which are not created by
-        the OpenOffice.org or StarOffice software. Arguments are passed in
-        pairs [key => value] and handled without checking.
+        the office software. Arguments are passed in pairs [key => value] and
+	handled without checking.
 
         Example:
 
@@ -195,13 +232,12 @@ of OpenDocument (ODF) and OpenOffice.org documents.
         and adds an arbitrary attribute 'status' with value 'OK'.
 	
 	Note : Such forced attributes do not upset the function of
-        OpenOffice.org which ignores them. They could therefore be useful in
-        programs which handle documents out of reach of the end user.
-        However, if such a document is then edited or updated by
-        OpenOffice.org or StarOffice (using currently released versions),
-        these "foreign" attributes will be lost and the software will
-        replace what it considers to be the "real" values to those
-        attributes it manages.
+        the office software which ignores them. They could therefore be useful
+	in programs which handle documents out of reach of the end user.
+        However, if such a document is then edited or updated by a typical
+	end-user desktop application, these "foreign" attributes could be lost
+	and and replaced by what this application considers to be the "real"
+	values to those attributes it manages.
 
 =head3	subject()
 
@@ -217,21 +253,20 @@ of OpenDocument (ODF) and OpenOffice.org documents.
 
 =head3	user_defined()
 
-        Returns a list of the four fields which appear in the User tab of
-        the Properties dialog in OpenOffice.org. These fields are called, by
-        default, "Info 1" to "Info 4". The end user can change their names
-        and their content.
+        Returns the list of the user defined fields of the document.
 
-        The list is returned in the form of a hash of 4 elements whose
-        keywords represent the field names and whose values represent their
-        content.
+        The list is returned in the form of a hash elements whose keys represent
+	the field names and whose values represent their content.
 
-        By supplying a similar hash of 4 elements as an argument, this
-        method deletes and replaces the existing content.
+        By supplying a similar hash of elements as an argument, this method
+	deletes and replaces the existing content. However, if the number of
+	provided items is less than the numbers of existing user defined
+	properties, the exceding properties are left unchanged.
 
-        If the number of elements supplied in the hash is less than 4, the
-        last fields are left untouched. If, however, the hash contains more
-        than 4 elements, only the first 4 are taken into account.
+	Warning: this method is deprecated; it fits with some legacy
+	documents where the number of user defined properties was fixed.
+	The newer getUserProperty() and setUserProperty() methods should
+	be preferred.
 
 =head3	version()
 
@@ -247,7 +282,7 @@ Developer/Maintainer: Jean-Marie Gouarne L<http://jean.marie.gouarne.online.fr>
 
 Contact: jmgdoc@cpan.org
 
-Copyright 2004-2008 by Genicorp, S.A. L<http://www.genicorp.com>
+Copyright 2004-2009 by Genicorp, S.A. L<http://www.genicorp.com>
 
 Initial English version of the reference manual by Graeme A. Hunter
 (graeme.hunter@zen.co.uk).

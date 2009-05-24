@@ -16,7 +16,7 @@ cat sourcefile.txt | text2odf targetfile.odt
 This filter creates an OpenDocument (ODF) file and fills it
 with the text coming through the standard entry. The target file is
 created, and any existing file with the same name is replaced.
-To avoid this behaviour and append the text to an existing OOo file,
+To avoid this behaviour and append the text to an existing ODF file,
 just remove the create => 'text' option in the script.
 
 =cut

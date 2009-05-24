@@ -17,7 +17,7 @@ document as "target.odt"
 
 odfhighlight "myfile.odt" "search string" -color "green"
 
-highlights each occurrence of "search string" in "myfile.sxw" with a green
+highlights each occurrence of "search string" in "myfile.odt" with a green
 background color, without changing the text (without "-o" option, the changes
 apply to "myfile.odt"
 

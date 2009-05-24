@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 2.228 2008-11-07 JMG$
+#	$Id : XPath.pm 2.229 2009-05-24 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
@@ -9,7 +9,7 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 2.228;
+our	$VERSION	= 2.229;
 use	XML::Twig	3.32;
 use	Encode;
 
@@ -494,6 +494,7 @@ sub	new
 				opendocument	=> $self->{'opendocument'},
 				template_path	=> $self->{'template_path'}
 				);
+			return undef unless $self->{'container'};
 			delete $self->{'file'};
 			my $xml = $self->{'container'}->link($self);
 			$self->{'xpath'} = $self->{'twig'}->safe_parse($xml);
@@ -2506,7 +2507,7 @@ sub	insertTextChild
 sub	getAttributes
 	{
 	my $node	= shift;
-	return %{$node->atts(@_)};
+	return %{$node->atts(@_) || {}};
 	}
 
 sub	setAttribute

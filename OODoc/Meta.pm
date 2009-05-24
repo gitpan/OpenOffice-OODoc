@@ -1,16 +1,16 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Meta.pm 2.012 2008-10-23 JMG$
+#	$Id : Meta.pm 2.013 2009-05-24 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
-#	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2009 by Genicorp, S.A. (www.genicorp.com)
 #
 #-----------------------------------------------------------------------------
 
 package	OpenOffice::OODoc::Meta;
 use	5.008_000;
-our	$VERSION	= 2.012;
-use	OpenOffice::OODoc::XPath	2.227;
+our	$VERSION	= 2.013;
+use	OpenOffice::OODoc::XPath	2.229;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
 
 #-----------------------------------------------------------------------------
@@ -395,7 +395,6 @@ sub	user_defined
 			$self->setAttribute($element, 'meta:name', $key);
 			$self->setText($element, $new_fields{$key});
 			$count++;
-			last if $count > 3;
 			}
 		}
 	
@@ -408,6 +407,58 @@ sub	user_defined
 		}
 
 	return %fields;
+	}
+
+#-----------------------------------------------------------------------------
+
+sub	getUserProperty
+	{
+	my $self	= shift;
+	my $name	= $self->inputTextConversion(shift) or return undef;
+	my $property	= $self->getNodeByXPath
+		("//meta:user-defined[\@meta:name=\"$name\"]")
+		or return undef;
+
+	my $type	= $self->getAttribute($property, 'meta:value-type');
+	my $value	= $self->getText($property);
+
+	return (wantarray) ? ($type, $value) : $value;
+	}
+
+#-----------------------------------------------------------------------------
+
+sub	setUserProperty
+	{
+	my $self	= shift;
+	my $name	= shift or return undef;
+	my %opt		= @_;
+	my $n		= $self->inputTextConversion($name);
+	my $property	= $self->getNodeByXPath
+		("//meta:user-defined[\@meta:name=\"$n\"]");
+	unless ($property)
+		{
+		$property = $self->appendElement
+			(
+			$self->{'body'}, 'meta:user-defined',
+			);
+		$self->setAttribute($property, 'meta:name', $name);
+		}
+	$opt{'type'} = 'string' unless defined $opt{'type'};
+	$self->setAttribute($property, 'meta:value-type', $opt{'type'});
+	$self->setText($property, $opt{'value'});
+	return (wantarray) ? ($opt{'type'}, $opt{'value'}) : $opt{'value'};
+	}
+
+#-----------------------------------------------------------------------------
+
+sub	removeUserProperty
+	{
+	my $self	= shift;
+	my $name	= $self->inputTextConversion(shift);
+	return undef unless defined $name;
+	my $property	= $self->getNodeByXPath
+		("//meta:user-defined[\@meta:name=\"$name\"]");
+	return $self->removeElement($property);
 	}
 
 #-----------------------------------------------------------------------------

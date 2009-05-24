@@ -14,8 +14,7 @@ header, list item) in a source document matching a given pattern (string or
 regex), and appends it as a new paragraph to a target document. The target
 document must exist.
 
-The target OpenOffice.org document must exist (it can be an empty document
-or a template).
+The target document must exist (it can be an empty document or a template).
 
 usage : odfsearch target_file source_file "search_string"
 

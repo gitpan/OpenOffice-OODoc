@@ -13,9 +13,9 @@ odf_set_fields <filename> -options
 
 =head1	SYNOPSIS
 
-Sample script updating the 4 user-defined fields of an ODF file and adding
-new keywords. Existing keywords are preserved. Old user-defined fields names
-and values are deleted and replaced.
+Sample script updating or creating the 4 first user-defined fields of an ODF
+file and adding new keywords. Existing keywords are preserved. Old user-defined
+fields names and values are deleted and replaced.
 
 The keywords must be passed as a comma-separated list through the -keywords
 option.

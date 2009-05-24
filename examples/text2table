@@ -13,7 +13,7 @@ text2table sourcefile.csv mycalc.ods 32 20
 
 =head1	DESCRIPTION
 
-Creates an OpenOffice.org Calc file and populate its first sheet
+Creates an ODF spreadsheet file and populate its first sheet
 from a delimited text file. Each line of the source file produces
 a row in the target table. In the line, the field separator is ";".
 

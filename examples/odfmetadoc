@@ -29,8 +29,8 @@ appends the word to the keword list. 'OK' saves the changes in the file.
 This script is provided as a demo and test tool, with a very basic user
 interface. There is no directory selection dialog box. Some file names with
 blank spaces and/or non-ASCII characters are not properly processed by the
-graphical user interface (even if the OODoc API does support the same character
-sets as the local Perl installation).
+graphical user interface in some environments (even if the OODoc API does
+support the same character sets as the local Perl installation).
 
 =head1	REQUIREMENTS
 

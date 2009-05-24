@@ -137,7 +137,10 @@ the following title:
 
 "Open Document Format for Office Applications (OpenDocument) v1.0"
 
-However, it works with ODF 1.1 documents as well.
+It works with ODF 1.1 and 1.2 documents as well, knowing that these newer
+versions use the same basic data structure as 1.0, and (hopefully) this
+library doesn't depend on any particular feature which could be removed from
+the specification.
 
 =head1	Architecture
 
