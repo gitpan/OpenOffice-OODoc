@@ -1,5 +1,5 @@
 #------------------------------------------------------
-# OpenOffice::OODoc packaging & installation 2008-11-08
+# OpenOffice::OODoc packaging & installation 2010-01-05
 #------------------------------------------------------
 
 use 5.008;
@@ -13,7 +13,7 @@ GetOptions
 	(
 	'config!'	=> \(my $config = 1),
 	'prompt!'	=> \(my $prompt = 1),
-	'encoding=s'	=> \(my $encoding = 'iso-8859-1'),
+	'encoding=s'	=> \(my $encoding = 'utf8'),
 	'colormap=s'	=> \(my $colormap = ''),
 	'workdir=s'	=> \(my $workdir = '.'),
 	'format=s'	=> \(my $format = 2),
@@ -153,10 +153,11 @@ WriteMakefile
     	'PREREQ_PM'	=>
     		{
 		'XML::Twig'		=> '3.32',
-		'Archive::Zip'		=> '1.14',
+		'Archive::Zip'		=> '1.18',
 		'File::Temp'		=> '0.12',
 		'File::Find'		=> '1.01',
-		'Time::Local'		=> '1.07'
+		'Time::Local'		=> '1.07',
+		'IO::File'		=> '1.14'
 		},
 	'EXE_FILES'	=>
 		[

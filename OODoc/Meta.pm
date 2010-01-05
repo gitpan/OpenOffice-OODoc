@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Meta.pm 2.013 2009-05-24 JMG$
+#	$Id : Meta.pm 2.014 2010-01-05 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2009 by Genicorp, S.A. (www.genicorp.com)
@@ -9,7 +9,7 @@
 
 package	OpenOffice::OODoc::Meta;
 use	5.008_000;
-our	$VERSION	= 2.013;
+our	$VERSION	= 2.014;
 use	OpenOffice::OODoc::XPath	2.229;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
 
@@ -411,16 +411,60 @@ sub	user_defined
 
 #-----------------------------------------------------------------------------
 
+sub	getUserPropertyElements
+	{
+	my $self	= shift;
+	return $self->getElementList('//meta:user-defined');
+	}
+
+#-----------------------------------------------------------------------------
+
+sub	removeUserProperties
+	{
+	my $self	= shift;
+	my $count	= 0;
+	foreach my $element ($self->getUserPropertyElements())
+		{
+		$element->delete; $count++;
+		}
+	return $count;
+	}
+
+#-----------------------------------------------------------------------------
+
+sub     getUserPropertyElement
+        {
+        my $self        = shift;
+        my $arg         = shift;
+        return undef    unless defined $arg;
+        if (ref $arg)
+                {
+                return ($arg->hasTag('meta:user-defined'))     ?
+                                $arg            :
+                                undef;
+                }
+        else
+                {
+                my $name = $self->inputTextConversion($arg);
+                return $self->getNodeByXPath
+                        ("//meta:user-defined[\@meta:name=\"$name\"]");
+                }
+        }
+
+#-----------------------------------------------------------------------------
+
 sub	getUserProperty
 	{
 	my $self	= shift;
-	my $name	= $self->inputTextConversion(shift) or return undef;
-	my $property	= $self->getNodeByXPath
-		("//meta:user-defined[\@meta:name=\"$name\"]")
-		or return undef;
-
-	my $type	= $self->getAttribute($property, 'meta:value-type');
-	my $value	= $self->getText($property);
+        my $property    = $self->getUserPropertyElement(shift);
+	my $type        = undef;
+	my $value       = undef;
+	
+	if ($property)
+		{
+	        $type	= $self->getAttribute($property, 'meta:value-type');
+	        $value	= $self->getText($property);
+	        }
 
 	return (wantarray) ? ($type, $value) : $value;
 	}
@@ -430,23 +474,30 @@ sub	getUserProperty
 sub	setUserProperty
 	{
 	my $self	= shift;
-	my $name	= shift or return undef;
+	my $name        = shift;
+	unless (defined $name)
+	        {
+	        return (wantarray) ? (undef, undef) : undef;
+	        }
 	my %opt		= @_;
-	my $n		= $self->inputTextConversion($name);
-	my $property	= $self->getNodeByXPath
-		("//meta:user-defined[\@meta:name=\"$n\"]");
-	unless ($property)
-		{
-		$property = $self->appendElement
-			(
-			$self->{'body'}, 'meta:user-defined',
-			);
-		$self->setAttribute($property, 'meta:name', $name);
-		}
-	$opt{'type'} = 'string' unless defined $opt{'type'};
-	$self->setAttribute($property, 'meta:value-type', $opt{'type'});
-	$self->setText($property, $opt{'value'});
-	return (wantarray) ? ($opt{'type'}, $opt{'value'}) : $opt{'value'};
+
+        my $property    = $self->getUserPropertyElement($name);	
+        unless ($property)
+                {
+                $property =$self->appendElement
+                        ($self->{'body'}, 'meta:user-defined');
+                $self->setAttribute($property, 'meta:name', $name);
+                }
+
+        my $type =      $opt{'type'}                            ||
+                        $self->getAttribute
+                                ($property, 'meta:value-type')  ||
+                        'string';
+
+	$self->setAttribute($property, 'meta:value-type', $type);
+	$self->setText($property, $opt{'value'}) if defined $opt{'value'};
+	
+	return $self->getUserProperty($property);
 	}
 
 #-----------------------------------------------------------------------------
@@ -475,6 +526,27 @@ sub	statistic
 	else
 		{ return $self->setAttributes($element, %new_fields);	}
 	
+	}
+
+#-----------------------------------------------------------------------------
+
+sub	getTemplate
+	{
+	my $self	= shift;
+	my $element	= $self->getElement('//meta:template', 0)
+				or return undef;
+	my %t		= $self->getAttributes($element);
+	return (wantarray) ?
+		($t{'xlink:href'}, $t{'meta:date'}, $t{'xlink:title'})	:
+		$t{'xlink:href'};
+	}
+
+#-----------------------------------------------------------------------------
+
+sub	unlinkTemplate
+	{
+	my $self	= shift;
+	return $self->removeElement('//meta:template', 0);	
 	}
 
 #-----------------------------------------------------------------------------

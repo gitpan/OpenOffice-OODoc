@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : File.pm 2.118 2009-01-30 JMG$
+#	$Id : File.pm 2.201 2009-06-06 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2009 by Genicorp, S.A. (www.genicorp.com)
@@ -9,9 +9,10 @@
 
 package	OpenOffice::OODoc::File;
 use	5.008_000;
-our	$VERSION	= 2.118;
-use	Archive::Zip	1.14	qw ( :DEFAULT :CONSTANTS :ERROR_CODES );
+our	$VERSION	= 2.201;
+use	Archive::Zip	1.18	qw ( :DEFAULT :CONSTANTS :ERROR_CODES );
 use	File::Temp;
+use	IO::File;
 
 #-----------------------------------------------------------------------------
 # some defaults
@@ -358,9 +359,15 @@ sub	new
 		return undef;
 		}
 		
-
-	$self->{'source_file'}	= $sourcefile;
-
+	if ($sourcefile->isa('IO::Handle'))
+		{
+		$self->{'io_handle'}	= $sourcefile;
+		}
+	else
+		{
+		$self->{'source_file'}	= $sourcefile;
+		}
+	
 	unless	($sourcefile)
 		{
 		warn "[" . __PACKAGE__ . "::new] Missing file name\n";

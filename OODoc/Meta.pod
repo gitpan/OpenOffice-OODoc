@@ -120,10 +120,28 @@ of ODF documents.
 
         With argument, inserts any signature.
 
+=head3	getTemplate()
+
+	Returns information about the template that is linked to the current
+	document, if any.
+
+	In scalar context, the returned information is the location (URL) of
+	the template, or undef if the document isn't linked to any template.
+
+	In array context, the returned values are, in this order, the location
+	of the template document, the date and time when the template was last
+	modified prior to being used to create the current document, then the
+	title of the template document.
+
+	See also unlinkTemplate().
+
 =head3	getUserProperty(name)
 
 	Retrieves the content of the user-defined property corresponding to the
 	given name, if any.
+	
+	The argument may be an already retrieved user-defined property element
+	reference instead of a name. 
 
 	In scalar context, returns the value only.
 	In array context, returns the data type (1st) and the value (2nd).
@@ -131,6 +149,17 @@ of ODF documents.
 	Returns undef if the property is not defined.
 
 	See also setUserProperty().
+
+=head3  getUserPropertyElement(name)
+
+        Like getUserProperty(), but the return value is the user property
+        element instead of its value and/or type. Returns undef if the given
+        property is not defined (or if the given object is not a user-defined
+        property element).
+
+=head3  getUserPropertyElements()
+
+	Returns the list of all the existing user-defined property elements.
 
 =head3	initial_creator()
 
@@ -168,6 +197,12 @@ of ODF documents.
 	Deletes the user-defined property corresponding to the given name (does
 	nothing if the given property is not defined in the document).
 
+=head3	removeUserProperties()
+
+	Deletes all the existing user-defined properties and returns the number
+	or really deleted elements (does nothing and returns 0 if no user
+	property is defined in the document).
+
 =head3	setUserProperty(name, type => value_type, value => text)
 
 	Creates or updates a user-defined property with the given data type and
@@ -182,8 +217,32 @@ of ODF documents.
 	ODF compliance requires 'true' or 'false' for a boolean, and the ISO-8601
 	format for a date (see odfLocaltime()).
 
-	If the 'type' option is not provided, the 'string' type is selected
-	by default.
+	Example:
+
+		$meta->setUserProperty
+			(
+			"Approved",
+			type => 'boolean', value => 'false'
+			);
+		$meta->setUserProperty
+			(
+			"Circulation",
+			type => 'string', value => "Internal"
+			);
+		$meta->setUserProperty
+			(
+			"Release date",
+			type => 'date', value => "2010-01-01'
+			);
+		$meta->setUserProperty
+			(
+			"Release number",
+			type => 'float', value => "5.4'
+			);
+	
+        The 'type' option allows to change the data type of an existing user-
+        defined property. However, if a new property is created without 'type'
+        option, the 'string' type is selected by default.
 
 	The return value reflects the new status of the user defined item,
 	in the same format as with getUserProperty().
@@ -251,6 +310,11 @@ of ODF documents.
 
         With argument, adds a new title to the document.
 
+=head3	unlinkTemplate()
+
+	Removes the reference to a template document, if any, ensuring that
+	the document no longer depends on any external template.
+
 =head3	user_defined()
 
         Returns the list of the user defined fields of the document.
@@ -263,10 +327,10 @@ of ODF documents.
 	provided items is less than the numbers of existing user defined
 	properties, the exceding properties are left unchanged.
 
-	Warning: this method is deprecated; it fits with some legacy
-	documents where the number of user defined properties was fixed.
-	The newer getUserProperty() and setUserProperty() methods should
-	be preferred.
+	Warning: this method is deprecated. Newer methods such as
+	setUserProperty(), getUserProperty(), removeUserProperties(),
+	getUserPropertyElements(), and getUserPropertyElements() should be
+	preferred. 
 
 =head3	version()
 
@@ -282,7 +346,7 @@ Developer/Maintainer: Jean-Marie Gouarne L<http://jean.marie.gouarne.online.fr>
 
 Contact: jmgdoc@cpan.org
 
-Copyright 2004-2009 by Genicorp, S.A. L<http://www.genicorp.com>
+Copyright 2004-2010 by Genicorp, S.A. L<http://www.genicorp.com>
 
 Initial English version of the reference manual by Graeme A. Hunter
 (graeme.hunter@zen.co.uk).

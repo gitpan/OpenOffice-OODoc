@@ -2474,6 +2474,37 @@ presentation which is one of the foundations of the OpenDocument format.
 	such a link is the concatenation of a file path, a "#", and a local
 	name that makes sense in the target document (bookmark, heading...).
 
+=head3  setNote(path, position, text [, options])
+
+=head3  setNote(element, text [, options])
+
+        Creates and inserts a footnote or an endnote in the given element with
+        the given text as the note content. Returns the new note element in
+        case of success, or undef if the target element doesn't exist.
+        
+        Supported options are:
+        
+        'offset' => specifies the numeric position of the note in the text of the
+	target element; by default the note is located at the beginning;
+        
+        'class' => specifies the display class of the now note; may be 'footnote'
+        or 'endnote', default is 'footnote';
+        
+        'id' => a note identifier, must be provided by the application and must
+        be unique for the class (be careful, the uniqueness is not automatically
+        checked and no default is provided);
+        
+        'citation' => specifies the character string to display as note citation
+        (at the place in the host element where the note is anchored);
+        
+        'label' => this option, if provided, means that the note should not be
+        processed as automatically numbered by the printing/editing applications
+        and that it should be represented by the given (arbitrary) string; if
+        'label' is defined, it becomes the default value of 'citation';
+        
+        'style' => specifies the style of the note content (should be a regular
+        paragraph style).
+
 =head3	setSpan(path, position, [context,] expression, style)
 
 =head3	setSpan(element, [context,] expression, style)

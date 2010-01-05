@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #-----------------------------------------------------------------------------
-# OpenOffice::OODoc test					2008-10-31
+# OpenOffice::OODoc test					2010-01-05
 #-----------------------------------------------------------------------------
 
 =head1	NAME
@@ -41,7 +41,7 @@ my $testfile	=	$OpenOffice::OODoc::File::DEFAULT_OFFICE_FORMAT == 2 ?
 				"odftest.odt" : "ootest.sxw";
 my $class	=	"text";
 my $image_file	=	"$instpath/data/image.png";
-my $image_size	=	"91mm, 53mm";
+my $image_size	=	"60mm, 82mm";
 my $test_date	=	odfLocaltime();
 
 print "Generating $testfile file\n";
@@ -89,9 +89,10 @@ $styles->createImageStyle
 	'Centered Image',
 	properties	=>
 			{
-			'style:horizontal-pos'	=> 'center',
-			'style:vertical-pos'	=> 'from-top',
-			'fo:margin-bottom'	=> '2cm'
+			'horizontal-pos'	=> 'center',
+			'vertical-pos'	        => 'from-top',
+			'wrap'                  => 'none',
+			'fo:margin-bottom'	=> '1cm'
 			}
 	);
 # Inserting an image in the document
@@ -216,6 +217,9 @@ $meta->description($description);
 $meta->generator($generator);
 $meta->creation_date($test_date);
 $meta->date($test_date);
+$meta->removeUserProperties();
+$meta->setUserProperty("Application", type => 'string', value => "oodoc_test");
+$meta->setUserProperty("Test date", type => 'date', value => $test_date);
 
 # Saving the $testfile file
 print "Saving $testfile file\n";

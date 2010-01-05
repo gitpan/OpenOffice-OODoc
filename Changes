@@ -1,3 +1,11 @@
+2.109   2010-01-05
+	Cosmetic changes in the installation tests; changed the test image.
+	Updated template documents.
+	Makefile.PL: Updated dependencies (updated INSTALL accordingly).
+	Makefile.PL: utf8 becomes the default character set.
+	File.pm: Archive::Zip 1.18 now required; IO::File required; file handles supported.
+        Meta.pm: Added user-defined property access methods; added getTemplate(), unlinkTemplate().
+        Text.pm: Added setNote(), fixed a bug in getTableByName() [#48356].
 2.108	2009-05-24
 	Some doc cleaning
 	Meta.pm: added getUserProperty(), setUserProperty(), removeUserProperty()

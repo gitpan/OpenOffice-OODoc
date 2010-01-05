@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.236 2009-02-18 JMG$
+#	$Id : Text.pm 2.237 2010-01-05 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2009 by Genicorp, S.A. (www.genicorp.com)
@@ -11,7 +11,7 @@ package OpenOffice::OODoc::Text;
 use	5.008_000;
 use	OpenOffice::OODoc::XPath	2.229;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.236;
+our	$VERSION	= 2.237;
 
 #-----------------------------------------------------------------------------
 # synonyms
@@ -877,6 +877,54 @@ sub	setAnnotation
 
 	return $annotation;
 	}
+
+#-----------------------------------------------------------------------------
+# creates and inserts a footnote or endnote
+
+sub     setNote
+        {
+        my $self	= shift;
+	my $path	= shift;
+	my $pos		= ref $path ? undef : shift;
+	my $element	= $self->getElement($path, $pos)   or return undef;
+	my $text        = shift;
+	my %opt		=
+		(
+		'offset'	=> 0,
+		'text'		=> "",
+		'style'		=> 'Standard',
+		'citation'      => undef,
+		'id'            => undef,
+		'class'         => 'footnote',
+		'label'         => undef,
+		@_
+		);
+        my $note = $element->insertNewNode
+                ('text:note', 'within', $opt{'offset'});
+        $self->setAttributes
+                (
+                $note,
+                'text:id'               => $opt{'id'},
+                'text:note-class'       => $opt{'class'}
+                );
+        my $note_citation       = $note->appendChild('text:note-citation');
+        if (defined $opt{'label'})
+                {
+                $self->setAttribute
+                        ($note_citation, 'text:label', $opt{'label'});
+                $opt{'citation'} = $opt{'label'}
+                        unless defined $opt{'citation'};
+                }
+        $self->setText($note_citation, $opt{'citation'});
+        my $note_body           = $note->appendChild('text:note-body');
+        $self->appendParagraph
+                (
+                attachment      => $note_body,
+                text            => $text,
+                style           => $opt{'style'}
+                );
+        return $note;
+        }
 
 #-----------------------------------------------------------------------------
 
@@ -3182,7 +3230,7 @@ sub	getTableByName
 	my $self	= shift;
 	my $name 	= $self->inputTextConversion(shift);
 	my $table = $self->getNodeByXPath
-		("//table:table[\@table:name=\"$n\"]");
+		("//table:table[\@table:name=\"$name\"]");
 	return $self->getTable($table, @_);
 	}
 
