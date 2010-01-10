@@ -163,6 +163,14 @@ features of OODoc::Meta and OODoc::Document are described here.
 	In addition, this constructor is able to create a new document
 	from scratch.
 
+        The value of the 'file' option may be an open IO::File object,
+        that allows the application to use an application-provided file
+        handle. However, you should prefer file paths/names when possible,
+        and read the explanations about the constructor and the save() method
+        in the OpenOffice::OODoc::File manual page before using open file
+        handles. Remember that, as soon as the given file or handle is
+        an ODF container, OODoc::XPath uses OODoc::File.
+
         Parameters are named (hash key => value). The constructor must get
         at least one parameter giving a means of obtaining the XML document
         that it will represent. Several options are available; each one is
@@ -1434,11 +1442,21 @@ features of OODoc::Meta and OODoc::Document are described here.
 	Resets the search context to its default value, which is the root of
 	the document. See currentContext().
 
-=head3	save([filename])
+=head3	save([filename|filehandle])
 
 	Saves the content of the current document through a physical
-	output.
+	output, that is either a regular file specified by path/name, or
+	an open, application-provided IO::Handle. If no argument is
+	provided, the document which had been used as the source (if any)
+	is used as the default target.
 	
+	Technically, as soon as the document container is a regular ODF
+	file, this method is a stub for the save() method of the associated
+	OpenOffice::OODoc::File object, so all the related explanations and
+	recommendations given in the OpenOffice::OODoc::File manual chapter
+	apply. So, for example, be careful if the target is an open IO::Handle
+	instead of a file path/name.
+
 	The behaviour of this method depends on the way the current
 	OpenOffice::OODoc::XPath object has been created.
 	
@@ -1485,11 +1503,6 @@ features of OODoc::Meta and OODoc::Document are described here.
 	above, if, say, the $meta object is created (through odfXPath())
 	with a "read_only" option set to "true", only $content and $styles
 	are really saved by the last instruction.
-
-	Note: OpenOffice::OODoc::XPath doesn't really know anything about
-	the physical archive file; here save() is only a stub method and
-	the real job is done by the save() method of the associated container,
-	which is an OpenOffice::OODoc::File object.
 			
 	If the document is not associated with a regular OpenDocument
 	compressed file (used through an OODoc::File object), it's saved
@@ -2033,7 +2046,7 @@ Developer/Maintainer: Jean-Marie Gouarne L<http://jean.marie.gouarne.online.fr>
 
 Contact: jmgdoc@cpan.org
 
-Copyright 2004-2008 by Genicorp, S.A. L<http://www.genicorp.com>
+Copyright 2004-2010 by Genicorp, S.A. L<http://www.genicorp.com>
 
 Initial English version of the reference manual by Graeme A. Hunter
 (graeme.hunter@zen.co.uk).

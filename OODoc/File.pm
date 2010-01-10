@@ -1,18 +1,17 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : File.pm 2.201 2009-06-06 JMG$
+#	$Id : File.pm 2.202 2010-01-10 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
-#	Copyright 2009 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2010 by Genicorp, S.A. (www.genicorp.com)
 #
 #-----------------------------------------------------------------------------
 
 package	OpenOffice::OODoc::File;
 use	5.008_000;
-our	$VERSION	= 2.201;
+our	$VERSION	= 2.202;
 use	Archive::Zip	1.18	qw ( :DEFAULT :CONSTANTS :ERROR_CODES );
 use	File::Temp;
-use	IO::File;
 
 #-----------------------------------------------------------------------------
 # some defaults
@@ -170,6 +169,42 @@ sub	_load_template_file
 	}
 
 #-----------------------------------------------------------------------------
+# existing ZIP file container loader
+
+sub     _load_container
+        {
+        my $container   = shift         or return undef;
+        my $source      = shift         or return undef;
+        
+        my $z = Archive::Zip->new;
+        
+        if (UNIVERSAL::isa($source, 'IO::File'))
+                {
+                if ($z->readFromFileHandle($source) != AZ_OK)
+                        {
+                        warn "[" . __PACKAGE__ . "::new] Handle read error\n";
+                        return undef;
+                        }
+                }
+        else
+                {
+		unless	( -e $source && -f $source && -r $source )
+			{
+			warn	"[" . __PACKAGE__ . "::new] "	.
+				"File $source unavailable\n";
+			return undef;
+			}
+		if ($z->read($source) != AZ_OK)
+			{
+			warn "[" . __PACKAGE__ . "::new] File read error\n";
+			return undef;
+			}
+                }
+        $container->{'source_file'} = $source;
+        return $z;
+        }
+
+#-----------------------------------------------------------------------------
 # control & conversion of XML component names of the OO file
 
 sub	CtrlMemberName
@@ -319,7 +354,7 @@ sub	remove_temp_files
 	}
 
 #-----------------------------------------------------------------------------
-# constructor; requires an existing regular OO file
+# constructor
 
 sub	new
 	{
@@ -358,39 +393,8 @@ sub	new
 		warn "[" . __PACKAGE__ . "::new] Wrong 'opendocument' option\n";
 		return undef;
 		}
-		
-	if ($sourcefile->isa('IO::Handle'))
-		{
-		$self->{'io_handle'}	= $sourcefile;
-		}
-	else
-		{
-		$self->{'source_file'}	= $sourcefile;
-		}
-	
-	unless	($sourcefile)
-		{
-		warn "[" . __PACKAGE__ . "::new] Missing file name\n";
-		return undef;
-		}
-	
-	unless ($self->{'create'})
-		{
-		unless	( -e $sourcefile && -f $sourcefile && -r $sourcefile )
-			{
-			warn	"[" . __PACKAGE__ . "::new] "	.
-				"File $sourcefile unavailable\n";
-			return undef;
-			}
-		$self->{'archive'} = Archive::Zip->new;
-		if ($self->{'archive'}->read($self->{'source_file'}) != AZ_OK)
-			{
-			delete $self->{'archive'};
-			warn "[" . __PACKAGE__ . "::new] Read error\n";
-			return undef;
-			}
-		}
-	else
+		                                                
+	if ($self->{'create'})                  # new ODF container
 		{
 		$self->{'create'} = 'drawing'
 			if $self->{'create'} eq 'graphics';
@@ -407,7 +411,19 @@ sub	new
 				"Bad or missing template\n";
 			return undef;
 			}
+		$self->{'source_file'} = $sourcefile || "";
 		}
+	elsif   ($sourcefile)                   # existing container
+		{
+		$self->{'archive'}      = _load_container($self, $sourcefile);
+		return undef unless $self->{'archive'};
+		}
+	else
+		{
+		warn "[" . __PACKAGE__ . "::new] Missing source file\n";
+		return undef;
+		}
+	        
 	$self->{'members'} = [ $self->{'archive'}->memberNames ];
 	return bless $self, $class;
 	}
@@ -660,32 +676,32 @@ sub	save
 				# target file check --------------------------
 
 	$targetfile	= $self->{'source_file'}	unless $targetfile;
-	if ( -e $targetfile )
-		{
-		unless ( -f $targetfile )
-			{
-			warn 	"[" . __PACKAGE__ . "::save] "	.
-				"$targetfile is not a regular file\n";
-			return undef;
+	if (UNIVERSAL::isa($targetfile, 'IO::File'))
+	        {
+	        $outfile = $self->new_temp_file_name();
+	        }
+	else
+	        {
+	        if ( -e $targetfile )
+		        {
+		        unless ( -f $targetfile )
+		        	{
+			        warn 	"[" . __PACKAGE__ . "::save] "	.
+				        "$targetfile is not a regular file\n";
+			        return undef;
+			        }
+		        unless ( -w $targetfile )
+			        {
+			        warn 	"[" . __PACKAGE__ . "::save "	.
+				        "$targetfile is read only\n";
+			        return undef;
+			        }
 			}
-		unless ( -w $targetfile )
-			{
-			warn 	"[" . __PACKAGE__ . "::save "	.
-				"$targetfile is read only\n";
-			return undef;
-			}
+		$outfile = ($targetfile eq $self->{'source_file'}) ?
+		        $self->new_temp_file_name()     :
+		        $targetfile;		        
 		}
 		
-				# output to temporary file if target eq source
-
-	if ($targetfile eq $self->{'source_file'})
-		{
-		$outfile = $self->new_temp_file_name;
-		}
-	else
-		{
-		$outfile = $targetfile;
-		}
 
 				# discriminate replaced/added members --------
 
@@ -705,13 +721,16 @@ sub	save
 		}
 		
 				# target archive operation -------------------
+				
+				        # output to temporary archive
+        $self->{'archive'}->writeToFileNamed($outfile);
 
-	$self->{'archive'}->writeToFileNamed($outfile);
+                                        # reload temporary archive
 	my $archive	= Archive::Zip->new;
-	my $status	= $archive->read($outfile);
+	my $status      = $archive->read($outfile);
 	unless ($status == AZ_OK)
 		{
-		warn "[" . __PACKAGE__ . "::save] Archive write error\n";
+		warn "[" . __PACKAGE__ . "::save] Archive I/O error\n";
 		return undef;
 		}
 	
@@ -758,8 +777,16 @@ sub	save
 			{
 			require File::Copy;
 
-			unlink $targetfile;
-			File::Copy::move($outfile, $targetfile);
+                        if (UNIVERSAL::isa($targetfile, 'IO::File'))
+                                {
+                                File::Copy::cp($outfile, $targetfile);
+                                unlink $outfile;
+                                }
+                        else
+                                {
+			        unlink $targetfile;
+			        File::Copy::move($outfile, $targetfile);
+			        }
 			}
 		$self->remove_temp_files;
 		return 1;

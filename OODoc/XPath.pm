@@ -1,15 +1,15 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 2.229 2009-05-24 JMG$
+#	$Id : XPath.pm 2.232 2010-01-10 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
-#	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2010 by Genicorp, S.A. (www.genicorp.com)
 #
 #-----------------------------------------------------------------------------
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 2.229;
+our	$VERSION	= 2.232;
 use	XML::Twig	3.32;
 use	Encode;
 
@@ -47,7 +47,7 @@ our %XMLNAMES	=			# OODoc root element names
 					# characters to be escaped in XML
 our	$CHARS_TO_ESCAPE	= "\"<>'&";
 					# standard external character set
-our	$LOCAL_CHARSET		= 'iso-8859-1';
+our	$LOCAL_CHARSET		= 'utf8';
 					# standard ODF character set
 our	$OO_CHARSET		= 'utf8';
 
@@ -373,6 +373,31 @@ sub	isText
 
 #------------------------------------------------------------------------------
 
+sub     _get_container      # get a new OODoc::File container
+        {
+        require OpenOffice::OODoc::File;
+        
+        my $doc         = shift;
+                
+	return OpenOffice::OODoc::File->new
+				(
+				$doc->{'file'},
+				create		=> $doc->{'create'},
+				opendocument	=> $doc->{'opendocument'},
+				template_path	=> $doc->{'template_path'}
+				);
+        }
+        
+sub     _get_flat_file          # get flat ODF content
+        {
+        my $doc         = shift;
+        my $source      = $doc->{'file'};
+	$doc->{'xpath'} = UNIVERSAL::isa($source, 'IO::File') ?
+			     $doc->{'twig'}->safe_parse($source)    :
+			     $doc->{'twig'}->safe_parsefile($source);
+        return $doc->{'path'};
+        }
+
 sub	new
 	{
 	my $caller	= shift;
@@ -448,6 +473,14 @@ sub	new
 			);
 		}
 
+	                                        # other OODoc::Xpath object
+	$self->{'container'} = $self->{'container'}->{'container'}
+	        if      (
+	                ref $container
+	                        &&
+	                $self->{'container'}->isa('OpenOffice::OODoc::XPath')
+                        );
+	
 	if ($self->{'xml'})			# load from XML string
 		{
 		delete $self->{'container'};
@@ -455,54 +488,50 @@ sub	new
 		$self->{'xpath'} =
 			$self->{'twig'}->safe_parse($self->{'xml'});
 		delete $self->{'xml'};
-		}
-	elsif (ref $self->{'container'})	# load from OOFile container
+		}	
+	
+	elsif (defined $self->{'container'})
 		{
 		delete $self->{'file'};
-	 	my $obj = $self->{'container'};
-		$self->{'container'} = $obj->{'container'}
-			if $obj->isa('OpenOffice::OODoc::XPath');
-		unless ($self->{'container'}->isa('OpenOffice::OODoc::File'))
-			{
-			warn "[" . __PACKAGE__ . "::new] Invalid container\n";
-			return undef;
-			}
-		my $xml = $self->{'container'}->link($self);
-		$self->{'xpath'} = $self->{'twig'}->safe_parse($xml);
-		}
-	else					# load from file
-		{
-		$self->{'file'} = $self->{'container'};
-		delete $self->{'container'};
-		if	(
-			$self->{'flat_xml'}
+	 	                                # existing OODoc::File object
+	 	if 
+	 	        (
+	 	        UNIVERSAL::isa($self->{'container'},
+	 	        'OpenOffice::OODoc::File')
+	 	        )
+	 	        {
+	 	        my $xml = $self->{'container'}->link($self);
+	 	        $self->{'xpath'} = $self->{'twig'}->safe_parse($xml);
+	 	        }
+	 	                                # source file or filehandle
+	 	else
+	 	        {
+	 	        $self->{'file'} = $self->{'container'};
+	 	        delete $self->{'container'};
+	 	        if	(
+	 	                $self->{'flat_xml'}
 					||
-			(lc $self->{'file'}) =~ /\.xml$/
-			)
-			{			# load from XML flat file
-			$self->{'xpath'} =
-			    $self->{'twig'}->safe_parsefile($self->{'file'});
-			}
-		else
-			{			# load from ODF archive
-			require OpenOffice::OODoc::File;
-
-			$self->{'container'} = OpenOffice::OODoc::File->new
-				(
-				$self->{'file'},
-				create		=> $self->{'create'},
-				opendocument	=> $self->{'opendocument'},
-				template_path	=> $self->{'template_path'}
-				);
-			return undef unless $self->{'container'};
-			delete $self->{'file'};
-			my $xml = $self->{'container'}->link($self);
-			$self->{'xpath'} = $self->{'twig'}->safe_parse($xml);
-			}	
+			        (lc $self->{'file'}) =~ /\.xml$/
+			        )
+			        		# XML flat file
+			        {
+			        $self->{'xpath'} = _get_flat_file($self);
+			        }
+		        else
+			        {		# new OODoc::File object
+			        $self->{'container'} = _get_container($self);
+			        return undef unless $self->{'container'};
+			        delete $self->{'file'};
+			        my $xml = $self->{'container'}->link($self);
+			        $self->{'xpath'} =
+			                $self->{'twig'}->safe_parse($xml);
+			        }	
+	 	        }				
 		}
+
 	unless ($self->{'xpath'})
 		{
-		warn "[" . __PACKAGE__ . "::new] No well formed content\n";
+		warn "[" . __PACKAGE__ . "::new] No ODF content\n";
 		return undef;
 		}
 						# XML content loaded & parsed

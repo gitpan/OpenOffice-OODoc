@@ -1,3 +1,10 @@
+2.111   2010-01-10
+        File.pod, XPath.pod: doc update.
+	File.pm: target file no longer require at creation time.
+        File.pm: fixed bug #53552, real support for filehandles.
+        XPath.pm: changes related to filehandle support and bug #53552.
+        XPath.pm: utf8 becomes the default local character set.
+        INSTALL: doc update.
 2.109   2010-01-05
 	Cosmetic changes in the installation tests; changed the test image.
 	Updated template documents.

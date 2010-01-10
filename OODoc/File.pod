@@ -28,18 +28,38 @@ not necessarily in OpenOffice.org format.
 
 =head2	Methods
 
-=head3	Constructor : OpenOffice::OODoc::File->new(<filename>)
+=head3	Constructor : OpenOffice::OODoc::File->new(filename|handle)
 
         Short Forms (equivalent):
-		odfFile(filename), odfContainer(filename), or odfPackage()
+		odfFile(), odfContainer(), or odfPackage()
 
-        Returns an instance of OODoc::File if <filename> is a valid zip
-        archive name.
+        Returns an instance of OODoc::File if the argument corresponds to a
+        valid and accessible zip archive. The argument may be either a
+        file path/name or an open (in binmode) and seekable IO::File.
+        
+        The file or file handle used here is used in order to initialize the
+        ODF Connector for subsequent processing through the other submodules
+        of the OpenOffice::OODoc API. It becomes the default target file if
+        the data are updated and the changes committed using save().
+        
+        If the OODoc::File object is loaded for update, it's strongly
+        recommended to avoid the use of a single IO::File object to read and
+        write. However, if the source is a file name, the same file name may
+        be safely used as the source and the target (of course and as usual,
+        any sensitive document must be backed up before processing).
+        
+        If the "create" option is set (see below), a file path/name may be
+        provided, but a file handle must be avoided.
+        
+        See the explanations about the save() method below.
 
-        Example:
+        Examples:
 
-            my $archive	=
-            	OpenOffice::OODoc::File->new("my_document.odt");
+            my $container1 = odfContainer("doc1.odt");
+ 
+            my $fh = new IO::File "< doc2.odt";
+            binmode $fh;           
+            my $container2 = odfContainer($fh);
 
         An optional argument can be passed in hash format (key => value),
         after the filename. Like this:
@@ -65,7 +85,15 @@ not necessarily in OpenOffice.org format.
 	terminology, so it is one of the following values: "text",
 	spreadsheet", "presentation", "drawing". These values are the same
 	as the legal parameters of contentClass() in OpenOffice::OODoc::XPath.
-	For a very advanced use, it's possible to pass an additional option
+	If "create" is provided, the first argument must not be a file handle,
+	knowing that the target (if the data is later saved) can't be an
+	open file, and that there is by definition no source file. Note that,
+	for a creation, the value of the file argument is ignored so it may be
+	undef or an empty string; however a valid path/name may be provided in
+	order to provide a default target for a subsequent save().
+
+	For a very advanced use, it's possible to combine "create" with an
+	additional option
 
 		template_path	=> "path"
 
@@ -79,7 +107,7 @@ not necessarily in OpenOffice.org format.
 	presently odt, ods, odp, odg, sxw, sxc, sxi, sxd. Of course, some
 	applications don't need all the templates; for example, the
 	"template.sx?" files should be omitted if the user don't want to
-	use the legacy OpenOffice.org format for new documents.
+	use the legacy OpenOffice.org 1.0 format for new documents.
 
 	When the "create" option is used, it's possible to provide an
 	"opendocument" option in order to override the installation-level
@@ -88,7 +116,9 @@ not necessarily in OpenOffice.org format.
 	OpenDocument format; if it's set to "0", "off" or "false", the new
 	document will be created according to the OpenOffice.org 1.0 format.
 	The "opendocument" option is ignored without the "create" one (this
-	tool is not a format converter for existing documents).
+	tool is not a format converter for existing documents). Remember that
+	the default format is set to OpenDocument in the CPAN distribution
+	and the OpenOffice.org 1.0 format is deprecated.
 
         The returned object of new(), if successful, is a valid File object,
 	whose methods listed below become available.
@@ -242,37 +272,43 @@ not necessarily in OpenOffice.org format.
         moment of the save() call, even if it had perhaps been modified in the
         meantime (probably not a very useful outcome).
 
-=head3	save([<filename>])
+=head3	save([filename|handle])
 
-        Saves the content of the archive to a file replacing the content of
-        some or all of the XML members with data supplied by the linked
-        OODoc::XPath object(s). Each updated member must be indicated in the
-        form of a hash element whose key corresponds to a standard XML
-        member of an OpenDocument file, in the same way as for an extract
-        call with the value being the new XML content to be saved.
+        Commits all the changes made in the members of the archive and makes
+        the resulting content persistent.
 
 	In addition, the external, non-XML resources (i.e. image files) that
 	have previously been targeted by import methods, if any, are
 	physically imported when save() is called (and not before). If these
 	resources are not available at this time, they are ignored and a
-	warning is issued for each missing file. 
+	warning is issued for each missing file.
 
         Example:
 
         	$archive->save("target.odt");
 
-        Please note that File does not check the content, and the save()
+        The target may be a file name (with optional path) or an IO::File
+        object (that must be open, in binmode and writable).
+
+        Without argument, save(), attempts to write the on the file or handle
+        that was specified as the source file at the creation time, if any.
+        However, if the OODoc::File was initialized with a IO::File, the use of
+        the same IO::File for writing the output is presently not recommended;
+        in some situations, bi-directional I/Os against an application-provided
+        open IO::File may result in unpredictable results with the current
+        implementation. Of course, if the OODoc::File object has been
+        initialized with the "create" option and with an undef value or an
+        empty string as file name, save() requires an explicit target (a valid
+        file/path or an open and writable IO::File).
+
+        Please note that OODoc::File does not check the content, and the save()
         method can be used to force through any data which may produce a
         file not compliant with the ODF packaging specification.
 
         The filename argument is optional. If it is omitted, the source file
-        previously supplied by the constructor call is used. In fact in this
-	case a more complex (but hidden) operation is carried out: firstly
-	it writes to a temporary file and if no error occurs, the source file
-	is deleted and replaced by the temporary file. If something goes wrong
-	during the process, the temporary file remains available in the
-	working directory (whose path depends on the installation parameters).
-	OODoc::File never writes directly to the source file.
+        previously supplied by the constructor call (if any) is updated.
+        Without a filename argument, save() if the source document was got
+        through a IO::Handle.
 
         Even though the life of an OODoc::File object does not necessarily
         end with a save, it is recommended that you avoid repeated
