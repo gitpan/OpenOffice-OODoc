@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.237 2010-01-05 JMG$
+#	$Id : Text.pm 2.238 2010-01-27 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2009 by Genicorp, S.A. (www.genicorp.com)
@@ -9,9 +9,9 @@
 
 package OpenOffice::OODoc::Text;
 use	5.008_000;
-use	OpenOffice::OODoc::XPath	2.229;
+use	OpenOffice::OODoc::XPath	2.232;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.237;
+our	$VERSION	= 2.238;
 
 #-----------------------------------------------------------------------------
 # synonyms
@@ -138,7 +138,11 @@ sub	fieldType
 	my $self	= shift;
 	my $field	= shift		or return undef;
 	my $newtype	= shift;
-	my $prefix	= $self->{'opendocument'} ? 'office' : 'table';
+	my $prefix	= 'office';
+	unless ($self->{'opendocument'})
+		{
+		$prefix = $field->isTableCell() ? 'table' : 'text';
+		}
 	my $attribute	= $prefix . ':value-type';
 	my $oldtype	= $field->att($attribute);
 	unless (defined $newtype)
@@ -169,7 +173,13 @@ sub	fieldValueAttributeName
 				$self->fieldType($field)	:
 				$field;
 	my $attribute	= "";
-	my $prefix	= $self->{'opendocument'} ? 'office' : 'table';
+
+	my $prefix	= 'office';
+	unless ($self->{'opendocument'})
+		{
+		$prefix = $field->isTableCell() ? 'table' : 'text';
+		}
+
 	if	(
 			($value_type eq 'string')	||
 			($value_type eq 'date')		||

@@ -19,13 +19,15 @@ format (http://jean.marie.gouarne.online.fr/doc/oodoc_guide.pdf).
 See INSTALL for system requirements and installation instructions for
 the CPAN original distribution.
 
-The present version supports both the OpenOffice.org 1.0 document format
-and the OASIS OpenDocument Format (ODF) 1.0. It works with ODF 1.1 and
-1.2 as well, knowing that its present features are not directly impacted
-by the changes between the successive versions of the ODF specification.
-In addition, advanced users can rely on OpenOffice::OODoc to process any
-kind of flat or zipped XML files, in order to combine ODF documents with
-non-ODF XML data through a single application programming interface.
+The present version supports the OASIS OpenDocument Format (ODF). It works
+with ODF 1.0 to 1.2, knowing that its present features are not directly
+impacted by the changes between the successive versions of the ODF standard.
+The legacy OpenOffice.org 1.0 format is still supported, too; however, the
+use of this deprecated format is not recommended for new documents.
+In addition, advanced users can rely on OpenOffice::OODoc to process
+any kind of flat or zipped XML files that don't comply with the ODF
+standard, so they can combine ODF documents with non-ODF XML data through
+a single application programming interface.
 
 -------------------------------------------------------------------------
 

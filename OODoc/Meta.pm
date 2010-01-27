@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Meta.pm 2.014 2010-01-05 JMG$
+#	$Id : Meta.pm 2.015 2010-01-27 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2009 by Genicorp, S.A. (www.genicorp.com)
@@ -9,8 +9,8 @@
 
 package	OpenOffice::OODoc::Meta;
 use	5.008_000;
-our	$VERSION	= 2.014;
-use	OpenOffice::OODoc::XPath	2.229;
+our	$VERSION	= 2.015;
+use	OpenOffice::OODoc::XPath	2.232;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
 
 #-----------------------------------------------------------------------------
@@ -171,6 +171,16 @@ sub	editing_cycles
 	my $self	= shift;
 	return $self->accessor('//meta:editing-cycles', @_);
 	}
+
+#-----------------------------------------------------------------------------
+# increment the 'editing-cycles' field
+
+sub     increment_editing_cycles
+        {
+        my $self        = shift;
+        my $v           = $self->editing_cycles;
+        return $self->editing_cycles($v + 1);
+        }
 
 #-----------------------------------------------------------------------------
 # get/set the 'editing-duration' field (i.e. the total elapsed time for all

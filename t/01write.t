@@ -1,12 +1,12 @@
 #-----------------------------------------------------------------------------
-# 01write.t	OpenOffice::OODoc Installation test		2010-01-05
+# 01write.t	OpenOffice::OODoc Installation test		2010-01-11
 #-----------------------------------------------------------------------------
 
 use Test;
 BEGIN	{ plan tests => 19 }
 
-use OpenOffice::OODoc	2.109;
-ok($OpenOffice::OODoc::VERSION >= 2.109);
+use OpenOffice::OODoc	2.112;
+ok($OpenOffice::OODoc::VERSION >= 2.112);
 
 #-----------------------------------------------------------------------------
 

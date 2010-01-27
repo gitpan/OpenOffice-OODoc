@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #-----------------------------------------------------------------------------
-#	$Id : odfhighlight 0.2 2008-05-04 JMG$
+#	$Id : odfhighlight 0.3 2010-01-11 JMG$
 #-----------------------------------------------------------------------------
 
 =head1	NAME
@@ -106,7 +106,7 @@ $color	= odfColor($color) or die "Color code is not valid\n";
 
 my $filename	= $ARGV[0];
 my $search	= $ARGV[1];
-die "usage: oohighlight <file> <search_string> [-options]\n"
+die "usage: odfhighlight <file> <search_string> [-options]\n"
 	unless ($filename && $search);
 
 #-----------------------------------------------------------------------------

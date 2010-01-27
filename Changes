@@ -1,3 +1,8 @@
+2.112   2010-01-27
+        Meta.pm: Added increment_editing_cycles().
+        Text.pm: Bug fix in userFieldValue() #54004.
+        Cosmetic change in odf_set_fields example.
+        Bug fix and cosmetic change in odf_set_title example.
 2.111   2010-01-10
         File.pod, XPath.pod: doc update.
 	File.pm: target file no longer require at creation time.

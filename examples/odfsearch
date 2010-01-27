@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #-----------------------------------------------------------------------------
-#	$Id : odfsearch 0.2 2008-05-04 JMG$
+#	$Id : odfsearch 0.3 2010-01-11 JMG$
 #-----------------------------------------------------------------------------
 
 =head1	NAME
@@ -52,7 +52,7 @@ my $source_file		= $ARGV[1];
 my $search_string	= $ARGV[2];
 my $stylename		= $ARGV[3] || 'Text body';
 
-die "Usage : oosearch target_file source_file search_string\n"
+die "Usage : odfsearch target_file source_file search_string\n"
 	unless ($target_file && $source_file && $search_string);
 
 	# create the 2 Document instances

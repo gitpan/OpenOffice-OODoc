@@ -95,6 +95,8 @@ of ODF documents.
 	of versions.
 
         With argument, modifies this number without checking.
+        
+        See also increment_editing_cycles().
 
 =head3	editing_duration()
 
@@ -160,6 +162,14 @@ of ODF documents.
 =head3  getUserPropertyElements()
 
 	Returns the list of all the existing user-defined property elements.
+
+=head3  increment_editing_cycles()
+
+        Adds 1 to the editing cycle count that is stored in the document, and
+        returns the new count. This count should be incremented each time
+        the document is edited through an ODF-compliant application.
+        
+        See also editing_cycles().
 
 =head3	initial_creator()
 
@@ -232,12 +242,12 @@ of ODF documents.
 		$meta->setUserProperty
 			(
 			"Release date",
-			type => 'date', value => "2010-01-01'
+			type => 'date', value => '2010-01-01'
 			);
 		$meta->setUserProperty
 			(
 			"Release number",
-			type => 'float', value => "5.4'
+			type => 'float', value => 5.4
 			);
 	
         The 'type' option allows to change the data type of an existing user-

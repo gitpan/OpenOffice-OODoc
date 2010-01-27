@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #-----------------------------------------------------------------------------
-#	$Id : odf2pod 0.3 2008-05-04 JMG$
+#	$Id : odf2pod 0.4 2010-01-11 JMG$
 #-----------------------------------------------------------------------------
 
 =head1	NAME
@@ -74,7 +74,7 @@ sub	heading_output
 # output the content according to the type of text object
 sub	content_output
 	{
-	my $element = shift; # it's an OOo text object (not a flat string)
+	my $element = shift; # it's an ODF text object (not a flat string)
 	my $text = $doc->getText($element);
 
 	# choose an output format according to the type
@@ -95,9 +95,9 @@ sub	content_output
 
 #-----------------------------------------------------------------------------
 
-# initialise the OOo file object
+# initialise the ODF file object
 my $ooarchive	= odfContainer($ARGV[0])
-	or die "No regular OpenOffice.org file\n";
+	or die "No regular ODF file\n";
 
 # extract the metadata
 $meta	= odfMeta(container => $ooarchive)

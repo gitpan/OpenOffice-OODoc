@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #-----------------------------------------------------------------------------
-#	$Id : odfbuild 0.2 2008-05-04 JMG$
+#	$Id : odf_set_title 0.3 2010-01-27 JMG$
 #-----------------------------------------------------------------------------
 
 =head1	NAME
@@ -21,13 +21,15 @@ is changed.
 
 =cut
  
-use OpenOffice::OODoc	2.101;
+use OpenOffice::OODoc	2.112;
 
-	# create an OpenOffice.org file object
+my $new_title   = undef;
+
+	# create an ODF file object
 	# using the 1st command line argument as filename
 my $oofile	= odfContainer($ARGV[0]);
 	# exit if $filename isn't available or can't be open
-	# as a regular OpenOffice.org file
+	# as a regular ODF file
 die "Unavailable file $ARGV[0]\n" unless $oofile;
 
 	# create a metadata-aware object, linked to the File object
@@ -38,53 +40,50 @@ my $doc_meta	= odfMeta(container => $oofile);
 my $title	= $doc_meta->title;
 
 	# if the title is defined, display it and exit
-if ($title)
+if (defined $title)
 	{
 	print "The existing title is \"$title\"\n";
 	}
-	
-	# if there is no title...
-else
+
+if (defined $ARGV[1])
+        {
+        $new_title = $ARGV[1];
+        }
+elsif (! defined $title)
 	{
-	my $new_title = undef;
-	# use the 2nd command line arg, if any, as the new title
-	if ($ARGV[1])
+	# use the 1st heading of the content
+	# create a content-aware object linked to the same container
+	my $doc_text	= odfDocument
+			(
+			container	=> $oofile,
+			read_only	=> 'true'
+			);
+	# get the text of the first heading element
+	my $text = $doc_text->getHeadingText(0);
+	if ($text)
 		{
-		$new_title = $ARGV[1];
+		# use this text, if defined, as the title
+		$new_title = $text;
 		}
-	# use the 1st heading of the content otherwise
 	else
 		{
-		# create a content-aware object linked to the same file object
-		my $doc_text	= odfDocument
-				(
-				container	=> $oofile,
-				read_only	=> 'true'
-				);
-		# get the text of the first heading element
-		my $text = $doc_text->getHeadingText(0);
-		if ($text)
-			{
-			# use this text, if defined, as the title
-			$new_title = $text;
-			}
-		else
-			{
-			# alas, there was no heading in the document,
-			# so we put an arbitrary provisional title
-			warn	"No heading text in the document.\n"	.
-				"Nothing is changed.\n";
-			}
+		# there was no heading in the document,
+		# so nothing is done
+		warn	"No heading text in the document.\n"	.
+			"Nothing is changed.\n";
 		}
+	}
 		
-	if ($new_title)
-		{
-		# set the new title
-		print "The new title is \"$new_title\"\n";
-		$doc_meta->title($new_title);
-		# commit the update
-		$oofile->save;
-		}
+		# the new title (if any) is saved
+if (defined $new_title)
+	{
+	# set the new title
+	print "The new title is \"$new_title\"\n";
+	$doc_meta->title($new_title);
+	# update the revision number
+	$doc_meta->increment_editing_cycles;
+	# commit the update
+	$oofile->save;
 	}
 
 exit;
