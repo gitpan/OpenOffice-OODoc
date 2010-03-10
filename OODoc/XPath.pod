@@ -353,11 +353,10 @@ features of OODoc::Meta and OODoc::Document are described here.
         If the 'text' option is omitted, an empty element is created (in the
         above example it would be an empty paragraph or line feed).
 
-        You can pass the 'attribute' or 'attributes' option which is a hash
-	whose keys are the XML attribute names and whose values are the XML
-        attribute values. Use of these options depends on the type of
-        document and the type of element and requires knowledge of
-        OpenDocument conventions.
+        You can pass the 'attributes' option which is a hash whose keys are the
+        XML attribute names and whose values are the XML attribute values. Use
+        of these options depends on the type of document and the type of element
+        and requires knowledge of OpenDocument conventions.
 
         Example:
 
@@ -370,7 +369,7 @@ features of OODoc::Meta and OODoc::Document are described here.
             $content->appendElement
             	(
             	'//office:automatic-styles', 0, 'style:style',
-            	attribute	=> $my_style
+            	attributes	=> $my_style
             	);
 
         creates a new paragraph style called 'P1' in the list of "automatic
@@ -419,6 +418,11 @@ features of OODoc::Meta and OODoc::Document are described here.
         Using this method, after one or more element creations by direct
         importation of XML strings, it might be useful to call the
         reorganize method (but not absolutely necessary).
+
+=head3	appendBodyElement(element [, options])
+
+        Copies an existing element of any type and appends it to the end of
+        the document body. No new element is created.
 	
 =head3	appendLineBreak(element)
 
@@ -533,7 +537,7 @@ features of OODoc::Meta and OODoc::Document are described here.
         character at the beginning of the argument. See appendElement for
         comments on the direct insertion of XML.
 
-        Explicit calls to createElement should be rare. This method is
+        Explicit calls to createElement() should be rare. This method is
         normally called silently by higher-level methods which are capable
         of creating an element, inserting it in a document's XML tree and
         giving it attributes (see appendElement and insertElement).
@@ -889,7 +893,40 @@ features of OODoc::Meta and OODoc::Document are described here.
 	getText() or getFlatText()) or a non-text element (such as a style,
 	a font declaration, a variable field, a document properties container,
 	etc).
-	
+
+=head3  getElementByIdentifier(id [, options])
+
+        Returns an element according to the given identifier, if any, or undef
+        otherwise.
+        
+        Note that, according to the ODF 1.1 standard, some elements have
+        identifiers (i.e. text:id attributes), while most haven't, so
+        this method can't work with any object.
+        
+        Allowed options are:
+        
+            tag         => restricts the search to a given element tag
+            
+            context     => restricts the search to a given context
+        
+        Example:
+        
+            $section = $doc->getElement('//text:section', 0);
+            $note = $doc->getElementByIdentifier(
+                        "id004",
+                        tag             => 'text:note',
+                        context         => $section
+                        );
+        
+        This sequence selects the note (i.e. footnote or endnote) identified by
+        "id004" if such a note appear in the first section of the document.
+        Without the 'context' option, the search space would be the current
+        context (that is the whole document by default). Without the 'tag'
+        option, the first object that owns the given identifier is selected,
+        whatever its tag.
+        
+        See also getIdentifier(), setIdentifier(), identifier().
+        	
 =head3	getElementList(path)
 
         Returns a list of all elements at a specified path.
@@ -911,6 +948,16 @@ features of OODoc::Meta and OODoc::Document are described here.
         Note: the returned list contains elements in the sense of getElement
         and not a list of element contents.
 
+=head3  getFirstTextRun(path, position)
+
+=hread3 getFirstTextRun(element)
+
+        Returns the first text segment of an element whose text content is
+        segmented due to one or more child elements. In other words, returns
+        the beginning of the text content up to the first child element, if
+        any. If the given element just contains flat text, without any child
+        element, returns the whole text, just like getText() introduced below.
+
 =head3	getFlatText(path, position)
 
 =head3	getFlatText(element)
@@ -923,7 +970,15 @@ features of OODoc::Meta and OODoc::Document are described here.
 
 	Selects the frame identified by the given name, or by the given order
 	number in the document context.
-	
+
+=head3  getIdentifier(path, pos)
+
+=head3  getIdentifier(element)
+
+        Returns the identifier (text:id) of the given element, if any.
+        
+        See also identifier(), setIdentifier(), selectElementByIdentifier().
+
 =head3	getNodeByXPath(xpath_expression)
 
 =head3	getNodeByXPath(xpath_expression, context)
@@ -955,6 +1010,10 @@ features of OODoc::Meta and OODoc::Document are described here.
 	Returns the litteral description of a visible object. This method
 	makes sense for frames or frame-like objects (such as images or
 	text boxes).
+
+=head3  getObjectName(element)
+
+        Returns the name of the given element, if any.
 	
 =head3	getObjectSize(object)
 
@@ -965,6 +1024,11 @@ features of OODoc::Meta and OODoc::Document are described here.
 	
 	The size is returned in the same way as the coordinates with
 	getObjectCoordinates().
+
+=head3  getPartName()
+
+        Returns the name of the document part, i.e. 'content', 'styles', 'meta',
+        and so on.
 	
 =head3	getRoot()
 
@@ -1020,6 +1084,46 @@ features of OODoc::Meta and OODoc::Document are described here.
         editable text and each element's content is separated from that of
         the following element by a line feed.
 
+=head3	getUserField(name [, context])
+
+	Returns the element (if defined) representing a user-defined field,
+	and corresponding to the given name. See also userFieldValue().
+	
+	By default, this method works with the first user field declaration
+	matching the given name in the whole document. However, if the calling
+	object is a 'styles' document part, the search is restricted to a given
+	context (provided through an optional 2nd argument) or to the current
+	context. This feature allows the applications to look for user fields
+	whose declarations are associated to page styles.
+
+=head3  getUserFields([context])
+
+        Returns the list of the declared user-defined fields.
+        
+        The example below prints the names of all the user-defined fields:
+        
+                foreach my $field ($doc->getUserFields)
+                        {
+                        print $doc->getObjectName($field);
+                        }
+
+        By default, this method returns all the user fields at the document
+        level. However, if the active document part is 'styles', the search is
+        restricted to a given context (provided through an optional 2nd
+        argument) or to the current context. This feature allows the
+        applications to look for user fields whose declarations are associated
+        to page styles.
+
+=head3	getVariable(name)
+
+	Returns the user-defined variable identified by the given name.
+
+	[Contribution by Andrew Layton]
+
+=head3  getVariableElement()
+
+        See getVariable().
+
 =head3	getXMLContent([filehandle])
 
         Without argument, returns a document's entire XML content.
@@ -1070,6 +1174,22 @@ features of OODoc::Meta and OODoc::Document are described here.
         primarily for internal use. It should not be used by the majority of
         applications.
 
+=head3  identifier(path, pos [, value])
+
+=head3  identifier(element [, value])
+
+        Gets or sets the identifier of the given element.
+        
+        If the value argument is not provided, does the same as getIdentifier().
+        If provided, the value argument replaces the previous element identifier
+        or creates it if it was not set.
+        
+        This method can change the identifier, but can't remove it, unlike
+        setIdentifier().
+        
+        See also getIdentifier(), setIdentifier(), getElementByIdentifier().
+
+
 =head3	insertElement(path, position, name/xml [, options])
 
 =head3	insertElement(element, name/xml [, options])
@@ -1090,20 +1210,19 @@ features of OODoc::Meta and OODoc::Document are described here.
 	
 	If "position" is set to "within", the new element is inserted within
 	the text of the target element, so an additional "offset" option (i.e.
-	a numeric position in the string) is required. Caution: this feature
-	is provided for a few special purposes only; inserting text elements
-	within text strings is not the same as inserting text strings within
-	text strings. 
-
+	a numeric position in the string) is required.
+	
+	However, for insertion within a text container, setChildElement(),
+	described later, is much more powerful.
+	
 	Other options are:
 
             text	=> "text of element"
 
-            attribute	=> $attributes
+            attributes	=> $attributes
 
-        The "attribute" (or "attributes") option is itself a hash reference
-	containing one or more attributes in the form [name => value] as in
-	appendElement.
+        The "attributes" option is itself a hash reference containing one or
+        more attributes in the form [name => value] as in appendElement.
 
         When successful, this method returns the inserted element's
         reference (else undef).
@@ -1138,7 +1257,8 @@ features of OODoc::Meta and OODoc::Document are described here.
         be replaced by an XML string which describes the element.
 
         Note: to add an element to the end of a document, it would obviously
-        be better to use appendElement.
+        be better to use appendElement(), and to insert an element at a selected
+        position within an existing element, see setChildElement().
 
 =head3	isOpenDocument()
 
@@ -1209,6 +1329,11 @@ features of OODoc::Meta and OODoc::Document are described here.
 	This method can be used to move elements from one place to another
 	place in the same document, as well as from one document to another
 	one (caution, the elements are moved, not copied).
+
+=head3  objectName(element [, name])
+
+        Returns the name of the given element. Changes this name is a new name
+        is provided as the 2nd argument.
 
 =head3	odfLocaltime()
 
@@ -1316,6 +1441,18 @@ features of OODoc::Meta and OODoc::Document are described here.
         Deletes the given element (if found) by [path, position] or by
         reference and returns "true". Returns undef if the element does not
         exist.
+
+=head3  removeIdentifier(path, pos)
+
+=head3  removeIdentifier(element)
+
+        Deletes the identifier attribute ('text:id') of the given element.
+        
+        Be careful, this method should be used in order to delete temporary
+        element identifiers that don't comply with the ODF specification;
+        remember that the identifier is mandatory for some elements.
+        
+        See also getIdentifier(), setIdentifier(), identifier().
 
 =head3	replaceElement(path, position, replacement [, options])
 
@@ -1613,47 +1750,85 @@ features of OODoc::Meta and OODoc::Document are described here.
         purely for demonstration and unnecessarily complex. You can perform
         the same operation much more simply using the OODoc::Image module.
 
-=head3	selectElementsByAttribute(path, attribute, filter)
+=head3	selectElementByAttribute(path, attribute [, value [, context [, pos]]])
 
-        In a list context, returns a list of elements at the given path with
-        the given attribute which contain a value matching the filter's
-        regular expression.
+        Like selectElementsByAttribute in a scalar context. By default, returns
+        the first element at the given path which has the given attribute
+        containing the given value. If the value is omitted, then returns the
+        first (or only) element that owns the attribute whatever the value.
+        
+        The context optional argument allows to restrict the search space to
+        a given container. The last optional argument, if set, is a positive
+        integer that specifies the index of the required element if more than
+        one element match the other conditions (beware: if the specified
+        position is out of range, the result is undef).
+        
+        The following example (that apply with the "styles" part of an ODF
+        document) prints a message if the "Time New Roman" font face is
+        declared:
+        
+                print "The Time New Roman font is defined !"
+                        if $styles->selectElementByAttribute (
+                                        'style:font-face',
+                                        'style:name',
+                                        "Times New Roman"
+                                        );
 
-        In a scalar context, returns the first (or only) element which
-        matches the same condition.
+        Returns undef if no element matches the conditions.
+        
+        See also selectElementsByAttribute().
 
-        Returns undef if no elements match the condition.
+=head3	selectElementsByAttribute(path, attribute [, value [, context]])
 
-        Example:
+        Like selectElementByAttribute(), but for an array context. Returns
+        all the elements that match the path/attribute/value/context conditions
+        as a list.
+        
+        The following example selects a document section whose name is
+        "Foreword" then selects the list of all the level 3 headings in this
+        section (note that $section is used as the optional context argument
+        in the second instruction):
 
-            my @paragraph_styles =
-             $doc->selectElementsByAttribute
-            	('style:style', 'style:family', 'paragraph');
+                my $section = $doc->selectElementByAttribute
+                        ('text:section', 'text:name', "Foreword");
+                my @headings3 =
+                        $doc->selectElementsByAttribute
+            	                ('text:h', 'text:outline-level', 3, $section);
 
-        returns the list of elements which describe the paragraph styles of
-        document $doc.
+        (But remember that the same result could be got without knowledge of the
+        XML tags and attributes using more user-friendly methods introduced in
+        other manual chapters !) 
+        
+        See also selectElementByAttribute().
 
-        Caution: the filter is treated as a regular expression and not as a
-        classic string. This means that the above piece of code might not
-        only return the elements whose "style:family" attribute equals
-        "paragraph", but also all those in which the same attribute contains
-        the word "paragraph". You must therefore use the appropriate syntax
-        (in regexp language) if you want to select an exact value, which in
-        this case would be "^paragraph$".
+=head3	selectFrameElementByName(name)
 
-=head3	selectElementByAttribute(path, attribute, value)
-
-        Like selectElementsByAttribute in a scalar context. Returns the
-        first (or only) element at the given path which has the given
-        attribute containing the given value.
-
-        Returns undef if no element matches the condition.
-
+	Selects the first frame element whose name is exactly the given
+	argument. A frame is an OpenDocument container which can host a
+	rectangular object, such as an image or a text box.
+			
 =head3	selectNodesByXPath(xpath_expression)
 
         This low-level method returns a list of nodes (which are not
         necessarily elements) which match the give XPath expression. See
         getNodeByXPath() for options and comments.
+
+=head3	setAttribute(path, position, attribute, value)
+
+=head3	setAttribute(element, attribute, value)
+
+        Modifies or adds an attribute to an element.
+
+        The element is indicated by reference or by [path, position].
+
+        The following arguments are the attribute name and the value.
+        
+        If the name is provided without namespace prefix, it's automatically
+        concatenated to the element's namespace prefix. Every space in the
+        attribute name, if any, is automatically replaced by a '-'.
+        
+        If the value is undef, the corresponding attribute is deleted if it
+        exists in the element; nothing is done otherwise.
 
 =head3	setAttributes(path, position, attributes_table)
 
@@ -1668,15 +1843,187 @@ features of OODoc::Meta and OODoc::Document are described here.
         Example:
 
             my $h = $doc->getElement('//text:h', 12);
-            my %attributes =
-            	(
-            	'text:style-name'	=> 'My Header',
-            	'text:level		=> '3'
-            	);
-            $doc->setAttributes($h, %attributes);
+            $doc->setAttributes(
+                    $h,
+                    'text:style-name'	=> 'My Header',
+                    'text:level'        => 3
+                    );
 
         This sequence gives the 'My Header' style and level 3 to the 13th
         "header" element in the document.
+        
+        Any attribute name provided without namespace prefix is automatically
+        concatenated with the namespace prefix of the target element. So, the
+        "text:" prefix could have been omitted in the attribute hash of the
+        example above. In addition, every space in an attribute name is
+        automatically replaced by a '-'. So the code below produces the same
+        result as the previous example:
+        
+            my $h = $doc->getElement('//text:h', 12);
+            $doc->setAttributes(
+                    $h,
+                    'style name'        => 'My Header',
+                    'level'             => 3
+                    );
+
+        An attribute provided as undef is deleted, if it exists.
+
+=head3  setChildElement(context, tag/element [, options])
+
+        Creates a new child element within the text content of an existing one.
+        The context element may be provided like with insertElement(), either
+        by [path, position] or directly as the 1st argument. The next argument
+        is the XML tag of the element to be created, or an existing free
+        element.
+        
+        The given context may be any element, including the whole document body;
+        however, it should be a simple text container in most cases.
+        
+        If the provided tag doesn't include a namespace prefix, it's
+        automatically concatenated with the namespace prefix of the context
+        element (provided as 1st argument).
+        
+        Allowed options are
+        
+                attributes      => attribute/value hash for the new element
+                text            => text content for the new element
+                offset          => position
+                after           => search string (regexp)
+                before          => search string (regexp)
+                replace         => search string (regexp)
+                capture         => search string (regexp)
+                way             => search way ('forward' or 'backward')
+                start_mark      => element
+                end_mark        => element
+        
+        Some of them are mutually exclusive. They work according to the
+        following logic.
+        
+        By default, the new element is created without text and attributes.
+        However, an initial content may be provided through a 'text' optional
+        parameter. In addition, a 'attributes' option  allows to provide a set
+        of attributes for the new element as a hash reference; note that every
+        attribute name provided without namespace prefix is automatically
+        concatenated with the same namespace prefix as the given element name.
+        
+        The child element may be inserted at the beginning, at the end, or at a
+        position within the text content. In the last case, the position may be
+        specified by a given numeric argument, or looked for according a given
+        expression.
+        
+        By default, the new element is inserted at the beginning of the target
+        element. An arbitrary other position may be specified with the 'offset'
+        argument, that is either an integer (positive or negative) value, or one
+        of the 'start' and 'end' special indicators. If 'offset' is set to
+        'start' or 'end', the new element is inserted at the start or at the
+        end, and the other position options are ignored. If 'offset' is a
+        negative integer, the position is counted backward from the end.
+        
+        Whatever the value of 'offset', a 'way' option, whose possible values
+        are 'forward' (the default) or 'backward', specifies the search way.
+        If 'offset' is negative, the 'way' option is ignored because the
+        way is always backward. If 'offset' is positive and 'way' is 'backward',
+        then the result is the same as if 'offset' was negative. If 'offset'
+        is 0 or not set and 'way' is 'backward', then the search is done
+        backward from the end.
+        
+        A search string may be provided instead of or in combination with an
+        offset. If so, the insert point will depend on the position of the first
+        substring that matches the given optional search expression (if any).
+        The search expression may be provided through the 'after', 'before',
+        'replace' or 'capture' option. An expression provided with 'after' or
+        'before' means that the insert point is immediately after or before the
+        first matching substring. If the search string is provided through
+        'replace' or 'capture', the matching string will be replaced by the new
+        element. If the option is 'replace' the matching string is just deleted
+        while if 'capture' the same matching string is moved in the new element. 
+        Of course, these search string options are mutually exclusive; if more
+        than one of them are wrongly set, only one is considered, and the
+        priority order is 'after', 'before', 'replace', and 'capture'.
+        
+        If the insertion point depends on a search string (i.e. if 'after',
+        'before', 'replace' or 'capture' is used), it's selected according to
+        the first match. However, it's possible to reverse the search way using
+        the 'way' option. In addition, the search area may be restricted by the
+        'offset' parameter: if 'offset' is used in combination with any search
+        string option, it specifies the limit of the search area instead of
+        a insertion point; if 'offset' is positive and 'way' is 'forward' (or
+        not set), the search is done from 'offset' to the end; if 'offset' is
+        negative or 'way' is 'backward', the search is done backward from the
+        given offset to the beginning.
+
+        The 'start_mark' optional parameter is a child element that already
+        exists within the context element. If this parameter is set, it 
+        specifies that the search will start from the position of this child
+        element and not from the beginning of the end of the context element.
+        If the search way is forward, the insert point (in case of success)
+        will be located after the start mark, but if the search way is backward
+        the insert point will be before the start mark. And if an offset is
+        provided, it's counted from the position of the start mark.
+        
+        Another existing child element may be used in order to restrict the
+        search area, through a 'end_mark' parameter. If this parameter is set,
+        no search will be done beyond it. If both 'start_mark' and 'end_mark'
+        are provided, the search will run from the first one to the second one
+        Of course, if the start mark is located after the end mark, nothing
+        will be done if the search way is not backward, and vice-versa.
+        
+        The following example inserts a new 'text:time' element (i.e. an ODF
+        time field) immediately after the first "Clock:" substring appearing
+        between the 20th character and the end of a given paragraph (specified
+        by the 1st argument). The new element will be a 'text:time', knowing
+        that the namespace prefix of a paragraph element (text:p) is "text".
+        According to the given attributes, the field will display the current
+        time increased by 15 minutes:
+
+            $doc->setChildElement(
+                $paragraph, 'time',
+                offset          => 20,
+                after           => "Clock:",
+                attributes      => {
+                        'time-value' => odfLocaltime()
+                        } 
+                );
+        
+        The variant below creates a the same 'time' field after each occurrence
+        of "Clock:" (probably not very useful, but the aim is to illustrate the
+        use of 'start_mark' in order to ensure that every field but the first
+        one will be inserted after the previous field):
+
+            my $field = undef;
+            while   (
+                $field = $doc->setChildElement(
+                        $paragraph, 'time',
+                        after           => "Clock:",
+                        start_mark      => $field,
+                        attributes      => {
+                                'time-value' => odfLocaltime()
+                                }
+                ) {}
+     
+        Note that the loop body is empty; the start mark, which is undef at the
+        first round, is then the previously inserted child element.
+        Warning: without carefully designed offset and/or search option, such
+        a construct may produce a long or infinite loop (until memory fault).
+     
+        The next example creates a text span (i.e. a text area with a special
+        character style) for the last "ODF" substring of a given paragraph:
+        
+            $doc->setChildElement(
+                $paragraph, 'span',
+                capture         => "ODF",
+                way             => 'backward'
+                attributes      => {
+                        'style-name'    => "My Style"
+                        }
+                );
+        
+        These examples are shown to illustrate the general logic, not
+        necessarily to be reproduced in real applications, knowing that
+        setChildElement() is a common basis for more specialized methods
+        (mainly introduced in the OODoc::Text man page).
+
+        See also splitContent().
 
 =head3	setFlatText(path, position, text)
 
@@ -1687,6 +2034,22 @@ features of OODoc::Meta and OODoc::Document are described here.
 	
 	For exceptional use only. Allows, for example, the use of the OODoc
 	API with non-OpenDocument XML files.
+
+=head3  setIdentifier(path, pos, value)
+
+=head3  setIdentifier(element, value)
+
+        Sets (or resets) the identifier of the given element. The identifier is
+        namely the 'text:id' attribute, that is allowed for some elements and
+        not for other elements by the ODF standard. OpenOffice::OODoc allows it
+        with any kind of element, and doesn't check its uniqueness, so it may be
+        used with care. A non-conformant element identifier is not an issue if,
+        for example, it's removed before editing or processing the resulting
+        documents through another application.
+        
+        This method removes the identifier if the value argument is undef;
+        however the removeIdentifier() method produces the same result in a
+        more self-documented way).
 
 =head3	setObjectCoordinates(object, coordinates)
 
@@ -1701,6 +2064,11 @@ features of OODoc::Meta and OODoc::Document are described here.
 	Should be used for frames, images or text boxes. Caution: the
 	description is not the same as the printable content of a text
 	box.
+
+=head3  setObjectName(element, name)
+
+        Sets or changes the name of the given element according to the given
+        new name. Deletes the name if the given name is undef.
 	
 =head3	setObjectSize(object, size)
 
@@ -1710,8 +2078,109 @@ features of OODoc::Meta and OODoc::Document are described here.
 	as the frames, images or text boxes.
 	
 	See createFrameElement() for details about the size units and
-	notation. 
-		
+	notation.
+
+=head3  setRangeMark(type, identifier, parameters)
+
+        Creates a pair of corresponding delimiting markup elements in place, in
+        order to set up an identified text range (such as a range bookmark,
+        an index mark or a table of content mark).
+        
+        The first argument specifies the type of range; it's mandatory but its
+        value is not checked. Examples of legal types are 'bookmark',
+        'toc-mark', 'alphabetical-index-mark'. If the provided type doesn't
+        contain a semicolon, it's automatically prefixed according to the
+        content of the 'prefix' parameter (whose default is 'text').
+        
+        The identifier argument id mandatory; it's an arbitrary (preferently
+        unique) identifier for the pair. While this identifier is generally
+        invisible for the end-user, it's sometimes an explicit name (for
+        example in a range bookmark).
+        
+        The 'prefix' optional parameter allows the applications to specify a
+        particular XML prefix; the default prefix for range marks is 'text'.
+        
+        An arbitrary set of attributes may be provided as a hash through an
+        optional 'attributes' parameter. This hash will be processed according
+        to the same logic as with the common setAttributes() method.
+        
+        The 'context' optional parameter, if provided, specifies the element
+        (which should be a text container, such as a paragraph, a heading or a
+        text span) containing the text range to be delimited. However, if
+        the covered text range is spread across two or more text containers,
+        this parameter must not be set, and a separate 'context' parameter must
+        be provided for the start mark and the end mark (see below).
+        
+        If (and only if) the 'context' parameter is set (meaning that the whole
+        text content between the marks belongs to the same element), a
+        'content' optional parameter allows to provide an expression; if so,
+        the setRangeMark() will look for the first substring that matches this
+        expression in the target element, and in case of success the range marks
+        will be inserted at the beginning and the end of this substring. The
+        search space of the substring may be restricted using the 'offset' and
+        'way' parameters, according to the same rules as setChildElement().
+        Note that the 'replace', 'before' and 'after' parameters don't apply
+        with setRangeMark().
+        
+        Unless 'context' and 'content' are defined, there are two mandatory
+        parameters, namely 'start' and 'end'; each one is a hash of parameters
+        that apply to the start mark and the end mark, respectively. Each one
+        allows the same options as the option hash of setChildElement(), i.e.
+        'offset', 'before', 'after', 'replace' and/or 'way' as described above.
+        Note that the 'start' and 'end' structures are ignored as soon as
+        the 'context' and 'content' parameters are set at the first level.
+        
+        In addition, if the start and end marks are not contained in the same
+        text element, separate 'context' parameters must be provided with each
+        one of the 'start' hash and the 'end' hash. However, if the 'end' hash
+        doesn't contain any 'context' parameter, the end mark is supposed to
+        be in the same container as the start mark.
+        
+        The method returns the new start and end marks as a list of elements
+        in array context, or the start mark only in scalar context.
+        In case of failure (due to wrong parameters), both are undef, knowing
+        than setRangeMark() creates the full pair of marks or nothing. Note
+        that the optional attributes (provided through the 'attributes'
+        parameter) are stored in the start mark element only.
+        
+        By default, nothing prevents the applications from creating a range mark
+        whose start point is (temporarily or not) located after the end point,
+        so introducing an inconsistency. However, it's possible to set a 'check'
+        boolean option; if this option is 'true', an order check is done and, if
+        something is wrong, the range mark creation is cancelled and the method
+        fails. On the other hand, as long as the application may ensure that it
+        the start will always be set before the end, the order check should be
+        avoided for performance reasons. 
+        
+        Caution: The relative positions of the two marks are not checked, so
+        nothing prevents the users from creating a range whose start point
+        is (temporarily or not) located after the end point in the document.
+        The applications should ensure that the 'start' and 'end' options
+        really specify two locations in the right order.
+        
+        The following instruction creates an index mark covering a
+        text area within a single paragraph (previously selected); the range
+        starts before the "abc" substring and ends after the "xyz" substring;
+        the mark identifier is 'ind1234'. Nothing is done if one of these
+        substrings is not present in the target element:
+        
+            $doc->setRangeMark(
+                'alphabetical-index-mark', 'ind1234',
+                element => $paragraph,
+                start   => { before => "abc" },
+                end     => { after  => "xyz" }
+                );
+        
+        The next example creates a range bookmark (i.e. a bookmark covering
+        a text area) that starts before the "abc" substring in a paragraph
+        and ends at the end of another paragraph:
+        
+            $doc->setRangeMark(
+                'bookmark', 'bm0001',
+                start   => { element => $p1, before => "abc" },
+                end     => { element => $p2, offset => 'end' }
+                );
+
 =head3	setText(path, position, text)
 
 =head3	setText(element, text)
@@ -1752,6 +2221,21 @@ features of OODoc::Meta and OODoc::Document are described here.
 	See spaces() and extendText() for a workaround if you
 	need to insert repeated spaces without using the 'multiple_spaces'
 	property.
+
+=head3  setUserFieldDeclaration(name [, options])
+
+        Creates a new user field declaration in the document.
+        
+        The optional parameter are:
+        
+                'type'          => data type (default 'string')
+                
+                'value'         => initial value (default "")
+                
+                'currency'      => a 3-letter currency code (ex: EUR, USD...)
+
+        See also setTextField() in OpenOffice::OODoc::Text.
+
 	
 =head3	spaces(length)
 
@@ -1762,6 +2246,34 @@ features of OODoc::Meta and OODoc::Document are described here.
 	element is free, so it could/should be inserted later within a text
 	element. See extendText() for an example of use.
 
+=head3  splitContent(path, pos, tag, expression [, attributes])
+
+=head3  splitContent(element, tag, expression [, attributes])
+
+        Moves some parts of the text content of the given element and its
+        descendants in new child elements.
+        
+        The tag argument specifies the XML tag of the child elements to be
+        created. Unless this tag is provided with a namespace prefix (or more
+        precisely unless it contains a semicolon), it's automatically
+        concatenated with the namespace prefix of the host element.
+        
+        The following argument is a regular expression that specifies the text
+        substrings to wrap in the new elements. An element is created for every
+        match in the context element and, if any, in its existing children.
+        
+        After these arguments, additional attribute/value pairs may be
+        optionally provided; each one will become an attribute for every created
+        child element (the same name and attributes apply to all). Every
+        attribute name provided without namespace prefix is automatically
+        concatenated to the same namespace prefix as the new elements.
+        
+        This method returns the new child elements as a list.
+        
+        Note that splitContent() is a simplified interface for the mark()
+        method provided by XML::Twig, which may be directly used as an element
+        method for more advanced uses.
+
 =head3	splitElement(element, offset)
 
 	Splits a text element at a given offset. This method is a wrapper
@@ -1771,26 +2283,19 @@ features of OODoc::Meta and OODoc::Document are described here.
 	of the string and a new element holds the right part".
 	
 	In addition, the new element is created with the same attributes (ex:
-	the style or the heading level, if any) as the original one. 
+	the style or the heading level, if any) as the original one.
+	
+	The new element is inserted immediately after the old one.
 	
 	The method returns both the original and the new elements in a list
 	context. In a scalar context, the new element only is returned.
 	
-	The new element is "free", i.e. it doesn't belong to the document.
-	It's available for later use with any element attachment method,
-	provided by OpenOffice::OODoc (appendElement(), insertElement()) or
-	by XML::Twig (paste()). Example:
-	
-		my $new_elt = $doc->splitElement($para, 12);
-		$doc->insertElement($para, $new_elt, position => 'after');
-	
-	This example splits the given paragraph in two consecutive paragraphs.
-
 	Caution: splitElement() works properly on elements containing "flat
 	text" only. It's a bit complicated to use and probably doesn't
 	produce the right effects on elements containing line breaks, tab
-	stops, "styled spans" or any kind of structure. So, it should be used
-	on flat paragraphs or headings only.
+	stops, "styled spans" or any kind of structure. If it's used with an
+	element containing more that one text segment, it works with the first
+	one only.
 	
 =head3	substituteText(element, filter, replacement)
 
@@ -1814,7 +2319,35 @@ features of OODoc::Meta and OODoc::Document are described here.
 	within an existing text element (knowing that "\t" is not recognized
 	as a tab stop if stored "as is"). The returned element is free, so
 	it could/should be inserted later within a text element.
-	
+
+=head3	userFieldValue(user_field [, value])
+
+	Reads the stored value of a given user field or changes it if a
+	value is provided. The 1st argument can be either the name of the
+	field (as it appears for the end-user) or a previously loaded
+	user field element. See also getUserField().
+
+	This method doesn't create any new user field. It can only read or
+	update an existing one.
+
+	If the given user field is numeric (ex: date, currency) the returned
+	and/or provided value is the internally stored value, and not the
+	displayed one.
+
+	Warning: the changes made in a document using userFieldValue() don't
+	necessarily produce visible changes for the end-user. This method
+	can update the internal value of a field, but the displayable
+	representations of this field are not automatically refreshed (it
+	depends on a later field update).
+
+=head3	variableValue(name/element [, newvalue])
+
+	Returns the current value of the given user-defined variable or, if
+	a new value is provided as the second argument, updates the variable
+	accordingly.
+
+	[Contribution by Andrew Layton]
+
 =head2	Element methods
 
 	Every document element is an OpenOffice::OODoc::Element object,
@@ -1961,12 +2494,11 @@ features of OODoc::Meta and OODoc::Document are described here.
 	Note: the children() method of XML::Twig::Elt should be preferred
 	if the filter is the exact tag name of the needed elements.
 
-=head3	selectFrameElementByName(name)
+=head3  textLength()
 
-	Selects the first frame element whose name is exactly the given
-	argument. A frame is an OpenDocument container which can host a
-	rectangular object, such as an image or a text box.
-			
+        Works with text nodes. In array context, returns the length of the text
+        and the text itself; in scalar context, returns the length only.
+
 =head2	Properties
 
         No class variables are exported; the applications, if needed,

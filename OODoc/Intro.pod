@@ -161,7 +161,72 @@ OpenDocument-oriented wrapper for the standard Archive::Zip Perl
 module (but it could be extended to encapsulate any other physical
 storage method for the ODF documents).
 
+Every physical access to a document through the OpenOffice::OODoc API requires
+the use of one or more "connectors", each one being associated to an ODF
+"container". The appropriate constructor is the odfContainer() function, which
+requires a file name/path as its first (and mandatory) argument:
+
+        my $resource = odfContainer("myfile.odt");
+
+The instruction above creates an instance of ODF container, associated to a
+given filename. The returned object (assuming the specified file exists and is
+readable) is an OpenOffice::OODoc::File instance, i.e. an abstraction of the
+ODF physical file. However, it's possible to associate a container with an ODF
+that doesn't exist yet, provided that an additional 'create' named parameter,
+whose value is the class of the new document, is set. The following example
+creates an instance of spreadsheet ODF package:
+
+        my $container = odfContainer("accounts.ods", create => 'spreadsheet');
+
+Note that no persistent resource is created at this time. Without the 'create'
+option, the odfContainer() function attempts to load the structure of the
+specified ODF file (and fails if something is wrong). With the 'create' option,
+the structure is loaded in memory according to defaut ODF templates that belong
+to the OpenOffice::OODoc installation. But any persistent change (including the
+creation of the new ODF file, if any) requires the save() method. As an example,
+the following code really created a new ODF presentation file (without content):
+
+        my $container = odfContainer("show.odp", create => 'presentation');
+        $container->save;
+
+Or, more concisely:
+
+        odfContainer("show.odp", create => 'presentation')->save;
+
+So, the most minimalistic OpenOffice::OODoc application is a one-liner that
+creates an empty document.
+
+For an existing resource, an open IO::File is allowed instead of a file name. 
+
+Once initialized, such a container is typically used as a basis to instantiate
+one or more document-oriented connectors using odfDocument(), introduced later.
+However, for the users who know exactly what they do, an ODF container brings
+some low-level methods, such as physical export and/or import of document parts.
+The next example exports all the named persistent styles of "doc1.odt" then
+imports them in "doc2.odt":
+
+        my $p1 = odfContainer("doc1.odt");
+        my $p2 = odfContainer("doc2.odt");
+        $p1->raw_export("styles.xml");
+        $p2->raw_import("styles.xml");
+        $p2->save;
+
+Caution: there is no consistency check with raw_import(), so the application
+may ensure that the imported part makes sense according to the remainder of the
+target container (so, in this example, it may ensure that all the styles needed
+in the document content are conveniently defined in the imported part).
+Note that the raw_import() method doesn't produce any persistent effect before
+the save() method is issued from the importing container. All the changes are
+lost if the program ends or the objects goes out of scope before save().
+
 =head2	XML access
+
+An OpenOffice::OODoc::File object which has been instantiated using
+odfContainer(), it becomes available for processing through document-oriented,
+XML-based connectors. A typical OpenOffice::OODoc user doesn't need to be really
+"XML-aware", and most applications will probably use the high-level, XML-free
+methods provided by the Document and Meta objects, introduced later. However,
+the present section could prove useful for the general knowledge of the API.
 
 The second layer is made of the OpenOffice::OODoc::XPath class (XPath.pm), which
 is an ODF/XML-aware class. This class is generally not directly used by
@@ -185,64 +250,150 @@ For an example, if you want to get access to the content of any ODF file
 (say 'foo.odt'), you have to write something like:
 
 	use OpenOffice::OODoc;
-	my $doc = odfXPath
+	my $container = odfContainer("foo.odt");
+	my $doc = odfDocument
 			(
-			file	=> 'foo.odt',
-			part	=> 'content'
+			container => $container,
+			part      => 'content'
 			);
 
-then $doc becomes an abstraction of the 'content.xml' (i.e. the content
-and automatic styles) of the 'foo.odt' file, that can be used to get/set
-any content through simple methods like:
+then $doc becomes an abstraction of the 'content' part of the document
+(corresponding to the document body and some automatic styles).
+This new object brings a lot of methods allowing the applications to retrieve,
+read, modify, delete and creates elements in the documents.
 
-	print $doc->getText('//text:p', 2);
+An element is a consistent piece of content or style definition. Any element
+may contain a text and/or one or more attributes. As an example, the following
+example selects a paragraph, then gets its text content and the name of its
+style:
 
-The last instruction outputs the content of the 3rd paragraph as flat,
-editable text (because '//text:p' is the XPath expression which selects all
-the paragraphs in the current context, and the paragraphs are numbered from
-zero). But don't worry about this XPath syntax, that is shown here in order
-to explain the basic logic of the API.
+        my $element = $doc->getElement('//text:p', 2);
+        my $text = $doc->getText($element);
+        my $style = $doc->getAttribute($element, 'style name');
+
+Note that the getElement() method works with XPath expressions. According to the
+ODF specification, "text:p" specifies a paragraph. The double slash ("//") means
+"everything from the root of the document". The second argument of getElement()
+is the position of the needed element in the list (knowing that "//text:p"
+designates all the paragraphs); this position is zero-based, so in this example
+the third paragraph is selected. The search space of getElement() is the whole
+document by default, but it's possible to restrict it to a given context,
+specified through a additional argument. A context is a particular element,
+previously selected. As an example, the following code selects the 3rd paragraph
+in the 4th section (if any):
+
+        my $section = $doc->getElement('//text:section', 3);
+        my $paragraph = $doc->getElement('//text:p', 2, $section);
+
+(Of course, there is a getSection() method that allows you to forget the XPath
+expression and to retrieve a section by name instead of number.)
+
+In a real application, the user doesn't need to known such an XPath expression,
+because there is a more convenient getParagraph() method that just requires the
+paragraph number. However, the generic, XPath-based getElement() method remains
+available in order to retrieve any element that is not covered by a specialized
+accessor.
+
+The getText() method is self-documented in the example. The getAttribute()
+method requires, after the element itself, the name of the attribute whose value
+is needed. The real ODF name of the style attribute of a paragraph is
+"text:style-name"; however, the application may use the "style name" simplified
+form knowing that getAttribute() is able to translate the attribute names
+according to a simple logic: every space in the given name is replaced by a "-"
+and, if no prefix is specified, the prefix of the element itself is used, so
+"style name" is automatically interpreted as "text:style-name" in this
+particular context.
+
 You don't need to remember the path of such usual objects as paragraphs,
 headings, lists, images, ..., and other well known document components, because
 the 3rd layer (see below) provides easy-to-use, predefined accessors for these
 objects.
 
-You could also put your own text in the same paragraph with:
+The text content and the attributes of a selected element may be changed. The
+following sequence puts a new text content and affects a new style to our
+previously selected paragraph:
 
-	$doc->setText('//text:p', 2, 'My text');
+        $doc->setText($element, "A new text content");
+        $doc->setAttribute($element, 'style name' => "Text Body Style");
 
-The line above deletes any preceding content in the paragraph and replaces
-it by 'My text'. But, for the moment, the paragraph is only changed in
-memory; to commit the change and make it persistent in the OO file, you
-have just to do a
+The same layer of the API allows to append of insert new elements. The next
+example demonstrates the use of appendElement(); it creates a new paragraph with
+given text and style and appends it to the existing content:
 
-	$doc->save;
+        $doc->appendElement(
+                'text:p',
+                text            => "Hello world",
+                attributes      => {
+                        'style name'    => "Text Body Style"
+                        }
+                );
+
+For those who hate complex instructions, the 3 lines below do the same job as
+the example above:
+
+        my $new_element = $doc->appendElement('text:p');
+        $doc->setText($new_element, "Hello world");
+        $doc->setAttribute($new_element, 'style name' => "Text Body Style");
+
+Remember that the changes above are done in the volatile content of document
+object; up to now; nothing is changed in the corresponding file. In order to
+commit the changes and make them persistent, we need to call the save() method
+of the container that has been used to instantiate the document.
+
+The API allows the user, in simple situations, to "forget" the ODF container
+behind the document. The following "hello world" example, that creates and saves
+a new document, works without explicit use of the odfContainer() constructor:
+
+        my $doc = odfDocument(
+                        file => "foo.odt",
+                        create => 'text',
+                        part => 'content'
+                        );
+        $doc->appendElement(
+                'text:p',
+                text            => "Hello World !",
+                attributes      => {
+                        'style name'    => "Text Body Style"
+                        }
+                );
+        $doc->save;
+
+Note that odfDocument() is used here with a 'file' parameter, whose value is a
+file name, instead of a 'container'. At the end, save() is called from the
+document instance itself instead of a container. However, a container is
+always instantiated, but it's just hidden; and save() is only a stub method, the
+real job being done by the save() method of the container. Such a shortcut is
+useful in this example because the program processes one part only, i.e. the
+content; for applications that uses more than one part (content, styles, meta-
+data), two or more document connectors must be instantiated in association with
+the same container connector, and, as a consequence, the explicit use of
+odfContainer() is recommended.
 
 OpenOffice::OODoc::XPath allows some quick element manipulation and exchange,
 and can operate on several documents in the same session. For example:
 
-	my $doc1 = odfXPath(file => 'file1.odt', part => 'content');
-	my $doc2 = odfXPath(file => 'file2.odt', part => 'content');
+	my $doc1 = odfDocument(file => 'file1.odt', part => 'content');
+	my $doc2 = odfDocument(file => 'file2.odt', part => 'content');
 	my $paragraph = $doc1->getElement('//text:p', 15);
 	$doc2->insertElement
 		('//text:h', 0, $paragraph, position => 'after');
 
 This sequence takes an arbitrary paragraph (the 16th one) of a document
-and inserts it just after an arbitrary heading (the first one) in another
-document. Here, we used an 'insertElement' method to directly transfer
+and inserts it immediately after an arbitrary heading (the first one) in another
+document. Here, we used an insertElement() method to directly transfer
 an existing text element, but the same method (with different arguments)
 can create a new element according to application data, or from a well-
-formed XML string describing any document element in regular OpenOffice
+formed XML string describing any document element in regular Open Document
 syntax. Example:
 
 	# a program
-	my $doc = odfXPath(file => 'file1.odt', part => 'content');
+	my $doc = odfDocument(file => 'file1.odt', part => 'content');
 	open MYFILE, "> transfer.xml";
 	print MYFILE $doc1->exportXMLElement('//text:p', 15);
 	close MYFILE;
 	
 	# another program
-	my $doc2 = odfXPath(file => 'file2.odt', part => 'content');
+	my $doc2 = odfDocument(file => 'file2.odt', part => 'content');
 	open MYFILE, "< transfer.xml";
 	$doc2->insertElement
 		('//text:h', 0, <MYFILE>, position => 'after');
@@ -257,18 +408,18 @@ that is an exact replicate of the exported one. In the meantime, the XML
 intermediate file can be checked, processed and transmitted with any
 language and protocol.
 
+The OpenOffice::OODoc::XPath manual page describes a lot more common features
+that may be used through the document-oriented API introduced below.
+
 But it's just a beginning, because, in the real world, you have to do
 much more sophisticated processing, and you have not a lot of time to
 learn the XML path of any kind of document element (paragraph, heading,
-item list, style, ...).
+item list, table, draw frame, style, ...).
 
-=head2	Document-oriented API
+=head2	Document-oriented API 
 
 So there is a third, more user-friendly layer, that should be the only one
-visible for most of the applications. The programmer should know the
-features provided by the first layer (i.e. the XPath object) but should not
-explicitly instantiate XPath objects, knowing that all these features are
-inherited by more user-friendly objects.
+visible for most of the applications.
 
 The third layer is designed as a set of application-oriented
 classes, inherited from OpenOffice::OODoc::XPath. In this layer, the basic
@@ -289,7 +440,8 @@ which inherits all their features. As a consequence, ordinary users have just
 to deal with OpenOffice::OODoc::Document to process any content (graphic or
 textual) or layout. An OpenOffice::OODoc::Document object is instantiated
 through the odfDocument() function, that is a shortcut for
-OpenOffice::OODoc::Document->new().
+OpenOffice::OODoc::Document->new(). For other parts, such as the metadata or the
+file manifest, other constructors are available.
 
 Simply put, a typical application will need OpenOffice::OODoc::Document in
 order to process the content and the layout, and OpenOffice::OODoc::Meta for a
@@ -308,26 +460,25 @@ The OpenOffice::OODoc::Text class brings some table processing methods
 some conditions) can be used with spreadsheets (ODF spreadsheet documents) as
 well as with tables included in text documents.
 
-To illustrate the differences between the layers, with the ::Text features of
-a ::Document object, the two following instructions are equivalent:
+To illustrate the differences between the layers, the two following instructions
+are equivalent:
 
-	print $doc->getText('//text:p', 2); # common ::XPath method
-	print $doc->getParagraphText(2); # ::Text (::Document) method	
+	print $doc->getText('//text:p', 2);
+	print $doc->getParagraphText(2);
 
 provided that $doc has been previously created through an odfDocument() call.
 
 The difference looks tiny, but in fact OODoc::Text contains much more
 sophisticated text-aware methods that avoid a lot of coding and probably
 a lot of errors. For example, the following code puts the content of an
-ordinary perl list (@mydata) in an OpenOffice document as an ordinary
-item list:
+ordinary perl list (@mydata) in an ODF document as an regular item list:
 
 	my $list = $doc->appendItemList();
 	$doc->setText($list, @mydata);
 
 The first instruction creates an empty list at the end of the document body.
 The second one populates the new list with the content of an application-
-provided table. The setText method automatically modify its behaviour
+provided table. The setText() method automatically modify its behaviour
 according to the functional type of its first argument (with is not the same
 for a paragraph as for an itemlist or a table cell).
 
@@ -621,7 +772,7 @@ text in an alternative (simple) markup language.
 To do some intelligent processing in the text, we need to deal with
 individual text objects such as paragraphs, headings, list items or table
 cells. For example, to export the content of the 5th paragraph (paragraph
-numbering beginning with 0), we could directly get th text with:
+numbering beginning with 0), we could directly get the text with:
 
 	my $text = $doc->getParagraphText(4);
 
@@ -639,7 +790,7 @@ of a given text element), can return the content of many kinds of element
 (paragraphs, headings, table cells, item lists or individuals list items).
 In addition, any text content extracted with an high-level OODoc method is
 transcoded in the local character set (UTF-8 issues are (we hope) hidden for
-the application). Optionnally, the text output can be instrumented with
+the application). Optionally, the text output can be instrumented with
 begin and end application-provided tags according to the element type (so
 it's possible to export the text in an alternative, simple XML dialect, or
 in LaTeX, or in an application-specific markup language).
@@ -874,6 +1025,9 @@ by a given value, the corresponding code could be:
 	$old_value = $doc->userFieldValue("FieldName");
 	$doc->userFieldValue("FieldName", $old_value + $added_value);
 
+In addition, the OODoc API allows the user to "declare" new user-defined fields
+if needed (see setUserFieldDeclaration() in OpenOffice::OODoc::XPath).
+
 Any OpenDocument-compliant variable text field may be inserted in a document
 through the textField() method. The next example appends a paragraph whose
 text content is "This document contains <page-count> pages", knowing that
@@ -883,7 +1037,20 @@ the real page count will be dynamically displayed by the office software:
 		(text => "This document contains ");
 	$doc->appendElement($p, $doc->textField('page-count'));
 	$doc->extendText($p, " pages");
-	
+
+While the sequence above appends a text field at the end of a paragraph, the
+setTextField() method may insert a text field anywhere within an existing
+paragraph according to various positioning parameters. The example hereafter
+creates a date field immediately after the last occurrence of the substring
+"the current date is "; the 'after' option provides the search string while the
+'way' option specifies that it must be searched backward:
+
+        $doc->setTextField(
+                $paragraph, 'date',
+                after   => "the current date is ",
+                way     => 'backward'
+                ); 
+
 It's possible to get or set any property of a bibliography entry. An entry
 can be selected by its identifier (as it appears for the end-user). The first
 example below prints the title and the author of the first found occurrence
@@ -906,20 +1073,56 @@ and "pages" properties:
 In addition, a getBibliographyEntries() method allows the user to retrieve
 the full list of the entries included in a document.
 
+An additional bibliography entry may be inserted within a paragraph using
+setBibliographyMark(). As an example, the following instruction inserts a new
+bibliography mark as a replacement of the first substring "reference needed"
+that may occur after the 20th character in a given paragraph:
+
+		$doc->setBibliographyMark (
+			$paragraph,
+			offset     => 20,
+			replace    => "reference needed",
+			attributes => { 
+			    identifier	=> "JDE",
+			    title	=> "OASIS OpenDocument Essentials",
+			    author	=> "J. David Eisenberg",
+			    year	=> 2005,
+			    isbn	=> "1-4116-6832-4"
+			    }
+			);
+
 We can put a bookmark in a paragraph containing a given string.
 Example:
 
 	my $paragraph	= $doc->selectElementByContent("my search string");
 	$doc->setBookmark($paragraph, "MyMark");
-	
+
 The instruction above puts the mark at the beginning of the paragraph;
-however, if an optional offset argument is provided, setBookmark() could
-put the mark at any position within the text.
+however, setBookmark() could put the mark at any position within the text,
+according to optional parameters. To illustrate the positioning logic, the
+following instruction puts the bookmark immediately after the first occurrence
+of "xyz" that appear after the first 20 characters:
+
+        $doc->setBookmark(
+                $paragraph, "MyMark",
+                offset  => 20,
+                after   => "xyz"
+                );
+
+Note that there are many possible positioning parameter combinations for
+bookmarks and any other markup elements intended to be inserted within text
+containers; the various possibilities are inherited from the setChildElement()
+method, that is described in the OpenOffice::OODoc::XPath manual page.
 
 A bookmark (created either through OpenOffice::OODoc or through this Perl
 API) can be used to retrieve a text element:
 
 	my $paragraph = $doc->selectElementByBookmark("MyMark");
+
+Note that the insert position of text fields, bibliography marks, bookmarks,
+and other markup elements may be specified using the same set of position
+parameters and according to the same logic, that are inherited from the
+common setChildElement() method, described in OpenOffice::OODoc::XPath. 
 
 =head2	Dealing with text AND metadata
 
@@ -929,45 +1132,15 @@ avoid collisions and inefficient I/O operations, we need to connect the 2
 objects with the same OODoc::File "server".
 
 	use OpenOffice::OODoc;
-
 	my $archive	= odfContainer('myfile.odt');
 	my $content	= odfDocument(container => $archive);
 	my $meta	= odfMeta(container => $archive);
 	# process content and metadata
 	$archive->save;
 
-In this case, the OODoc::Document and OODoc::Meta objects are created with
-a 'container' parameter, so they are required to connect to an existing
-OODoc::File object. After processing, a 'save' call directly addressed
-to the OODoc::File is sufficient to do the physical file update, because
-this object "knows" the list of the OODoc::XPath objects connected to it,
-and "asks" to each of them the XML content it's responsible of (the other
-XML members of the file remain unchanged).
-
-In the example above, if the user writes 'file' instead of 'container', the
-API automatically detects the real type of the $archive value (i.e. an
-OODoc::File object) and adapts its behaviour accordingly. So, one can use
-the 'file' option either if the parameter is really a file path/name or if
-it's a reference to a previously instantiated ODF package.
-
-However, the explicit use of OODoc::File is not mandatory. The example above
-could be written in a different way:
-
-	use OpenOffice::OODoc;
-
-	my $content	= ooDocument(file => 'myfile.odt');
-	my $meta	= ooMeta(file => $content);
-	# process content and metadata
-	$content->save;
-
-This last sequence sounds strange because the 'file' option of ooMeta()
-is an OODoc::Document (i.e. an OODoc::XPath object) and not a file. But
-OpenOffice::OODoc encourages your laziness: if the value type of the
-'file' option is OODoc::XPath (and neither a file path nor an OODoc::File
-object), it knows you want share a file interface already used. So you get
-the same result as in the previous example, but the common OODoc::File object
-is not visible. The final save() could be issued from anyone of the document
-objects.
+In this case, the $content and $meta are explicitly linked to a common
+container. As a consequence, when the save() method of this container is
+triggered, all the changes through them are made persistent.
 
 There is an example of simultaneous access to content and metadata in the
 script 'set_title' (where some text content is used to generate a piece
@@ -1157,8 +1330,8 @@ metadata in the same session, we could instantiate a ::Meta object through
 odfMeta() as well. So up to 3 connecting objects can be used as interfaces
 for the same ODF file.
 
-Of course, a single $archive->save() can make all the changes made through all
-the connected objects persistent.
+Of course, a single $archive->save() can make persistent all the changes made
+through all the connected objects.
 
 =head1	COMMENTS AND BUG REPORTS
 
@@ -1174,7 +1347,7 @@ Developer/Maintainer: Jean-Marie Gouarne L<http://jean.marie.gouarne.online.fr>
 
 Contact: jmgdoc@cpan.org
 
-Copyright 2004-2008 by Genicorp, S.A. L<http://www.genicorp.com>
+Copyright 2004-2010 by Genicorp, S.A. L<http://www.genicorp.com>
 
 Initial English version of the reference manual by Graeme A. Hunter
 (graeme.hunter@zen.co.uk).

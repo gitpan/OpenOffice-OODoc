@@ -6,7 +6,7 @@ OpenOffice::OODoc - The Perl Open OpenDocument Connector
 
 	use OpenOffice::OODoc;
 
-			# get global access to the content of an OOo file
+			# get global access to the content of an ODF file
 	my $document = odfDocument(file => "MyFile.odt");
 			# select a text element containing a given string
 	my $place = $document->selectElementByContent("my search string");
@@ -98,23 +98,47 @@ following list:
 The present manual page contains (in the GENERAL FUNCTIONS section below) the
 description of a small number of miscellaneous functions, dedicated to control
 some general parameters, to create the main objects of the applications, or to
-provide the user with some basic utilities.
+provide the user with some basic utilities. It introduces the main object
+constructors, namely odfContainer(), odfDocument() and odfMeta().
 
 =head2	OpenOffice::OODoc::File
 
 This manual page contains detailed information about the physical access to
-the ODF files. In some simple applications, this page can be ignored without
-risk.
+the ODF containers, i.e. the multipart, compressed files that contain the
+documents.
+
+In some simple applications, this page can be ignored without risk.
 
 =head2	OpenOffice::OODoc::XPath
 
 It describes all the common features, that are provided by the corresponding
 class, and available in every other class with the exception of OODoc::File.
-This manual page describes the low level, XPath-based XML API of
-OpenOffice::OODoc. It can be necessary for advanced applications, but can be
-ignored at first look. However, the Text, Image, Styles, Document and Meta
-objects inherit all the features of the XPath object, so this manual page
-can be useful even if the user don't need to work with explicit XPath objects.
+This page is so called because it essentially relies on XPath expressions to
+select the various document elements. However, beyond the XPath-based retrieval
+features, it allows the user to update, create, or delete any element.
+
+This manual page describes the common XML toolbox of OpenOffice::OODoc. It
+allows almost everything, and it may be appropriate for XML- and XPath-aware
+users who have some knowledge of the Open Document Format. On the other hand,
+it covers only the low level part of the API. 
+
+The high level part of OpenOffice::OODoc is covered by the ::Text, ::Image,
+::Styles, ::Document and ::Meta manual chapters. However, the user should
+remember that ::XPath describes some common features which are not redundantly
+documented in the high level chapters , so this manual page can be useful even
+if the user don't need to work with explicit XPath expressions.
+
+Note: by "high level", I don't suggest that OpenOffice::OODoc provides any
+stratospheric functionality. The "high level" API is a set of frequently needed
+features that are implemented in order to be used without knowledge of the ODF
+storage structure and without XML familiarity. The following example, that
+retrieves a section in a text document according to its name, illustrates the
+difference: while both return the same result, the second instruction, which is
+mnemonic and largely self-documented, belongs to a higher level than the first
+one:
+
+        $section = $doc->getElement('//text:section[@text:name="Foo"]');
+        $section = $doc->getSection("Foo");
 
 =head2	OpenOffice::OODoc::Text
 
@@ -126,11 +150,25 @@ to the so-called "text documents". As a consequence, this chapter describes
 all the methods which process ODF text containers in spreadsheets and
 presentations as well as in text documents.
 
+The set of covered text objects includes all the markup elements that may be
+inserted within paragraphs, such as variable text fields, notes, bibliography
+entries, bookmarks, index entries, text runs with special styles, hyperlinks,
+etc.
+
+Whatever the document class, the ::Text part of OpenOffice::OODoc may apply to
+some style definitions, too. For example, a page style may specify a header
+and/or a footer that may contain paragraphs and other text elements.
+
 =head2	OpenOffice::OODoc::Image
 
 This manual page describes all the graphics manipulation API, i.e. all the
 available syntax dedicated to insert or remove images in the documents, and
 to control the presentation of these images.
+
+Note that OpenOffice::OODoc does *NOT* include any graphical processing API; it
+just deals with the Open Document way to include and display images. It allows,
+for example, to control the color correction and the display size of an image in
+the context of a particular document, but not to change the image itself.
 
 =head2	OpenOffice::OODoc::Styles
 

@@ -113,11 +113,6 @@ presentation which is one of the foundations of the OpenDocument format.
         text is to be exported "as is". See the getText method of
         OODoc::Text for information about exporting text.
 
-=head3	appendBodyElement(element [, options])
-
-        Copies an existing element of any type and appends it to the end of
-        the document body. No new element is created.
-
 =head3	appendDrawPage([options])
 
 	In a presentation or drawing document, appends a new page at the en
@@ -171,7 +166,7 @@ presentation which is one of the foundations of the OpenDocument format.
             	text	=> 'Attributes are important',
             	level	=> '1',
             	style	=> 'Chapter heading',
-            	attribute => %attr
+            	attributes => {%attr}
             	);
 
         If the 'text' option is empty, the heading is created with an empty
@@ -606,6 +601,49 @@ presentation which is one of the foundations of the OpenDocument format.
 		$doc->cellValueType($cell, 'float');
 		$doc->cellValue($cell, 12.34);
 
+=head3  checkIndexMark(name, type [, context])
+
+        Checks the existence and validity of an index mark (see setIndexMark()
+        for details about range index marks). The mandatory argument are the
+        index entry identifier and the index entry type (namely 'toc' or
+        'alphabetical index'. A context element may provided in order to
+        restrict the search context.
+        
+        This method may return 1, 0 or undef.
+        
+        '1' means that the index mark is present and consistent;
+        
+        '0' means that the index mark is present in the context but not valid;
+        
+        undef means that the index mark doesn't exist in the context.
+        
+        If the result is 0, the are 2 possible reasons: the start point or the
+        end point of the index mark has been found, but not both, or both have
+        been found but there relative positions are wrong (the end is located
+        before the start). Whatever the explanation, this result means that some
+        cleaning should be done (see deleteIndexMark()).
+
+=head3  checkRangeBookmark(name [, context])
+
+        Checks the existence and validity of a range bookmark (see setBookmark()
+        for details about range bookmarks). The mandatory argument is the
+        bookmark name. A context element may provided in order to restrict the
+        search context.
+        
+        This method may return 1, 0 or undef.
+        
+        '1' means that the range bookmark is present and in the right order;
+        
+        '0' means that the bookmark is present in the context but not valid;
+        
+        undef means that the bookmark doesn't exist in the context.
+        
+        If the result is 0, the are 2 possible reasons: the start point or the
+        end point of the range has been found, but not both, or both have been
+        found but there relative positions are wrong (the end is located before
+        the start). Whatever the explanation, this result means that some
+        cleaning should be done (see deleteBookmark()).
+
 =head3	columnStyle(column_element [, style])
 
 =head3	columnStyle(table, column [, style])
@@ -736,11 +774,40 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	Without argument, returns the currently selected terminator, if any.
 
-=head3	deleteBookmark(name)
+=head3	deleteBookmark(name [, context])
 
-	Deletes the given bookmark (if defined).
+	Deletes the bookmark owning the given name (if defined).
+	A context optional argument is provided; if so, the bookmark is deleted
+	only if it's located in the given context.
 
-	Works with position bookmarks only.
+        If several bookmarks wrongly own the same name, they are removed.
+        
+        The method returns the number of physical deleted elements, i.e. 1 for
+        a regular position bookmark, 2 for a range bookmark, 0 for nothing. Any
+        other return value means that deleteBookmark() has cleaned up a strange
+        situation (ex: more than one bookmark for a single name, a position
+        bookmark with one start and many ends, and so on).
+        
+        Warning: if the context argument is set (or if the default current
+        context is not the whole document), and if the bookmark to be deleted
+        is not entirely included in the context, the result may be a partially
+        deleted bookmark (wrong).
+        
+        See also deleteBookmarks().
+
+=head3  deleteBookmarks([context])
+
+        Delete all the bookmarks in the current context (by default the whole
+        document) or in a given optional context, and returns the number of
+        physical deleted elements (that may be greater than the number of
+        deleted bookmarks, knowing that a bookmark may be stored a one or two
+        XML elements).
+       
+        Warning: some inconsistencies may result if the context is not the whole
+        document, knowing that a range bookmark could run across the border of
+        the restricted context.
+        
+        See also deleteBookmark().
 
 =head3	deleteColumn(table, col_num)
 
@@ -762,6 +829,41 @@ presentation which is one of the foundations of the OpenDocument format.
 =head3	deleteRow(row_elt)
 
 	Deletes a given row in a table.
+
+=head3  deleteIndexMark(id [, type [, context]])
+
+	Deletes the index mark owning the given identifier (if defined).
+	The first argument (mandatory) is the index mark identifier. The second
+	argument is the index type ('alphabetical index' or 'toc', the first one
+	is the default).
+
+	A context optional argument is provided; if so, the index entry is
+	deleted only if it's located in the given context.
+
+        If several index marks wrongly own the same identifier, they are
+        removed.
+        
+        The method returns the number of physical deleted elements, that should
+        be 0 (if the index mark did not exist) or 2 (the start and the end
+        points). Any other return value means that deleteIndexMark() has cleaned
+        up a strange situation (less or more than two range delimiters).
+        
+        See also deleteIndexMarks().
+
+=head3  deleteIndexMarks([type [, context])
+
+        Without argument, deletes all the TOC marks and alphabetical index marks
+        in the document (or the default context).
+        
+        The first argument, if set, non-blank and non-empty, restricts the
+        deletion to one type of index marks; it should be either 'toc' or
+        'alphabetical index' (unless the user need to remove non standard index
+        marks).
+        
+        A particular context may set through the third argument in order to
+        restrict the index mark removal to the content of a particular element.
+        
+        See also deleteIndexMark().
 
 =head3	drawPageId(page [, new_id])
 
@@ -1664,21 +1766,6 @@ presentation which is one of the foundations of the OpenDocument format.
 	WARNING: Ordered lists are possible in the OpenOffice.org 1 format
 	only. Don't use it against OpenDocument.
 
-=head3	getUserField(name)
-
-	Returns the element (if defined) representing a user-defined field,
-	and corresponding to the given name. See also userFieldValue().
-
-=head3	getUserFieldElement(name)
-
-	See getUserField().
-
-=head3	getVariableElement(name)
-
-	Returns the user-defined variable identified by the given name.
-
-	[Contribution by Andrew Layton]
-
 =head3	hyperlinkURL(hyperlink [, url])
 
 	Get/set the URL of an hyperlink element. The first argument may be
@@ -2171,48 +2258,40 @@ presentation which is one of the foundations of the OpenDocument format.
 	range bookmarks (a range bookmark can be spread over several text
 	elements).
 
-=head3	selectElementByContent(filter, [...])
+=head3	selectElementByContent([context,] filter [...])
 
 	Returns the first text element whose content matches the 'filter'
 	(which can be an exact string or a regular expression), or undef
 	if no matching content is found.
 
-	With more than one argument, this method can be used for replacement
-	operations, or user-defined function triggering, in the same
+	With additional arguments after the filter, this method can be used for
+	replacement operations, or user-defined function triggering, in the same
 	conditions as selectElementsByContent().
 
 	The retrieval functionality of selectElementByContent() is the same
 	as selectElementsByContent(). See selectElementsByContent() for
 	limits.
 
-=head3	selectElementsByContent(filter)
+=head3	selectElementsByContent([context,] filter)
 
-=head3	selectElementsByContent(filter, replacement)
+=head3	selectElementsByContent([context,] filter, replacement)
 
-=head3	selectElementsByContent(filter, action [, other_arguments])
+=head3	selectElementsByContent([context,] filter, action [, other_arguments])
 
-        This method returns a list of text elements such as paragraphs,
-        headers or ordered/unordered lists whose content matches the search
-        criteria contained in 'filter' (which can be an exact string or a
-        regular expression). Note that this method can be used with a
-	"non-filtering" regular expression (".*") for unconditional movement
-	through all text elements.
+        This method returns the text elements whose content matches the search
+        criteria contained in 'filter' (a string that may be a regexp).
+        Note that this method can be used with a "non-filtering" regular
+        expression (".*") for unconditional movement through all text elements.
+	
+	The default scope is the current context (practically it's the whole
+	document unless it has been changed using the currentContext() method).
+	However a context element may provided before the filter argument in
+	order to restrict the search space.
 
-	This method is context-sensitive (see currentContext() and
-	resetCurrentContext() in OpenOffice::OODoc::XPath for details about
-	the context). Its search space is restrained to the children of the
-	context element (so the default search space is the whole document
-	body). Be careful: if the search is successful, the returned elements
-	are not always the direct containers of the string which matches the
-	filter; they are the elements whose any child element contains the
-	string. For example, if a table cell contains a matching string, the
-	containing table, and not the cell, is returned. If a paragraph
-	containing the matching string belongs to a section, the section,
-	not the paragraph, is returned. However, if the current context is
-	the table, selectElementsByContent() will return the matching rows.
-	And if the context is the section, it will return the matching
-	objects included in the section (knowing that a section can contain
-	other sections and any other structured containers).
+        Be careful: if the search is successful, the returned elements may be
+        of various kinds; they are not always paragraphs or headings. They
+        may be, for example lower level text elements contained in paragraphs,
+        such as text spans or text hyperlinks.
 
         The first form simply returns the given list without modifying the
         text.
@@ -2296,14 +2375,6 @@ presentation which is one of the foundations of the OpenDocument format.
 	represented with only one style and if it doesn't contain multiple
 	spaces, tab stops or line breaks.
 
-=head3	selectElementByTextId(id)
-
-	Returns the element (if any) identified by the given value of text
-	identifier. The text identifier (i.e. "text:id") is an optional
-	attribute for text containers. It *should* be unique in a document.
-	However, this identifier is presently used in a few elements only
-	by OpenOffice.org.
-
 =head3	selectHyperlinkElement(url_filter)
 
 	Retrieves the first hyperlink element (if any) whose the URL matches
@@ -2361,100 +2432,195 @@ presentation which is one of the foundations of the OpenDocument format.
 
             print $doc->selectTextContent('.*');
 
+
 =head3	setAnnotation(element [, options])
 
 	Creates and inserts an annotation in a given element.
 
 	The possible options are:
 
-	'date' => the date/time of the annotation (ISO-8601 format)
+	'date' => the date/time of the annotation (ISO-8601 format); the default
+	is the current system date/time
 
 	'author' => the name of the author of the annotation; unless this
 	option is provided; the default is the current system user name
+	
+	'text' => the text content of the annotation (no default)
 
-	'offset' => the offset of the insertion point; by default, the
-	annotation is inserted at the beginning of the element
+	'style' => a paragraph style for the annotation (no default)
 
-	'text' => the text of the annotation; the default is an empty string
-
-	'style' => a paragraph style for the annotation
-
+	'offset' => an integer value that specifies the position of the
+	insertion point of the annotation (default=0); a negative value means
+	that the position is counted backward from the end
+	
+	'before' => a regular expression; specifies that the insertion point
+	should be before the first match
+	
+	'after' => same as 'before' but the insertion point should be after the
+	first match
+	
+	'replace' => same as 'before', but the matching substring is deleted
+	and replaced by the annotation
+	
+	If 'before', 'after' or 'replace' (which are mutually exclusive) is set,
+	the 'offset' option, if provided too, specifies a search space
+	restriction and a search way. If 'offset' is positive, the search space
+	runs from 'offset' to the end; if 'offset' is negative, the search space
+	runs from the end and its size is the absolute value of 'offset'.
+	
+	If 'offset' is 0, then it's possible to force the search backward from
+	the end to the beginning using an additional 'way' parameter whose
+	possible values are 'backward' and 'forward' (if 'way' is 'backward',
+	then 'offset' is regarded as negative whatever its sign).
+	
+	Note that the 'capture' option doesn't work with annotations.
+	
 	Returns the reference of the annotation element. Note that this
 	reference could be used later as a context for additional insertions
 	(for example in order to append several paragraphs to the content of
 	the annotation).
 
-=head3	setBibliographyMark(element, offset, identifier => id [, options])
+=head3	setBibliographyMark(element, [, position_options][attributes])
 
-	Creates a new bibliography mark within a given text element at a
-	given offset. The hosting element, the offset (relative to the content
-	of the element) and the "identifier" parameter are mandatory. The other
-	options are all the possible attributes of an OpenDocument-compliant
-	bibliography entry, such as author, editor, isbn, title, year, and
-	many others. Example:
+	Creates a new bibliography mark within a given text element.
+	
+	The content of the new bibliography entry may be initialized through
+	a 'attributes' parameter whose value is a hash.
+	
+	All the possible attributes of an ODF-compliant bibliography entry, 
+	such as author, editor, isbn, title, year, and many others, are
+	allowed. A 'identifier' parameter is mandatory in order to get a
+	visible mark; note that this identifier is bibliography-specific and
+	is not the same as the generic identifier that could be get or set
+	using getIdentifier() and setIdentifier(). Other attributes are optional
+	(but, of course, an entry with nothing more than an identifier would not
+	be very useful in a final document).
+	
+	By default, the object is inserted at the beginning of the target text
+	element. But, thanks to the optional position parameters, it can be put
+	anywhere within the text of the bookmarked element. The position
+	parameters are 'offset', 'before', 'after', 'replace', and 'way' and
+	they work like with setAnnotation().        
 
 		$para = $doc->selectElementByContent("ODF-related book");
-		$doc->setBibliographyMark
-			(
-			$para, 0,
-			identifier	=> "JDE",
-			title		=> "OASIS OpenDocument Essentials",
-			author		=> "J. David Eisenberg",
-			year		=> 2005,
-			isbn		=> "1-4116-6832-4"
+		$doc->setBibliographyMark (
+			$para,
+			offset     => -20,
+			replace    => "reference needed",
+			attributes => { 
+			    identifier	=> "JDE",
+			    title	=> "OASIS OpenDocument Essentials",
+			    author	=> "J. David Eisenberg",
+			    year	=> 2005,
+			    isbn	=> "1-4116-6832-4"
+			    }
 			);
 
-	This sequences puts a bibliography mark at the beginning (position=0)
-	of a previously selected text element. This mark will be displayed by
-	default as "[JDE]" with OpenOffice.org Writer.
+        This sequence replaces a "reference needed" substring in a given
+        paragraph by a bibliography mark that will be displayed by default as
+        "[JDE" and that contains various attributes. The 'replace' option means
+        that the given substring will be deleted and replaced by the mark. The
+        given (negative) offset means that the substring must be searched
+        backward and that the last 20 characters of the paragraph must be
+        excluded from the search space.
 
-=head3	setBookmark(element, name [, offset])
+=head3	setBookmark(element, name [, position_options])
 
-	Puts a bookmark in a text element.
+	According to the structure of the optional parameters, this method may
+	be used either to set a position bookmark (i.e. a named place holder
+	at some point of the text content in a pararaph) or to set a range
+	bookmark (i.e. a range of text that may spread across paragraph
+	boundaries and that is delimited by a bookmark start and a bookmark end
+	elements).
+	
+	The first form is illustrated by the following example:
 
-	Example:
+		$doc->setBookmark(
+		        $paragraph, "BM001",
+		        offset  => -20
+		        before  => "xyz"
+		        );
 
-		my $paragraph = $doc->selectElementByContent
-						("Eragon and Saphira");
-		$doc->setBookmark($paragraph, "The Heroes");
+	This sequence puts a bookmark identified by "BM001" in a given
+	paragraph, immediately before the first "xyz" substring found in a
+	backward search among the last 20 characters.
+	
+	The mandatory arguments are the target text element and the name of the
+	new bookmark (that should be unique).
 
-	puts a bookmark identified by "The Heroes" in a paragraph where a
-	given text has been found (of course, the bookmark will remain even
-	if the text of the paragraph is changed later).
+	By default, the object is inserted at the beginning of the text. But,
+	thanks to the optional position parameters, it can be put anywhere
+	within the text of the bookmarked element. The position parameters
+	are 'offset', 'before', 'after', 'replace', and 'way', and they work
+	like with setAnnotation(). See also setChildElement() in OODoc::XPath.
+	However, the 'text' option is ignored, knowing that a bookmark has no
+	text content. If the 'replace' option is used, the matching substring
+	is deleted and replaced by the bookmark, but the deleted text is not
+	reused.
 
-	By default, the bookmark is put at the beginning of the text. But,
-	thanks to the optional offset, it can be put at any position within
-	the text of the bookmarked element.
-
-	Note: This method puts a position bookmark, and not a range bookmark.
-	The OpenDocument specification allows both range and position
-	bookmarks. However, a range bookmark is not an element; it's a pair
-	of elements ("bookmark-start" and "bookmark-end").
+        The second form requires a bookmark name as the 1st argument, then
+        a 'start' and a 'end' parameters are required; each one is a hash of
+        parameters that specifies the position of one mark according to the same
+        options as for a position bookmark (namely with 'offset', 'before',
+        'after', 'replace', and 'way'). In addition, each of the 'start' and
+        'end hashes may contain an additional 'context' parameter that specifies
+        the elements that will contain the start and end marks, respectively.
+        
+        The following example creates a range bookmark that starts after the
+        15th character of $p1 and ends before the "xyz" substring in $p2,
+        assuming that $p1 and $p2 are previously selected paragraphs in the
+        right order:
+        
+                $doc->setBookmark(
+                        "BM002",
+                        start   => {
+                                context => $p1,
+                                offset  => 15
+                                },
+                        end     => {
+                                context => $p2,
+                                before  => "xyz"
+                                }
+                        );
+                        
+        The user is not prevented by default from creating a range bookmark
+        whose start point is after the end point of a range bookmark. However,
+        it's possible to force an order check using a boolean 'check' option.
+        If 'check' is 'true' while the order is wrong, the bookmark is not
+        created.
+        
+        Note that the second form of setBookmark() is the same as
+        setRangeBookmark().
 
 =head3	setHyperlink(path, position, [context,] expression, url)
 
-=head3	setHyperlink(element, [context,] expression, url [, options])
+=head3	setHyperlink(element, expression, url [, options])
 
 	Puts an hyperlink on a text area in a given text element.
+	The first substring matching the given "expression" argument in the
+	text element (if any) will become the hyperlinked text. The "url"
+	argument is, of course, the URL of the hyperlink. If successful, the
+	method returns the new hyperlink element, or undef otherwise.
 
-	Example:
+	This short example illustrates the simplest use:
 
 	    $doc->setHyperlink($para, "CPAN", "http://www.cpan.org");
 
-	This method works in the same was as setSpan(), described below,
-	but the text span is hyperlinked, and not only presented according
+	This method works in the same way as setTextSpan(), described below,
+	but the text span is hyperlinked, and not only presented according to
 	a particular style. So, the third argument must be an URL instead
 	of a style. 
 	
-	A set of hyperlink attributes may be optionally provided as a hash.
-	For example, the application can provide a 'style-name' and a
-	'visited-style-name' options:
+	A set of hyperlink attributes may be optionally provided as a hash
+	through an optional 'attributes' parameter. For example, the application
+	can provide a 'style-name' and a 'visited-style-name' as shown below:
 	
-	    $doc->setHyperlink
-	    		(
+	    $doc->setHyperlink (
 			$para, "CPAN", "http://www.cpan.org",
-			'style-name' => "ToBeVisited",
-			'visited-style-name' => "Visited"
+			attributes      => {
+			        'style-name' => "ToBeVisited",
+			        'visited-style-name' => "Visited"
+			        }
 			);
 			
 	'style-name' selects the style which applies to the text of the
@@ -2464,7 +2630,9 @@ presentation which is one of the foundations of the OpenDocument format.
 	'text' family. 
 	
 	Other allowed hyperlink attributes are listed in the §5.1.4 of the
-	OASIS OpenDocument 1.0 specification.
+	OASIS OpenDocument specification. They may be set through the
+	'attributes' options or later through the common setAttributes() method
+	(that may apply to the object returned by setHyperlink).
 
 	Note: The hyperlink is not always a remote URL, such as in the
 	example above. Internal references ere allowed as well. An
@@ -2474,9 +2642,88 @@ presentation which is one of the foundations of the OpenDocument format.
 	such a link is the concatenation of a file path, a "#", and a local
 	name that makes sense in the target document (bookmark, heading...).
 
+=head3  setIndexMark(element, id [, options][, start =>{}, end =>{}])
+
+        Creates an alphabetical index entry in a given element. The first
+        arguments are the target element (generally a paragraph) and a
+        mandatory identifier (that should be unique).
+        
+        A 'type' parameter allows to select the type of index; possible
+        values are 'alphabetical-index' or 'toc' (the last one stands for
+        "table of contents index mark"). The default is 'alphabetical-index'
+        (it may be wrote 'alphabetical index', knowing that every space is
+        automatically interpreted as a '-').
+        
+        A 'content' parameter allows to specify an expression; the first
+        substring in the element that matches this expression will become the
+        indexed substring. It's possible to restrict the search area using a
+        'offset' option, a positive or negative integer; a positive value means
+        that the search space runs from the beginning to the given offset; a
+        negative value means that it runs backward from the end to the given
+        offset. In addition, a 'way' option whose legal values are 'forward' or
+        'backward' may control the search way: if 'way' is 'backward' then the
+        search is done backward even if 'offset' is not provided, and 'offset'
+        is regarded as negative even if it's provided without the minus sign.
+        Unless 'offset' is defined and negative, the default way is 'forward'.
+        
+        The code below puts an index entry, identified by "idx001" and related
+        to the first match of a "xyz" expression:
+        
+                setIndexMark(
+                        $paragraph, "idx001",
+                        type    => 'alphabetical index',
+                        content => "xyz"
+                        );
+        
+        Note that the 'type' option is provided for clarity only, knowing that
+        'alphabetical-index' is the default.
+
+        The following variant puts a TOC mark, searched backward from the end
+        of a given paragraph, within a 20-character-long area:
+        
+                setIndexMark(
+                        $paragraph, "idx001",
+                        type    => 'toc',
+                        content => "xyz",
+                        offset  => 20,
+                        way     => 'backward'
+                        );
+        
+        The same result in this second example could be obtained without the
+        'way' option, with -20 instead of 20 as the 'offset' value.
+        
+        A more sophisticated set or parameters may be provided in order to
+        specify the beginning and the end of the index mark separately. To do
+        so, 'content' must be omitted and replaced by the 'start' and 'end'
+        parameters, each one being a hash, just like with the second form of
+        setBookmark() that created a range bookmark, with a restriction: 
+
+        The 'start' and 'end' optional parameters allows to specify the start
+        and the end positions of the index mark. Each one is a hash that may
+        contain the same options as with setBookmark() described below, namely
+        'offset', 'before', 'after', 'replace', and 'way', with the exception
+        of 'context', because (unlike a bookmark) an index mark is entirely
+        included in a single paragraph; its start and its end belong to the same
+        context, that is specified by the first argument.
+        
+        The following example creates an alphabetical index mark that is
+        associated to a text range running from the "xyz" substring to the end
+        of the given paragraph:
+        
+                $doc->setIndexMark(
+                        $paragraph, "idx002",
+                        type    => 'alphabetical index',
+                        start   => {
+                                before  => "xyz"
+                                },
+                        end     => {
+                                offset  => 'end'
+                                }
+                        );
+
 =head3  setNote(path, position, text [, options])
 
-=head3  setNote(element, text [, options])
+=head3  setNote(element [, options])
 
         Creates and inserts a footnote or an endnote in the given element with
         the given text as the note content. Returns the new note element in
@@ -2484,8 +2731,7 @@ presentation which is one of the foundations of the OpenDocument format.
         
         Supported options are:
         
-        'offset' => specifies the numeric position of the note in the text of the
-	target element; by default the note is located at the beginning;
+        'text' => the text content of the note
         
         'class' => specifies the display class of the now note; may be 'footnote'
         or 'endnote', default is 'footnote';
@@ -2504,82 +2750,26 @@ presentation which is one of the foundations of the OpenDocument format.
         
         'style' => specifies the style of the note content (should be a regular
         paragraph style).
+        
+	By default, the object is inserted at the beginning of the text. But,
+	thanks to the optional position parameters, it can be put anywhere
+	within the text of the bookmarked element. The position parameters
+	are 'offset', 'before', 'after', 'replace', and 'way' and they work
+	like with setAnnotation().
 
-=head3	setSpan(path, position, [context,] expression, style)
+=head3  setRangeBookmark(name, start => {options}, end => {options}, ...)
 
-=head3	setSpan(element, [context,] expression, style)
+        Like the second form of setBookmark(): creates a range bookmark
+        according to a mandatory name (1st argument) and position options
+        provided through 'start' and 'end' parameters, each one being a hash
+        of options. See setBookmark() above for details.
 
-        Applies a special text style to one or more parts of the content
-	of a text element.
+=head3  setSpan()
 
-        In OpenDocument XML language, a "text span" is a substring whose
-        presentation style differs from the style of the text element to
-        which it belongs. For example, a given "span" could be in italics
-	while the rest of the paragraph is in normal characters.
-
-	Caution: the same word has a different meaning when it's used
-	about table cells (see cellSpan()).
-
-        A "span" is therefore a way to use several styles within the same
-	element, bearing in mind that the paragraph's global style can be
-	modified by setStyle().
-
-	The properties of a text span can be related to any kind of character
-	string presentation, such as font, font size, font weight, font
-	style, and colors (background and foreground). Whatever these
-	properties, they apply through a style.
-
-        The desired text element is normally indicated by [path, position]
-        or reference (recommended). The optional argument 'context' which
-	consists of an element reference, allows you (when using [path,
-	position]) to limit a search to child elements of a particular
-	element (e.g. page header, page footer, item list, section, etc.).
-
-        'expression' represents a filter; every substring contained
-	in the target element and matching the filter is attributed using the
-	given style. This filter is processed, up to some extent, as a regular
-	expression, but there is no full perl regexp support here.
-
-	'style' is obviously the style describing the presentation
-	characteristics to give to it. See OODoc::Styles for how to construct
-	styles by program or to replicate existing styles. Remember that a
-	style must belong to the 'text' family in order to be used in this
-	context (for example, a paragraph style would not work). 
-
-        As a highlighted string can be quite long or not all known in
-        advance, you can represent it with a regular expression. Taking the
-        following paragraph as an example:
-
-	"OpenOffice.org includes Writer, Calc, Draw and Impress"
-
-	Assuming this text is contained in a $p element, the following
-	instruction gives the "Highlight" style to the "OpenOffice.org",
-	"Writer", "Calc", "Draw", and "Impress" substrings:
-
-		$doc->setSpan
-		    (
-		    $p,
-		    'OpenOffice\.org|Writer|Draw|Calc|Impress',
-		    "Highlight"
-		    );
-
-	The style referred to by setSpan() may be an existing style as well
-	as a style to be defined by the program (see createStyle() in
-	OpenOffice::OODoc::Styles).
-	
-	setSpan() works on any kind of text container, whatever its
-	hierarchical level. For example, if the given element is a table,
-	the span style attribution applies to every cell of the table. And
-	the same change can be done in all the displayable content not
-	including page headers, page footers, and page backgrounds through
-	a single setSpan() call, if the given element is the document body
-	itself (see getBody() in OpenOffice::OODoc::XPath).
-	
-        Caution: this method can neither recognise nor handle a string
-	located partly in a "span" and partly outside it. It can, however,
-	create a "span" inside another.
-
-        See also removeSpan() and setHyperlink().
+        Deprecated.
+        
+        See also setTextSpan() and setTextSpans(), more powerful but using
+        different options.
 
 =head3	setStyle(path, position, style_name)
 
@@ -2633,13 +2823,124 @@ presentation which is one of the foundations of the OpenDocument format.
 	reference of a text box. The content is processed in the same way
 	as the content option in createTextBox().
 
-=head3	setTextField(element, [context,] expression, field-type [, options])
+=head3  setTextField(element, field-type [, options])
 
-	Replaces one or more substrings of a given text element by a variable
-	text field. See textField() in the present manual chapter for some
-	information about text fields.
+        Puts a variable text field in a given text element.
+        
+        The 2nd argument specifies the type of field. The offical types are
+        described in §6.2 and §6.4 in the OpenDocument 1.1 specification,
+        corresponding to the so-called "document fields" and "metadata fields".
+        
+        Examples of possible field type arguments are 'page number', 'chapter',
+        'paragraph count', 'time', 'file name', 'creator', 'creation date', etc.
+        The full syntax of the ODF field tags is not mandatory; the right
+        namespace prefix is automatically added if the given type indicator
+        doesn't contain a semicolon, and every space is replaced by a '-'. So,
+        a field type like, say "text:word-count" may be specified as
+        "word count".
+        
+        This method may be used in order to display a declared user field. To
+        do so, the field type must be 'variable' instead of a regular ODF
+        text field, and a 'name' parameter must be provided with the name of an
+        existing (ot to be created) user field declaration.
+        
+        While the content of a text field is often computed and displayed
+        dynamically by ODF-compliant viewers, it's possible to provide an
+        alternative text that will be persistently stored in the field and
+        available for applications which are note able to compute the content
+        and/or for users who need to know the last displayed value. Such an
+        alternative content is provided through a 'text' option.
+        
+        It's possible to provide the new text field with one or more attributes
+        as a hash through a 'attributes' parameter. The most common attributes
+        are 'fixed' and 'style'; the first one is a boolean, the
+        second one is the name of a display format. The 'fixed' attribute, if
+        'true', prevents the ODF-compliant editors and viewers from refreshing
+        the content of the field (for example a fixed date field displays the
+        same date forever instead of the current date). The 'style' attribute
+        is the name of a display format (it's recommended to associate every
+        date, time or numeric field to a display format, while the default
+        display format of some ODF editors may be convenient for some needs).
+        Here the 'style' attribute is a shorcut for 'style:data-style-name';
+        see the ODF 1.1 specification §6.7.7 for a full description of this
+        kind of styles.
+        
+        Other attributes depend on the kind of content. The following example
+        creates a fixed time field; the time value is stored as standard
+        (ISO 8601) date format and the alternative text is an arbitrary local
+        representation of the same; the presentation style (for applications
+        that can deal with ODF number styles) is "MyTimeStyle" (that is supposed
+        to be the name of a time style defined as an automatic style in the
+        document):
+        
+                $doc->setTextField (
+                        $paragraph, 'time',
+                        text            => "17:03:25",
+                        attributes      => {
+                                fixed           => 'true',
+                                'time value'    => "2010-02-25T17:03:25",
+                                style           => "MyTimeStyle"
+                        );
+         
+         Note that in this example, if 'fixed' was 'false' or undef, a fully
+         functional ODF editor could dynamically update the 'time value'
+         according to the current date and the text content according to the
+         current time and the given style. Here the internal value is a
+         'time value'; it would be the same for any field type containing a
+         time value (such as, say, a 'print time' or a 'creation time' field).
+         For other field types, the corresponding attribute would be
+         'date value', 'string value', 'boolean value', or just 'value'. For
+         any detailed information about the possible attribute combinations
+         according to the field types, have a look at the chapter 6 of ODF 1.1.
+         
+        By default, the field is inserted at the beginning of the given text
+        element. But, thanks to the optional position parameters, it can be put
+        anywhere within the text of the element. The position parameters
+	are 'offset', 'before', 'after', 'replace', and 'way', and they work
+	like with setBookmark() and other methods. See also setChildElement()
+	in OODoc::XPath. If the 'replace' option is used, the matching substring
+	is deleted and replaced by the text field. The next example inserts
+	the name of the author of the last change (i.e. the 'creator', according
+	to the ODF vocabulary) as a replacement of a "AUTHOR HERE" substring
+	searched backward somewhere in a 50-character-long area at the end of
+	the target element:
 	
-	This method works the same way as setSpan() to retrieve the strings
+	        $doc->setTextField (
+	                $paragraph, 'creator',
+	                replace         => "AUTHOR HERE",
+	                offset          => 50,
+	                way             => 'backward'
+	                );
+	                
+	and the code below appends after the last character of the paragraph a
+	'file name' field that will display the full path of the file:
+	
+	        $doc->setTextField (
+	                $paragraph, 'file name',
+	                offset          => 'end',
+	                attributes      => {
+	                        display         => 'full'
+	                        }
+                        );
+
+        The last example creates a display area in a given paragraph after a
+        given substring for a declared variable whose name is "Amount" (see
+        setUserFieldDeclaration() in OpenOffice::OODoc::XPath to see how such
+        a variable may be declared):
+        
+                $doc->setTextField (
+                        $paragraph, 'variable',
+                        name            => "Amount",
+                        replace         => "AMOUNT HERE"
+                        );
+
+=head3	setTextFields(element, expression, field-type [, options])
+
+	Replaces every substring that matches the given expression in the given
+	text element by a variable text field. See textField() in the present
+	manual chapter for some information about text fields.
+	
+	This method works the same way as setTextSpans() to retrieve the strings
 	to be replaced. However, each matching string becomes invisible and
 	is replaced by the variable field.
 	
@@ -2651,11 +2952,221 @@ presentation which is one of the foundations of the OpenDocument format.
 	later than the current time:
 	
 		$section = $doc->getSection("Variables");
-		$doc->setTextField
+		$doc->setTextFields
 			(
 			$section, "TIMESTAMP", 'time',
 			'time-adjust' => 'PT02H'
 			);
+	
+	This method returns the text field elements as a list.
+	
+	See also setTextField().
+
+=head3  setTextSpan(path, position, style [, options])
+
+=head3  setTextSpan(element, style [, options])
+
+        Inserts a substring with a special text style in a selected position
+        within the content of an existing text element (namely a paragraph or
+        a heading). Unlike setSpan() and setTextSpan(), inserts only one span
+        (or nothing if the conditions are not met).
+        
+        A "text span" is a substring whose presentation style differs from the
+        style of the text element to which it belongs. For example, a given
+        "span" could be in italics while the rest of the paragraph is in normal
+        characters. A text span is a special element that contains text but that
+        must be included in a paragraph or a heading. Caution: the same word has
+        a different meaning when it's used about table cells (see cellSpan()).
+	The properties of a text span can be related to any kind of character
+	string presentation, such as font, font size, font weight, font
+	style, and colors (background and foreground). Whatever these
+	properties, they apply through a style.
+
+	setTextSpan() works on any kind of text container, whatever its
+	hierarchical level. For example, if the given element is a table,
+	the span style attribution applies to every cell of the table. And
+	the same change can be done in all the displayable content not
+	including page headers, page footers, and page backgrounds through
+	a single setTextSpans() call, if the given element is the document body
+	itself (see getBody() in OpenOffice::OODoc::XPath).
+
+        The first argument is the target element, the second one is the name of
+        a text style (existing of to be defined). The optional parameters that
+        follow specify how and where the text span should be inserted.
+        
+        The method returns the new text span object, or undef in case of
+        failure.
+        
+        The location of the text span may be specified using the same options as
+        the setChildElement() which is described in the OODoc::XPath manual.
+        
+        A 'capture' parameter, whose value is a string, means that the first
+        substring that matches it should become the content of the new text
+        span. The following instruction replaces the first appearance of the
+        "ODF" substring in a given paragraph by a text span whose content will
+        be "ODF" and whose style will be "Standout"; in other words, it tells
+        that the style "Standout" will apply to the first "ODF" substring:
+        
+            $doc->setTextSpan($paragraph, 'Standout', capture => "ODF");
+
+        It's possible to apply a text style and to change the text content in
+        a single operation using both the 'replace' and the 'text' options.
+        If 'text' is set, its value is used as the text of the new span element.
+        In the next example, the "ODF" substring will be removed and replaced
+        by a text span whose style will be "Standout" and content will be
+        "OpenDocument" instead of "ODF":
+        
+            $doc->setTextSpan(
+                $paragraph, "Standout",
+                replace => "ODF",
+                text    => "OpenDocument"
+                );
+        
+        Note that there is no default text, so if 'replace' is set while 'text'
+        is not set, the matching substring is deleted and replaced by a text
+        span with a style but without content, resulting in useless markup
+        (there are more convenient ways to just delete a substring).
+        
+        Practically, if both 'text' and 'capture' are set, the result is the
+        same as with 'replace'; however, as soon as the aim is to replace a
+        substring by a text span and not to capture the content of the substring
+        in the text span, I encourage the use of 'replace' in order to get a
+        more self-documented code.  
+        
+        It's possible to provide a search string with a 'after' or 'before'
+        option instead of 'replace'. If so, the new text span is inserted
+        after of before the first match, and no text is removed or moved into
+        the text span element, that may receive the value of 'text' (if set).
+        The example below creates a text span with the "Standout" style and
+        whose content is "OpenDocument" immediately after a the substring "the
+        best document format is ":
+        
+            $doc->setTextSpan(
+                $paragraph, "Standout",
+                after   => "the best document format is ",
+                text    => "OpenDocument"
+                );
+
+        While the 'replace', 'after' or 'before' parameter automatically selects
+        the first match, it's possible to reverse the search, thanks to the
+        'way' option, whose possible values are 'forward' and 'backward'
+        (default='forward').
+        
+        Caution: A substring located partly in a "span" and partly outside it
+        will never match. In addition, while a text span is allowed inside
+        another text span, a text span can not be spread across element
+        boundaries.
+        
+        The 'offset' parameter is a positive or negative integer that specifies
+        the start position of the span in the text. So, this parameter allows
+        to insert a text span at an arbitrary position (counted forward from the
+        start or backward from the end).
+        
+	If 'before', 'after' or 'replace' (which are mutually exclusive) is set,
+	the 'offset' option, if provided too, specifies a search space
+	restriction and a search way. If 'offset' is positive, the search space
+	runs from 'offset' to the end; if 'offset' is negative, the start
+	position is counted from the end and the search space runs backward
+	from the given position and the beginning of the context.
+	
+	More generally, this method uses the logic and the search options of
+	setChildElement() to compute the insert point, like setAnnotation() and
+	other special intra-paragraph markup insertion methods;
+	setChildElement() is described in the OODoc::XPath manual page.
+
+        Remember that setTextSpan() creates only one text span with various
+        options; if the aim is to automatically create a text span for every
+        match of a given substring, see setTextSpans().
+
+=head3	setTextSpans(element, style [, options])
+
+        Applies a special text style to all the substrings of a given text
+	element that match a given expression. See setTextSpan() for
+	explanations about the meaning of "text span". The main difference
+	with setTextSpan() is that setTextSpans() unconditionally sets a
+	span for each substring that matches the given expression in the whole
+	target element.
+
+        The context element and the style to apply are provided as mandatory
+        arguments. They are followed by the named search parameters. These
+        parameters are the same as for setTextSpan(). Warning: the user must
+        ensure that the provided search parameters make sense and can't result
+        in an infinite loop. For example, the following instruction will
+        attempt to create an infinite sequence of continuous bookmarks before
+        the first occurrence of "xyz" substring, if this substring exists:
+        
+                $doc->setTextSpans(     # Wrong !
+                        $paragraph, "SomeStyle",
+                        before  => "xyz"
+                        );
+
+        Taking the following paragraph as an example:
+
+	"OpenOffice.org includes Writer, Calc, Draw and Impress"
+
+	Assuming this text is contained in a $p element, the following
+	instruction gives the "Highlight" style to the "OpenOffice.org",
+	"Writer", "Calc", "Draw", and "Impress" substrings:
+
+		$doc->setTextSpans(
+		    $p, "HighLight",
+		    capture => 'OpenOffice\.org|Writer|Draw|Calc|Impress'
+		    );
+
+        The given context may be any element, including the whole document,
+        and not only a paragraph. This last example produces the same effect
+        as the previous one, but it operates between two given arbitrary text
+        bookmarks that may be in different paragraphs in the document, while
+        the context is the document body:
+        
+                $doc->setTextSpans(
+                    $doc->getBody(), "HighLight",
+                    capture => 'OpenOffice\.org|Writer|Draw|Calc|Impress',
+                    start_mark => $doc->getBookmark("BM1"),
+                    end_mark   => $doc->getBookmark("BM2")
+                    ); 
+
+        See also setTextSpan(), removeSpan() and setHyperlink().
+
+=head3  setUserFieldDeclaration(name [, options])
+
+        Creates a user field declaration for the document. Allowed options
+        are:
+        
+                'type'  => the data type (default=string)
+                'value' => the initial value (default="")
+        
+        Returns the new variable element if successful. Does nothing and
+        returns undef if the variable already exists. The example below creates
+        a declaration for a variable whose name="Amount", type=float and
+        value=1234.56
+        
+                $doc->setUserFieldDeclaration(
+                        "Amount",
+                        type    => 'float',
+                        value   => 1234.56
+                        ); 
+        
+        See also getUserField(), userFieldValue(), setUserFieldReference().
+
+=head3  setUserFieldReference(context, name [, options])
+
+        Puts a displayable user field reference somewhere is the content of a
+        text element. The first argument is the context (should be a paragraph
+        or heading element). The second one is the name of a user field
+        (existing or to be created using, for example, setUserFieldDeclaration).
+        
+        Each user field reference in a document displays the value of the
+        corresponding user field declaration.
+        
+        If the 'check' option is set to 'true', warns and does nothing unless
+        the user field declaration exists.
+        
+        A 'style' optional parameter is allowed; if set, it must specify the
+        name of an appropriate format style according to the data type of the
+        user field declaration.
+        
+        By default, this 
 
 =head3	tableName(table [, newname])
 
@@ -2667,6 +3178,12 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	If the new name is the name of an existing table, the table is not
 	renamed and an error message is produced.
+
+=head3	tableStyle(table [, style])
+
+        Returns the current style of a given table, or replaces it with a
+        new style given as the second argument. The table can be indicated
+        by number, logical name or reference.
 
 =head3	textBoxCoordinates(text_box [, new_coord])
 
@@ -2708,12 +3225,6 @@ presentation which is one of the foundations of the OpenDocument format.
 	Caution: The text identifiers created or changed by other applications
 	are presently *not* preserved when the document is edited through
 	OpenOffice.org.
-
-=head3	tableStyle(table [, style])
-
-        Returns the current style of a given table, or replaces it with a
-        new style given as the second argument. The table can be indicated
-        by number, logical name or reference.
 
 =head3	textField(type [, options])
 
@@ -2862,43 +3373,13 @@ presentation which is one of the foundations of the OpenDocument format.
         This method can be replaced by cellValue() which allows reads and
 	writes.
 
-=head3	updateUserFieldReferences(user_field)
+=head3	updateUserFieldReferences(user_field [, context])
 
 	Forces an immediate update of the display representation(s) of
 	a given user field, according to the actual value of the field.
-
-	See also userFieldValue().
-
-=head3	userFieldValue(user_field [, value])
-
-	Reads the stored value of a given user field or changes it if a
-	value is provided. The 1st argument can be either the name of the
-	field (as it appears for the end-user) or a previously loaded
-	user field element. See also getUserFieldElement().
-
-	This method doesn't create any new user field. It can only read or
-	update an existing one.
-
-	If the given user field is numeric (ex: date, currency) the returned
-	and/or provided value is the internally stored value, and not the
-	displayed one.
-
-	Warning: the changes made in a document using userFieldValue() don't
-	necessarily produce visible changes for the end-user. This method
-	can update the internal value of a field, but not the displayable
-	representations of this field. The way these representations are
-	updated (or not) according to the internal value depends on the
-	field refreshment logic of the editing or printing software. However,
-	this update can be explicitly executed through another OODoc method,
-	updateUserFieldReferences().
-
-=head3	variableValue(name/element [, newvalue])
-
-	Returns the current value of the given user-defined variable or, if
-	a new value is provided as the second argument, updates the variable
-	accordingly.
-
-	[Contribution by Andrew Layton]
+	
+	It's possible to restrict the scope to a particular context, that
+	may be provided as an optional argument.
 
 =head2	OpenOffice::OODoc::Element methods
 

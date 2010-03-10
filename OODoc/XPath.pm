@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 2.232 2010-01-10 JMG$
+#	$Id : XPath.pm 2.233 2010-03-10 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2010 by Genicorp, S.A. (www.genicorp.com)
@@ -9,9 +9,36 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 2.232;
+our	$VERSION	= 2.233;
 use	XML::Twig	3.32;
 use	Encode;
+require	Exporter;
+our	@ISA	= qw    ( Exporter );
+our	@EXPORT	= qw
+                        (
+                        TRUE FALSE is_true is_false
+                        odfLocaltime odfTimelocal
+                        );
+
+#------------------------------------------------------------------------------
+
+use constant
+        {
+        TRUE    => 1,
+        FALSE   => 0
+        };
+
+sub     is_true
+        {
+        my $arg = shift         or return FALSE;
+        $arg    = lc $arg;
+        return ($arg eq '1' || $arg eq 'true' || $arg eq 'on') ? TRUE : FALSE;
+        }
+
+sub     is_not_true
+        {
+        return is_true(shift) ? FALSE : TRUE; 
+        }
 
 #------------------------------------------------------------------------------
 
@@ -21,9 +48,12 @@ BEGIN	{
 	*getXMLContent		= *exportXMLContent;
 	*getContent		= *exportXMLContent;
 	*getChildElementByName	= *selectChildElementByName;
+	*getElementByIdentifier = *selectElementByIdentifier;
 	*blankSpaces		= *spaces;
 	*createSpaces		= *spaces;
 	*getFrame		= *getFrameElement;
+	*getUserFieldElement	= *getUserField;
+	*getVariableElement     = *getVariable;
 	*getNodeByXPath		= *selectNodeByXPath;
 	*getNodesByXPath	= *selectNodesByXPath;
 	*isCalcDocument		= *isSpreadsheet;
@@ -50,6 +80,8 @@ our	$CHARS_TO_ESCAPE	= "\"<>'&";
 our	$LOCAL_CHARSET		= 'utf8';
 					# standard ODF character set
 our	$OO_CHARSET		= 'utf8';
+                                        # default element identifier
+our     $ELT_ID                 = 'text:id';
 
 #------------------------------------------------------------------------------
 # basic conversion between internal & printable encodings
@@ -170,14 +202,33 @@ sub	getObjectDescription
 	return $self->getXPathValue($element, 'svg:desc');
 	}
 
+sub     getObjectName
+        {
+	my $self	= shift;
+	my $element	= shift or return undef;
+	my $name	= shift;
+	my $attr        = $element->getPrefix() . ':name' ;
+        return $self->getAttribute($element, $attr);        
+        }
+
+sub     setObjectName
+        {
+	my $self	= shift;
+	my $element	= shift or return undef;
+	my $name	= shift;
+	my $attr        = $element->getPrefix() . ':name' ;
+        return $self->setAttribute($element, $attr, @_);        
+        }
+
 sub	objectName
 	{
 	my $self	= shift;
 	my $element	= shift or return undef;
 	my $name	= shift;
+	my $attr        = $element->getPrefix() . ':name' ;
 	return (defined $name) ?
-		$self->setAttribute($element, 'draw:name' => $name)	:
-		$self->getAttribute($element, 'draw:name');
+		$self->setAttribute($element, $attr => $name)	:
+		$self->getAttribute($element, $attr);
 	}
 
 #------------------------------------------------------------------------------
@@ -305,16 +356,28 @@ sub	_find_text
 sub	_search_content
 	{
 	my $self	= shift;
-	my $element	= shift or return undef;
+	my $node	= shift or return undef;
 	my $content	= undef;
 
-	foreach my $node ($element->getDescendantTextNodes)
-		{
-		my $text = $self->_find_text($node->text, @_);
-		if (defined $text)
-			{
-			$node->set_text($text);
-			$content .= $text;
+        if ($node->isTextNode)
+                {
+                my $text = $self->_find_text($node->text, @_);
+                if (defined $text)
+                        {
+                        $node->set_text($text);
+                        $content = $text;
+                        }
+                }    
+        else
+                {        
+	        foreach my $n ($node->getDescendantTextNodes)
+		        {
+		        my $text = $self->_find_text($n->text, @_);
+		        if (defined $text)
+			        {
+			        $n->set_text($text);
+			        $content .= $text;
+			        }
 			}
 		}
 	return $content;
@@ -435,16 +498,7 @@ sub	new
 		    $OpenOffice::OODoc::XPath::XMLNAMES{$m};
 		}
 					# create the XML::Twig
-	if 	(
-		$self->{'readable_XML'} &&
-		    (
-		    	($self->{'readable_XML'} eq '1')
-				||
-			($self->{'readable_XML'} eq 'true')
-				||
-			($self->{'readable_XML'} eq 'on')
-		    )
-		)
+	if 	(is_true($self->{'readable_XML'}))
 			{
 			$self->{'readable_XML'} = 'indented';
 			}
@@ -535,7 +589,6 @@ sub	new
 		return undef;
 		}
 						# XML content loaded & parsed
-	$self->{'context'} = $self->{'xpath'};
 	bless $self, $class;
 	
 	$self->{'opendocument'} = $self->isOpenDocument;
@@ -549,8 +602,9 @@ sub	new
 	
 	$self->{'member'} = $self->{'part'};		# for compatibility
 	$self->{'archive'} = $self->{'container'};	# for compatibility
+	$self->{'context'} = $self->getRoot;
 	$self->{'body'} = $self->getBody;
-	
+
 	return $self;
 	}
 
@@ -560,15 +614,16 @@ sub	new
 sub	DESTROY
 	{
 	my $self	= shift;
+
 	if ($self->{'body'})
 		{
-		$self->{'body'}->delete();
+		$self->{'body'}->dispose();
 		}
 	delete $self->{'body'};
 	if ($self->{'context'})
-		{
-		$self->{'context'}->dispose();
-		}
+	        {
+	        $self->{'context'}->dispose();
+	        }
 	delete $self->{'context'};
 	if ($self->{'xpath'})
 		{
@@ -611,9 +666,8 @@ sub	save
 	my $archive	= $self->{'container'};
 	unless ($archive)
 		{
-		my $ro = $self->{'read_only'};
-		return undef if $ro &&
-			(($ro eq '1') || ($ro eq 'on') || ($ro eq 'true'));
+		return undef if is_true($self->{'read_only'});
+
 		if ($filename)
 			{
 			open my $fh, ">:utf8", $filename;
@@ -732,6 +786,17 @@ sub	getRoot
 	}
 
 #------------------------------------------------------------------------------
+# returns the name of the document part (content, styles, meta, ...)
+
+sub     getPartName
+        {
+        my $self        = shift;
+        my $name        = $self->getRoot->getName;
+        $name           =~ s/^office:document-//;
+        return $name;
+        }
+
+#------------------------------------------------------------------------------
 # returns the root element of the XML document
 
 sub	getRootElement
@@ -759,7 +824,7 @@ sub	currentContext
 sub	resetCurrentContext
 	{
 	$self		= shift;
-	return $self->currentContext($self->{'xpath'});
+	return $self->currentContext($self->getRoot);
 	}
 
 #------------------------------------------------------------------------------
@@ -818,13 +883,15 @@ sub	getBody
 
 	return $self->{'body'} if ref $self->{'body'};
 	
+	my $root = $self->getRoot;
 	if ($self->{'body_path'})
 		{
-		$self->{'body'} =$self->getElement($self->{'body_path'}, 0);
+		$self->{'body'} = $self->getElement
+		                        ($self->{'body_path'}, 0, $root);
 		return $self->{'body'};
 		}
 
-	my $office_body = $self->getElement('//office:body', 0);
+	my $office_body = $self->getElement('//office:body', 0, $root);
 	
 	if ($office_body)
 		{
@@ -855,7 +922,7 @@ sub	cloneContent
 
 	unless ($source && $source->{'xpath'})
 		{
-		warn "[" . __PACKAGE__ . "]::cloneContent - No valid source\n";
+		warn "[" . __PACKAGE__ . "::cloneContent] No valid source\n";
 		return undef;
 		}
 
@@ -876,6 +943,12 @@ sub	exportXMLElement
 	my $path	= shift;
 	my $element	=
 		(ref $path) ? $path : $self->getElement($path, shift);
+	unless (defined $element)
+	        {
+	        warn    "[" . __PACKAGE__ . "::exportXMLElement]] "     .
+	                "Missing element\n";
+	        return undef;
+	        }
 	return $element->sprint(@_);
 	}
 
@@ -903,7 +976,7 @@ sub	getElement
 		return	$path->isElementNode ? $path : undef;
 		}
 	my $pos		= shift || 0;
-	my $context	= shift || $self->{'context'};
+	my $context	= shift || $self->{'context'} || $self->getRoot;
 	if (defined $pos && (($pos =~ /^\d*$/) || ($pos =~ /^[\d+-]\d+$/)))
 		{
 		my $node = $self->selectNodeByXPath($context, $path, $pos);
@@ -941,6 +1014,168 @@ sub	selectChildElementByName
 	my $element	= ref $path ? $path : $self->getElement($path, shift);
 	return undef			unless $element;
 	return $element->selectChildElement(@_);
+	}
+
+#-----------------------------------------------------------------------------
+# create a user field
+
+sub     setUserFieldDeclaration
+        {
+        my $self        = shift;
+        my $name        = shift         or return undef;
+        my %attr        =
+                        (
+                        type    => 'string',
+                        value   => "",
+                        @_
+                        );
+
+        return undef if $self->getUserField($name);
+
+        my $body        = $self->getBody;
+        my $context     = $body->first_child('text:user-field-decls');
+        unless ($context)
+                {
+                $context = $self->appendElement
+                        ($body, 'text:user-field-decls');
+                }
+
+        
+        my $va =
+            (
+                ($attr{'type'} eq 'float')      ||
+                ($attr{'type'} eq 'currency')   ||
+                ($attr{'type'} eq 'percentage')
+            ) ?
+                'office:value' : "office:$attr{'type'}-value" ;
+        $attr{'office:value-type'}      = $attr{'type'};
+        $attr{$va}                      = $attr{'value'};
+        $attr{'text:name'}              = $name;
+        $attr{'office:currency'}        = $attr{'currency'};
+        delete @attr{qw(type value currency)};
+
+        return $self->appendElement
+                (
+                $context, 'text:user-field-decl',
+                attributes => { %attr }
+                );
+        }
+
+#-----------------------------------------------------------------------------
+# get user field element
+
+sub	getUserField
+	{
+	my $self	= shift;
+	my $name	= shift;
+
+	unless ($name)
+		{
+		warn "[" . __PACKAGE__ . "::getUserField] Missing name\n";
+		return undef;
+		}
+	if (ref $name)
+		{
+		my $n = $name->getName;
+		return ($n eq 'text:user-field-decl') ? $name : undef;
+		}
+	$name = $self->inputTextConversion($name);
+	my $context     = $self->getRoot();
+	if ($self->getPartName() eq 'styles')
+	        {
+	        $context = shift || $self->currentContext;
+	        }
+	return $self->getNodeByXPath
+			(
+			"//text:user-field-decl[\@text:name=\"$name\"]",
+			$context
+			);
+	}
+
+#-----------------------------------------------------------------------------
+# get user field list
+
+sub     getUserFields
+        {
+        my $self        = shift;
+        my $context     = $self->getRoot;
+print "getUserFields: partie " . $self->getPartName;
+        if ($self->getPartName() eq 'styles')
+                {
+                $context = shift || $self->currentContext;
+                }
+print "getUserFields: contexte " . $context->getName;
+        return $self->selectNodesByXPath('//text:user-field-decl', $context);
+        }
+
+#-----------------------------------------------------------------------------
+# get/set user field value
+
+sub	userFieldValue
+	{
+	my $self	= shift;
+	my $field	= $self->getUserField(shift) or return undef;
+	my $value	= shift;
+
+	my $value_att	= $self->fieldValueAttributeName($field);
+
+	if (defined $value)
+		{
+		if ($value)
+			{
+			$self->setAttribute($field, $value_att, $value);
+			}
+		else
+			{
+			$field->set_att($value_att => $value);
+			}
+		}
+	return $self->getAttribute($field, $value_att);
+	}
+
+#-----------------------------------------------------------------------------
+# get a variable element (contributed by Andrew Layton)
+
+sub	getVariable
+	{
+	my $self	= shift;
+	my $name	= shift;
+
+	unless ($name) {
+		warn	"[" . __PACKAGE__ . "::getVariable] " .
+			"Missing name\n";
+		return undef;
+		}
+
+	if (ref $name) {
+		my $n = $name->getName;
+		return ($n eq 'text:variable-set') ? $name : undef;
+	}
+
+	$name = $self->inputTextConversion($name);
+	return $self->getNodeByXPath
+	        ("//text:variable-set[\@text:name=\"$name\"]");
+	}
+
+#-----------------------------------------------------------------------------
+# get/set the content of a variable element (contributed by Andrew Layton)
+
+sub	variableValue
+	{
+	my $self	= shift;
+	my $variable	= $self->getVariable(shift) or return undef;
+	my $value	= shift;
+
+	my $value_att	= $self->fieldValueAttributeName($variable);
+
+	if (defined $value)
+		{
+		$self->setAttribute($variable, $value_att, $value);
+		$self->setText($variable, $value);
+		}
+
+	$value = $self->getAttribute($variable, $value_att);
+	return defined $value ? $value : $self->getText($variable);
 	}
 
 #-----------------------------------------------------------------------------
@@ -1486,8 +1721,23 @@ sub	selectNodesByXPath
 	if (ref $p1)	{ $context = $p1; $path = $p2; }
 	else		{ $path = $p1; $context = $p2; }
 	($path, $context) = $self->xpathInContext($path, $context);
+	unless (ref $context)
+	        {
+	        warn    "[" . __PACKAGE__ . "::selectNodesByXPath] "    .
+	                "Bad context argument\n";
+	        return undef;
+	        }
 	return $context->get_xpath($path);
 	}
+
+#------------------------------------------------------------------------------
+# like selectNodesByXPath, without variable context (direct XML::Twig method)
+
+sub     get_xpath
+        {
+        my $self        = shift;
+        return $self->{'xpath'}->get_xpath(@_);
+        }
 
 #------------------------------------------------------------------------------
 # brute XPath single node selection; allows any XML::XPath expression
@@ -1503,6 +1753,12 @@ sub	selectNodeByXPath
 	if (ref $p1)	{ $context = $p1; $path = $p2; }
 	else		{ $path = $p1; $context = $p2; }
 	($path, $context) = $self->xpathInContext($path, $context);
+	unless (ref $context)
+	        {
+	        warn    "[" . __PACKAGE__ . "::selectNodeByXPath] "    .
+	                "Bad context argument\n";
+	        return undef;
+	        }
 	return $context->get_xpath($path, $offset);
 	}
 
@@ -1518,6 +1774,12 @@ sub	getXPathValue
 	if (ref $p1)	{ $context = $p1; $path = $p2; }
 	else		{ $path = $p1; $context = $p2; }
 	($path, $context) = $self->xpathInContext($path, $context);
+	unless (ref $context)
+	        {
+	        warn    "[" . __PACKAGE__ . "::getXPathValue] "    .
+	                "Bad context argument\n";
+	        return undef;
+	        }
 	return $self->outputTextConversion($context->findvalue($path, @_));
 	}
 
@@ -1636,23 +1898,32 @@ sub	makeXPath
 sub	selectElementByAttribute
 	{
 	my $self	= shift;
-	my $path	= shift;
-	my $key		= shift;
-	my $value	= shift || '';
-
-	my @candidates	=  $self->getElementList($path);
-	return @candidates	unless $key;
-
-	for (@candidates)
-		{
-		if ($_->isElementNode)
-			{
-			my $v = $self->getAttribute($_, $key);
-			return $_ if (defined $v && ($v =~ /$value/));
-			}
-		}
-	return undef;
+	my $path	= shift         or return undef;
+	my $key		= shift         or return undef;
+	my $arg3        = shift;
+	
+	my $xp  = undef;
+	if (defined $arg3 && ! ref $arg3)       # arg3 = value
+	        {
+	        my $value = $self->inputTextConversion($arg3);
+	        $xp = "//$path\[\@$key=\"$value\"\]";
+	        }
+	else                                    # arg3 = undef or context
+	        {
+	        $xp = "//$path\[\@$key\]" ; unshift @_, $arg3;
+	        }
+        
+        return $self->selectNodeByXPath($xp, @_);
 	}
+
+#------------------------------------------------------------------------------
+
+sub     selectElementByIdentifier
+        {
+        my $self        = shift;
+        
+        return $self->selectElementByAttribute(shift, $ELT_ID, @_);
+        }
 
 #------------------------------------------------------------------------------
 # selects list of elements by path and attribute
@@ -1660,24 +1931,24 @@ sub	selectElementByAttribute
 sub	selectElementsByAttribute
 	{
 	my $self	= shift;
-	my $path	= shift;
-	my $key		= shift;
-	my $value	= shift || '';
+	my $path	= shift         or return undef;
+	my $key		= shift         or return undef;
+	my $arg3        = shift;
+	
+	my $xp  = undef;
+	if (defined $arg3 && ! ref $arg3)       # arg3 = value
+	        {
+	        my $value = $self->inputTextConversion($arg3);
+	        $xp = "//$path\[\@$key=\"$value\"\]";
+	        }
+	else                                    # arg3 = undef or context
+	        {
+	        $xp = "//$path\[\@$key\]" ; unshift @_, $arg3;
+	        }
+        
 
-	my @candidates	=  $self->getElementList($path);
-	return @candidates	unless $key;
-
-	my @selection	= ();
-	for (@candidates)
-		{
-		if ($_->isElementNode)
-			{
-			my $v	= $self->getAttribute($_, $key);
-			push @selection, $_	if ($v && ($v =~ /$value/));
-			}
-		}
-
-	return wantarray ? @selection : $selection[0];
+	return wantarray ?      $self->selectNodesByXPath($xp, @_)      :
+	                        $self->selectNodeByXPath($xp, @_);
 	}
 
 #------------------------------------------------------------------------------
@@ -1860,9 +2131,6 @@ sub	getAttributes
 	my $path	= shift;
 	my $pos		= (ref $path) ? undef : shift;
 
-	return undef	unless $path;
-	$pos	= 0	unless $pos;
-
 	my $node	= $self->getElement($path, $pos, @_);
 	return undef	unless $path;
 
@@ -1885,12 +2153,15 @@ sub	getAttribute
 	my $self	= shift;
 	my $path	= shift;
 	my $pos		= (ref $path) ? undef : shift;
-	my $name	= shift;
-
-	return undef	unless $path;
-	$pos	= 0	unless $pos;
+	my $name	= shift or return undef;
 
 	my $node	= $self->getElement($path, $pos, @_);
+	unless ($name =~ /:/)
+	        {
+	        my $prefix = $node->ns_prefix;
+	        $name = $prefix . ':' . $name   if $prefix;
+	        }
+	$name =~ s/ /-/g;
 	return	$self->outputTextConversion($node->att($name));
 	}
 
@@ -1906,20 +2177,27 @@ sub	setAttributes
 
 	my $node	= $self->getElement($path, $pos, $attr{'context'});
 	return undef	unless $node;
+	my $prefix      = $node->ns_prefix();
 
 	foreach my $k (keys %attr)
 		{
+		my $att_name = $k;
+		$att_name =~ s/ /-/g;
+		if (!($k =~ /:/) && $prefix)
+		        {
+		        $att_name = $prefix . ':' . $att_name;
+		        }
 		if (defined $attr{$k})
 		    {
 		    $node->set_att
 		    		(
-				$k,
+				$att_name,
 				$self->inputTextConversion($attr{$k})
 				);
 		    }
 		else
 		    {
-		    $node->del_att($k) if $node->att($k);
+		    $node->del_att($att_name) if $node->att($att_name);
 		    }
 		}
 
@@ -1940,6 +2218,12 @@ sub	setAttribute
 	my $node	= $self->getElement($path, $pos, @_)
 		or return undef;
 
+        $attribute =~ s/ /-/g;
+        unless ($attribute =~ /:/)
+                {
+                my $prefix = $node->ns_prefix;
+                $attribute = $prefix . ':' . $attribute if $prefix;                
+                }
 	if (defined $value)
 		{
 		$node->set_att
@@ -1964,11 +2248,16 @@ sub	removeAttribute
 	my $self	= shift;
 	my $path	= shift;
 	my $pos		= (ref $path) ? undef : shift;
-	my $name	= shift;
+	my $name	= shift or return undef;
 
-	my $node	= $self->getElement($path, $pos, @_);
+	my $node	= $self->getElement($path, $pos, @_)
+	                        or return undef;
 
-	return undef	unless $node;
+        unless ($name =~ /:/)
+                {
+                my $prefix = $node->ns_prefix;
+                $name = $prefix . ':' . $name   if $prefix;
+                }
 	return $node->del_att($name) if $node->att($name);
 	}
 
@@ -2160,6 +2449,16 @@ sub	appendElement
 	return $element;
 	}
 
+#-----------------------------------------------------------------------------
+# append an element to the document body
+
+sub	appendBodyElement
+	{
+	my $self	= shift;
+
+	return $self->appendElement($self->{'body'}, @_);
+	}
+
 #------------------------------------------------------------------------------
 # appends a list of children to an existing element
 
@@ -2191,6 +2490,333 @@ sub	moveElements
 	}
 
 #------------------------------------------------------------------------------
+# selects a text node in a given element according to offset & expression
+
+sub     textIndex
+        {
+        my $self        = shift;
+        my $path        = shift;
+        my $pos         = (ref $path) ? undef : shift;
+	my $element	= $self->getElement($path, $pos) or return undef;
+	my %opt         = @_;
+
+        my $offset      = $opt{'offset'};
+        my $way         = $opt{'way'} || 'forward';
+        if (defined $offset && $offset < 0)
+                {
+                $way = 'backward';
+                }
+        $offset = -abs($offset) if defined $offset && $way eq 'backward';
+
+        my $start_mark  = $opt{'start_mark'};
+        my $end_mark    = $opt{'end_mark'};
+
+        my $expr        = undef;
+        if (defined $opt{'after'})
+                {
+                $expr = $opt{'after'};
+                delete @opt{qw(before replace capture content)};
+                }
+        elsif (defined $opt{'before'})
+                {
+                $expr = $opt{'before'};
+                delete @opt{qw(replace capture content)};
+                }
+        else
+                {
+                $expr = $opt{'content'} || $opt{'replace'} || $opt{'capture'};
+                }
+        $expr           = $self->inputTextConversion($expr);
+
+        my $node        = undef;
+        my $node_text   = undef;
+        my $node_length = undef;
+        my $found       = undef;
+        my $end_pos     = undef;
+        my $match       = undef;
+
+        if ($way ne 'backward')         # positive offset, forward
+                {
+                if ($start_mark)
+                        {
+                        my $n = $start_mark->last_descendant;
+                        $start_mark = $n        if $n;
+                        $node = $n->next_elt($element, '#PCDATA');
+                        }
+                else
+                        {
+                        $node = $element->first_descendant('#PCDATA');
+                        }
+                if ($end_mark && ! $node->before($end_mark))
+                        {
+                        $node = undef;
+                        }
+                ($node_length, $node_text) = $node->textLength  if $node;
+                FORWARD_LOOP: while ($node && !defined $found)
+                        {
+                        if ($end_mark && ! $node->before($end_mark))
+                                {
+                                $node = undef;
+                                last;
+                                }
+                        if (defined $offset && ($offset > $node_length))
+                                {                       # skip node
+                                ($node_length, $node_text) = $node->textLength;
+
+                                $offset -= $node_length;
+                                $node = $node->next_elt($element, '#PCDATA');
+                                }
+                        elsif (defined $expr)
+                                {                       # look for substring
+                                my $text = $node->text() || "";
+                                if (defined $offset && $offset > 0)
+                                        {
+                                        $text = substr($text, $offset);
+                                        }
+                                if ($text =~ /($expr)/)
+                                        {
+                                        $found = length($`);
+                                        $found += $offset if defined $offset;
+                                        $end_pos = $found + length($&);
+                                        $match = $1;
+                                        }
+                                unless (defined $found)
+                                        {
+                                        $offset = undef;
+                                        $node   = $node->next_elt
+                                                        ($element, '#PCDATA');
+                                        }
+                                }
+                        else                              # selected by offset
+                            {
+                            $found = $offset || 0;
+                            }
+                        }
+                }
+        else                            # negative offset, backward
+                {
+                if ($start_mark)
+                        {
+                        $node   = $start_mark->prev_elt('#PCDATA');
+                        }
+                else
+                        {
+                        $node   = $element->last_descendant('#PCDATA');
+                        }
+                if ($end_mark)
+                        {
+                        my $n = $end_mark->last_descendant;
+                        $end_mark = $n        if $n;
+                        $node = undef if
+                                ($end_mark && ! $node->after($end_mark));
+                        }
+                ($node_length, $node_text) = $node->textLength  if $node;
+                BACKWARD_LOOP: while ($node && !defined $found)
+                        {
+                        if ($end_mark && ! $node->after($end_mark))
+                                {
+                                $node = undef;
+                                last;
+                                }
+                        ($node_length, $node_text) = $node->textLength;
+                        if (defined $offset && (abs($offset) > $node_length))
+                                {                       # skip node
+                                $offset += $node_length;
+                                $node = $node->prev_elt($element, '#PCDATA');
+                                }
+                        elsif (defined $expr)
+                                {
+                                my $text = $node->text() || "";
+                                if (defined $offset && $offset < 0)
+                                        {
+                                        $text = substr($text, 0, $offset);
+                                        }
+                                my @r = ($text =~ m/($expr)/g);
+                                if (@r)
+                                        {
+                                        $found = length($`);
+                                        $end_pos = $found + length($&);
+                                        $match = $1;
+                                        }
+                                unless (defined $found)
+                                        {
+                                        $offset = undef;
+                                        $node   = $node->prev_elt
+                                                        ($element, '#PCDATA');
+                                        }
+                                }
+                        else                              # selected by offset
+                                {
+                                $found = $offset || 0;
+                                }
+                        }
+                }
+
+        return ($node, $found, $end_pos, $match);
+        }
+ 
+#------------------------------------------------------------------------------
+# creates new child elements in a given element and splits the content
+# according to a regexp
+
+sub     splitContent
+        {
+        my $self        = shift;
+        my $path        = shift;
+        my $pos         = (ref $path) ? undef : shift;
+        my $context     = $self->getElement($path, $pos) or return undef;
+        my $tag         = shift         or return undef;
+        my $expr        = $self->inputTextConversion(shift);
+        return undef unless defined $expr;        
+        my %opt         = @_;
+
+        my $prefix      = undef;        
+        if ($tag =~ /(.*):/)
+                {
+                $prefix = $1 || 'text';
+                }
+        else
+                {
+                $prefix = $context->ns_prefix() || 'text';
+                $tag = $prefix . ':' . $tag;
+                }
+
+        my %attr        = ();
+        foreach my $k (keys %opt)
+                {
+                my $a = $self->inputTextConversion($opt{$k});
+                $k = $prefix . ':' . $k         unless $k =~ /:/;
+                $attr{$k} = $a;
+                }
+        %opt            = ();
+        
+        return $context->mark("($expr)", $tag, { %attr });
+        }
+
+#------------------------------------------------------------------------------
+# creates a child element in place within an existing element
+# at a given position or before/after a given substring
+
+sub     setChildElement 
+        {
+        my $self        = shift;
+        my $path        = shift;
+        my $pos         = (ref $path) ? undef : shift;
+        my $node        = $self->getElement($path, $pos) or return undef;
+        my $name        = shift or return undef;
+        my %opt         = @_;
+        my $newnode     = undef;
+        
+        if (ref $name)
+                {
+                if ($name->isElementNode)
+                    {
+                    $newnode = $name;
+                    }
+                else
+                    {
+                    warn  "[" . __PACKAGE__ . "::setChildElement]" .
+                          "Non element object\n";
+                    return undef;
+                    }
+                }
+        else
+                {
+                unless ($name =~ /:/)
+                        {
+                        my $prefix = $node->ns_prefix() || 'text';
+                        $name = $prefix . ':' . $name;
+                        }
+                $newnode = OpenOffice::OODoc::XPath::new_element($name);
+                }
+
+       	my $offset = $opt{'offset'} || 0;
+	if (lc($offset) eq 'end')
+		{
+		$newnode->paste_last_child($node);
+		}
+	elsif (lc($offset) eq 'start')
+	        {
+	        $newnode->paste_first_child($node);
+	        }
+	else
+		{
+                my ($text_node, $start_pos, $end_pos, $match, $text) =
+                                        $self->textIndex($node, %opt);
+                if ($text_node)
+                        {
+                        if (defined $opt{'replace'} || defined $opt{'capture'})
+                                {
+                                my $t = $text_node->text;
+                                substr  (
+                                        $t, $start_pos, $end_pos - $start_pos,
+                                        ""
+                                        );
+                                $text_node->set_text($t);
+                                $newnode->paste_within($text_node, $start_pos);
+                                $newnode->set_text($match)
+                                        if      defined $opt{'capture'} &&
+                                                ! defined $opt{'text'};
+                                }
+                        else
+                                {
+                                my $p = defined $opt{'after'} ?
+                                                $end_pos : $start_pos;
+                                $newnode->paste_within($text_node, $p);
+                                }
+                        }
+                else
+                        {
+                        return undef;
+                        }
+		}
+
+        $self->setAttributes($newnode, %{$opt{'attributes'}});
+        $self->setText($newnode, $opt{'text'}) unless is_true($opt{'no_text'});
+        return $newnode;
+        }
+
+#------------------------------------------------------------------------------
+# create successive child elements
+
+sub     setChildElements
+        {
+        my $self        = shift;
+        my $path        = shift;
+        my $pos         = (ref $path) ? undef : shift;
+        my $element     = $self->getElement($path, $pos) or return undef;
+        my $name        = shift or return undef;
+        my %opt         = @_;
+
+        my @elements    = ();
+        my $node        = $self->setChildElement($element, $name, %opt);
+        push @elements, $node if $node;
+        delete $opt{'offset'};
+
+        while ($node)
+                {
+                $node = $self->setChildElement
+                                ($element, $name, %opt, start_mark => $node);
+                push @elements, $node if $node;
+                }
+
+        return @elements;
+        }
+
+#------------------------------------------------------------------------------
+
+sub     markElement
+        {
+        my $self        = shift;
+        my $context     = shift         or return undef;
+        my $tag         = shift;
+        my $expression  = $self->inputTextConversion(shift);
+        my %attr        = @_;
+        
+        return $context->mark("($expression)", $tag, { %attr });
+        }
+
+#------------------------------------------------------------------------------
 # inserts a new element before or after a given node
 
 sub	insertElement
@@ -2200,7 +2826,7 @@ sub	insertElement
 	my $pos		= (ref $path) ? undef : shift;
 	my $name	= shift;
 	my %opt		= @_;
-	$opt{'attribute'} = $opt{'attributes'} unless $opt{'attribute'};
+	$opt{'attributes'} = $opt{'attribute'} unless $opt{'attributes'};
 
 	return undef	unless $name;
 	my $element	= undef;
@@ -2249,7 +2875,7 @@ sub	insertElement
 		$element->paste_before($posnode);
 		}
 
-	$self->setAttributes($element, %{$opt{'attribute'}});
+	$self->setAttributes($element, %{$opt{'attributes'}});
 
 	return $element;
 	}
@@ -2280,7 +2906,7 @@ sub	cutElement
 	return $e;
 	}
 
-#------------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
 # splits a text element at a given offset
 
 sub	splitElement
@@ -2297,59 +2923,101 @@ sub	splitElement
 	}
 
 #------------------------------------------------------------------------------
+# get/set ODF element identifier
+
+sub     getIdentifier
+        {
+        my $self        = shift;
+	my $path	= shift;
+	my $element	=
+		(ref $path) ? $path : $self->getElement($path, shift);
+	return $self->outputTextConversion($element->getID());
+        }
+
+sub     setIdentifier
+        {
+        my $self        = shift;
+	my $path	= shift;
+	my $element	=
+		(ref $path) ? $path : $self->getElement($path, shift);
+	my $value       = shift;
+	return (defined $value) ?
+	        $self->inputTextConversion($element->setID($value))     :
+	        $self->removeIdentifier($element);
+        }
+
+sub     identifier
+        {
+        my $self        = shift;
+	my $path	= shift;
+	my $element	=
+		(ref $path) ? $path : $self->getElement($path, shift);
+	my $value       = shift;
+        return (defined $value) ?
+                $self->setIdentifier($element, $value)  :
+                $self->getIdentifier($element);
+        }
+
+sub     removeIdentifier
+        {
+        my $self        = shift;
+	my $path	= shift;
+	my $element	=
+		(ref $path) ? $path : $self->getElement($path, shift);
+	return $element->setID();
+        }
+
+sub     getElementName
+        {
+        my $self        = shift;
+        my $path        = shift;
+	my $element	=
+		(ref $path) ? $path : $self->getElement($path, shift);
+        my $attr        = $element->ns_prefix() . ':name';
+        return $self->getAttribute($element, $attr);
+        }
+
+sub     setElementName
+        {
+        my $self        = shift;
+        my $path        = shift;
+	my $element	=
+		(ref $path) ? $path : $self->getElement($path, shift);
+        my $attr        = $element->ns_prefix() . ':name';
+        return $self->setAttribute($element, $attr => shift);       
+        }
+
+sub     elementName
+        {
+        my $self        = shift;
+	my $path	= shift;
+	my $element	=
+		(ref $path) ? $path : $self->getElement($path, shift);
+	my $value       = shift;
+        return (defined $value) ?
+                $self->setElementName($element, $value)  :
+                $self->getElementName($element);       
+        }
+
+#------------------------------------------------------------------------------
 # some extensions for XML Twig elements
 package	OpenOffice::OODoc::Element;
 our @ISA	= qw ( XML::Twig::Elt );
 #------------------------------------------------------------------------------
 
-sub	getAttribute
-	{
-	my $node	= shift;
-	return $node->att(@_);
-	}
-	
-sub	setNodeValue
-	{
-	my $node	= shift;
-	return $node->set_text(@_);
-	}
-	
-sub	getValue
-	{
-	my $node	= shift;
-	return $node->text(@_);
-	}
-	
-sub	getNodeValue
-	{
-	my $node	= shift;
-	return $node->text(@_);
-	}
-	
-sub	removeChildNodes
-	{
-	my $node	= shift;
-	return $node->cut_children(@_);
-	}
-	
-sub	setName
-	{
-	my $node	= shift;
-	return $node->set_tag(@_);
-	}
-	
-sub	getParentNode
-	{
-	my $node	= shift;
-	return $node->parent(@_);
-	}
-	
-sub	getPrefix
-	{
-	my $node	= shift;
-	return $node->ns_prefix(@_);
-	}
-	
+BEGIN   {
+	*identifier             = *ID;
+	*getPrefix              = *XML::Twig::Elt::ns_prefix;
+	*getNodeValue           = *XML::Twig::Elt::text;
+	*getValue               = *XML::Twig::Elt::text;
+	*setNodeValue           = *XML::Twig::Elt::set_text;
+	*getAttribute           = *XML::Twig::Elt::att;
+	*setName                = *XML::Twig::Elt::set_tag;
+	*getParentNode          = *XML::Twig::Elt::parent;
+	*getDescendantTextNodes = *getTextDescendants;
+	*dispose                = *XML::Twig::Elt::delete;
+        }
+
 sub	hasTag
 	{
 	my $node	= shift;
@@ -2442,11 +3110,33 @@ sub	getLastChild
 	return $lc;
 	}
 
-sub	getDescendantTextNodes
+sub     getChildrenTextNodes
+        {
+        my $node        = shift;
+        return $node->children('#PCDATA');
+        }
+
+sub     getChildTextNode
+        {
+        my $node        = shift;
+        my $pos         = shift || 0;
+        my @children    = $node->children('#PCDATA');
+        return $children[$pos];
+        }
+
+sub	getTextDescendants
 	{
 	my $node	= shift;
 	return $node->descendants('#PCDATA');
 	}
+
+sub     textLength      # length of a text node
+        {
+        my $node        = shift;
+        my $text        = $node->text;
+        my $length      = length($text);
+        return wantarray ? ($length, $text) : $length;
+        }
 
 sub	appendChild
 	{
@@ -2553,6 +3243,25 @@ sub	setAttribute
 		return $node->removeAttribute($attribute);
 		}
 	}
+
+sub     setID
+        {
+        my $node        = shift;
+        return $node->setAttribute($ELT_ID, shift);
+        }
+
+sub     getID
+        {
+        my $node        = shift;
+        return $node->getAttribute($ELT_ID);
+        }
+
+sub     ID
+        {
+        my $node        = shift;
+        my $new_id      = shift;
+        return (defined $new_id) ? $node->setID($new_id) : $node->getID();
+        }
 
 sub	removeAttribute
 	{

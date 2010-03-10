@@ -1,9 +1,9 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : OODoc.pm 2.112 2010-01-27 JMG$
+#	$Id : OODoc.pm 2.121 2010-03-08 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
-#	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2010 by Genicorp, S.A. (www.genicorp.com)
 #
 #-----------------------------------------------------------------------------
 
@@ -16,7 +16,7 @@ use OpenOffice::OODoc::Manifest		2.005;
 
 package	OpenOffice::OODoc;
 use 5.008_000;
-our $VERSION				= 2.112;
+our $VERSION				= 2.121;
 
 require Exporter;
 our @ISA    = qw(Exporter);
@@ -74,48 +74,6 @@ sub	odfReadConfig
 	return 1;
 	}
 
-#-----------------------------------------------------------------------------
-
-sub	odfFile
-	{
-	return OpenOffice::OODoc::File->new(@_);
-	}
-
-sub	odfXPath
-	{
-	return OpenOffice::OODoc::XPath->new(@_);
-	}
-
-sub	odfText
-	{
-	return OpenOffice::OODoc::Text->new(@_);
-	}
-
-sub	odfMeta
-	{
-	return OpenOffice::OODoc::Meta->new(@_);
-	}
-
-sub	odfManifest
-	{
-	return OpenOffice::OODoc::Manifest->new(@_);
-	}
-
-sub	odfImage
-	{
-	return OpenOffice::OODoc::Image->new(@_);
-	}
-
-sub	odfDocument
-	{
-	return OpenOffice::OODoc::Document->new(@_);
-	}
-
-sub	odfStyles
-	{
-	return OpenOffice::OODoc::Styles->new(@_);
-	}
-	
 #-----------------------------------------------------------------------------
 # accessor for local character set control
 
@@ -176,15 +134,58 @@ sub	odfDecodeText
 	}
 
 #-----------------------------------------------------------------------------
+# constructors
+
+sub     odfDocument
+        {
+        return OpenOffice::OODoc::Document->new(@_);
+        }
+
+sub     odfContainer
+        {
+        return OpenOffice::OODoc::File->new(@_);
+        }
+
+sub     odfXPath
+        {
+        return OpenOffice::OODoc::XPath->new(@_);
+        }
+        
+sub     odfText
+        {
+        return OpenOffice::OODoc::Text->new(@_);
+        }
+
+sub     odfStyles
+        {
+        return OpenOffice::OODoc::Styles->new(@_);
+        }
+
+sub     odfImage
+        {
+        return OpenOffice::OODoc::Image->new(@_);
+        }
+
+sub     odfMeta
+        {
+        return OpenOffice::OODoc::Meta->new(@_);
+        }
+
+sub     odfManifest
+        {
+        return OpenOffice::OODoc::Manifest->new(@_);
+        }
+
+#-----------------------------------------------------------------------------
 # initialization
 
 BEGIN
 	{
 	*ooDocument		= *odfDocument;
 	*odfConnector		= *odfDocument;
-	*odfContainer		= *odfFile;
-	*odfPackage		= *odfFile;
-	*ooFile			= *odfFile;
+	*odfFile                = *odfContainer;
+	*odfPackage		= *odfContainer;
+	*ooFile			= *odfContainer;
 	*ooXPath		= *odfXPath;
 	*ooText			= *odfText;
 	*ooStyles		= *odfStyles;

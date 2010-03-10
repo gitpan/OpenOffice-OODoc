@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Styles.pm 2.025 2008-09-16 JMG$
+#	$Id : Styles.pm 2.026 2010-03-10 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
@@ -9,9 +9,9 @@
 
 package OpenOffice::OODoc::Styles;
 use	5.008_000;
-our	$VERSION	= 2.025;
+our	$VERSION	= 2.026;
 
-use	OpenOffice::OODoc::XPath	2.226;
+use	OpenOffice::OODoc::XPath	2.233;
 use	File::Basename;
 require	Exporter;
 our	@ISA	= qw ( Exporter OpenOffice::OODoc::XPath );
@@ -47,6 +47,7 @@ BEGIN	{
 	*odfLoadColorMap		= *ooLoadColorMap;
 	*rgbColor			= *oo2rgb;
 	*odfColor			= *rgb2oo;
+	*getMasterPageElement           = *getMasterPage;
 	*getPageMasterElement		= *getPageLayoutElement;
 	*getPageMasterAttributes	= *getPageLayoutAttributes;
 	*createPageMaster		= *createPageLayout;
@@ -924,7 +925,7 @@ sub	createStyle
 			"Missing style name\n";
 		return	undef;
 		}
-	my %opt = (check => 'true', @_);
+	my %opt = (check => 'false', @_);
 	
 	my $check = lc $opt{'check'} eq 'true'; delete $opt{'check'};
 	my $replace = lc $opt{'replace'} eq 'true'; delete $opt{'replace'};	 
@@ -951,12 +952,14 @@ sub	createStyle
 	my $type	= $opt{'type'} || 'style';
 	
 	my $namespace	= $opt{'namespace'} || 'style';
+	my $context     = $self->{'xpath'};
 	
-	if	($self->getElement('//office:document-content', 0))
+	my $part_name   = $self->getPartName;
+	if	($part_name eq 'content')
 		{
 		$path = $self->{'auto_style_path'};
 		}
-	elsif	($self->getElement('//office:document-styles', 0))
+	elsif	($part_name eq 'styles')
 		{
 		$path	=
 			($opt{'path'}		&& $opt{'path'} =~ /auto/)
@@ -1312,7 +1315,7 @@ sub	switchPageOrientation
 #-----------------------------------------------------------------------------
 # get the page content for a given page style
 
-sub	getMasterPageElement
+sub	getMasterPage
 	{
 	my $self	= shift;
 	my $name	= shift;
@@ -1323,8 +1326,12 @@ sub	getMasterPageElement
 		}
 	else
 		{
-		return $self->selectElementByAttribute
-				('//style:master-page', 'style:name', $name);
+		$name = $self->inputTextConversion($name);
+		return $self->getNodeByXPath
+		                (
+		                "//style:master-page[\@style:name=\"$name\"]",
+		                $self->getRoot
+		                );
 		}
 	}
 

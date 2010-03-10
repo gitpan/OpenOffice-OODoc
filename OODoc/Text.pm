@@ -1,17 +1,17 @@
 #----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.238 2010-01-27 JMG$
+#	$Id : Text.pm 2.239 2010-03-04 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
-#	Copyright 2009 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2010 by Genicorp, S.A. (www.genicorp.com)
 #
 #-----------------------------------------------------------------------------
 
 package OpenOffice::OODoc::Text;
 use	5.008_000;
-use	OpenOffice::OODoc::XPath	2.232;
+use	OpenOffice::OODoc::XPath	2.233;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.238;
+our	$VERSION	= 2.239;
 
 #-----------------------------------------------------------------------------
 # synonyms
@@ -63,12 +63,12 @@ BEGIN	{
 	*getNote			= *getNoteElement;
 	*getNoteList			= *getNoteElementList;
 	*getHeadingText			= *getHeadingContent;
-	*getUserFieldElement		= *getUserField;
 	*cellType			= *fieldType;
 	*cellValueAttributeName		= *fieldValueAttributeName;
 	*cellCurrency			= *fieldCurrency;
 	*getStyle			= *textStyle;
 	*setStyle			= *textStyle;
+	*removeMark                     = *deleteMark;
 	}
 
 #-----------------------------------------------------------------------------
@@ -249,7 +249,7 @@ sub	getText
 	my $end_text	= '';
 
 	my $line_break	= $self->{'line_separator'} || '';
-	if ($self->{'use_delimiters'} && $self->{'use_delimiters'} eq 'on')
+	if (is_true($self->{'use_delimiters'}))
 		{
 		my $name	= $element->getName;
 		$begin_text	=
@@ -415,8 +415,7 @@ sub	getTextContent
 sub	textId
 	{
 	my $self	= shift;
-	my $element	= shift		or return undef;
-	return $element->textId(@_);
+	return $self->identifier(@_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -425,46 +424,47 @@ sub	textId
 # if $action is defined, it's treated as a reference to a callback procedure
 # to be executed for each node matching the pattern, with the node as arg.
 
-sub	selectElementsByContent
-	{
+sub     selectElementsByContent
+        {
 	my $self	= shift;
-	my $pattern	= shift;
-
-	my $context = $self->{'context'}->isa('OpenOffice::OODoc::Element') ?
-			$self->{'context'} : $self->{'body'};
-
-
-	my @elements	= ();
-	foreach my $element ($context->getChildNodes)
-		{
-		next if
-			(
-				(! $element->isElementNode)
-				||
-				($element->isSequenceDeclarations)
-			);
-		push @elements, $element
-			if (
-				(! $pattern)
-				||
-				($pattern eq '.*')
-				||
-				(defined $self->_search_content
-					($element, $pattern, @_, $element))
-			   );
-		}
-
-	return @elements;
-	}
-
-#-----------------------------------------------------------------------------
-
-sub	selectElementByTextId
-	{
-	my $self	= shift;
-	my $id		= $self->inputTextConversion(shift) or return undef;
-	return $self->getNodeByXPath("//*[\@text:id=\"$id\"]");
-	}
+	my $arg1        = shift;
+	my $pattern     = undef;
+	my $context     = undef;
+	
+	if (ref $arg1)
+	        {
+	        $context        = $arg1;
+	        $pattern        = shift;
+	        }
+	else
+	        {
+	        $context        =
+	                $self->{'context'}->isa('OpenOffice::OODoc::Element') ?
+			        $self->{'context'} : $self->{'body'};
+		$pattern        = $arg1;
+	        }
+	
+        my @elements = ();
+        foreach my $node ($context->getTextDescendants)
+                {
+                if
+                        (
+                                (! $pattern)
+                                        ||
+                                ($pattern eq '.*')
+                                        ||
+                                (
+                                defined $self->_search_content
+                                        ($node, $pattern, @_, $element)
+                                )
+                        )
+                        {
+                        my $element = $node->parent or next;
+                        push @elements, $element if $element->is_elt;
+                        }
+                }
+        return @elements;
+        }
 
 #-----------------------------------------------------------------------------
 # select the 1st element matching a given pattern
@@ -472,29 +472,42 @@ sub	selectElementByTextId
 sub	selectElementByContent
 	{
 	my $self	= shift;
-	my $pattern	= shift;
+	my $arg1        = shift;
+	my $pattern     = undef;
+	my $context     = undef;
+	
+	if (ref $arg1)
+	        {
+	        $context        = $arg1;
+	        $pattern        = shift;
+	        }
+	else
+	        {
+	        $context        =
+	                $self->{'context'}->isa('OpenOffice::OODoc::Element') ?
+			        $self->{'context'} : $self->{'body'};
+		$pattern        = $arg1;
+	        }
 
-	my $context = $self->{'context'}->isa('OpenOffice::OODoc::Element') ?
-			$self->{'context'} : $self->{'body'};
+        foreach my $node ($context->getTextDescendants)
+                {
+                if
+                        (
+                                (! $pattern)
+                                        ||
+                                ($pattern eq '.*')
+                                        ||
+                                (
+                                defined $self->_search_content
+                                        ($node, $pattern, @_, $element)
+                                )
+                        )
+                        {
+                        my $element = $node->parent or next;
+                        return $element if $element->is_elt;
+                        }
+                }
 
-	foreach my $element ($context->getChildNodes)
-		{
-		next if
-			(
-				(! $element->isElementNode)
-				||
-				($element->isSequenceDeclarations)
-			);
-		return $element
-			if (
-				(! $pattern)
-				||
-				($pattern eq '.*')
-				||
-				(defined $self->_search_content
-					($element, $pattern, @_, $element))
-			   );
-		}
 	return undef;
 	}
 
@@ -647,69 +660,56 @@ sub	getSpanTextList
 
 sub	setSpan
 	{
+	my $self        = shift;
+        my $path        = shift;
+        my $pos         = (ref $path) ? undef : shift;
+        my $context     = $self->getElement($path, $pos) or return undef;
+        my $expr        = shift; return undef unless defined $expr;
+        my $style       = shift                          or return undef;
+
+        return $self->markElement
+                ($context, 'text:span', $expr, 'text:style-name' => $style);	
+	}
+
+#-----------------------------------------------------------------------------
+# set text spans that are attributed using a particular style
+
+sub     setTextSpan
+        {
 	my $self	= shift;
-	my $last	= pop;
-	my $tag		= 'text:span';
-	if ($last =~ /:/)
-		{
-		$tag = $last;
-		}
-	else
-		{
-		push @_, $last;
-		}
 	my $path	= shift;
 	my $pos		= ref $path ? undef : shift;
+	my $element	= $self->getElement($path, $pos)   or return undef;
+	my $style       = shift                            or return undef;
+	my %opt         = @_;
 
-	my $element	= undef;
-	my $span	= undef;
-	if (ref $path)
-		{
-		if ($path->isElementNode)
-			{ $element = $path; }
-		else
-			{ return undef; }
-		}
-	else
-		{
-		my $context	= shift;
-		unless (ref $context)
-			{
-			$element = $self->getElement($path, $pos)
-					or return undef;
-			unshift @_, $context;
-			}
-		else
-			{
-			$element = $self->getElement
-						($path, $pos, $context)
-					or return undef;
-			}
-		}
-	my $expression = shift; return undef unless defined $expression;
-	my $value = shift or return undef;
-	my %attrs = (@_);
-	if ($tag eq 'text:span')
-		{
-		$attrs{'text:style-name'}	= $value;
-		}
-	elsif ($tag eq 'text:a')
-		{
-		$attrs{'xlink:href'}		= $value;
-		my $prefix = $attrs{'-prefix'} || 'text';
-		delete $attrs{'-prefix'};
-		foreach my $k (keys %attrs)
-			{
-			unless ($k =~ /:/)
-				{
-				$attrs{"$prefix:$k"} = $attrs{$k};
-				delete $attrs{$k};
-				}
-			}
-		}
+	my $tag         = $opt{'tag'} || 'text:span';
+	delete $opt{'tag'};
+        $opt{'attributes'}{'text:style-name'} = $style;
+        if (is_true($opt{'repeat'}))
+                {
+                delete $opt{'repeat'};
+                return $self->setChildElements($element, $tag, %opt);
+                }
+        else
+                {
+	        return $self->setChildElement($element, $tag, %opt);
+	        }
+        }
 
-	return $element->mark("($expression)", $tag, { %attrs });
-	}
+#-----------------------------------------------------------------------------
+
+sub     setTextSpans
+        {
+	my $self	= shift;
+	my $path	= shift;
+	my $pos		= ref $path ? undef : shift;
+	my $element	= $self->getElement($path, $pos)   or return undef;
+	my $style       = shift                            or return undef;
+	my %opt         = @_;
+
+        return $self->setTextSpan($element, $style, %opt, repeat => 'true');
+        }
 
 #-----------------------------------------------------------------------------
 
@@ -727,53 +727,73 @@ sub	textField
 
 #-----------------------------------------------------------------------------
 
-sub	setTextField
-	{
-	my $self	= shift;
-	my $path	= shift;
-	my $pos		= ref $path ? undef : shift;
+sub     setTextField
+        {
+        my $self        = shift;
+        my $path        = shift;
+        my $pos         = (ref $path) ? undef : shift;
+        my $context     = $self->getElement($path, $pos) or return undef;
+        my $field_type  = shift;
+        my %opt         = @_;
 
-	my $element	= undef;
-	my $span	= undef;
-	if (ref $path)
-		{
-		if ($path->isElementNode)
-			{ $element = $path; }
-		else
-			{ return undef; }
-		}
-	else
-		{
-		my $context	= shift;
-		unless (ref $context)
-			{
-			$element = $self->getElement($path, $pos)
-					or return undef;
-			unshift @_, $context;
-			}
-		else
-			{
-			$element = $self->getElement
-						($path, $pos, $context)
-					or return undef;
-			}
-		}
+        if ($field_type eq 'variable')
+                {
+                $field_type = 'text:user-field-get';
+                $opt{'attributes'}{'text:name'} = $opt{'name'};
+                $opt{'attributes'}{'style:data-style-name'} = $opt{'style'};           
+                $opt{'no_text'} = 'true';
+                if (is_true($opt{'check'}))
+                        {
+                        my $name = $opt{'name'} || "";
+                        unless ($self->getUserField($name))
+                                {
+                                warn "[" . __PACKAGE__ . "::setTextField] " .
+                                        "Unknown variable $name\n";
+                                return undef;
+                                }
+                        }
+                delete @opt{qw(name style)};
+                }
+        else
+                {
+                $field_type = 'text:' . $field_type unless $field_type =~ /:/;
+                }        
+        
+        return $self->setChildElement($context, $field_type, %opt);
+        }
 
-	my $expression = shift; return undef unless defined $expression;
-	my $field = shift or return undef;
-	my $tag = $field =~ /:/ ? $field : "text:$field";
-	my %attrs = (@_);
-	my $prefix = $attrs{'-prefix'} || 'text'; delete $attrs{'-prefix'};
-	foreach my $k (keys %attrs)
-		{
-		unless ($k =~ /:/)
-			{
-			$attrs{"$prefix:$k"} = $attrs{$k}; delete $attrs{$k};
-			}
-		}
+#-----------------------------------------------------------------------------
 
-	return $element->mark("($expression)", $tag, { %attrs });
-	}
+sub	setTextFields
+        {
+        my $self        = shift;
+        my $path        = shift;
+        my $pos         = (ref $path) ? undef : shift;
+        my $context     = $self->getElement($path, $pos) or return undef;
+        my $expr        = $self->inputTextConversion(shift);
+        my $tag         = shift;
+        my %opt         = @_;
+
+        if ($tag eq 'variable')
+                {
+                $tag                    = 'text:user-field-get';
+                $opt{'text:name'}      = $opt{'name'};
+                if (is_true($opt{'check'}))
+                        {
+                        my $name = $opt{'name'} || "";
+                        unless ($self->getUserField($name))
+                                {
+                                warn "[" . __PACKAGE__ . "::setTextField] " .
+                                        "Unknown variable $name\n";
+                                return undef;
+                                }
+                        }
+                }
+        $opt{'style:data-style-name'} = $opt{'style'};
+        delete @opt{qw(name style check)};
+
+        return $self->splitContent($context, $tag, $expr, %opt);
+        }
 
 #-----------------------------------------------------------------------------
 
@@ -810,7 +830,42 @@ sub	extendText
 sub	setHyperlink
 	{
 	my $self	= shift;
-	return $self->setSpan(@_, 'text:a');
+        my $path        = shift;
+        my $pos         = (ref $path) ? undef : shift;
+        my $context     = $self->getElement($path, $pos) or return undef;
+        my $expr        = shift; return undef unless defined $expr;
+        my $url         = shift or return undef;
+        my %opt         = @_;
+        my $tag         = 'text:a';
+        
+        $opt{'attributes'}{'xlink:href'}        = $url;
+        $opt{'attributes'}{'xlink:type'}        = 'simple'
+                        unless $opt{'attributes'}{'xlink:type'};
+        $opt{'attributes'}{'office:name'}       = $opt{'name'};
+        delete @opt{qw(name before after content)};
+        $opt{'capture'} = $expr;
+        
+        return $self->setChildElement($context, $tag, %opt);
+	}
+
+#-----------------------------------------------------------------------------
+
+sub	setHyperlinks
+	{
+	my $self        = shift;
+        my $path        = shift;
+        my $pos         = (ref $path) ? undef : shift;
+        my $context     = $self->getElement($path, $pos) or return undef;
+        my $expr        = shift; return undef unless defined $expr;
+        my $url         = shift                          or return undef;
+        my %opt         =
+                        (
+                        'xlink:href'    => $url,
+                        'xlink:type'    => 'simple',
+                        @_
+                        );
+        
+        return $self->markElement($context, 'text:a', $expr, %opt);	
 	}
 
 #-----------------------------------------------------------------------------
@@ -860,20 +915,20 @@ sub	setAnnotation
 	my $path	= shift;
 	my $pos		= ref $path ? undef : shift;
 	my $element	= $self->getElement($path, $pos);
-	my %opt		=
-		(
-		'offset'	=> 0,
-		'text'		=> "",
-		'style'		=> 'Standard',
-		@_
-		);
+	my %opt		= @_;
+
+	my $text        = $opt{'text'};         delete $opt{'text'};
+	my $style       = $opt{'style'};        delete $opt{'style'};
 
 	my $creator = $opt{'creator'} || $opt{'author'} || $ENV{'USER'};
+	delete $opt{'author'}; delete $opt{'creator'};
 	my $date = (defined $opt{'date'}) ?
-		$opt{'date'}	:
-		OpenOffice::OODoc::XPath::odfLocaltime();
-	my $annotation	= $element->insertNewNode
-		('office:annotation', 'within', $opt{'offset'});
+		        $opt{'date'} : odfLocaltime();
+	delete $opt{'date'};
+	delete $opt{'capture'};
+        my $annotation  = $self->setChildElement
+                                ($element, 'office:annotation', %opt);		
+
 	$self->appendElement
 		($annotation, 'dc:creator', text => $creator);
 	$self->appendElement
@@ -881,8 +936,8 @@ sub	setAnnotation
 	$self->appendParagraph
 		(
 		attachment	=> $annotation,
-		text		=> $opt{'text'},
-		style		=> $opt{'style'}
+		text		=> $text,
+		style		=> $style
 		);
 
 	return $annotation;
@@ -897,11 +952,8 @@ sub     setNote
 	my $path	= shift;
 	my $pos		= ref $path ? undef : shift;
 	my $element	= $self->getElement($path, $pos)   or return undef;
-	my $text        = shift;
 	my %opt		=
 		(
-		'offset'	=> 0,
-		'text'		=> "",
 		'style'		=> 'Standard',
 		'citation'      => undef,
 		'id'            => undef,
@@ -909,8 +961,9 @@ sub     setNote
 		'label'         => undef,
 		@_
 		);
-        my $note = $element->insertNewNode
-                ('text:note', 'within', $opt{'offset'});
+	my $text        = $opt{'text'};         delete $opt{'text'};
+
+        my $note = $self->setChildElement($element, 'text:note', %opt);
         $self->setAttributes
                 (
                 $note,
@@ -1063,14 +1116,207 @@ sub	setBibliographyMark
 	my $path	= shift;
 	my $pos		= ref $path ? undef : shift;
 	my $element	= $self->getElement($path, $pos);
-	my $offset	= shift;
 	my %opt		= @_;
+	
+	my $bib = $self->setChildElement(
+	        $element, 'bibliography-mark', @_
+	        );
 # 	my $bib	= $self->createElement('text:bibliography-mark');
-	my $bib	= OpenOffice::OODoc::Element->new('text:bibliography-mark');
-	$bib->paste_within($element, $offset);
 	$self->bibliographyEntryContent($bib, @_);
 	return $bib;
 	}
+
+#-----------------------------------------------------------------------------
+# creates a pair of markup elements as range delimiters
+
+sub     setRangeMark
+        {
+        my $self        = shift;
+        my $type        = shift         or return undef;
+        my $id          = shift         or return undef;
+        my %opt         = @_;
+        
+        $type           =~ s/ /-/g;  
+        my $check       = $opt{'check'};        delete $opt{'check'};
+        my $prefix      = $opt{'prefix'} || 'text';
+        my $container   = $opt{'context'};      delete $opt{'context'};
+        my $content     = $opt{'content'};
+        delete @opt{qw(after before replace)};
+        my %start       = ();
+        my %end         = ();
+        my %attributes  = ();
+        if ($opt{'start'})
+                {
+                %start = %{$opt{'start'}}; delete $opt{'start'};
+                }
+        if ($opt{'end'})
+                {
+                %end = %{$opt{'end'}}; delete $opt{'end'};
+                }
+        delete $start{'attributes'};
+        delete $end{'attributes'};
+        $end{'context'} = $start{'context'}     unless $end{'context'};
+        if ($opt{'attributes'})
+                {
+                %attributes = %{$opt{'attributes'}}; delete $opt{'attributes'};
+                }
+
+        $type                   = "$prefix:$type" unless $type =~ /:/;
+        my $start_tag           = $type . '-start';
+        my $end_tag             = $type . '-end';
+        my $start_context       =
+                        $context || $start{'context'};
+        my $end_context         =
+                        $context || $end{'context'} || $start_context;
+        delete $start{'context'};
+        delete $end{'context'};
+        
+        my $start_mark  = undef;
+        my $end_mark    = undef;
+        $opt{'no_text'} = 'true';
+        if (defined $content)
+                {
+                delete @opt{qw(before after replace content)};
+                $opt{'no_text'} = 'true';
+                $end_mark       = $self->setChildElement
+                                        (
+                                        $context, $end_tag,
+                                        %opt, after => $content
+                                        );
+                $start_mark     = $self->setChildElement
+                                        (
+                                        $context, $start_tag,
+                                        %opt, before => $content  
+                                        );
+                }
+        else
+                {
+                $end_mark       = $self->setChildElement
+                                        (
+                                        $end_context, $end_tag, %end,
+                                        no_text => 'true'
+                                        );
+                $start_mark     = $self->setChildElement
+                                        (
+                                        $start_context, $start_tag, %start,
+                                        no_text => 'true'
+                                        );
+                }
+        unless ($start_mark && $end_mark)
+                {
+                $self->removeElement($start_mark);
+                $self->removeElement($end_mark);
+                return wantarray ? (undef, undef) : undef;
+                }
+        elsif (is_true($check))
+                {
+                if ($end_mark->before($start_mark))
+                        {
+                        warn    "[" . __PACKAGE__ . "::setRangeMark] "  .
+                                "End position before start position\n";
+                        $start_mark->delete;
+                        $end_mark->delete;
+                        return wantarray ? (undef, undef) : undef;
+                        }
+                }
+        unless ($type =~ /bookmark/)
+                {
+                $self->setIdentifier($start_mark, $id);
+                $self->setIdentifier($end_mark, $id);
+                }
+        else
+                {
+                $self->elementName($start_mark, $id);
+                $self->elementName($end_mark, $id);
+                }
+        $self->setAttributes($start_mark, %attributes);
+        return wantarray ? ($start_mark, $end_mark) : $start_mark;
+        }
+
+#------------------------------------------------------------------------------
+
+sub     checkRangeMark
+        {
+        my $self        = shift;
+        my $id          = shift;
+        my $type        = shift;
+        my $context     = shift;
+        
+        $type =~ s/ /-/g; $type = 'text:' . $type unless $type =~ /:/;
+        my $attr = ($type =~ /bookmark/) ? 'text:name' : 'text:id';
+        my $start_tag   = $type . '-start';
+        my $end_tag     = $type . '-end';
+
+        my $start = $self->selectNodeByXPath
+                ("//$start_tag\[\@$attr=\"$id\"\]", $context);
+        my $end   = $self->selectNodeByXPath
+                ("//$end_tag\[\@$attr=\"$id\"\]", $context);
+        if ($start && $end)
+                {
+                return $start->before($end) ? TRUE : FALSE;
+                }
+        elsif ($start || $end)
+                {
+                return FALSE;
+                }
+        return undef;
+        }
+
+#------------------------------------------------------------------------------
+
+sub     deleteMark
+        {
+	my $self	= shift;
+	my $id          = $self->inputTextConversion(shift);
+	my $type        = shift;
+	my $attr        = shift || 'text:id';
+	my $context     = shift;
+
+        $attr =~ s/ /-/g; $attr = 'text:' . $attr unless $attr =~ /:/;
+        $type =~ s/ /-/g; $type = 'text:' . $type unless $type =~ /:/;
+        my $start_tag   = $type . '-start';
+        my $end_tag     = $type . '-end';
+        my $count       = 0;
+
+        foreach my $e   (
+		        $self->getElementList
+		            ("//$type\[\@$attr=\"$id\"\]", $context),
+		        $self->getElementList
+		            ("//$start_tag\[\@$attr=\"$id\"\]", $context),
+			$self->getElementList
+		            ("//$end_tag\[\@$attr=\"$id\"\]", $context)
+                        )
+                        {
+                        $e->delete; $count++;
+                        }
+
+	return $count;
+        }
+
+#------------------------------------------------------------------------------
+
+sub     deleteMarks
+        {
+	my $self	= shift;
+	my $type        = shift;
+	my $context     = shift;
+
+        $type =~ s/ /-/g; $type = 'text:' . $type unless $type =~ /:/;
+        my $start_tag   = $type . '-start';
+        my $end_tag     = $type . '-end';
+
+        my $count       = 0;
+        foreach my $e   (
+		        $self->getElementList("//$type", $context),
+			$self->getElementList("//$start_tag", $context),
+			$self->getElementList("//$end_tag", $context)
+                        )
+                        {
+                        $e->delete; $count++;
+                        }
+
+	return $count;
+        }
 
 #-----------------------------------------------------------------------------
 # get a bookmark
@@ -1078,15 +1324,23 @@ sub	setBibliographyMark
 sub	getBookmark
 	{
 	my $self	= shift;
-	my $name	= $self->inputTextConversion(shift);
-
-	return	(
-		$self->getNodeByXPath
-			("//text:bookmark[\@text:name=\"$name\"]")
+	my $name        = shift         or return undef;
+	
+	unless (ref $name)
+	        {
+	        return	(
+		    $self->getNodeByXPath
+			("//text:bookmark\[\@text:name=\"$name\"\]", @_)
 			||
-		$self->getNodeByXPath
-			("//text:bookmark-start[\@text:name=\"$name\"]")
-		);
+		    $self->getNodeByXPath
+			("//text:bookmark-start\[\@text:name=\"$name\"\]", @_)
+	                );
+                }
+        else
+                {
+                my $tag = $name->getName;
+                return ($tag =~ /^text:bookmark/) ? $name : undef;
+                }
 	}
 
 #-----------------------------------------------------------------------------
@@ -1101,27 +1355,56 @@ sub	selectElementByBookmark
 	}
 
 #-----------------------------------------------------------------------------
-# attach a bookmark to a given element
+
+sub     setRangeBookmark
+        {
+        my $self        = shift;
+        return $self->setRangeMark('text:bookmark', @_);
+        }
+
+#-----------------------------------------------------------------------------
+# set a position or range bookmark
 
 sub	setBookmark
 	{
 	my $self	= shift;
-	my $path	= shift;
-	my $element     = ref $path ? $path : $self->getElement($path, shift);
-	return undef unless $element;
-	my $name	= shift;
-	my $offset	= shift || 0;
-	unless ($name)
-		{
-		warn	"[" . __PACKAGE__ . "::setBookmark] "	.
-			"Missing bookmark name\n";
-		return undef;
-		}
-	my $bookmark	= OpenOffice::OODoc::XPath::new_element
-						('text:bookmark', @_);
-	$self->setAttribute($bookmark, 'text:name', $name);
-	return $bookmark->paste_within($element, $offset);
+	my $context     = undef;
+	my $name        = undef;
+	my $arg1        = shift         or return undef;
+	if (ref $arg1)
+	        {
+	        $context        = $arg1;
+	        $name           = shift         or return undef;
+	        }
+	else
+	        {
+	        $name           = $arg1;
+	        }
+	my %opt         = @_;
+        delete $opt{'text'};    # no text content for bookmarks
+        if (defined $context)   # one target element => position bookmark
+                {
+                delete $opt{'context'};
+                $opt{'attributes'}{'text:name'} = $name;
+                $opt{'no_text'} = 'true';
+	        return $self->setChildElement($context, 'text:bookmark', %opt);
+                }
+        else                    # else => range bookmark
+                {
+                return $self->setRangeBookmark($name, %opt);
+                }
 	}
+
+#-----------------------------------------------------------------------------
+# check the existence and consistency of a range bookmark
+
+sub     checkRangeBookmark
+        {
+        my $self        = shift;
+        my $name        = shift;
+        
+        return $self->checkRangeMark($name, 'bookmark', @_);        
+        }
 
 #-----------------------------------------------------------------------------
 # delete a bookmark
@@ -1129,9 +1412,86 @@ sub	setBookmark
 sub	deleteBookmark
 	{
 	my $self	= shift;
+        my $name        = shift;
 
-	$self->removeElement($self->getBookmark(@_));
+        return $self->deleteMark($name, 'text:bookmark', 'text:name', @_);
 	}
+
+#-----------------------------------------------------------------------------
+# delete all the bookmarks in the context
+
+sub	deleteBookmarks
+	{
+	my $self	= shift;
+
+        return $self->deleteMarks('text:bookmark', @_);
+	}
+
+#-----------------------------------------------------------------------------
+# creates an alphabetical index or TOC mark
+
+sub     setIndexMark
+        {
+        my $self        = shift;
+        my $path        = shift;
+        my $pos         = ref $path ? undef : shift;
+        my $element     = $self->getElement($path, $pos) or return undef;
+        my $id          = shift         or return undef;
+        my %opt         = @_;
+        
+        my $type        = $opt{'type'} || 'alphabetical-index';
+        delete $opt{'type'};
+        $opt{'context'} = $element;
+        my $tag         = 'text:' . $type . '-mark';
+        return $self->setRangeMark($tag, $id, %opt);
+        }
+
+#-----------------------------------------------------------------------------
+# check the existence and consistency of a range bookmark
+
+sub     checkIndexMark
+        {
+        my $self        = shift;
+        my $id          = shift;
+        my $type        = shift;
+        
+        $type   = $type . '-mark';
+        return $self->checkRangeMark($id, $type, @_);
+        }
+
+#-----------------------------------------------------------------------------
+# delete an index mark
+
+sub     deleteIndexMark
+        {
+        my $self        = shift;
+        my $id          = shift;
+        my $type        = shift;
+        
+        $type        = $type . '-mark';
+        return $self->deleteMark($id, $type, 'text:id', @_);                
+        }
+
+#-----------------------------------------------------------------------------
+# delete all the index marks of a given type in the context
+
+sub     deleteIndexMarks
+        {
+        my $self        = shift;
+        my $type        = shift;
+        
+        if ($type)
+                {
+                $type   = $type . '-mark';
+                return $self->deleteMarks($type, @_);
+                }
+        else
+                {
+                return  $self->deleteMarks('text:toc-mark', @_)
+                                +
+                        $self->deleteMarks('text:alphabetical-index-mark', @_);
+                }
+        }
 
 #-----------------------------------------------------------------------------
 # get the footnote bodies in the document
@@ -1438,17 +1798,14 @@ sub	getSection
 		{
 		return ($name->isSection) ? $name : undef;
 		}
-	my $context	= shift;
 	if (($name =~ /^\d*$/) || ($name =~ /^[\d+-]\d+$/))
 		{
-		return $self->getElement('//text:section', $name, $context);
+		return $self->getElement('//text:section', $name, @_);
 		}
 
 	my $n = $self->inputTextConversion($name);
-	return $self->getNodeByXPath
-			(
-			"//text:section[\@text:name=\"$n\"]"
-			);
+	return $self->selectElementByAttribute
+	        ('text:section', 'text:name', $n, @_);
 	}
 
 #-----------------------------------------------------------------------------
@@ -3694,6 +4051,7 @@ sub	updateUserFieldReferences
 	{
 	my $self	= shift;
 	my $fd		= shift or return undef;
+	my $context     = shift;
 	my $field_decl	= undef;
 	my $name	= undef;
 	if (ref $fd)
@@ -3703,7 +4061,7 @@ sub	updateUserFieldReferences
 		}
 	else
 		{
-		$field_decl= $self->getUserFieldElement($fd);
+		$field_decl= $self->getUserField($fd, $context);
 		$name = $fd;
 		}
 	unless ($field_decl && $name)
@@ -3713,7 +4071,7 @@ sub	updateUserFieldReferences
 		return undef;
 		}
 	my @fields = $self->selectNodesByXPath
-		("//text:user-field-get[\@text:name=\"$name\"]");
+		("//text:user-field-get[\@text:name=\"$name\"]", $context);
 	my $content = $self->userFieldValue($field_decl) || "";
 	my $count = 0;
 	foreach my $field (@fields)
@@ -3725,107 +4083,29 @@ sub	updateUserFieldReferences
 	}
 
 #-----------------------------------------------------------------------------
-# get user field element
+# get user field references
 
-sub	getUserField
-	{
-	my $self	= shift;
-	my $name	= shift;
-	unless ($name)
-		{
-		warn "[" . __PACKAGE__ . "::getUserField] Missing name\n";
-		return undef;
-		}
-	if (ref $name)
-		{
-		my $n = $name->getName;
-		return ($n eq 'text:user-field-decl') ? $name : undef;
-		}
-	$name = $self->inputTextConversion($name);
-	return $self->getNodeByXPath
-			("//text:user-field-decl[\@text:name=\"$name\"]");
-	}
+sub     getUserFieldReferences
+        {
+        my $self        = shift;
+        my $name        = $self->inputTextConversion(shift);
+        my $xp          = undef;
+        my @list        = ();
 
-#-----------------------------------------------------------------------------
-# get/set user field value
+        $xp = (defined $name && $name gt "") ?
+                "//text:user-field-get[\@text:name=\"$name\"]"  :
+                "//text:user-field-get";
+        @list = $self->selectNodesByXPath($xp, @_);
+        $xp = (defined $name && $name gt "") ?
+                "//text:user-field-input[\@text:name=\"$name\"]"  :
+                "//text:user-field-input";
+        push @list, $self->selectNodesByXPath($xp, @_);
 
-sub	userFieldValue
-	{
-	my $self	= shift;
-	my $field	= $self->getUserFieldElement(shift)
-				or return undef;
-	my $value	= shift;
-
-	my $value_att	= $self->fieldValueAttributeName($field);
-
-	if (defined $value)
-		{
-		if ($value)
-			{
-			$self->setAttribute($field, $value_att, $value);
-			}
-		else
-			{
-			$field->set_att($value_att => $value);
-			}
-		}
-	return $self->getAttribute($field, $value_att);
-	}
+        return @list;
+        }
 
 #-----------------------------------------------------------------------------
-# get a variable element (contributed by Andrew Layton)
 
-sub	getVariableElement
-	{
-	my $self	= shift;
-	my $name	= shift;
-
-	unless ($name) {
-		warn	"[" . __PACKAGE__ . "::getVariableElement] " .
-			"Missing name\n";
-		return undef;
-		}
-
-	if (ref $name) {
-		my $n = $name->getName;
-		return ($n eq 'text:variable-set') ? $name : undef;
-	}
-
-	return
-	$name = $self->inputTextConversion($name);
-	$self->getNodeByXPath("//text:variable-set[\@text:name=\"$name\"]");
-	}
-
-#-----------------------------------------------------------------------------
-# get/set the content of a variable element (contributed by Andrew Layton)
-
-sub	variableValue
-	{
-	my $self	= shift;
-	my $variable	= $self->getVariableElement(shift) or return undef;
-	my $value	= shift;
-
-	my $value_att	= $self->fieldValueAttributeName($variable);
-
-	if (defined $value)
-		{
-		$self->setAttribute($variable, $value_att, $value);
-		$self->setText($variable, $value);
-		}
-
-	$value = $self->getAttribute($variable, $value_att);
-	return defined $value ? $value : $self->getText($variable);
-	}
-
-#-----------------------------------------------------------------------------
-# append an element to the document body
-
-sub	appendBodyElement
-	{
-	my $self	= shift;
-
-	return $self->appendElement($self->{'body'}, @_);
-	}
 
 #-----------------------------------------------------------------------------
 # create a new paragraph
@@ -3869,6 +4149,7 @@ sub	appendText
 	my %opt		= @_;
 
 	my $attachment	= $opt{'attachment'} || $self->{'body'};
+	$opt{'attribute'} = $opt{'attributes'} unless ($opt{'attribute'});
 	$opt{'attribute'}{'text:style-name'} = $opt{'style'}
 			if $opt{'style'};
 	unless ((ref $name) || $opt{'attribute'}{'text:style-name'})
@@ -3935,7 +4216,7 @@ sub	appendHeading
 
 	$opt{'attribute'}{$self->{'level_attr'}}	= $opt{'level'};
 
-	return $self->appendText('text:h',%opt);
+	return $self->appendText('text:h', %opt);
 	}
 
 #-----------------------------------------------------------------------------

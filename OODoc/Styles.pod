@@ -223,10 +223,9 @@ at least a blank of each required style.
         returns its reference if successful.
 
         The first argument indicates the new style name which must be unique
-        in the document. By default, a check is automatically done; the method
-	fails and produces a warning if the style already exists. However,
-	no check is done if a 'check' option is provided and set to 'false'.
-	Avoiding the uniqueness check can improve the 
+        in the document. By default, there is no automatic uniqueness check.
+        However, if a 'check' option is set to 'true', the method
+	fails and produces an error message warning if the style already exists.
 	
 	If the external name of the style, as it could be made visible for the
 	end-user through an OpenDocument-compliant editing software (such as
