@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 2.233 2010-03-10 JMG$
+#	$Id : XPath.pm 2.234 2010-03-10 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2010 by Genicorp, S.A. (www.genicorp.com)
@@ -9,7 +9,7 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 2.233;
+our	$VERSION	= 2.234;
 use	XML::Twig	3.32;
 use	Encode;
 require	Exporter;
@@ -1099,12 +1099,12 @@ sub     getUserFields
         {
         my $self        = shift;
         my $context     = $self->getRoot;
-print "getUserFields: partie " . $self->getPartName;
+
         if ($self->getPartName() eq 'styles')
                 {
                 $context = shift || $self->currentContext;
                 }
-print "getUserFields: contexte " . $context->getName;
+
         return $self->selectNodesByXPath('//text:user-field-decl', $context);
         }
 
