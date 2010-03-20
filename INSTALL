@@ -88,7 +88,10 @@ INSTALLATION FROM THE CPAN DISTRIBUTION
         document, but OpenOffice::OODoc will not change the format of an
         existing document. Be careful: knowing that the legacy OpenOffice.org
         1.0 format is disappearing, it will not necessarily supported by future 
-        versions of OpenOffice::OODoc. 
+        versions of OpenOffice::OODoc. OpenOffice::OODoc currently supports
+	ODF 1.0 to 1.2; however, it doesn't include any validating feature, so
+	the users are not prevented from using its API to insert custom,
+	non-standard XML constructs in the documents.
 
 	- the preferred file format, to be used when you create a new
 	document from scratch (answer "1" for OpenOffice.org, "2" for OASIS

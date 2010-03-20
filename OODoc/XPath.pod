@@ -927,7 +927,7 @@ features of OODoc::Meta and OODoc::Document are described here.
         
         See also getIdentifier(), setIdentifier(), identifier().
         	
-=head3	getElementList(path)
+=head3	getElementList(path [, context])
 
         Returns a list of all elements at a specified path.
 
@@ -944,8 +944,11 @@ features of OODoc::Meta and OODoc::Document are described here.
         (especially in Text, Image and Styles modules), as there are methods
         for searching by element type, attribute and content which are much
         easier to use and avoid the need to supply XPath expressions.
+        
+        An optional context argument may be provided in order to restrict the
+        search space.
 
-        Note: the returned list contains elements in the sense of getElement
+        Note: the returned list contains elements in the sense of getElement()
         and not a list of element contents.
 
 =head3  getFirstTextRun(path, position)
@@ -1330,6 +1333,17 @@ features of OODoc::Meta and OODoc::Document are described here.
 	place in the same document, as well as from one document to another
 	one (caution, the elements are moved, not copied).
 
+=head3  newTextNode(text)
+
+        Creates a free text node (to be inserted later within a text element).
+        
+        A text node is a piece of flat text, without any attribute, that may be
+        a part or the text content of an element.
+        
+        Note that it's a low level method for special uses; there are various
+        text-oriented methods in the API (mainly described is the ::Text manual
+        page), and the explicit use of text nodes should be avoided.
+
 =head3  objectName(element [, name])
 
         Returns the name of the given element. Changes this name is a new name
@@ -1470,53 +1484,6 @@ features of OODoc::Meta and OODoc::Document are described here.
         option, it is only a reference which is inserted. See the section on
         appendElement for comments on the subject of multiple references to
         a single physical element.
-
-=head3	replaceText(path, position, filter, replacement)
-
-=head3	replaceText(element, filter, replacement)
-
-        Replaces all sub-strings which match "filter" with "replacement" in
-        the text of an element (and its descendants) indicated by
-	[path, position] or by reference and returns the modified text. The
-	"filter" string can be an "exact" literal or a regular expression.
-
-        Example:
-
-            $doc->replaceText($p, "C(LIENT|USTOMER)", $contact);
-
-        replaces each occurrence of "CLIENT" and "CUSTOMER" with the content
-        of the $contact variable in the paragraph $p of document $doc.
-
-        The "replacement" argument can be a function reference. In which
-        case, the function is called each time the string is matched, and
-        the value returned by the function is used as the replacement value.
-
-        	sub action	{
-        		my $arg = shift;
-        		my $text = shift;
-        		print "$arg : $text\n";
-        		return "OK";
-        		}
-		$doc->replaceText($p, $expression, \&action, "Found");
-
-        displays "Found: <text>" (where <text> is the text retrieved) each
-        time a string matches $expression and replaces this string with
-        "OK". If $expression contains an "exact" string (not a regexp), then
-	clearly the text displayed will always be the same string. However,
-	if it happens to be a regular expression, it is in effect the text
-        retrieved which will be displayed.
-	
-        Generally speaking, if the replacement value is a function
-        reference, the called function receives the remainder of the
-        arguments which follow it, in this order:
-	
-	1) all the arguments following the function reference in the
-	replaceText() call, in the same order;
-	
-	2) the string that matches the filter argument.
-	
-	See also substituteText(), which should be preferred in most
-	situations.
 
 =head3	replicateElement(original_element, position_object [, options]])
 
@@ -1881,8 +1848,24 @@ features of OODoc::Meta and OODoc::Document are described here.
         
         If the provided tag doesn't include a namespace prefix, it's
         automatically concatenated with the namespace prefix of the context
-        element (provided as 1st argument).
+        element (provided as 1st argument). In addition, every space (" ") is
+        regarded as a "-". For example, knowing that the ODF names of a line
+        break and a tab stop are respectively 'text:line-break' and 'text:tab',
+        they may be specified as 'line break' and 'tab' when they are inserted
+        in a regular text paragraph (that is their right place).
         
+        For alternative and very specific purposes, the tag argument may be
+        replaced by a function reference. If so, the corresponding application-
+        provided function will be triggered with the following arguments: the
+        containing document, a text node, a position, and possibly a string
+        (this last argument will be provided if setChildElement() is called with
+        a 'replace', 'after', 'before' or 'capture' argument introduced below
+        and will contain the matching substring). The application-provided
+        function is supposed to insert one or more contiguous new elements in
+        the text node at the given position (optionally using the given
+        substring); it must return an element. However, most users may safely
+        forget this feature...
+
         Allowed options are
         
                 attributes      => attribute/value hash for the new element
@@ -1918,6 +1901,10 @@ features of OODoc::Meta and OODoc::Document are described here.
         'start' or 'end', the new element is inserted at the start or at the
         end, and the other position options are ignored. If 'offset' is a
         negative integer, the position is counted backward from the end.
+        Caution: if the text of the target container includes tab stops and/or
+        multiple contiguous spaces, the effective offset will be larger than
+        the given one (because ODF tab stops and multiple spaces are special
+        markup elements and not characters).
         
         Whatever the value of 'offset', a 'way' option, whose possible values
         are 'forward' (the default) or 'backward', specifies the search way.
@@ -1939,7 +1926,9 @@ features of OODoc::Meta and OODoc::Document are described here.
         while if 'capture' the same matching string is moved in the new element. 
         Of course, these search string options are mutually exclusive; if more
         than one of them are wrongly set, only one is considered, and the
-        priority order is 'after', 'before', 'replace', and 'capture'.
+        priority order is 'after', 'before', 'replace', and 'capture'. If both
+        'capture' and 'text' are set, the result is the same as with 'replace'
+        and 'text'.
         
         If the insertion point depends on a search string (i.e. if 'after',
         'before', 'replace' or 'capture' is used), it's selected according to
@@ -2003,8 +1992,10 @@ features of OODoc::Meta and OODoc::Document are described here.
      
         Note that the loop body is empty; the start mark, which is undef at the
         first round, is then the previously inserted child element.
-        Warning: without carefully designed offset and/or search option, such
-        a construct may produce a long or infinite loop (until memory fault).
+        Caution: without carefully designed offset and/or search option, such
+        a construct may produce a long or infinite loop (until memory fault);
+        in addition, the setChildElements() method (see below) is generally
+        more appropriate for such repetitive element insertions.
      
         The next example creates a text span (i.e. a text area with a special
         character style) for the last "ODF" substring of a given paragraph:
@@ -2024,6 +2015,26 @@ features of OODoc::Meta and OODoc::Document are described here.
         (mainly introduced in the OODoc::Text man page).
 
         See also splitContent().
+
+=head3  setChildElements(context, tag/element [, options])
+
+        Like setChildElement() but with a repetitive effect that depends on the
+        options.
+        
+        If 'offset' is the only one option, it's used at a regular interval
+        between insert points. If one of the search string options ('after',
+        'before', 'capture', or 'replace') is set, 'offset' is used once for all
+        to exclude an area from the search space, and not as an interval between
+        the new elements. The other options work like with setChildElement().
+        
+        The example below inserts a line break after every ";" in a given
+        paragraph (remember that an ODF line break is an element; it's neither
+        an end of paragraph nor a "\n" character):
+        
+                $doc->setChildElements(
+                        $paragraph, 'line break',
+                        after   => ";"
+                        );
 
 =head3	setFlatText(path, position, text)
 
@@ -2297,22 +2308,6 @@ features of OODoc::Meta and OODoc::Document are described here.
 	element containing more that one text segment, it works with the first
 	one only.
 	
-=head3	substituteText(element, filter, replacement)
-
-	Replaces any substring in a given element and its descendants,
-	matching a given filter (regexp) by a given replacement string.
-	
-	It "replacement" is a string, this method produces the same result as
-	replaceText(), and it should be preferred.
-	
-	If "replacement" is a function reference, the replacement value is the
-	return value of the function. But, unlike replaceText(), any argument
-	after "replacement" is ignored.
-	
-	This method is a wrapper for the subs_text() method provided by the
-	XML::Twig::Elt class. See the XML::Twig documentation for advanced
-	details.
-
 =head3	tabStop
 
 	Returns a special tabulation mark element, available for insertion

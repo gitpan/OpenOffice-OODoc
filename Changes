@@ -1,8 +1,16 @@
+2.123   2010-03-20
+        XPath.pm: getElementList() becomes an alias of selectNodesByXPath().
+        XPath.pm: improved setChildElement(), selectChildElements(), added setChildElements(), newTextNode().
+        Manifest.pm: getEntry() optimization.
+        Text.pm: added updateText(); fixed a doc error.
+        Moved replaceText(), substituteText() from XPath.pm to Text.pm.
+2.122   2010-03-10
+        Minor bug fix.
 2.121   2010-03-10
         Intro.pod: doc update.
         Styles.pm: createStyle() bug fix; now 'check' is no longer 'true' by default with createStyle().
         Text.pm, XPath.pm: moved some methods from Text to XPath.
-        Text.pm: various improvements and compatibility break with setNote(), setBibliographyMark(), setBookmark(), setHyperlink(), setAnnotation(), setNote(), setTextField(), getUserFieldRefernces(); deprecated setSpan().
+        Text.pm: various improvements and compatibility break with setNote(), setBibliographyMark(), setBookmark(), setHyperlink(), setAnnotation(), setTextField(), getUserFieldReferences(); deprecated setSpan().
         Text.pm: added setRangeMark(), checkRangeMark(), deleteMark(), deleteMarks(), checkRangeBookmark(), deleteBookmark(), setIndexMark(), checkIndexMark(), deleteIndexMark(), setTextSpan(), setTextSpans(), setIndexMark(), setTextFields(), setUserFieldDeclaration().
         XPath.pod: splitElement() doc error fix.
         XPath.pm: Added splitContent(), setChildElement(), textIndex(), getPartName(); added element identifier accessors & id-based retrieval; improved getRoot(), context-related methods, objectName(), selectElementByAttribute(), selectElementsByAttribute(), selectElementByContent(), selectElementsByContent(), getUserFields().

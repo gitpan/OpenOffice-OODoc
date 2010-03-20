@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.239 2010-03-04 JMG$
+#	$Id : Text.pm 2.241 2010-03-16 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2010 by Genicorp, S.A. (www.genicorp.com)
@@ -9,9 +9,9 @@
 
 package OpenOffice::OODoc::Text;
 use	5.008_000;
-use	OpenOffice::OODoc::XPath	2.233;
+use	OpenOffice::OODoc::XPath	2.235;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.239;
+our	$VERSION	= 2.241;
 
 #-----------------------------------------------------------------------------
 # synonyms
@@ -662,8 +662,8 @@ sub	setSpan
 	{
 	my $self        = shift;
         my $path        = shift;
-        my $pos         = (ref $path) ? undef : shift;
-        my $context     = $self->getElement($path, $pos) or return undef;
+        my $context     = (ref $path) ? $path : $self->getElement($path, shift)
+                        or return undef;
         my $expr        = shift; return undef unless defined $expr;
         my $style       = shift                          or return undef;
 
@@ -678,8 +678,8 @@ sub     setTextSpan
         {
 	my $self	= shift;
 	my $path	= shift;
-	my $pos		= ref $path ? undef : shift;
-	my $element	= $self->getElement($path, $pos)   or return undef;
+	my $element     = (ref $path) ? $path : $self->getElement($path, shift)
+	                or return undef;
 	my $style       = shift                            or return undef;
 	my %opt         = @_;
 
@@ -703,8 +703,8 @@ sub     setTextSpans
         {
 	my $self	= shift;
 	my $path	= shift;
-	my $pos		= ref $path ? undef : shift;
-	my $element	= $self->getElement($path, $pos)   or return undef;
+	my $element     = (ref $path) ? $path : $self->getElement($path, shift)
+	                or return undef;
 	my $style       = shift                            or return undef;
 	my %opt         = @_;
 
@@ -731,8 +731,8 @@ sub     setTextField
         {
         my $self        = shift;
         my $path        = shift;
-        my $pos         = (ref $path) ? undef : shift;
-        my $context     = $self->getElement($path, $pos) or return undef;
+        my $context     = (ref $path) ? $path : $self->getElement($path, shift) 
+                        or return undef;
         my $field_type  = shift;
         my %opt         = @_;
 
@@ -768,8 +768,8 @@ sub	setTextFields
         {
         my $self        = shift;
         my $path        = shift;
-        my $pos         = (ref $path) ? undef : shift;
-        my $context     = $self->getElement($path, $pos) or return undef;
+        my $context     = (ref $path) ? $path : $self->getElement($path, shift) 
+                        or return undef;
         my $expr        = $self->inputTextConversion(shift);
         my $tag         = shift;
         my %opt         = @_;
@@ -825,7 +825,175 @@ sub	extendText
 	return $self->SUPER::extendText($element, $text, @_);
 	}
 
+#------------------------------------------------------------------------------
+# replaces substring in an element and its descendants
+
+sub	replaceText
+	{
+	my $self	= shift;
+	my $path	= shift;
+	my $element	= (ref $path) ?
+				$path	:
+				$self->getElement($path, shift);
+
+	return $self->_search_content($element, @_);
+	}
+
+#------------------------------------------------------------------------------
+# replaces substring in an element and its descendants
+
+sub	substituteText
+	{
+	my $self	= shift;
+	my $path	= shift;
+	my $element	= (ref $path) ?
+				$path	:
+				$self->getElement($path, shift);
+	return undef unless $element;
+	my $filter 	= $self->inputTextConversion(shift) or return undef;
+	my $replace	= shift;
+	my %opt         = @_;
+	
+	unless (%opt)
+	        {
+                $replace = $self->inputTextConversion($replace)
+	                                        unless ref $replace;
+	        return $element->subs_text($filter, $replace);
+	        }
+
+        $opt{'replace'} = $filter;
+	if ($opt{'element'})
+	        {
+	        my $child = $opt{'element'}; delete $opt{'element'};
+	        return $self->setChildElement($element, $child, %opt);
+	        }
+
+        my ($text_node, $start_pos, $end_pos, $match) =
+	                        $self->textIndex($element, %opt);
+	if ($text_node)
+	        {
+                my $t = $text_node->text;
+                substr($t, $start_pos, $end_pos - $start_pos, $replace);
+                $text_node->set_text($t);
+	        }
+	return undef;
+	}
+
 #-----------------------------------------------------------------------------
+
+sub     updateText
+        {
+        my $self        = shift;
+        my $path        = shift;
+        my $pos         = (ref $path) ? undef : shift;
+        my $node        = $self->getElement($path, $pos) or return undef;
+        my %opt         = @_;
+        return undef unless @_;
+
+        my $replace     = $opt{'replace'};
+        $replace = $opt{'capture'} unless defined $replace;
+        my $after       = $opt{'after'};
+        my $before      = $opt{'before'};
+        my $new_text    = $opt{'text'};
+        $new_text       = ""    unless defined $new_text;
+        $new_text       = $self->inputTextConversion($new_text)
+                                unless ref $new_text;
+        my $ln_new      = ref $new_text ? 0 : length($new_text);
+       	my $offset = lc($opt{'offset'}) || 0;
+        my $repeat      = $opt{'repeat'}; delete $opt{'repeat'};
+        my $forward     = (! defined $opt{'way'} || $opt{'way'} ne 'backward');
+        my $search_string =
+                (defined $after || defined $before || defined $replace);
+        my $nt          = ref $new_text ? undef : $new_text;
+        
+        unless (defined $new_text && (ref $new_text || $new_text gt ""))
+                {
+                return undef unless defined $replace;
+                }
+     
+	if ($offset eq 'start')
+		{
+                $nt = ref $new_text ?
+                        $self->inputTextConversion(&$new_text($self))        :
+                        $new_text;
+                $node->insertTextChild($nt, 0);
+                $node->normalize;
+                return 1;
+		}
+	elsif ($offset eq 'end')
+	        {
+                $nt = ref $new_text ?
+                        $self->inputTextConversion(&$new_text($self))        :
+                        $new_text;
+                $node->appendTextChild($nt);
+	        $node->normalize;
+	        return 1;
+	        }
+	
+	my ($text_node, $start_pos, $end_pos, $match) =
+	                $self->textIndex($node, %opt);
+
+	return undef unless $text_node;
+
+        my $t = $text_node->text;
+        my $p = defined $after ? $end_pos : $start_pos;
+        my $size = defined $replace ? $end_pos - $start_pos : 0;  
+        if (ref $new_text)
+                {
+                $nt = $self->inputTextConversion(&$new_text($self, $match));
+                $ln_new = length($nt);
+                }
+        substr($t, $p, $size, $nt);
+        $text_node->set_text($t);
+
+        return 1 unless is_true($repeat);
+        
+        my $ln_match = defined $match ? length($match) : 0;
+        my $count = 1;      
+        $text_node = undef unless (($offset != 0) || $search_string);
+        while ($text_node)
+                {
+                if ($search_string)
+                        {
+                        if ($forward)
+                                {
+                                $opt{'offset'} = $p + $ln_new;
+                                $opt{'offset'} += $ln_match if defined $before;
+                                }
+                        else
+                                {
+                                $opt{'offset'} = $p - length($t);
+                                $opt{'offset'} -= $ln_match if defined $after;
+                                }
+                        $opt{'start_mark'} = $text_node;
+                        }
+                else
+                        {
+                        $opt{'offset'} += ($offset + $ln_new);
+                        }            
+                ($text_node, $start_pos, $end_pos, $match) =
+                                        $self->textIndex($node, %opt);
+                if ($text_node)
+                        {
+                        $ln_match = defined $match ? length($match) : 0;
+                        $t = $text_node->text;
+                        $p = defined $after ? $end_pos : $start_pos;
+                        $size = defined $replace ? $end_pos - $start_pos : 0;
+                        if (ref $new_text)
+                                {
+                                $nt = $self->inputTextConversion
+                                                (&$new_text($self, $match));
+                                $ln_new = length($nt);
+                                }
+                        substr($t, $p, $size, $nt);
+                        $text_node->set_text($t);
+                        $count++;
+                        }           
+                }
+        return $count;
+        }
+
+#------------------------------------------------------------------------------
 
 sub	setHyperlink
 	{
@@ -3178,7 +3346,7 @@ sub	getTableCell
 #-----------------------------------------------------------------------------
 # adapted from a suggestion by dhoworth
 
-sub getCellPosition
+sub     getCellPosition
 	{
 	my $self	= shift;
 	my $cell	= $self->getTableCell(@_);

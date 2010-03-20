@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 2.234 2010-03-10 JMG$
+#	$Id : XPath.pm 2.235 2010-03-20 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2010 by Genicorp, S.A. (www.genicorp.com)
@@ -9,7 +9,7 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 2.234;
+our	$VERSION	= 2.235;
 use	XML::Twig	3.32;
 use	Encode;
 require	Exporter;
@@ -51,11 +51,13 @@ BEGIN	{
 	*getElementByIdentifier = *selectElementByIdentifier;
 	*blankSpaces		= *spaces;
 	*createSpaces		= *spaces;
+	*createTextNode         = *newTextNode;
 	*getFrame		= *getFrameElement;
 	*getUserFieldElement	= *getUserField;
 	*getVariableElement     = *getVariable;
 	*getNodeByXPath		= *selectNodeByXPath;
 	*getNodesByXPath	= *selectNodesByXPath;
+	*getElementList         = *selectNodesByXPath;
 	*isCalcDocument		= *isSpreadsheet;
 	*isDrawDocument		= *isDrawing;
 	*isImpressDocument	= *isPresentation;
@@ -255,7 +257,7 @@ sub	OpenOffice::OODoc::XPath::new_element
 
 sub	OpenOffice::OODoc::XPath::new_text_node
 	{
-	return OpenOffice::OODoc::XPath::new_element('#PCDATA');
+	return OpenOffice::OODoc::XPath::new_element('#PCDATA', @_);
 	}
 
 #------------------------------------------------------------------------------
@@ -1588,46 +1590,12 @@ sub	flatten
 #------------------------------------------------------------------------------
 # creates a new encoded text node
 
-sub	createTextNode
+sub	newTextNode
 	{
 	my $self	= shift;
-	my $text	= shift		or return undef;
-	my $content	= $self->inputTextConversion($text);
+	my $text	= $self->inputTextConversion(shift)
+	                or return undef;
 	return OpenOffice::OODoc::Element->new('#PCDATA' => $text);
-	}
-
-#------------------------------------------------------------------------------
-# replaces substring in an element and its descendants
-
-sub	replaceText
-	{
-	my $self	= shift;
-	my $path	= shift;
-	my $element	= (ref $path) ?
-				$path	:
-				$self->getElement($path, shift);
-
-	return $self->_search_content($element, @_);
-	}
-
-#------------------------------------------------------------------------------
-# replaces substring in an element and its descendants
-
-sub	substituteText
-	{
-	my $self	= shift;
-	my $path	= shift;
-	my $element	= (ref $path) ?
-				$path	:
-				$self->getElement($path, shift);
-	return undef unless $element;
-	my $filter 	= $self->inputTextConversion(shift) or return undef;
-	my $replace	= shift;
-	unless (ref $replace)
-		{
-		$replace = $self->inputTextConversion($replace);
-		}
-	return $element->subs_text($filter, $replace);
 	}
 
 #------------------------------------------------------------------------------
@@ -1687,16 +1655,6 @@ sub	xpathInContext
 		$path =~ s/^\//\.\//;
 		}
 	return ($path, $context);
-	}
-
-#------------------------------------------------------------------------------
-# returns the children of a given element
-
-sub	getElementList
-	{
-	my $self	= shift;
-	my ($path, $context)	= $self->xpathInContext(@_);
-	return $context->findnodes($path);
 	}
 
 #------------------------------------------------------------------------------
@@ -2496,8 +2454,8 @@ sub     textIndex
         {
         my $self        = shift;
         my $path        = shift;
-        my $pos         = (ref $path) ? undef : shift;
-	my $element	= $self->getElement($path, $pos) or return undef;
+        my $element     = (ref $path) ? $path : $self->getElement($path, shift)
+                        or return undef;
 	my %opt         = @_;
 
         my $offset      = $opt{'offset'};
@@ -2537,11 +2495,22 @@ sub     textIndex
 
         if ($way ne 'backward')         # positive offset, forward
                 {
-                if ($start_mark)
+                if ($element->isTextNode)
                         {
-                        my $n = $start_mark->last_descendant;
-                        $start_mark = $n        if $n;
-                        $node = $n->next_elt($element, '#PCDATA');
+                        $node = $element;
+                        }
+                elsif ($start_mark)
+                        {
+                        unless($start_mark->isTextNode)
+                                {
+                                my $n   = $start_mark->last_descendant;
+                                $start_mark = $n        if $n;
+                                $node   = $n->next_elt($element, '#PCDATA');
+                                }
+                        else
+                                {
+                                $node   = $start_mark;
+                                }
                         }
                 else
                         {
@@ -2561,11 +2530,12 @@ sub     textIndex
                                 }
                         if (defined $offset && ($offset > $node_length))
                                 {                       # skip node
-                                ($node_length, $node_text) = $node->textLength;
-
                                 $offset -= $node_length;
                                 $node = $node->next_elt($element, '#PCDATA');
+                                ($node_length, $node_text) = $node->textLength
+                                        if $node;
                                 }
+
                         elsif (defined $expr)
                                 {                       # look for substring
                                 my $text = $node->text() || "";
@@ -2595,9 +2565,20 @@ sub     textIndex
                 }
         else                            # negative offset, backward
                 {
-                if ($start_mark)
+                if ($element->isTextNode)
                         {
-                        $node   = $start_mark->prev_elt('#PCDATA');
+                        $node = $element;
+                        }
+                elsif ($start_mark)
+                        {
+                        unless ($start_mark->isTextNode)
+                                {
+                                $node   = $start_mark->prev_elt('#PCDATA');
+                                }
+                        else
+                                {
+                                $node   = $start_mark;
+                                }
                         }
                 else
                         {
@@ -2701,28 +2682,34 @@ sub     setChildElement
         {
         my $self        = shift;
         my $path        = shift;
-        my $pos         = (ref $path) ? undef : shift;
-        my $node        = $self->getElement($path, $pos) or return undef;
+        my $node        = (ref $path) ? $path : $self->getElement($path, shift)
+                        or return undef;
         my $name        = shift or return undef;
         my %opt         = @_;
+        if (defined $opt{'text'})
+                {
+                $opt{'replace'} = $opt{'capture'}
+                                unless defined $opt{'replace'};
+                delete $opt{'capture'};
+                }
         my $newnode     = undef;
-        
+        my $function    = undef;
+    
         if (ref $name)
                 {
-                if ($name->isElementNode)
-                    {
-                    $newnode = $name;
-                    }
+                if      ((ref $name) eq 'CODE')
+                        {
+                        $function   = $name;
+                        $name       = undef;
+                        }
                 else
-                    {
-                    warn  "[" . __PACKAGE__ . "::setChildElement]" .
-                          "Non element object\n";
-                    return undef;
-                    }
+                        {
+                        $newnode    = $name;
+                        }
                 }
         else
                 {
-                unless ($name =~ /:/)
+                unless ($name =~ /:/ || $name =~ /^#/)
                         {
                         my $prefix = $node->ns_prefix() || 'text';
                         $name = $prefix . ':' . $name;
@@ -2733,15 +2720,29 @@ sub     setChildElement
        	my $offset = $opt{'offset'} || 0;
 	if (lc($offset) eq 'end')
 		{
-		$newnode->paste_last_child($node);
+		unless ($function)
+		        {
+		        $newnode->paste_last_child($node);
+		        }
+		else
+		        {
+		        $newnode = &$function($self, $node, 'end');
+		        }
 		}
 	elsif (lc($offset) eq 'start')
 	        {
-	        $newnode->paste_first_child($node);
+	        unless ($function)
+	                {
+	                $newnode->paste_first_child($node);
+	                }
+                else
+                        {
+                        $newnode = &$function($self, $node, 'start');
+                        }
 	        }
 	else
 		{
-                my ($text_node, $start_pos, $end_pos, $match, $text) =
+                my ($text_node, $start_pos, $end_pos, $match) =
                                         $self->textIndex($node, %opt);
                 if ($text_node)
                         {
@@ -2753,16 +2754,42 @@ sub     setChildElement
                                         ""
                                         );
                                 $text_node->set_text($t);
-                                $newnode->paste_within($text_node, $start_pos);
-                                $newnode->set_text($match)
-                                        if      defined $opt{'capture'} &&
-                                                ! defined $opt{'text'};
+                                unless ($function)
+                                        {
+                                        $newnode->paste_within
+                                                ($text_node, $start_pos);
+                                        $newnode->set_text($match)
+                                                if defined $opt{'capture'};
+                                        }
+                                else
+                                        {
+                                        $newnode = &$function
+                                                        (
+                                                        $self,
+                                                        $text_node,
+                                                        $start_pos,
+                                                        $match
+                                                        );
+                                        }
                                 }
                         else
                                 {
                                 my $p = defined $opt{'after'} ?
                                                 $end_pos : $start_pos;
-                                $newnode->paste_within($text_node, $p);
+                                unless ($function)
+                                        {
+                                        $newnode->paste_within($text_node, $p);
+                                        }
+                                else
+                                        {
+                                        $newnode = &$function
+                                                        (
+                                                        $self,
+                                                        $text_node,
+                                                        $p,
+                                                        $match
+                                                        );
+                                        }
                                 }
                         }
                 else
@@ -2771,8 +2798,12 @@ sub     setChildElement
                         }
 		}
 
-        $self->setAttributes($newnode, %{$opt{'attributes'}});
-        $self->setText($newnode, $opt{'text'}) unless is_true($opt{'no_text'});
+        if ($newnode)
+                {
+                $self->setAttributes($newnode, %{$opt{'attributes'}});
+                $self->setText($newnode, $opt{'text'})
+                                unless is_true($opt{'no_text'});
+                }
         return $newnode;
         }
 
@@ -2791,12 +2822,35 @@ sub     setChildElements
         my @elements    = ();
         my $node        = $self->setChildElement($element, $name, %opt);
         push @elements, $node if $node;
-        delete $opt{'offset'};
+
+        if (defined $opt{'text'})
+                {
+                $opt{'replace'} = $opt{'capture'}
+                                unless defined $opt{'replace'};
+                delete $opt{'capture'};
+                }
+
+        delete $opt{'attributes'};
+        delete $opt{'text'};
+        delete $opt{'offset'} if
+                (
+                defined $opt{'after'}   ||
+                defined $opt{'before'}  ||
+                defined $opt{'replace'} ||
+                defined $opt{'capture'}
+                ); 
+        $opt{'offset'} = 1 if
+                (
+                    ($opt{'way'} ne 'backward' && defined $opt{'before'})
+                        ||
+                    ($opt{'way'} eq 'backward' && defined $opt{'after'})
+                );
 
         while ($node)
                 {
+                my $arg = ref($name) eq 'CODE' ? $name : $node->copy;
                 $node = $self->setChildElement
-                                ($element, $name, %opt, start_mark => $node);
+                                ($element, $arg, %opt, start_mark => $node);
                 push @elements, $node if $node;
                 }
 
@@ -3040,26 +3094,13 @@ sub	getLocalPosition
 	return defined $xpos ? $xpos - 1 : undef;
 	}
 
-sub	selectChildElements
-	{
-	my $node	= shift;
-	return $node->selectChildElement(@_) unless wantarray;
-	my $filter	= shift		or return $node->getChildNodes();
-	
-	my @list	= ();
-	my $fc = $node->first_child;
-	my $name = $fc->name if $fc;
-	while ($fc)
-		{
-		if ($name && ($name =~ /$filter/))
-			{
-			push @list, $fc;
-			}
-		$fc = $fc->next_sibling;
-		$name = $fc->name if $fc;;
-		}
-	return @list;
-	}
+sub     selectChildElements
+        {
+        my $node        = shift;
+        my $filter      = shift;
+        my $condition   = ref $filter ? $filter : qr($filter);
+        return $node->children($condition);
+        }
 
 sub	selectChildElement
 	{
@@ -3180,6 +3221,23 @@ sub	insertNewNode
 		}
 	}
 
+sub     insertNodes
+        {
+        my $node        = shift;
+        my $offset      = shift;
+        my $child       = shift         or return undef;
+        $child->paste_within($node, $offset);
+        my $count = 1;
+        while (@_)
+                {
+                my $next_child = shift;
+                $next_child->paste_after($child);
+                $child = $next_child;
+                $count++;
+                }
+        return $count;
+        }
+
 sub	replicateNode
 	{
 	my $node	= shift;
@@ -3220,7 +3278,9 @@ sub	insertTextChild
 	my $offset	= shift;
 	return $node->appendTextChild($text) unless defined $offset;
 	my $text_node	= OpenOffice::OODoc::Element->new('#PCDATA' => $text);
-	return $text_node->paste_within($node, $offset);
+	return $offset > 0 ?
+	        $text_node->paste_within($node, $offset)        :
+	        $text_node->paste_first_child($node);
 	}
 
 sub	getAttributes

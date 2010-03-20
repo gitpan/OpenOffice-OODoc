@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Manifest.pm 2.005 2008-09-16 JMG$
+#	$Id : Manifest.pm 2.006 2010-03-14 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
@@ -9,9 +9,9 @@
 
 package	OpenOffice::OODoc::Manifest;
 use	5.008_000;
-our	$VERSION	= 2.005;
+our	$VERSION	= 2.006;
 
-use	OpenOffice::OODoc::XPath	2.226;
+use	OpenOffice::OODoc::XPath	2.235;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
 
 #-----------------------------------------------------------------------------
@@ -50,15 +50,8 @@ sub	getBody
 sub	getEntry
 	{
 	my ($self, $entry)	= @_;
-	my @list = $self->getElementList('//manifest:file-entry');
-	foreach my $element (@list)
-		{
-		my $member = $self->getAttribute
-					($element, 'manifest:full-path');
-		next unless $member;
-		return $element if ($member eq $entry);
-		}
-	return undef;
+	return $self->selectElementByAttribute
+                ('manifest:file-entry', 'manifest:full-path' => $entry);
 	}
 
 #-----------------------------------------------------------------------------
