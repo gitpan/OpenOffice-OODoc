@@ -803,17 +803,29 @@ features of OODoc::Meta and OODoc::Document are described here.
 	
 =head3	getAttribute(path, position, name)
 
-=head3	getAttribute(element, name)
+=head3	getAttribute(element, attribute_name)
 
-        Returns the 'name' value of the chosen element (or undef if name is
-        not defined or if the element does not exist).
+        Returns the value of a given attribute in a given element.
+        
+        The element is the first argument, the name of the attribute the second
+        one. The return value is undef if the attribute is not defined in the
+        given element.
 
         Example:
 
-            my $style	=
-             $doc->getAttribute('//text:p', 15, 'text:style-name');
+                my $element = $doc->getElement('//text:p', 15);
+                my $style = $doc->getAttribute($element, 'text:style-name');
 
         returns the style for paragraph 15.
+        
+        If the given attribute name doesn't include a namespace prefix, the
+        namespace of the attribute is automatically supposed to be the same as
+        the namespace of the element. In addition, any blank space within the
+        attribute name is regarded as a '-'. So, the same example could be
+        be written more concisely as shown below:
+        
+                my $element = $doc->getElement('//text:p', 15);
+                my $style = $doc->getAttribute($element, 'style name');
 
 =head3	getAttributes(path, position)
 
@@ -831,7 +843,7 @@ features of OODoc::Meta and OODoc::Document are described here.
 =head3	getDescendants(tag [, context])
 
 	Returns the list of the descendants of the given context element
-	strictly matching the given tag. Example:
+	matching the given tag. Example:
 	
 		my $section = $doc->getSection("SectionName");
 		my @paragraphs = $doc->getDescendants('text:p', $section);
@@ -851,14 +863,13 @@ features of OODoc::Meta and OODoc::Document are described here.
 	whose type is not explicitly supported by the more focused (and more
 	user-friendly) methods, described in other manual chapters (::Text,
 	::Styles, ::Meta, and ::Document).
-
-	It returns an element's reference from an XPath path and a position
-	(or undef if the given xpath does not indicate an existing element).
 	
+	This method returns an element's reference.
+
 	The position argument is used to select a particular element, in the
-	order of the document, knowing that the given xpath expression could
+	order of the document, knowing that the given XPath expression could
 	select a set of elements. Without it, getElement() returns the first
-	element matching the given xpath.
+	element matching the given XPath.
 	
 	The XPath expression applies in the current context, and not always
 	in the whole document (see currentContext()). However, if the
@@ -893,6 +904,10 @@ features of OODoc::Meta and OODoc::Document are described here.
 	getText() or getFlatText()) or a non-text element (such as a style,
 	a font declaration, a variable field, a document properties container,
 	etc).
+	
+	Limit: getElement() doesn't implement the full XPath specification,
+	while it supports a large subset (see the XML::Twig documentation for
+	details about the current XPath coverage).
 
 =head3  getElementByIdentifier(id [, options])
 
@@ -1086,6 +1101,39 @@ features of OODoc::Meta and OODoc::Document are described here.
         (as in our two examples), the returned value is a unique piece of
         editable text and each element's content is separated from that of
         the following element by a line feed.
+
+=head3  getTextNodes(context [, filter])
+
+        Returns the text nodes belonging (at any level) to the given context
+        element. So-called text nodes are low-level text runs, without
+        attributes, that populate text containers such as paragraphs, knowing
+        that a paragraph may contain one or more text nodes. For an example,
+        as soon as a bookmark is put within a pararaph, there is (at least) one
+        text node before the bookmark and another one after the bookmark.
+        
+        The textnodes are returned as a list in the order of the context.
+        
+        Note that a text node is not an element, but that every text node in
+        a regular document is a child of a text element (generally a paragraph,
+        a heading or a text span). So, the node-based parent() method may be
+        used to get the element that contains a given text node.
+        
+        The second argument (optional) specifies a search filter. If it's
+        provided, only the matching text nodes are returned.
+        
+        The example below uses getTextNodes() in order to count the text nodes
+        that contain "foo" and that belong to elements whose style is "bar" in
+        the whole document body (beware, this examples uses methods which are
+        introduced in the OpenOffice::OODoc::Text manual chapter):
+        
+                my $context = $doc->getBody;
+                my @list = ();
+                foreach my $tn ($doc->getTextNodes($context, "foo")) {
+                        my $style = $doc->getAttribute
+                                        ($tn->parent, 'style name');
+                        next unless $style;
+                        push @list, $tn if $style eq "bar";
+                        }
 
 =head3	getUserField(name [, context])
 

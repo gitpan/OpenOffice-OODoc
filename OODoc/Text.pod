@@ -568,7 +568,7 @@ presentation which is one of the foundations of the OpenDocument format.
 	vertical span. In scalar context, it returns the horizontal span only.
 
 	Caution: when related to table cells, "span" has not the same
-	meaning as when related to flat text (see getSpan() and setSpan()).
+	meaning as when related to flat text (see getSpan() and setTextSpan()).
 
 =head3	cellStyle(table, row, column [, stylename])
 
@@ -940,7 +940,7 @@ presentation which is one of the foundations of the OpenDocument format.
 
 	If a third argument is provided and is neither 0 nor an empty string,
 	it's regarded as the desired style of the new text, which is inserted
-	as a "styled span" (see setSpan() for details about text "spans").
+	as a "styled span" (see setTextSpan() for details about text "spans").
 	By default, the text is inserted without any special style (i.e. with
 	the same style as the containing element).
 
@@ -973,33 +973,12 @@ presentation which is one of the foundations of the OpenDocument format.
 	third argument. Example:
 
 		$doc->extendText($p, "New text", "", 5);
-
-	Every string inserted through this method looks like it had always
-	been a part of the original string when edited using OOo. However,
-	each one remains stored in a separate space, like a "styled text
-	span" (see setSpan()). So, given the following example:
-
-		$doc->setText($para, "Old");
-		$doc->extendText($para, "New");
-
-	After this sequence, the displayable content of $para is "OldNew",
-	but "OldNew" is not retrievable by selectElementsByContent(),
-	setSpan(), or other text-searching methods, because "Old" and "New"
-	are physically stored in separate containers (each one can have a
-	distinct style). In addition, a subsequent call of extendText()
-	with an offset on the same target will not properly work if the
-	offset value is greater than the initial length (3 in the example).
-	However, all the internal text span borders may be removed by an
-	explicit call of flatten(). So, a third instruction could be
-	appended to the example:
-
-		$doc->flatten($para);
-
-	After this last instruction, the whole content of $para is stored
-	as a single string, and there is no internal separation between the
-	original content and the extension(s). In the other hand, flatten()
-	removes any previous formatting markup as well. For details about
-	flatten(), see OpenOffice::OODoc::XPath.
+	
+	Caution: the use of extendText() with the style and offset optional
+	arguments is allowed for some simple situations; however, there are
+	more powerful methods to insert additional text, with or without a
+	particular style, within en existing element. See updatetext() and
+	setTextSpan().
 
 =head3	getBibliographyElements([id])
 
@@ -1435,19 +1414,19 @@ presentation which is one of the foundations of the OpenDocument format.
 
         For example, a word in italics or in font size 12 in a paragraph of
         mostly standard characters in font size 10 is a 'span' element and
-        would therefore appear in a list returned by getSpanList.
+        would therefore appear in a list returned by getSpanList().
 
 =head3	getSpanTextList([filter])
 
         Gets a list of texts which "stand out" in the same way as
-        getSpanList and returns it under the same conditions as
-        getParagraphTextList or getHeadingTextList, with optional filter.
+        getSpanList() and returns it under the same conditions as
+        getParagraphTextList() or getHeadingTextList(), with optional filter.
 
 =head3	getStyle(path, position)
 
 =head3	getStyle(element)
 
-        Obsolete. See textStyle.
+        Obsolete. See textStyle().
 
 =head3	getTable(number_or_name [, 'normalize'])
 
@@ -1748,10 +1727,12 @@ presentation which is one of the foundations of the OpenDocument format.
 
         Same as selectTextContent('.*').
 
-=head3	getTextElementList()
+=head3	getTextElementList([context])
 
         Returns the list of all the text elements, including headers,
-        paragraphs and item lists.
+        paragraphs and item lists, that directly belong to an optional given
+        context. Without context argument, the default context is the document
+        body.
 
 =head3	getTopParagraph(n)
 
@@ -2197,17 +2178,29 @@ presentation which is one of the foundations of the OpenDocument format.
 	But other applications (including the present version of
 	OpenOffice.org Writer) can implement the cell merge using subtables
 	instead of span attributes.
+
+=head3  removeSpan()
+
+        See removeTextStyleChanges().
 	
-=head3	removeSpan(path, position)
+=head3	removeTextStyleChanges(path, position)
 
-=head3	removeSpan(element)
+=head3	removeTextStyleChanges(element)
 
-        "Flattens" a text element, removing all presentation distinctions
-        which may mark out some substrings of its content.
+        Removes all the text style that apply to particular text spans in the
+        paragraph or a heading provided as argument, so all the content will be
+        displayed according to the text style that is defined at the paragraph
+        level (font, colors, etc).
+        
+        Works with paragraphs or headings only.
 
 	For a more drastic result, see flatten() in OpenOffice::OODoc::XPath.
 
-        See also setSpan().
+        See also setTextSpan(). Caution: there is no symmetry between
+        setTextSpan() and removeTextStyleChanges(). The first one creates one
+        styled text span at a time in a given context that may be larger than
+        a single paragraph. The second one removes all the styled text spans
+        in the given context, but the context is a paragraph or a heading only.
 
 =head3	renameSection(section, newname)
 
@@ -2815,14 +2808,14 @@ presentation which is one of the foundations of the OpenDocument format.
 
         Deprecated.
         
-        See also setTextSpan() and setTextSpans(), more powerful but using
-        different options.
+        See textStyle(), setTextSpan() and setTextSpans(), more powerful but
+        using different options.
 
 =head3	setStyle(path, position, style_name)
 
 =head3	setStyle(element, style_name)
 
-        Obsolete. See textStyle.
+        Obsolete. See textStyle().
 
 =head3	setText(element, text ,[text, ...])
 
@@ -3015,8 +3008,8 @@ presentation which is one of the foundations of the OpenDocument format.
 
         Inserts a substring with a special text style in a selected position
         within the content of an existing text element (namely a paragraph or
-        a heading). Unlike setSpan() and setTextSpan(), inserts only one span
-        (or nothing if the conditions are not met).
+        a heading). Unlike setTextSpans() and the 3-argument use of textStyle(),
+        inserts only one span (or nothing if the conditions are not met).
         
         A "text span" is a substring whose presentation style differs from the
         style of the text element to which it belongs. For example, a given
@@ -3123,16 +3116,16 @@ presentation which is one of the foundations of the OpenDocument format.
 
         Remember that setTextSpan() creates only one text span with various
         options; if the aim is to automatically create a text span for every
-        match of a given substring, see setTextSpans().
+        match of a given substring, see setTextSpans() or textStyle().
 
 =head3	setTextSpans(element, style [, options])
 
         Applies a special text style to all the substrings of a given text
 	element that match a given expression. See setTextSpan() for
 	explanations about the meaning of "text span". The main difference
-	with setTextSpan() is that setTextSpans() unconditionally sets a
-	span for each substring that matches the given expression in the whole
-	target element.
+	with setTextSpan() is that setTextSpans() operates repeatedly so it
+	may apply the given style to every substring that matches the given
+	conditions.
 
         The context element and the style to apply are provided as mandatory
         arguments. They are followed by the named search parameters. These
@@ -3160,6 +3153,17 @@ presentation which is one of the foundations of the OpenDocument format.
 		    capture => 'OpenOffice\.org|Writer|Draw|Calc|Impress'
 		    );
 
+        Note that the instruction above produces the same result as:
+        
+                $doc->textStyle(
+                        $p, "HighLight",
+                        'OpenOffice\.org|Writer|Draw|Calc|Impress'
+                        );
+
+        While the 3-argument use of textStyle() is appropriate as long as the
+        aim is to unconditionally apply the given style to every matching string
+        in the context, setTextSpans() allows much more selective operations.
+
         The given context may be any element, including the whole document,
         and not only a paragraph. This last example produces the same effect
         as the previous one, but it operates between two given arbitrary text
@@ -3173,7 +3177,8 @@ presentation which is one of the foundations of the OpenDocument format.
                     end_mark   => $doc->getBookmark("BM2")
                     ); 
 
-        See also setTextSpan(), removeSpan() and setHyperlink().
+        See also setTextSpan(), removeStyleChanges(), textStyle() and
+        setHyperlink().
 
 =head3  setUserFieldDeclaration(name [, options])
 
@@ -3355,9 +3360,9 @@ presentation which is one of the foundations of the OpenDocument format.
 	the author's name, the file path or name, and many other variable or
 	fixed values, according to many options.
 
-=head3	textStyle(path, position [, style])
+=head3	textStyle(path, position [, style [, expression]])
 
-=head3	textStyle(element [, style])
+=head3	textStyle(element [, style [, expression]])
 
         Reads the name of a text element's style or, if a 'style' argument is
 	given, changes it. The text element may be a section, paragraph, a
@@ -3366,18 +3371,30 @@ presentation which is one of the foundations of the OpenDocument format.
         The element can be indicated by the pair [path, position] or by
         reference.
 
+        If a style is provided as the second argument, it's applied to the text
+        element (and it replaces the previously set style, if any).
+        
+        If a text string is provided as the third argument, the given style
+        applies to every matching substring in the element, and not to the
+        element itself. In this case, the given style must be a text style,
+        while it must be a paragraph style otherwise.
+
         The returned value is a literal style identifier, i.e. the value
         of the element's 'text:style-name' attribute. This identifier could
 	be used to retrieve the style element itself, through another method
 	such as getStyleElement() (see OpenOffice::OODoc::Styles).
-
-        Note: this method allows you to attribute a non-existent style to a
-        paragraph or heading. Such a style can be created later (e.g. using
-        createStyle) or not at all. The actual existence of the style is
-        only relevant to the needs of the application. Obviously,
-	opening a document which contains references to non-existent styles
-	in OpenOffice.org will give unpredictable results as to the viewing
-	of the given paragraphs or headers.
+	
+	In the following example, the 1st instruction just returns the current
+	style of a given paragraph, the 2nd one sets the style of the given
+	paragraph to "New Paragraph Style", and the 3rd applies the "New Text
+	Style" to every substring matching "foo" in the given paragraph:
+	
+	        $current_style = $doc->textStyle($paragraph);
+	        $doc->textStyle($paragraph, "New Paragraph Style");
+	        $doc->textStyle($paragraph, "New Text Style", "foo");
+	
+	For more selective ways to apply a text style to a portion of paragraph,
+	see setTextSpan().
 
 =head3	unlockSection(section)
 
@@ -3424,12 +3441,18 @@ presentation which is one of the foundations of the OpenDocument format.
         
         'text': a text string that will be inserted somewhere within the
         element, at a position which depends on other options, by default at
-        the beginning; alternatively, 'text' may be a reference to a user-
-        provided function whose return value will be used as the text to be
-        inserted; this function will be called with the document object as its
-        first argument (so it can use document-based methods) and optionally
-        with a text string (that depends on other options, see below) as its
-        second argument.
+        the beginning.
+        
+        Alternatively, the 'text' option may be a reference to a user-provided
+        function whose return value will be used as the text to be inserted;
+        this function will be called with the document object as its first
+        argument (so it can use document-based methods), the current text node
+        as its second argument and optionally with a text string (that depends
+        on other options, see below) as its third argument. (Be careful, a
+        "text run", or "text node", is not always an element; it may be a local
+        text segment within an element.) The user-provided function is not
+        supposed to update the text node by itself. If the return value is
+        undef, or an empty string, nothing is inserted.
         
         'replace': a search string (regex) whose first match will be deleted
         (and, of course, replaced by the value of the 'text' option , if any).
@@ -3579,7 +3602,7 @@ presentation which is one of the foundations of the OpenDocument format.
 
             isSequenceDeclarations	set of sequence declarations
 
-	    isSpan			span element (see setSpan)
+	    isSpan			span element (see setTextSpan)
 
             isTable			table
 

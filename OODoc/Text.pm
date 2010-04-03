@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.241 2010-03-16 JMG$
+#	$Id : Text.pm 2.242 2010-04-02 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2010 by Genicorp, S.A. (www.genicorp.com)
@@ -9,9 +9,9 @@
 
 package OpenOffice::OODoc::Text;
 use	5.008_000;
-use	OpenOffice::OODoc::XPath	2.235;
+use	OpenOffice::OODoc::XPath	2.236;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.241;
+our	$VERSION	= 2.242;
 
 #-----------------------------------------------------------------------------
 # synonyms
@@ -69,6 +69,7 @@ BEGIN	{
 	*getStyle			= *textStyle;
 	*setStyle			= *textStyle;
 	*removeMark                     = *deleteMark;
+	*removeSpan                     = *removeTextStyleChanges;
 	}
 
 #-----------------------------------------------------------------------------
@@ -241,9 +242,11 @@ sub	new
 sub	getText
 	{
 	my $self	= shift;
-	my $element	= $self->getElement(@_);
-	return undef	unless ($element && $element->isElementNode);
-
+        my $path        = shift;
+        my $element     = ref $path ? $path : $self->getElement(@_);
+        return undef unless $element;
+        return $self->getFlatText($element) if $element->isTextNode;
+	return undef unless $element->isElementNode;
 	my $text	= undef;
 	my $begin_text	= '';
 	my $end_text	= '';
@@ -554,9 +557,7 @@ sub	selectTextContent
 sub	getTextElementList
 	{
 	my $self	= shift;
-
-	my $context = $self->{'context'}->isa('OpenOffice::OODoc::Element') ?
-			$self->{'context'} : $self->{'body'};
+	my $context     = shift || $self->getBody();
 
 	return $self->selectChildElementsByName
 			(
@@ -664,8 +665,9 @@ sub	setSpan
         my $path        = shift;
         my $context     = (ref $path) ? $path : $self->getElement($path, shift)
                         or return undef;
-        my $expr        = shift; return undef unless defined $expr;
-        my $style       = shift                          or return undef;
+        my $expr        = $self->inputTextConversion(shift);
+        return undef unless defined $expr;
+        my $style       = $self->inputTextConversion(shift) or return undef;
 
         return $self->markElement
                 ($context, 'text:span', $expr, 'text:style-name' => $style);	
@@ -914,7 +916,7 @@ sub     updateText
 	if ($offset eq 'start')
 		{
                 $nt = ref $new_text ?
-                        $self->inputTextConversion(&$new_text($self))        :
+                        $self->inputTextConversion(&$new_text($self, $node)) :
                         $new_text;
                 $node->insertTextChild($nt, 0);
                 $node->normalize;
@@ -923,7 +925,7 @@ sub     updateText
 	elsif ($offset eq 'end')
 	        {
                 $nt = ref $new_text ?
-                        $self->inputTextConversion(&$new_text($self))        :
+                        $self->inputTextConversion(&$new_text($self, $node)) :
                         $new_text;
                 $node->appendTextChild($nt);
 	        $node->normalize;
@@ -940,7 +942,8 @@ sub     updateText
         my $size = defined $replace ? $end_pos - $start_pos : 0;  
         if (ref $new_text)
                 {
-                $nt = $self->inputTextConversion(&$new_text($self, $match));
+                $nt = $self->inputTextConversion
+                                (&$new_text($self, $text_node, $match));
                 $ln_new = length($nt);
                 }
         substr($t, $p, $size, $nt);
@@ -982,7 +985,10 @@ sub     updateText
                         if (ref $new_text)
                                 {
                                 $nt = $self->inputTextConversion
-                                                (&$new_text($self, $match));
+                                                (
+                                                &$new_text
+                                                    ($self, $text_node, $match)
+                                                ) || "";
                                 $ln_new = length($nt);
                                 }
                         substr($t, $p, $size, $nt);
@@ -1159,47 +1165,47 @@ sub     setNote
 
 #-----------------------------------------------------------------------------
 
-sub	removeSpan
-	{
-	my $self	= shift;
-	my $path	= shift;
-	my $pos		= ref $path ? undef : shift;
-	my $tagname	= shift	|| 'text:span';
-
-	my $element	= ref $path ?
-				$path	:
-				$self->getElement($path, @_);
-	return undef	unless $element;
-
-	my $text	= "";
-	my @nodes	= $element->getChildNodes;
-	my $n		= undef;
-	my $last_text_node = undef;
-	foreach $n (@nodes)
-		{
-		if	($n->isTextNode)
-			{
-			$last_text_node	= $n;
-			}
-		elsif	($n->isElementNode && $n->hasTag($tagname))
-			{
-			my $t = $n->string_value;
-			if ($last_text_node)
-				{
-				$last_text_node->append_pcdata($t);
-				}
-			else
-				{
-				$last_text_node =
-				    OpenOffice::OODoc::XPath::new_text_node($t);
-				$element->insertBefore($last_text_node, $n);
-				}
-			$n->delete;
-			}
-		}
-
-	return $element;
-	}
+sub     removeTextStyleChanges
+        {
+        my $self        = shift;
+        my $path        = shift or return undef;
+        my $context     = ref $path ? $path : $self->getElement($path, @_);
+        return undef unless $context;
+        my $span_name   = 'text:span';
+        
+        my $name        = $context->getName;
+        unless ($name =~ /^text:(p|h|span)$/)
+                {
+                warn    "[" . __PACKAGE__ . "::removeTextStyleChanges] " .
+                        "$name is not a text container\n";
+                return undef;
+                }
+        my $new_elt     = OpenOffice::OODoc::Element->new($name);
+        $new_elt->set_atts($context->atts);
+        my $count       = 0;
+        foreach my $n ($context->descendants)
+                {
+                if ($n->getName() ne $span_name)
+                        {
+                        $n->move(last_child => $new_elt);
+                        }
+                else
+                        {
+                        $count++;
+                        }
+                }
+        
+        if ($count > 0)
+                {
+                $new_elt->replace($context);
+                return $new_elt;
+                }
+        else    
+                {
+                $new_elt->delete;
+                return $context;
+                }
+        }
 
 #-----------------------------------------------------------------------------
 
@@ -4470,6 +4476,12 @@ sub	textStyle
 			}
 		}
 
+        my $expression  = shift;
+        if (defined $expression)
+                {
+                return $self->setSpan($element, $expression, $newstyle);
+                }
+
 	if ($element->isListItem)
 		{
 		return defined $newstyle ?
@@ -4489,6 +4501,11 @@ sub	textStyle
 package	OpenOffice::OODoc::Element;
 #-----------------------------------------------------------------------------
 # text element type detection (add-in for OpenOffice::OODoc::Element)
+
+BEGIN   {
+        *headerLevel            = *headingLevel;
+        *isHeader               = *isHeading;
+        }
 
 sub	isOrderedList
 	{
@@ -4521,22 +4538,10 @@ sub	isParagraph
 	return $element->hasTag('text:p');
 	}
 
-sub	isHeader	# DEPRECATED
-	{
-	my $element	= shift;
-	return $element->hasTag('text:h');
-	}
-
 sub	isHeading
 	{
 	my $element	= shift;
 	return $element->hasTag('text:h');
-	}
-
-sub	headerLevel	# DEPRECATED
-	{
-	my $element	= shift;
-	return $element->getAttribute($self->{'level_attr'});
 	}
 
 sub	headingLevel

@@ -1,3 +1,8 @@
+2.124   2010-04-02
+        Meta.pm: minor accessor improvement.
+        Text.pm: bug fixes in getTextElementList(), setSpan(), removeSpan(); removeTextStyleChanges() introduced as an alias of removeSpan(); textStyle(), getText() improvements.
+        Text.pm: functional change in updateText() (user-provided function call).
+        XPath.pm: improved getTextDescendants(), added getTextNodes().
 2.123   2010-03-20
         XPath.pm: getElementList() becomes an alias of selectNodesByXPath().
         XPath.pm: improved setChildElement(), selectChildElements(), added setChildElements(), newTextNode().

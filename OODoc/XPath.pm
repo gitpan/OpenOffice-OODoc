@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 2.235 2010-03-20 JMG$
+#	$Id : XPath.pm 2.236 2010-04-02 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2010 by Genicorp, S.A. (www.genicorp.com)
@@ -9,7 +9,7 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 2.235;
+our	$VERSION	= 2.236;
 use	XML::Twig	3.32;
 use	Encode;
 require	Exporter;
@@ -372,7 +372,7 @@ sub	_search_content
                 }    
         else
                 {        
-	        foreach my $n ($node->getDescendantTextNodes)
+	        foreach my $n ($node->getTextDescendants)
 		        {
 		        my $text = $self->_find_text($n->text, @_);
 		        if (defined $text)
@@ -1432,15 +1432,17 @@ sub	setFlatText
 	{
 	my $self	= shift;
 	my $path	= shift;
-	my $pos		= (ref $path) ? undef : shift;
+	my $element     = ref $path ?
+	                        $path     :
+	                        $self->OpenOffice::OODoc::XPath::getElement
+	                                                ($path, shift);
+	return undef unless $element;
 	my $text	= shift;
 
-	return undef	unless defined $text;
-	my $element 	= $self->OpenOffice::OODoc::XPath::getElement
-					($path, $pos)
-				or return undef;
 	my $t		= $self->inputTextConversion($text);
-	$element->set_text($t)	if defined $t;
+	return undef unless defined $t;
+
+	$element->set_text($t);
 	return $text;
 	}
 
@@ -1452,19 +1454,21 @@ sub	setText
 	{
 	my $self	= shift;
 	my $path	= shift;
-	my $pos		= (ref $path) ? undef : shift;
+	my $element     = ref $path ?
+	                        $path     :
+	                        $self->OpenOffice::OODoc::XPath::getElement
+	                                                ($path, shift);
+	return undef unless $element;
+
 	my $text	= shift;
-
 	return undef	unless defined $text;
-
-	my $element 	= $self->OpenOffice::OODoc::XPath::getElement
-					($path, $pos)
-					or return undef;
 
 	unless ($text)
 		{
 		$element->set_text($text); return $text;
 		}
+	return $self->setFlatText($element, $text) if $element->isTextNode;
+
 	my $tabtag = $self->{'opendocument'} ? 'text:tab' : 'text:tab-stop';
 	$element->set_text("");
 	my @lines	= split "\n", $text;
@@ -1604,7 +1608,13 @@ sub	newTextNode
 sub	getFlatText
 	{
 	my $self	= shift;
-	my $element	= $self->getElement(@_)	or return undef;
+	my $path	= shift;
+	my $element     = ref $path ?
+	                        $path     :
+	                        $self->OpenOffice::OODoc::XPath::getElement
+	                                                ($path, @_);
+	return undef unless $element;
+
 	return $self->outputTextConversion($element->text);
 	}
 
@@ -1614,8 +1624,15 @@ sub	getFlatText
 sub	getText
 	{
 	my $self	= shift;
-	my $element	= $self->OpenOffice::OODoc::XPath::getElement(@_);
-	return undef	unless ($element && $element->isElementNode);
+        my $path        = shift;
+        my $element     = ref $path ?
+                                $path   :
+                                $self->OpenOffice::OODoc::XPath::getElement
+                                                        ($path, @_);
+        return undef unless $element;
+        return $self->getFlatText($element) if $element->isTextNode;
+	return undef	unless $element->isElementNode;
+	
 	my $text	= '';
 
 	my $name	= $element->getName;
@@ -1668,6 +1685,18 @@ sub	getDescendants
 	}
 
 #------------------------------------------------------------------------------
+
+sub     getTextNodes
+        {
+        my $self        = shift;
+	my $path	= shift;
+	my $element	= ref $path ? $path : $self->getElement($path, shift)
+	                        or return undef;
+        my $filter      = $self->inputTextConversion(shift);
+        return $element->getTextDescendants($filter);
+        }
+
+#------------------------------------------------------------------------------
 # brute XPath nodelist selection; allows any XML::XPath expression
 
 sub	selectNodesByXPath
@@ -1717,6 +1746,7 @@ sub	selectNodeByXPath
 	                "Bad context argument\n";
 	        return undef;
 	        }
+
 	return $context->get_xpath($path, $offset);
 	}
 
@@ -3167,8 +3197,10 @@ sub     getChildTextNode
 
 sub	getTextDescendants
 	{
-	my $node	= shift;
-	return $node->descendants('#PCDATA');
+	my ($node, $filter)     = @_;
+	return  defined $filter ?
+	        $node->get_xpath('#PCDATA[string()=~/' . $filter . '/]') :
+	        $node->descendants('#PCDATA');
 	}
 
 sub     textLength      # length of a text node

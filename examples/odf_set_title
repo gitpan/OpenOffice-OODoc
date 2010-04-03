@@ -5,7 +5,7 @@
 
 =head1	NAME
 
-odf_set_title - Set the title of a document using
+odf_set_title - Set the title of a document using the first heading of the content
 
 =head1	USAGE
 

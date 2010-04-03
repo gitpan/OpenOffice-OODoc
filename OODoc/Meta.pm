@@ -1,16 +1,16 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Meta.pm 2.015 2010-01-27 JMG$
+#	$Id : Meta.pm 2.016 2010-04-02 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
-#	Copyright 2009 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2010 by Genicorp, S.A. (www.genicorp.com)
 #
 #-----------------------------------------------------------------------------
 
 package	OpenOffice::OODoc::Meta;
 use	5.008_000;
-our	$VERSION	= 2.015;
-use	OpenOffice::OODoc::XPath	2.232;
+our	$VERSION	= 2.016;
+use	OpenOffice::OODoc::XPath	2.236;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
 
 #-----------------------------------------------------------------------------
@@ -49,7 +49,13 @@ sub	new
 	}
 
 #-----------------------------------------------------------------------------
-# overrides setText() because meta elements contain flat text only
+# overrides getText() & setText() because meta elements contain flat text only
+
+sub     getText
+        {
+        my $self        = shift;
+        return $self->getFlatText(@_);
+        }
 
 sub	setText
 	{
@@ -178,7 +184,7 @@ sub	editing_cycles
 sub     increment_editing_cycles
         {
         my $self        = shift;
-        my $v           = $self->editing_cycles;
+        my $v           = $self->editing_cycles();
         return $self->editing_cycles($v + 1);
         }
 
@@ -194,11 +200,6 @@ sub	editing_duration
 
 #-----------------------------------------------------------------------------
 # get/set the 'keywords' list
-# optional arguments are a list of one or more keywords ;
-# each argument is appended to the keywords list only if not present in
-# the old list ;
-# result is an array of strings or a single string (with ',' as keyword
-# separator) ; optional newly added keywords are included in the result set
 
 sub	_od_keywords		# Open Document version
 	{
