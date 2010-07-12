@@ -1,7 +1,7 @@
 #-----------------------------------------------------------------------------
-# 01write.t	OpenOffice::OODoc Installation test		2010-03-30
+# 01write.t	OpenOffice::OODoc Installation test		2010-07-07
 #-----------------------------------------------------------------------------
-
+use strict;
 use Test;
 BEGIN	{ plan tests => 19 }
 

@@ -1,8 +1,9 @@
 #------------------------------------------------------
-# OpenOffice::OODoc packaging & installation 2010-01-05
+# OpenOffice::OODoc packaging & installation 2010-07-07
 #------------------------------------------------------
 
 use 5.008;
+use strict;
 use Getopt::Long;
 use Encode;
 use ExtUtils::MakeMaker;

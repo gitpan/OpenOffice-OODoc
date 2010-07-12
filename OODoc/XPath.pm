@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : XPath.pm 2.236 2010-04-02 JMG$
+#	$Id : XPath.pm 2.237 2010-07-12 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2010 by Genicorp, S.A. (www.genicorp.com)
@@ -9,7 +9,8 @@
 
 package	OpenOffice::OODoc::XPath;
 use	5.008_000;
-our	$VERSION	= 2.236;
+use     strict;
+our	$VERSION	= '2.237';
 use	XML::Twig	3.32;
 use	Encode;
 require	Exporter;
@@ -242,7 +243,7 @@ sub	OpenOffice::OODoc::XPath::new_element
 	return undef if ref $name;
 	$name		=~ s/^\s+//;
 	$name		=~ s/\s+$//;
-	if ($name =~ /^<.*>$/)	# create element from XML string
+	if ($name =~ /^</)	# create element from XML string
 		{
 		return OpenOffice::OODoc::Element->parse($name, @_);
 		}
@@ -532,7 +533,7 @@ sub	new
 	                                        # other OODoc::Xpath object
 	$self->{'container'} = $self->{'container'}->{'container'}
 	        if      (
-	                ref $container
+	                ref($self->{container})
 	                        &&
 	                $self->{'container'}->isa('OpenOffice::OODoc::XPath')
                         );
@@ -825,7 +826,7 @@ sub	currentContext
 
 sub	resetCurrentContext
 	{
-	$self		= shift;
+	my $self	= shift;
 	return $self->currentContext($self->getRoot);
 	}
 
@@ -919,8 +920,8 @@ sub	getBody
 
 sub	cloneContent
 	{
-	$self	= shift;
-	$source	= shift;
+	my $self        = shift;
+	my $source	= shift;
 
 	unless ($source && $source->{'xpath'})
 		{
@@ -3276,11 +3277,11 @@ sub	replicateNode
 	my $number	= shift;
 	$number = 1 unless defined $number;
 	my $position	= shift || 'after';
-	my $lastnode	= $node;
+	my $last_node	= $node;
 	while ($number > 0)
 		{
 		my $newnode	= $node->copy;
-		$newnode->paste($position => $lastnode);
+		$newnode->paste($position => $last_node);
 		$last_node	= $newnode;
 		$number--;
 		}

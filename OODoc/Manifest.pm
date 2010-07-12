@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Manifest.pm 2.006 2010-03-14 JMG$
+#	$Id : Manifest.pm 2.007 2010-07-07 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
@@ -9,9 +9,10 @@
 
 package	OpenOffice::OODoc::Manifest;
 use	5.008_000;
-our	$VERSION	= 2.006;
+use     strict;
+our	$VERSION	= '2.007';
 
-use	OpenOffice::OODoc::XPath	2.235;
+use	OpenOffice::OODoc::XPath	2.237;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
 
 #-----------------------------------------------------------------------------
@@ -69,7 +70,7 @@ sub	getMainEntry
 sub	setMainEntry
 	{
 	my $self	= shift;
-	return $element = $self->setEntry("/", @_);
+	return $self->setEntry("/", @_);
 	}
 
 #-----------------------------------------------------------------------------

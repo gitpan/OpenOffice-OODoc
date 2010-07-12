@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------------
 #
-#	$Id : Text.pm 2.242 2010-04-02 JMG$
+#	$Id : Text.pm 2.243 2010-07-08 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2010 by Genicorp, S.A. (www.genicorp.com)
@@ -9,9 +9,10 @@
 
 package OpenOffice::OODoc::Text;
 use	5.008_000;
-use	OpenOffice::OODoc::XPath	2.236;
+use     strict;
+use	OpenOffice::OODoc::XPath	2.237;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.242;
+our	$VERSION	= '2.243';
 
 #-----------------------------------------------------------------------------
 # synonyms
@@ -458,7 +459,7 @@ sub     selectElementsByContent
                                         ||
                                 (
                                 defined $self->_search_content
-                                        ($node, $pattern, @_, $element)
+                                        ($node, $pattern, @_, $node->parent)
                                 )
                         )
                         {
@@ -502,7 +503,7 @@ sub	selectElementByContent
                                         ||
                                 (
                                 defined $self->_search_content
-                                        ($node, $pattern, @_, $element)
+                                        ($node, $pattern, @_, $node->parent)
                                 )
                         )
                         {
@@ -1313,7 +1314,7 @@ sub     setRangeMark
         $type           =~ s/ /-/g;  
         my $check       = $opt{'check'};        delete $opt{'check'};
         my $prefix      = $opt{'prefix'} || 'text';
-        my $container   = $opt{'context'};      delete $opt{'context'};
+        my $context     = $opt{'context'};      delete $opt{'context'};
         my $content     = $opt{'content'};
         delete @opt{qw(after before replace)};
         my %start       = ();
@@ -3270,7 +3271,7 @@ sub	getTableRows
 
 sub	_coord_conversion
 	{
-	my $arg	= shift or return ($arg, @_);
+	my $arg	= shift; return ($arg, @_) unless $arg;
 	my $coord = uc $arg;
 	return ($arg, @_) unless $coord =~ /[A-Z]/;
 
@@ -4547,7 +4548,8 @@ sub	isHeading
 sub	headingLevel
 	{
 	my $element	= shift;
-	return $element->getAttribute($self->{'level_attr'});
+        my $level = $element->getAttribute('text:outline-level');
+        return defined $level ? $level : $element->getAttribute('text:level');
 	}
 
 sub	isTable

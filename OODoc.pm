@@ -1,22 +1,23 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : OODoc.pm 2.124 2010-04-02 JMG$
+#	$Id : OODoc.pm 2.125 2010-07-08 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2010 by Genicorp, S.A. (www.genicorp.com)
 #
 #-----------------------------------------------------------------------------
 
-use OpenOffice::OODoc::File		2.202;
-use OpenOffice::OODoc::Meta		2.016;
+use OpenOffice::OODoc::File		2.203;
+use OpenOffice::OODoc::Meta		2.017;
 use OpenOffice::OODoc::Document		2.023;
-use OpenOffice::OODoc::Manifest		2.005;
+use OpenOffice::OODoc::Manifest		2.007;
 
 #-----------------------------------------------------------------------------
 
 package	OpenOffice::OODoc;
 use 5.008_000;
-our $VERSION				= 2.124;
+use strict;
+our $VERSION				= '2.125';
 
 require Exporter;
 our @ISA    = qw(Exporter);
@@ -32,6 +33,8 @@ our @EXPORT = qw
 	odfWorkingDirectory workingDirectory ooWorkingDirectory
 	odfReadConfig readConfig ooReadConfig
 	);
+
+our $INSTALLATION_PATH;
 
 #-----------------------------------------------------------------------------
 # config loader
@@ -67,8 +70,10 @@ sub	odfReadConfig
 		next unless $node->isElementNode;
 		my $name = $node->getName; $name =~ s/-/::/g;
 		my $varname = 'OpenOffice::OODoc::' . $name;
+                no strict;
 		$$varname = $node->string_value;
 		$$varname = odfDecodeText($$varname);
+		use strict;
 		}
 	OpenOffice::OODoc::Styles::ooLoadColorMap();
 	return 1;
@@ -208,7 +213,7 @@ BEGIN
 	
 	my $module_path = $INC{"OpenOffice/OODoc.pm"};
 	$module_path =~ s/\.pm$//;
-	$OpenOffice::OODoc::INSTALLATION_PATH = $module_path;
+	$INSTALLATION_PATH = $module_path;
 	odfReadConfig() if ( -e "$INSTALLATION_PATH/config.xml" );
 	}
 

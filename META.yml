@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               OpenOffice-OODoc
-version:            2.124
+version:            2.125
 abstract:           The Perl Open OpenDocument Connector
 author:
     - Jean-Marie Gouarne <jmgdoc@cpan.org>

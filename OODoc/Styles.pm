@@ -1,17 +1,18 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Styles.pm 2.026 2010-03-10 JMG$
+#	$Id : Styles.pm 2.027 2010-07-12 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
-#	Copyright 2008 by Genicorp, S.A. (www.genicorp.com)
+#	Copyright 2010 by Genicorp, S.A. (www.genicorp.com)
 #
 #-----------------------------------------------------------------------------
 
 package OpenOffice::OODoc::Styles;
 use	5.008_000;
-our	$VERSION	= 2.026;
+use     strict;
+our	$VERSION	= '2.027';
 
-use	OpenOffice::OODoc::XPath	2.233;
+use	OpenOffice::OODoc::XPath	2.237;
 use	File::Basename;
 require	Exporter;
 our	@ISA	= qw ( Exporter OpenOffice::OODoc::XPath );
@@ -255,7 +256,7 @@ sub	_get_property_path
 		return 'style:' . $nodename . '-style/style:properties';
 		}
 	my $path = $self->_properties_tagname($element, $part);
-	$path .= ('/' . $nodename)	if $nodename;
+	$path .= ('/style:' . $nodename)	if $nodename;
 	return $path;
 	}
 
@@ -1352,8 +1353,7 @@ sub	pageLayout
 	else
 		{
 		my $pm_name = ref $pagemaster ?
-			$pm_name = $self->getAttribute
-					($pagemaster, 'style:name')	:
+			$self->getAttribute($pagemaster, 'style:name')	:
 			$pagemaster;
 		$self->setAttribute($masterpage, $layout_key => $pm_name);
 		return $pm_name;
@@ -1406,9 +1406,9 @@ sub	backgroundImageLink
 	else
 		{
 		my $xpath = $self->_get_property_path
-				($element, 'background-image')		.
+				($pagemaster, 'background-image')		.
 				'[@xlink:href="' . $newlink . '"]';
-		
+
 		return $self->makeXPath($pagemaster, $xpath);
 		}
 	}
@@ -1520,7 +1520,7 @@ sub	importBackgroundImage
 			$self->backgroundImageLink($pagemaster, $link);
 			}
 		}
-	$self->raw_import($link, $filename);	
+	$self->raw_import($link, $filename);
 	return $link;
 	}
 

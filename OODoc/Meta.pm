@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Meta.pm 2.016 2010-04-02 JMG$
+#	$Id : Meta.pm 2.017 2010-07-07 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2010 by Genicorp, S.A. (www.genicorp.com)
@@ -9,8 +9,9 @@
 
 package	OpenOffice::OODoc::Meta;
 use	5.008_000;
-our	$VERSION	= 2.016;
-use	OpenOffice::OODoc::XPath	2.236;
+use     strict;
+our	$VERSION	= '2.017';
+use	OpenOffice::OODoc::XPath	2.237;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
 
 #-----------------------------------------------------------------------------

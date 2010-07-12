@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : Image.pm 2.019 2009-02-18 JMG$
+#	$Id : Image.pm 2.020 2009-07-07 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2009 by Genicorp, S.A. (www.genicorp.com)
@@ -9,10 +9,11 @@
 
 package	OpenOffice::OODoc::Image;
 use	5.008_000;
-use	OpenOffice::OODoc::XPath	2.229;
+use     strict;
+use	OpenOffice::OODoc::XPath	2.237;
 use	File::Basename;
 our	@ISA		= qw ( OpenOffice::OODoc::XPath );
-our	$VERSION	= 2.019;
+our	$VERSION	= '2.020';
 
 #-----------------------------------------------------------------------------
 # default attributes for image style

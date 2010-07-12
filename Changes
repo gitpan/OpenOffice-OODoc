@@ -1,3 +1,8 @@
+2.125	2010-07-12
+	XPath.pm: bug #57888 fix
+	Text.pm: bug fix in selectElementByContent()
+	Styles.pm: bug fix in setBackgroundImage()
+	All: code cleaning
 2.124   2010-04-02
         Meta.pm: minor accessor improvement.
         Text.pm: bug fixes in getTextElementList(), setSpan(), removeSpan(); removeTextStyleChanges() introduced as an alias of removeSpan(); textStyle(), getText() improvements.

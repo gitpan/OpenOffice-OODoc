@@ -1,6 +1,6 @@
 #-----------------------------------------------------------------------------
 #
-#	$Id : File.pm 2.202 2010-01-10 JMG$
+#	$Id : File.pm 2.203 2010-07-07 JMG$
 #
 #	Created and maintained by Jean-Marie Gouarne
 #	Copyright 2010 by Genicorp, S.A. (www.genicorp.com)
@@ -9,7 +9,8 @@
 
 package	OpenOffice::OODoc::File;
 use	5.008_000;
-our	$VERSION	= 2.202;
+use     strict;
+our	$VERSION	= '2.203';
 use	Archive::Zip	1.18	qw ( :DEFAULT :CONSTANTS :ERROR_CODES );
 use	File::Temp;
 
